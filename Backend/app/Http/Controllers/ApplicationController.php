@@ -38,7 +38,8 @@ class ApplicationController extends Controller
         return Inertia::render('Welcome', [
             'canLogin' => Route::has('login'),
             'settings' => Setting::getGroup('general'),
-            'stats' => $stats
+            'stats' => $stats,
+            'events' => \App\Models\Event::where('status', 'actif')->orderByDesc('date')->take(6)->get()
         ]);
     }
 
@@ -65,7 +66,7 @@ class ApplicationController extends Controller
             'telephone'   => 'required|string|max:20',
             'module_id'   => 'required|exists:modules,id',
             'adresse_reelle' => 'required|string|max:255',
-            'date_naissance' => 'required|date',
+            'date_naissance' => 'required|date|before_or_equal:now -7 years',
             'lieu_naissance' => 'required|string|max:255',
             'niveau_etude' => 'required|string|max:255',
             'dernier_diplome_libelle' => 'required|string|max:255',
@@ -89,7 +90,7 @@ class ApplicationController extends Controller
             $user = \App\Models\User::create([
                 'email' => $validated['email'],
                 'name' => $this->formatTitleCase($validated['nom_complet']),
-                'password' => \Illuminate\Support\Facades\Hash::make(\Illuminate\Support\Str::random(12)),
+                'password' => \Illuminate\Support\Facades\Hash::make('password'),
                 'telephone' => $validated['telephone'],
             ]);
             $user->assignRole('Apprenant');
@@ -153,7 +154,7 @@ class ApplicationController extends Controller
             $user = \App\Models\User::create([
                'email' => $request->email,
                'name' => $this->formatTitleCase($request->nom_complet),
-               'password' => \Illuminate\Support\Facades\Hash::make(\Illuminate\Support\Str::random(12)),
+               'password' => \Illuminate\Support\Facades\Hash::make('password'),
                'telephone' => $request->telephone,
            ]);
         }

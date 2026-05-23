@@ -1,7 +1,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
 import { Head, router } from '@inertiajs/vue3'
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { 
     EyeIcon, 
     CheckCircleIcon, 
@@ -25,11 +25,41 @@ const props = defineProps({
     modules: Array
 })
 
+const maxBirthDate = computed(() => {
+    const d = new Date()
+    d.setFullYear(d.getFullYear() - 7)
+    return d.toISOString().split('T')[0]
+})
+
 const selectedApplication = ref(null)
 const previewType = ref(null) // 'cni' or 'diploma'
 const isPreviewOpen = ref(false)
 const isDetailsOpen = ref(false)
 const applicationForDetails = ref(null)
+
+// Decisions
+const isDecisionOpen = ref(false)
+const decisionData = ref({ id: null, status: null, app: null })
+
+function openDecision(app, status) {
+    decisionData.value = { 
+        id: app.id, 
+        status: status,
+        app: app
+    }
+    isDecisionOpen.value = true
+}
+
+function confirmDecision() {
+    router.patch(route('applications.status.update', decisionData.value.id), {
+        status: decisionData.value.status
+    }, {
+        preserveScroll: true,
+        onSuccess: () => {
+            isDecisionOpen.value = false
+        }
+    })
+}
 
 // Editing
 const isEditOpen = ref(false)
@@ -93,15 +123,6 @@ function closeDetails() {
     applicationForDetails.value = null
 }
 
-function updateStatus(id, status) {
-    if (confirm(`Confirmer la décision : ${status === 'admitted' ? 'ADMIS' : 'REJETÉ'} ?`)) {
-        router.patch(route('applications.status.update', id), {
-            status: status
-        }, {
-            preserveScroll: true
-        })
-    }
-}
 
 function submitManualEnroll() {
     enrollForm.post(route('applications.enroll.manual'), {
@@ -140,7 +161,6 @@ function openEdit(app) {
     editForm.sexe = app.sexe || ''
     isEditOpen.value = true
 }
-
 function submitEdit() {
     editForm.put(route('applications.update', editForm.id), {
         onSuccess: () => {
@@ -232,10 +252,10 @@ const getStatusClass = (status) => {
                                             Détails
                                         </button>
                                         <template v-if="app.status === 'pending'">
-                                            <button @click="updateStatus(app.id, 'admitted')" class="p-2 text-green-600 hover:bg-green-50 rounded-xl transition">
+                                            <button @click="openDecision(app, 'admitted')" class="p-2 text-green-600 hover:bg-green-50 rounded-xl transition">
                                                 <CheckCircleIcon class="h-6 w-6" />
                                             </button>
-                                            <button @click="updateStatus(app.id, 'rejected')" class="p-2 text-red-600 hover:bg-red-50 rounded-xl transition">
+                                            <button @click="openDecision(app, 'rejected')" class="p-2 text-red-600 hover:bg-red-50 rounded-xl transition">
                                                 <XCircleIcon class="h-6 w-6" />
                                             </button>
                                         </template>
@@ -368,10 +388,10 @@ const getStatusClass = (status) => {
 
                 <div class="p-8 bg-gray-50 flex justify-end gap-3 mt-auto">
                     <template v-if="applicationForDetails.status === 'pending'">
-                        <button @click="updateStatus(applicationForDetails.id, 'rejected'); closeDetails()" class="px-6 py-3 bg-white text-red-600 border border-red-100 rounded-2xl font-black text-sm hover:bg-red-50 transition">
+                        <button @click="openDecision(applicationForDetails, 'rejected');" class="px-6 py-3 bg-white text-red-600 border border-red-100 rounded-2xl font-black text-sm hover:bg-red-50 transition">
                             Rejeter le dossier
                         </button>
-                        <button @click="updateStatus(applicationForDetails.id, 'admitted'); closeDetails()" class="px-6 py-3 bg-blue-600 text-white rounded-2xl font-black text-sm hover:bg-blue-700 transition shadow-lg shadow-blue-100">
+                        <button @click="openDecision(applicationForDetails, 'admitted');" class="px-6 py-3 bg-blue-600 text-white rounded-2xl font-black text-sm hover:bg-blue-700 transition shadow-lg shadow-blue-100">
                             Admettre le candidat
                         </button>
                     </template>
@@ -419,7 +439,7 @@ const getStatusClass = (status) => {
                         </div>
                         <div>
                             <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Date de Naissance</label>
-                            <input v-model="enrollForm.date_naissance" type="date" required class="w-full bg-gray-50 border-0 rounded-2xl focus:ring-2 focus:ring-blue-500 font-bold px-5 py-3.5">
+                            <input v-model="enrollForm.date_naissance" type="date" :max="maxBirthDate" required class="w-full bg-gray-50 border-0 rounded-2xl focus:ring-2 focus:ring-blue-500 font-bold px-5 py-3.5">
                             <p v-if="enrollForm.errors.date_naissance" class="text-red-500 text-[10px] mt-1 font-bold">{{ enrollForm.errors.date_naissance }}</p>
                         </div>
                     </div>
@@ -436,7 +456,20 @@ const getStatusClass = (status) => {
                     <div class="grid grid-cols-2 gap-4">
                         <div>
                             <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Niveau d'étude</label>
-                            <input v-model="enrollForm.niveau_etude" type="text" required class="w-full bg-gray-50 border-0 rounded-2xl focus:ring-2 focus:ring-blue-500 font-bold px-5 py-3.5">
+                            <select v-model="enrollForm.niveau_etude" required class="w-full bg-gray-50 border-0 rounded-2xl focus:ring-2 focus:ring-blue-500 font-bold px-5 py-3.5 appearance-none">
+                                <option value="">Choisir...</option>
+                                <option value="Primaire">Élémentaire (Primaire)</option>
+                                <option value="CEM">Moyen (CEM)</option>
+                                <option value="BFEM">BFEM</option>
+                                <option value="Lycée">Enseignement Secondaire (Lycée)</option>
+                                <option value="Bac">Bac</option>
+                                <option value="Bac+1">Bac+1</option>
+                                <option value="Bac+2">Bac+2</option>
+                                <option value="Licence">Licence (Bac+3)</option>
+                                <option value="Master">Master</option>
+                                <option value="Doctorat">Doctorat</option>
+                                <option value="Autre">Autre</option>
+                            </select>
                             <p v-if="enrollForm.errors.niveau_etude" class="text-red-500 text-[10px] mt-1 font-bold">{{ enrollForm.errors.niveau_etude }}</p>
                         </div>
                         <div>
@@ -567,7 +600,7 @@ const getStatusClass = (status) => {
                             </div>
                             <div>
                                 <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Date de Naissance</label>
-                                <input v-model="editForm.date_naissance" type="date" required class="w-full bg-gray-50 border-0 rounded-2xl focus:ring-2 focus:ring-blue-500 font-bold px-5 py-3.5">
+                                <input v-model="editForm.date_naissance" type="date" :max="maxBirthDate" required class="w-full bg-gray-50 border-0 rounded-2xl focus:ring-2 focus:ring-blue-500 font-bold px-5 py-3.5">
                                 <p v-if="editForm.errors.date_naissance" class="text-red-500 text-[10px] mt-1 font-bold">{{ editForm.errors.date_naissance }}</p>
                             </div>
                             <div>
@@ -592,7 +625,20 @@ const getStatusClass = (status) => {
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Niveau d'étude</label>
-                                <input v-model="editForm.niveau_etude" type="text" required class="w-full bg-gray-50 border-0 rounded-2xl focus:ring-2 focus:ring-blue-500 font-bold px-5 py-3.5">
+                                <select v-model="editForm.niveau_etude" required class="w-full bg-gray-50 border-0 rounded-2xl focus:ring-2 focus:ring-blue-500 font-bold px-5 py-3.5 appearance-none">
+                                    <option value="">Choisir...</option>
+                                    <option value="Primaire">Élémentaire (Primaire)</option>
+                                    <option value="CEM">Moyen (CEM)</option>
+                                    <option value="BFEM">BFEM</option>
+                                    <option value="Lycée">Enseignement Secondaire (Lycée)</option>
+                                    <option value="Bac">Bac</option>
+                                    <option value="Bac+1">Bac+1</option>
+                                    <option value="Bac+2">Bac+2</option>
+                                    <option value="Licence">Licence (Bac+3)</option>
+                                    <option value="Master">Master</option>
+                                    <option value="Doctorat">Doctorat</option>
+                                    <option value="Autre">Autre</option>
+                                </select>
                                 <p v-if="editForm.errors.niveau_etude" class="text-red-500 text-[10px] mt-1 font-bold">{{ editForm.errors.niveau_etude }}</p>
                             </div>
                             <div>
@@ -638,6 +684,44 @@ const getStatusClass = (status) => {
                         :src="route('applications.preview', { application: selectedApplication.id, type: previewType })" 
                         class="w-full h-full border-0"
                     ></iframe>
+                </div>
+            </div>
+        </div>
+        <!-- Decision Modal -->
+        <div v-if="isDecisionOpen" class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-md">
+            <div class="bg-white w-full max-w-md rounded-[2.5rem] overflow-hidden shadow-2xl border border-white/20">
+                <div class="p-8 text-center">
+                    <div 
+                        class="h-20 w-20 rounded-[1.5rem] flex items-center justify-center mx-auto mb-6"
+                        :class="decisionData.status === 'admitted' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'"
+                    >
+                        <CheckCircleIcon v-if="decisionData.status === 'admitted'" class="h-10 w-10" />
+                        <XCircleIcon v-else class="h-10 w-10" />
+                    </div>
+                    
+                    <h3 class="text-2xl font-black text-gray-900 mb-2 tracking-tight">
+                        {{ decisionData.status === 'admitted' ? 'Confirmer l\'Admission' : 'Confirmer le Rejet' }}
+                    </h3>
+                    <p class="text-gray-500 font-medium mb-8">
+                        Êtes-vous sûr de vouloir {{ decisionData.status === 'admitted' ? 'admettre' : 'rejeter' }} la candidature de 
+                        <span class="font-bold text-gray-900">{{ decisionData.app?.nom_complet || decisionData.app?.user?.name }}</span> ?
+                    </p>
+                    
+                    <div class="flex gap-4">
+                        <button 
+                            @click="isDecisionOpen = false" 
+                            class="flex-1 py-4 bg-gray-100 text-gray-600 rounded-2xl font-black hover:bg-gray-200 transition"
+                        >
+                            Annuler
+                        </button>
+                        <button 
+                            @click="confirmDecision" 
+                            class="flex-[2] py-4 rounded-2xl font-black text-white shadow-lg transition"
+                            :class="decisionData.status === 'admitted' ? 'bg-green-600 hover:bg-green-700 shadow-green-100' : 'bg-red-600 hover:bg-red-700 shadow-red-100'"
+                        >
+                            Confirmer
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>

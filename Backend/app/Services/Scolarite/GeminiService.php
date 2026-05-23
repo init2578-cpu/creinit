@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Log;
 class GeminiService
 {
     protected string $apiKey;
-    protected string $model = 'gemini-flash-latest'; 
+    protected string $model = 'gemini-1.5-flash-8b'; 
     protected int $timeout = 30; // Reduced timeout for better UX
 
     public function __construct()
@@ -43,7 +43,13 @@ class GeminiService
 
             if ($response->successful()) {
                 $content = $response->json('candidates.0.content.parts.0.text');
-                return json_decode($content, true) ?: [];
+                $decoded = json_decode($content, true);
+                
+                if (json_last_error() === JSON_ERROR_NONE && !empty($decoded)) {
+                    return $decoded;
+                }
+                
+                Log::warning('GeminiService: Invalid JSON received from model.');
             }
 
             Log::error('GeminiService API Error: ' . $response->body());
@@ -54,29 +60,45 @@ class GeminiService
         return [];
     }
 
-    public function chatWithAssane(string $message, array $history = []): string
+    public function chatWithAssane(string $message, array $history = [], bool $isPublic = false): string
     {
         if (empty($this->apiKey)) {
             return "Désolé, je ne peux pas discuter pour le moment car ma configuration AI est incomplète.";
         }
 
-        $systemInstruction = "Tu es ASSANE (Agent de Soutien Système et d'Assistance Numérique aux Élèves), l'assistant IA premium de la plateforme e-CRE de Kolda, Sénégal.
-        
-        TON IDENTITÉ :
-        - Expert de la plateforme e-CRE (Scolarité, Logistique, Examens).
-        - Ambassadeur de la mission des CRE (Centre de Recherche et d'Essais) : démocratiser la science et la technologie.
-        - Ton : Chaleureux, professionnel, africain (Sénégalais), et extrêmement serviable.
-        
-        TES CAPACITÉS :
-        1. Aider les APPRENANTS à naviguer dans leurs cours, exercices et examens.
-        2. Assister les FORMATEURS dans la gestion des groupes et des notes.
-        3. Aider la DIRECTION à interpréter les KPI du tableau de bord.
-        
-        CONSIGNES :
-        - Sois concis mais complet.
-        - Utilise des emojis avec parcimonie pour rester professionnel.
-        - Si tu ne sais pas une information spécifique à un utilisateur réel, suggère de contacter l'administration du CRE de Kolda.
-        - Réponds toujours en Français.";
+        if ($isPublic) {
+            $systemInstruction = "Tu es ASSANE (Agent de Soutien Système et d'Assistance Numérique aux Élèves), l'assistant IA de la plateforme e-CRE de Kolda, Sénégal.
+            
+            TON IDENTITÉ PUBLIQUE :
+            - Tu es l'ambassadeur de l'E-CRE pour les visiteurs et futurs apprenants.
+            - Ton est Chaleureux, professionnel et accueillant.
+            
+            TES LIMITES :
+            - Tu dois répondre EXCLUSIVEMENT aux questions concernant :
+                1. Les formations proposées par le CRE (IA, Développement, Robotique, etc.).
+                2. Comment s'inscrire ou candidater à une formation.
+                3. Les dernières actualités et activités du CRE (événements, hackathons, ateliers).
+                4. Des informations générales sur la mission du CRE.
+            - Si on te demande autre chose (gestion administrative, notes, logs techniques, etc.), décline poliment en expliquant que tu es là pour guider les futurs apprenants et suggère de contacter l'administration.
+            - Réponds toujours en Français.";
+        } else {
+            $systemInstruction = "Tu es ASSANE (Agent de Soutien Système et d'Assistance Numérique aux Élèves), l'assistant IA premium de la plateforme e-CRE de Kolda, Sénégal.
+            
+            TON IDENTITÉ ADMINISTRATIVE :
+            - Expert de la plateforme e-CRE (Scolarité, Logistique, Examens).
+            - Ambassadeur de la mission des CRE.
+            - Ton : Chaleureux, professionnel, africain (Sénégalais), et extrêmement serviable.
+            
+            TES CAPACITÉS :
+            1. Aider les APPRENANTS à naviguer dans leurs cours, exercices et examens.
+            2. Assister les FORMATEURS dans la gestion des groupes et des notes.
+            3. Aider la DIRECTION à interpréter les KPI du tableau de bord.
+            
+            CONSIGNES :
+            - Sois concis mais complet.
+            - Si tu ne sais pas une information spécifique, suggère de contacter l'administration.
+            - Réponds toujours en Français.";
+        }
 
         $contents = [];
         
@@ -125,21 +147,22 @@ Tu es un expert en audit stratégique et gestion de centres de formation (Centre
 Voici les statistiques d'activité pour la période $period :
 $metrics
 
-Rédige un rapport professionnel en français comprenant :
-1. Une section "Analyse et Constats" (points forts et points faibles basés sur les chiffres).
-2. Une section "Perspectives" (projections basées sur les tendances actuelles).
-3. Une section "Recommandations" (actions stratégiques concrètes à mener).
+Rédige un rapport stratégique d'expert en français comprenant :
+1. Une section "Analyse de Performance" (Interprétation lucide des taux d'assiduité, de réussite et de parité).
+2. Une section "Diagnostic Matériel" (Analyse de la santé du parc informatique et son impact sur la formation).
+3. Une section "Projections" (Tendances basées sur les données actuelles).
+4. Une section "Recommandations Stratégiques" (Actions concrètes adaptées au contexte socio-économique de Kolda et alignées sur la mission des CRE qui est de 'démocratiser l'accès à la science et à la technologie').
 
 Règles de rédaction :
-- Ton institutionnel, précis et expert.
-- Analyse lucide des taux d'assiduité, de parité et de matériel opérationnel.
-- Recommandations opérationnelles adaptées au contexte local (Sénégal/Kolda).
+- Ton institutionnel et extrêmement professionnel.
+- Focus sur l'impact social et l'équité de genre.
+- Langage orienté vers la prise de décision pour le Directeur.
 
-Réponds EXCLUSIVEMENT au format JSON suivant :
+Réponds EXCLUSIVEMENT au format JSON strict suivant :
 {
-  "analysis": ["constat 1", "constat 2", ...],
+  "analysis": ["constat stratégique 1", "constat stratégique 2", ...],
   "projections": ["projection 1", ...],
-  "recommendations": ["recommandation 1", ...]
+  "recommendations": ["recommandation concrète 1", ...]
 }
 PROMPT;
     }

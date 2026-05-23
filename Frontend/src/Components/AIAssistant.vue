@@ -1,5 +1,6 @@
 <script setup>
 import { ref, onMounted, nextTick } from 'vue'
+import axios from 'axios'
 import { 
     ChatBubbleLeftRightIcon, 
     XMarkIcon, 
@@ -12,22 +13,10 @@ import {
 const isOpen = ref(false)
 const input = ref('')
 const messages = ref([
-    { role: 'bot', text: 'Séquence d\'accueil activée. Je suis Assane, votre guide neural. Comment puis-je assister votre progression aujourd\'hui ?' }
+    { role: 'assistant', text: 'Séquence d\'accueil activée. Je suis Assane, votre guide neural. Comment puis-je assister votre progression aujourd\'hui ?' }
 ])
 const isThinking = ref(false)
 const scrollContainer = ref(null)
-
-const knowledgeBase = [
-    { keywords: ['bonjour', 'salut', 'hello', 'coucou', 'hey', 'hi'], response: 'Bonjour ! Je suis Assane, l\'unité d\'assistance de l\'E-CRE. Comment puis-je vous aider dans votre exploration technologique aujourd\'hui ?' },
-    { keywords: ['va bien', 'ca va', 'comment vas-tu', 'santé'], response: 'Mes systèmes sont à 100% d\'efficacité opérationnelle. Merci de vous en soucier ! Comment se porte votre projet numérique ?' },
-    { keywords: ['merci', 'remercie', 'thanks', 'super'], response: 'C\'est un plaisir d\'assister une unité biologique aussi courtoise. N\'hésitez pas si vous avez d\'autres questions !' },
-    { keywords: ['aide', 'aider', 'help'], response: 'Je peux vous renseigner sur nos formations (IA, Développement, Robotique), sur le processus d\'inscription ou sur la localisation de nos laboratoires à Kolda. Que souhaitez-vous savoir ?' },
-    { keywords: ['cre', 'mission', 'est quoi'], response: 'Le Centre de Recherche et d\'Essais (CRE) de Kolda est un pôle technologique majeur. Notre mission est de démocratiser l\'accès à l\'IA, au codage et aux technologies de pointe pour dynamiser l\'économie numérique régionale.' },
-    { keywords: ['formation', 'module', 'apprendre'], response: 'Nous proposons des modules intensifs en Intelligence Artificielle, Développement Web (Laravel/Vue), Robotique, et Agriculture Numérique. Chaque parcours est conçu pour l\'excellence opérationnelle.' },
-    { keywords: ['inscription', 'candidater', 'admettre'], response: 'Pour rejoindre le Nexus, utilisez le bouton "Candidater" dans le menu. Vous aurez besoin d\'une copie de votre CNI et de votre dernier diplôme (format PDF/Image).' },
-    { keywords: ['ou est', 'localisation', 'localiser', 'quartier'], response: 'Le CRE est stratégiquement positionné au Quartier Bouna, à Kolda. Vous pouvez nous rendre visite pour explorer nos laboratoires d\'innovation.' },
-    { keywords: ['qui est', 'directeur', 'equipe'], response: 'Notre équipe est composée d\'experts passionnés dirigés par un visionnaire de la tech sénégalaise, dédié à faire de Kolda un hub numérique incontournable.' }
-]
 
 const scrollToBottom = async () => {
     await nextTick()
@@ -36,8 +25,8 @@ const scrollToBottom = async () => {
     }
 }
 
-const sendMessage = () => {
-    if (!input.value.trim()) return
+const sendMessage = async () => {
+    if (!input.value.trim() || isThinking.value) return
 
     const userText = input.value.trim()
     messages.value.push({ role: 'user', text: userText })
@@ -45,21 +34,28 @@ const sendMessage = () => {
     isThinking.value = true
     scrollToBottom()
 
-    setTimeout(() => {
-        const lowerText = userText.toLowerCase()
-        let response = 'Mes circuits de recherche ne trouvent pas de correspondance précise. Voulez-vous que je redirige votre demande vers nos capteurs humains via la page Contact ?'
-        
-        for (const entry of knowledgeBase) {
-            if (entry.keywords.some(k => lowerText.includes(k))) {
-                response = entry.response
-                break
-            }
-        }
+    try {
+        const history = messages.value.slice(0, -1).map(m => ({
+            role: m.role,
+            content: m.text
+        }))
 
-        messages.value.push({ role: 'bot', text: response })
+        const response = await axios.post(route('assane.chat'), {
+            message: userText,
+            history: history
+        })
+
+        messages.value.push({ role: 'assistant', text: response.data.response })
+    } catch (error) {
+        console.error('Assane Chat Error:', error)
+        messages.value.push({ 
+            role: 'assistant', 
+            text: 'Désolé, j\'ai rencontré une interférence dans mes circuits de communication. Veuillez réessayer.' 
+        })
+    } finally {
         isThinking.value = false
         scrollToBottom()
-    }, 1500)
+    }
 }
 
 onMounted(() => {
@@ -116,10 +112,10 @@ onMounted(() => {
 
                 <!-- Messages -->
                 <div ref="scrollContainer" class="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-nexus">
-                    <div v-for="(msg, i) in messages" :key="i" class="flex" :class="msg.role === 'bot' ? 'justify-start' : 'justify-end'">
+                    <div v-for="(msg, i) in messages" :key="i" class="flex" :class="msg.role === 'assistant' ? 'justify-start' : 'justify-end'">
                         <div 
                             class="max-w-[85%] p-4 rounded-2xl text-sm leading-relaxed"
-                            :class="msg.role === 'bot' 
+                            :class="msg.role === 'assistant' 
                                 ? 'bg-slate-800/50 text-slate-200 rounded-tl-none border border-white/5' 
                                 : 'bg-cyan-500 text-slate-950 font-bold rounded-tr-none shadow-lg'"
                         >

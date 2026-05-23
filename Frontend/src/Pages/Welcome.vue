@@ -2,6 +2,7 @@
 import { onMounted, ref } from 'vue'
 import { Head, Link } from '@inertiajs/vue3'
 import GuestLayout from '@/Layouts/GuestLayout.vue'
+import AssaneChat from '@/Components/AssaneChat.vue'
 import { 
     AcademicCapIcon, 
     ArrowRightIcon, 
@@ -23,6 +24,7 @@ const props = defineProps({
     canLogin: Boolean,
     settings: Object,
     stats: Object,
+    events: Array,
 })
 
 const pillars = [
@@ -58,6 +60,28 @@ const revealed = ref(new Set())
 const typeText = ref('')
 const fullTitle = 'Penser Demain. Innover Maintenant.'
 let typeIdx = 0
+
+// Modal Logic
+const selectedEvent = ref(null)
+const isModalOpen = ref(false)
+
+const openEvent = (event) => {
+    selectedEvent.value = event
+    isModalOpen.value = true
+    document.body.style.overflow = 'hidden'
+}
+
+const closeEvent = () => {
+    isModalOpen.value = false
+    selectedEvent.value = null
+    document.body.style.overflow = 'auto'
+}
+
+function resolveImagePath(path) {
+    if (!path) return '/images/default-event.png'
+    if (path.startsWith('/') || path.startsWith('http')) return path
+    return '/storage/' + path
+}
 
 onMounted(() => {
     // Intersection Observer
@@ -196,7 +220,7 @@ onMounted(() => {
         </section>
 
         <!-- AI Core Section -->
-        <section id="ai-core" class="py-40 bg-slate-950 relative overflow-hidden">
+        <section id="ai-core" class="pt-24 pb-8 bg-slate-950 relative overflow-hidden">
             <!-- Digital Rain / Grid Pattern -->
             <div class="absolute inset-0 opacity-5 pointer-events-none">
                 <div class="absolute inset-0" style="background-image: radial-gradient(circle at 2px 2px, rgba(6,182,212,0.15) 1px, transparent 0); background-size: 40px 40px;"></div>
@@ -250,7 +274,78 @@ onMounted(() => {
             </div>
         </section>
 
-        <!-- Smart Curriculum Grid -->
+        <!-- Subtle Divider -->
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="h-px w-full bg-gradient-to-r from-transparent via-cyan-500/20 to-transparent"></div>
+        </div>
+
+        <!-- Latest Activities Section -->
+        <section v-if="events && events.length > 0" class="pt-8 pb-16 bg-slate-950 relative overflow-hidden">
+            <div class="max-w-7xl mx-auto px-4">
+                <div class="mb-16 text-center" data-reveal id="events-header">
+                    <h2 class="text-4xl md:text-6xl font-black text-white tracking-tighter mb-4 font-display uppercase">Flux d'activités <span class="text-cyan-500 text-glow-cyan">CRE</span></h2>
+                    <p class="text-slate-500 font-medium tracking-wide">Découvrez les dernières innovations et événements communautaires au cœur de Kolda.</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <div 
+                        v-for="(event, index) in events" 
+                        :key="event.id"
+                        class="group relative h-[450px] rounded-[2.5rem] overflow-hidden border border-white/5 hover:border-cyan-500/50 transition-all duration-700 shadow-2xl cursor-pointer"
+                        data-reveal :id="'event-' + event.id"
+                        :style="`transition-delay: ${index * 150}ms`"
+                        @click="openEvent(event)"
+                    >
+                        <!-- Background Image with Overlay -->
+                        <div class="absolute inset-0">
+                            <img :src="resolveImagePath(event.image_path)" 
+                                 class="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110" 
+                                 :alt="event.titre">
+                            <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent"></div>
+                        </div>
+
+                        <!-- Content -->
+                        <div class="relative h-full flex flex-col justify-end p-8 z-10">
+                            <div class="flex items-center gap-2 mb-4">
+                                <span class="px-3 py-1 bg-cyan-500/20 text-cyan-400 text-[10px] font-black rounded-lg border border-cyan-500/30 uppercase tracking-widest backdrop-blur-md">
+                                    {{ event.type_activite }}
+                                </span>
+                                <span class="text-slate-400 text-[10px] font-bold uppercase tracking-widest">
+                                    {{ new Date(event.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }) }}
+                                </span>
+                            </div>
+
+                            <h3 class="text-2xl font-black text-white mb-4 leading-tight group-hover:text-cyan-400 transition-colors uppercase tracking-tighter">
+                                {{ event.titre }}
+                            </h3>
+                            
+                            <p class="text-slate-300 text-sm line-clamp-3 mb-6 opacity-80 group-hover:opacity-100 transition-opacity">
+                                {{ event.description }}
+                            </p>
+
+                            <div class="flex items-center justify-between pt-6 border-t border-white/10">
+                                <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                    <MapPinIcon class="h-3 w-3 text-cyan-500" />
+                                    {{ event.lieu }}
+                                </span>
+                                <div class="flex items-center gap-4">
+                                    <div class="flex items-center gap-1.5 px-3 py-1 bg-white/5 rounded-full border border-white/10">
+                                        <UserGroupIcon class="h-3 w-3 text-cyan-400" />
+                                        <span class="text-[10px] font-black text-white leading-none">{{ event.audience_estimee }}</span>
+                                    </div>
+                                    <div class="h-8 w-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center group-hover:bg-cyan-500 group-hover:text-slate-950 transition-all">
+                                        <ArrowRightIcon class="h-4 w-4" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Glow effect -->
+                        <div class="absolute -inset-2 bg-cyan-500/20 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
         <section class="py-24 bg-slate-950 relative overflow-hidden">
             <div class="max-w-7xl mx-auto px-4">
                 <div class="flex flex-col md:flex-row justify-between items-end gap-10 mb-24 relative">
@@ -333,6 +428,101 @@ onMounted(() => {
                 </div>
             </div>
         </section>
+
+        <!-- Event Details Modal -->
+        <Transition
+            enter-active-class="transition duration-300 ease-out"
+            enter-from-class="opacity-0 scale-95"
+            enter-to-class="opacity-100 scale-100"
+            leave-active-class="transition duration-200 ease-in"
+            leave-from-class="opacity-100 scale-100"
+            leave-to-class="opacity-0 scale-95"
+        >
+            <div v-if="isModalOpen && selectedEvent" class="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
+                <!-- Backdrop -->
+                <div class="absolute inset-0 bg-slate-950/80 backdrop-blur-xl" @click="closeEvent"></div>
+
+                <!-- Modal Content -->
+                <div class="relative w-full max-w-4xl bg-slate-900 border border-white/10 rounded-[3rem] overflow-hidden shadow-2xl flex flex-col md:flex-row max-h-[90vh]">
+                    <!-- Image Half -->
+                    <div class="w-full md:w-1/2 h-64 md:h-auto relative">
+                        <img :src="resolveImagePath(selectedEvent.image_path)" 
+                             class="w-full h-full object-cover" 
+                             :alt="selectedEvent.titre">
+                        <div class="absolute inset-0 bg-gradient-to-t md:bg-gradient-to-r from-slate-900 via-transparent to-transparent"></div>
+                    </div>
+
+                    <!-- Info Half -->
+                    <div class="w-full md:w-1/2 p-8 md:p-12 overflow-y-auto">
+                        <button @click="closeEvent" class="absolute top-6 right-6 text-slate-400 hover:text-white transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+
+                        <div class="flex items-center gap-3 mb-6">
+                            <span class="px-4 py-1.5 bg-cyan-500/10 text-cyan-400 text-xs font-black rounded-xl border border-cyan-500/20 uppercase tracking-widest">
+                                {{ selectedEvent.type_activite }}
+                            </span>
+                            <span class="text-slate-500 text-xs font-bold uppercase tracking-widest">
+                                {{ new Date(selectedEvent.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) }}
+                            </span>
+                        </div>
+
+                        <h2 class="text-3xl md:text-5xl font-black text-white mb-8 tracking-tighter leading-tight uppercase font-display">
+                            {{ selectedEvent.titre }}
+                        </h2>
+
+                        <div class="space-y-6 text-slate-400 leading-relaxed text-lg">
+                            <p v-if="selectedEvent.description">{{ selectedEvent.description }}</p>
+                            
+                            <div class="pt-8 border-t border-white/5 space-y-4">
+                                <div class="flex items-center gap-4 text-sm font-medium">
+                                    <div class="h-10 w-10 rounded-full bg-slate-800 flex items-center justify-center text-cyan-400">
+                                        <MapPinIcon class="h-5 w-5" />
+                                    </div>
+                                    <div>
+                                        <p class="text-[10px] text-slate-500 uppercase tracking-widest font-black">Localisation</p>
+                                        <p class="text-white">{{ selectedEvent.lieu }}</p>
+                                    </div>
+                                </div>
+
+                                <div class="flex items-center gap-4 text-sm font-medium">
+                                    <div class="h-10 w-10 rounded-full bg-slate-800 flex items-center justify-center text-indigo-400">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <p class="text-[10px] text-slate-500 uppercase tracking-widest font-black">Horaire</p>
+                                        <p class="text-white">{{ selectedEvent.heure_debut ? selectedEvent.heure_debut.substring(0, 5) : '09:00' }} - {{ selectedEvent.heure_fin ? selectedEvent.heure_fin.substring(0, 5) : '17:00' }}</p>
+                                    </div>
+                                </div>
+
+                                <div class="flex items-center gap-4 text-sm font-medium">
+                                    <div class="h-10 w-10 rounded-full bg-slate-800 flex items-center justify-center text-emerald-400">
+                                        <UserGroupIcon class="h-5 w-5" />
+                                    </div>
+                                    <div>
+                                        <p class="text-[10px] text-slate-500 uppercase tracking-widest font-black">Impact (Audience)</p>
+                                        <p class="text-white">{{ selectedEvent.audience_estimee }} participants estimés</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-12 flex flex-col sm:flex-row gap-4">
+                            <button @click="closeEvent" class="px-8 py-4 bg-white text-slate-950 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-cyan-500 transition-all active:scale-95 shadow-xl">
+                                Fermer
+                            </button>
+                            <Link :href="route('contact.index')" class="px-8 py-4 glass-dark border border-white/10 text-white rounded-2xl font-black text-sm uppercase tracking-widest hover:border-cyan-500 transition-all text-center">
+                                En savoir plus
+                            </Link>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </Transition>
     </GuestLayout>
 </template>
 

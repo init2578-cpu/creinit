@@ -23,7 +23,7 @@ class TraineesController extends Controller
     public function index(): Response
     {
         $trainees = User::role('Stagiaire')
-            ->with(['internshipRecord'])
+            ->with(['internshipRecord.module'])
             ->orderBy('name')
             ->get()
             ->map(fn($user) => [
@@ -42,6 +42,10 @@ class TraineesController extends Controller
                     'end_date' => $user->internshipRecord->end_date?->format('Y-m-d'),
                     'profile_photo_url' => $user->profile_photo_url ?? null,
                     'status' => $user->internshipRecord->status,
+                    'niveau_etude' => $user->internshipRecord->niveau_etude,
+                    'formation' => $user->internshipRecord->formation,
+                    'module_id' => $user->internshipRecord->module_id,
+                    'module_titre' => $user->internshipRecord->module?->titre,
                     'motivation_letter' => $user->internshipRecord->motivation_letter_path ? Storage::url($user->internshipRecord->motivation_letter_path) : null,
                     'cni' => $user->internshipRecord->cni_path ? Storage::url($user->internshipRecord->cni_path) : null,
                     'cv' => $user->internshipRecord->cv_path ? Storage::url($user->internshipRecord->cv_path) : null,
@@ -51,6 +55,7 @@ class TraineesController extends Controller
 
         return Inertia::render('Scolarite/TraineesIndex', [
             'trainees' => $trainees,
+            'modules' => \App\Models\Module::all(['id', 'titre']),
         ]);
     }
 
@@ -63,10 +68,10 @@ class TraineesController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8',
-            'telephone' => 'nullable|string|max:20',
-            'adresse' => 'nullable|string|max:255',
+            'telephone' => 'required|string|max:20',
+            'adresse' => 'required|string|max:255',
             // Internship fields
-            'internship_type' => 'required|string|in:course_assistant,management_assistant',
+            'internship_type' => 'required|string|in:course_assistant,management_assistant,electricity_trainee',
             'criteria' => 'nullable|string',
             'start_date' => 'nullable|date',
             'end_date' => 'nullable|date',
@@ -75,6 +80,8 @@ class TraineesController extends Controller
             'cni' => 'nullable|file|mimes:pdf,jpg,png,jpeg|max:5120',
             'cv' => 'nullable|file|mimes:pdf,jpg,png,jpeg|max:5120',
             'diploma' => 'nullable|file|mimes:pdf,jpg,png,jpeg|max:5120',
+            'niveau_etude' => 'nullable|string',
+            'formation' => 'nullable|string|max:255',
         ]);
 
         DB::transaction(function() use ($validated, $request) {
@@ -104,6 +111,8 @@ class TraineesController extends Controller
                 'criteria' => $validated['criteria'],
                 'start_date' => $validated['start_date'],
                 'end_date' => $validated['end_date'],
+                'niveau_etude' => $validated['niveau_etude'] ?? null,
+                'formation' => $validated['formation'] ?? null,
                 'status' => 'pending', // Default status
             ], $paths));
         });
@@ -123,11 +132,11 @@ class TraineesController extends Controller
             'name' => 'required|string|max:255',
             'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users')->ignore($trainee->id)],
             'password' => 'nullable|string|min:8',
-            'telephone' => 'nullable|string|max:20',
-            'adresse' => 'nullable|string|max:255',
+            'telephone' => 'required|string|max:20',
+            'adresse' => 'required|string|max:255',
             'is_active' => 'required|boolean',
             // Internship fields
-            'internship_type' => 'required|string|in:course_assistant,management_assistant',
+            'internship_type' => 'required|string|in:course_assistant,management_assistant,electricity_trainee',
             'criteria' => 'nullable|string',
             'start_date' => 'nullable|date',
             'end_date' => 'nullable|date',
@@ -137,6 +146,8 @@ class TraineesController extends Controller
             'cni' => 'nullable|file|mimes:pdf,jpg,png,jpeg|max:5120',
             'cv' => 'nullable|file|mimes:pdf,jpg,png,jpeg|max:5120',
             'diploma' => 'nullable|file|mimes:pdf,jpg,png,jpeg|max:5120',
+            'niveau_etude' => 'nullable|string',
+            'formation' => 'nullable|string|max:255',
         ]);
 
         DB::transaction(function() use ($validated, $trainee, $request) {
@@ -172,6 +183,8 @@ class TraineesController extends Controller
                     'criteria' => $validated['criteria'],
                     'start_date' => $validated['start_date'],
                     'end_date' => $validated['end_date'],
+                    'niveau_etude' => $validated['niveau_etude'],
+                    'formation' => $validated['formation'] ?? null,
                     'status' => $validated['status'],
                 ], $paths)
             );

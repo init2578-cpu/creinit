@@ -28,8 +28,10 @@ const props = defineProps({
 // Modals state
 const isViewModalOpen = ref(false)
 const isFormModalOpen = ref(false)
+const isDeleteModalOpen = ref(false)
 const selectedStudent = ref(null)
 const editingStudent = ref(null)
+const studentToDelete = ref(null)
 const activeTab = ref('id') // 'id', 'contact', 'profile'
 
 // Form state
@@ -74,6 +76,7 @@ function closeViewModal() {
 function openCreateModal() {
     editingStudent.value = null
     studentForm.reset()
+    studentForm.password = 'password'
     activeTab.value = 'id'
     isFormModalOpen.value = true
 }
@@ -123,9 +126,21 @@ function submitForm() {
     }
 }
 
-function deleteLearner(id) {
-    if (confirm('Êtes-vous sûr de vouloir supprimer cet apprenant ? Cette action est irréversible.')) {
-        router.delete(route('students.destroy', id))
+function confirmDelete(student) {
+    studentToDelete.value = student
+    isDeleteModalOpen.value = true
+}
+
+function cancelDelete() {
+    isDeleteModalOpen.value = false
+    studentToDelete.value = null
+}
+
+function proceedDelete() {
+    if (studentToDelete.value) {
+        router.delete(route('students.destroy', studentToDelete.value.id), {
+            onFinish: () => cancelDelete(),
+        })
     }
 }
 </script>
@@ -231,7 +246,7 @@ function deleteLearner(id) {
                                         <PencilSquareIcon class="h-5 w-5" />
                                     </button>
                                     <button 
-                                        @click="deleteLearner(student.id)"
+                                        @click="confirmDelete(student)"
                                         class="p-2 bg-red-50 text-red-600 rounded-xl hover:bg-red-600 hover:text-white transition-all shadow-sm"
                                         title="Supprimer"
                                     >
@@ -454,6 +469,38 @@ function deleteLearner(id) {
                         class="flex-1 py-4 bg-gray-100 text-gray-600 rounded-2xl font-black text-sm hover:bg-gray-200 transition-all"
                     >
                         Fermer
+                    </button>
+                </div>
+            </div>
+        </div>
+        <!-- Deletion Confirmation Modal (Glassmorphic) -->
+        <div v-if="isDeleteModalOpen" class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/40 backdrop-blur-md">
+            <div class="bg-white/80 backdrop-blur-2xl w-full max-w-md rounded-[3rem] p-10 shadow-4xl border border-white/20 relative overflow-hidden text-center">
+                <!-- Warning Visual -->
+                <div class="mb-8 relative flex justify-center">
+                    <div class="h-24 w-24 bg-red-50 rounded-[2rem] flex items-center justify-center text-red-500 animate-pulse">
+                        <TrashIcon class="h-12 w-12" />
+                    </div>
+                </div>
+
+                <h3 class="text-3xl font-black text-gray-900 tracking-tighter mb-4 uppercase">Confirmation</h3>
+                <p class="text-gray-500 font-medium leading-relaxed mb-10 px-4">
+                    Êtes-vous sûr de vouloir supprimer <span class="text-red-600 font-black">{{ studentToDelete.name }}</span> ? 
+                    <br><span class="text-xs opacity-60 italic">Cette action entraînera la suppression définitive de toutes ses données.</span>
+                </p>
+
+                <div class="flex flex-col gap-4">
+                    <button 
+                        @click="proceedDelete"
+                        class="w-full py-5 bg-red-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-red-200 hover:bg-red-700 transition-all active:scale-95"
+                    >
+                        Confirmer la suppression
+                    </button>
+                    <button 
+                        @click="cancelDelete"
+                        class="w-full py-5 bg-gray-100 text-gray-500 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-gray-200 transition-all"
+                    >
+                        Annuler
                     </button>
                 </div>
             </div>

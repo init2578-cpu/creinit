@@ -103,8 +103,9 @@ class SyntheticReportService
     private function getParityStats(): array
     {
         $counts = User::role('Apprenant')
+            ->leftJoin('applications', 'users.id', '=', 'applications.user_id')
             ->select(
-                DB::raw("COUNT(CASE WHEN LOWER(SUBSTRING(name, 1, 1)) IN ('a','e','i','o','u') THEN 1 END) as female"),
+                DB::raw("COUNT(CASE WHEN applications.sexe = 'F' THEN 1 END) as female"),
                 DB::raw("COUNT(*) as total"),
             )
             ->first();

@@ -24,8 +24,11 @@ class AssaneChatController extends Controller
 
         $message = $request->input('message');
         $history = $request->input('history', []);
+        
+        // Check if user is authenticated to determine scope
+        $isPublic = !auth()->check();
 
-        $response = $this->gemini->chatWithAssane($message, $history);
+        $response = $this->gemini->chatWithAssane($message, $history, $isPublic);
 
         return response()->json([
             'response' => $response,

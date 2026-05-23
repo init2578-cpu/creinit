@@ -108,14 +108,14 @@ const isUrl = (url) => page.url.startsWith(url)
 
 <template>
     <aside 
-        class="fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200 transform transition-transform duration-300 lg:translate-x-0"
+        class="fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200 transform transition-transform duration-300 lg:translate-x-0 flex flex-col"
         :class="isOpen ? 'translate-x-0' : '-translate-x-full'"
     >
-        <div class="flex items-center justify-center h-20 border-b border-gray-100 px-6">
+        <div class="flex-shrink-0 flex items-center justify-center h-20 border-b border-gray-100 px-6">
             <img src="/images/logo-cre.png" alt="CRE Logo" class="h-20 w-auto object-contain">
         </div>
 
-        <nav class="mt-6 px-4 space-y-1 overflow-y-auto">
+        <nav class="flex-1 mt-6 px-4 space-y-1 overflow-y-auto pb-24">
             <Link 
                 v-for="item in navigation" 
                 :key="item.name" 
@@ -130,7 +130,7 @@ const isUrl = (url) => page.url.startsWith(url)
             </Link>
         </nav>
 
-        <div class="absolute bottom-0 w-full p-4 border-t border-gray-200 bg-gray-50/50">
+        <div class="flex-shrink-0 p-4 border-t border-gray-200 bg-gray-50/50">
             <div class="flex items-center gap-3 px-3 py-1">
                 <div class="h-8 w-8 rounded-full overflow-hidden border border-gray-200 bg-white shadow-sm">
                     <img v-if="page.props.auth.user.profile_photo_url" :src="page.props.auth.user.profile_photo_url" class="h-full w-full object-cover">

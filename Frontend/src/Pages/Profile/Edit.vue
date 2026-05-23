@@ -26,6 +26,11 @@ const photoPreview = ref(null)
 const photoInput = ref(null)
 
 function updateProfile() {
+    if (form.password && !form.profile_photo) {
+        form.setError('profile_photo', 'Une photo de profil est obligatoire pour changer votre mot de passe.')
+        return
+    }
+    
     form.post(route('profile.update'), {
         preserveScroll: true,
         onSuccess: () => {
@@ -57,6 +62,11 @@ function updatePhotoPreview() {
     <AuthenticatedLayout>
         <div class="max-w-4xl mx-auto py-12 px-4">
             <header class="mb-12 text-center">
+                <div class="mb-4">
+                    <span v-if="form.password" class="text-[10px] font-black text-red-600 bg-red-50 px-4 py-1.5 rounded-full border border-red-100 uppercase tracking-widest animate-pulse">
+                        Photo obligatoire pour changer le MDP
+                    </span>
+                </div>
                 <div class="relative inline-block group">
                     <div v-if="!photoPreview" class="h-32 w-32 bg-indigo-600 text-white rounded-[3rem] flex items-center justify-center mx-auto mb-6 shadow-2xl shadow-indigo-200 border-4 border-white relative overflow-hidden transition-all group-hover:scale-105">
                         <img v-if="user.profile_photo_url" :src="user.profile_photo_url" class="h-full w-full object-cover">

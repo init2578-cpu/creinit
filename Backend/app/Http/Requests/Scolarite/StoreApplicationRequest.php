@@ -17,8 +17,8 @@ class StoreApplicationRequest extends FormRequest
     {
         return [
             'module_id' => ['required', 'exists:modules,id'],
-            'cni' => ['required', 'file', 'mimes:pdf,jpg,png', 'max:2048'], // 2MB as per current server limit
-            'diploma' => ['required', 'file', 'mimes:pdf,jpg,png', 'max:2048'],
+            'cni' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'], // 2MB as per current server limit
+            'diploma' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'],
             'commentaires' => ['nullable', 'string'],
             
             // New fields
@@ -26,7 +26,7 @@ class StoreApplicationRequest extends FormRequest
             'email' => ['nullable', 'email', 'max:255'],
             'telephone' => ['required', 'string', 'max:20'],
             'adresse_reelle' => ['required', 'string', 'max:255'],
-            'date_naissance' => ['required', 'date'],
+            'date_naissance' => ['required', 'date', 'before_or_equal:now -7 years'],
             'lieu_naissance' => ['required', 'string', 'max:255'],
             'niveau_etude' => ['required', 'string', 'max:255'],
             'dernier_diplome_libelle' => ['required', 'string', 'max:255'],

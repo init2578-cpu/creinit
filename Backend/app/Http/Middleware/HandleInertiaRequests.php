@@ -41,6 +41,7 @@ class HandleInertiaRequests extends Middleware
                     'id' => $request->user()->id,
                     'name' => $request->user()->name,
                     'email' => $request->user()->email,
+                    'must_change_password' => $request->user()->must_change_password,
                     'profile_photo_url' => $request->user()->profile_photo_url,
                     'roles' => $request->user()->getRoleNames(),
                     'unread_notifications' => $request->user()->unreadNotifications()->latest()->limit(10)->get(),

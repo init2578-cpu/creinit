@@ -23,6 +23,9 @@ class InternshipRecord extends Model
         'cni_path',
         'cv_path',
         'diploma_path',
+        'niveau_etude',
+        'module_id',
+        'formation',
     ];
 
     protected $casts = [
@@ -36,5 +39,13 @@ class InternshipRecord extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Get the module associated with the internship.
+     */
+    public function module(): BelongsTo
+    {
+        return $this->belongsTo(Module::class);
     }
 }

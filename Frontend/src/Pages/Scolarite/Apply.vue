@@ -39,6 +39,12 @@ const form = useForm({
     commentaires: '',
 })
 
+const maxBirthDate = computed(() => {
+    const d = new Date()
+    d.setFullYear(d.getFullYear() - 7)
+    return d.toISOString().split('T')[0]
+})
+
 onMounted(() => {
     const urlParams = new URLSearchParams(window.location.search)
     const moduleId = urlParams.get('module')
@@ -71,12 +77,27 @@ function submit() {
 function handleFile(e, field) {
     const file = e.target.files[0]
     if (file) {
+        // Validation de la taille (2Mo max)
         if (file.size > 2 * 1024 * 1024) {
             window.platformAlert('Le fichier est trop volumineux (Max 2Mo). Veuillez compresser votre document.', 'error')
             e.target.value = ''
             form[field] = null
             return
         }
+
+        // Validation du type de fichier
+        const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png']
+        const allowedExtensions = ['.pdf', '.jpg', '.jpeg', '.png']
+        const fileName = file.name.toLowerCase()
+        const hasValidExtension = allowedExtensions.some(ext => fileName.endsWith(ext))
+        
+        if (!allowedTypes.includes(file.type) && !hasValidExtension) {
+            window.platformAlert('Format de fichier non supporté. Veuillez utiliser PDF, JPG, JPEG ou PNG.', 'error')
+            e.target.value = ''
+            form[field] = null
+            return
+        }
+        
         form[field] = file
     }
 }
@@ -86,7 +107,7 @@ function handleFile(e, field) {
     <Head title="Candidature E-CRE" />
 
     <GuestLayout>
-        <div class="max-w-2xl mx-auto px-4 py-12">
+        <div class="max-w-2xl mx-auto px-4 pt-32 pb-12">
             <!-- Stepper -->
             <div v-if="step <= 5" class="mb-12 flex items-center justify-between overflow-x-auto pb-4 sm:pb-0">
                 <div v-for="i in 5" :key="i" class="flex items-center flex-shrink-0">
@@ -108,7 +129,7 @@ function handleFile(e, field) {
                 </h2>
                 <div class="space-y-4">
                     <div>
-                        <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-1">Nom Complet</label>
+                        <label class="block text-xs font-black text-gray-400 uppercase tracking-[0.2em] mb-1">Nom Complet <span class="text-red-500 font-bold ml-0.5">*</span></label>
                         <input v-model="form.nom_complet" type="text" required class="w-full bg-gray-50 border-0 rounded-xl focus:ring-2 focus:ring-blue-500 font-bold px-4 py-3" placeholder="Ex: Moussa Diop">
                     </div>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -123,12 +144,12 @@ function handleFile(e, field) {
                         </div>
                         <div>
                             <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-1">Date de Naissance <span class="text-red-500">*</span></label>
-                            <input v-model="form.date_naissance" type="date" required class="w-full bg-gray-50 border-0 rounded-xl focus:ring-2 focus:ring-blue-500 font-bold px-4 py-3">
+                            <input v-model="form.date_naissance" type="date" :max="maxBirthDate" required class="w-full bg-gray-50 border-0 rounded-xl focus:ring-2 focus:ring-blue-500 font-bold px-4 py-3">
                             <p v-if="form.errors.date_naissance" class="text-red-500 text-[10px] mt-1 font-bold">{{ form.errors.date_naissance }}</p>
                         </div>
                     </div>
                     <div>
-                        <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-1">Lieu de Naissance</label>
+                        <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-1">Lieu de Naissance <span class="text-red-500">*</span></label>
                         <input v-model="form.lieu_naissance" type="text" required class="w-full bg-gray-50 border-0 rounded-xl focus:ring-2 focus:ring-blue-500 font-bold px-4 py-3" placeholder="Ex: Kolda">
                     </div>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -137,7 +158,7 @@ function handleFile(e, field) {
                             <input v-model="form.email" type="email" class="w-full bg-gray-50 border-0 rounded-xl focus:ring-2 focus:ring-blue-500 font-bold px-4 py-3" placeholder="moussa@exemple.com">
                         </div>
                         <div>
-                            <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-1">Téléphone</label>
+                            <label class="block text-xs font-black text-gray-400 uppercase tracking-[0.2em] mb-1">Téléphone <span class="text-red-500 font-bold ml-0.5">*</span></label>
                             <input v-model="form.telephone" type="tel" required class="w-full bg-gray-50 border-0 rounded-xl focus:ring-2 focus:ring-blue-500 font-bold px-4 py-3" placeholder="77 000 00 00">
                         </div>
                     </div>
@@ -156,14 +177,18 @@ function handleFile(e, field) {
                 </h2>
                 <div class="space-y-4">
                     <div>
-                        <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-1">Adresse Réelle</label>
+                        <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-1">Adresse Réelle <span class="text-red-500">*</span></label>
                         <input v-model="form.adresse_reelle" type="text" required class="w-full bg-gray-50 border-0 rounded-xl focus:ring-2 focus:ring-blue-500 font-bold px-4 py-3" placeholder="Ex: Quartier Sikilo, Kolda">
                     </div>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-1">Niveau d'étude</label>
+                            <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-1">Niveau d'étude <span class="text-red-500">*</span></label>
                             <select v-model="form.niveau_etude" required class="w-full bg-gray-50 border-0 rounded-xl focus:ring-2 focus:ring-blue-500 font-bold px-4 py-3">
                                 <option value="">Choisir...</option>
+                                <option value="Primaire">Élémentaire (Primaire)</option>
+                                <option value="CEM">Moyen (CEM)</option>
+                                <option value="BFEM">BFEM</option>
+                                <option value="Lycée">Enseignement Secondaire (Lycée)</option>
                                 <option value="Bac">Bac</option>
                                 <option value="Bac+1">Bac+1</option>
                                 <option value="Bac+2">Bac+2</option>
@@ -174,13 +199,13 @@ function handleFile(e, field) {
                             </select>
                         </div>
                         <div>
-                            <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-1">Dernier Diplôme (Libellé)</label>
+                            <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-1">Dernier Diplôme (Libellé) <span class="text-red-500">*</span></label>
                             <input v-model="form.dernier_diplome_libelle" type="text" required class="w-full bg-gray-50 border-0 rounded-xl focus:ring-2 focus:ring-blue-500 font-bold px-4 py-3" placeholder="Ex: Licence en Informatique">
                         </div>
                     </div>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-1">Fonction Actuelle</label>
+                            <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-1">Fonction Actuelle <span class="text-red-500">*</span></label>
                             <input v-model="form.fonction" type="text" required class="w-full bg-gray-50 border-0 rounded-xl focus:ring-2 focus:ring-blue-500 font-bold px-4 py-3" placeholder="Ex: Étudiant, Sans emploi, Salarié">
                         </div>
                         <div>
@@ -193,7 +218,7 @@ function handleFile(e, field) {
                             <ArrowLeftIcon class="h-5 w-5" />
                             Retour
                         </button>
-                        <button @click="nextStep" :disabled="!form.adresse_reelle || !form.niveau_etude || !form.fonction" class="flex-[2] py-4 bg-blue-600 text-white rounded-2xl font-black flex items-center justify-center gap-2 disabled:opacity-50">
+                        <button @click="nextStep" :disabled="!form.adresse_reelle || !form.niveau_etude || !form.fonction || !form.dernier_diplome_libelle" class="flex-[2] py-4 bg-blue-600 text-white rounded-2xl font-black flex items-center justify-center gap-2 disabled:opacity-50">
                             Continuer
                             <ArrowRightIcon class="h-5 w-5" />
                         </button>
@@ -207,7 +232,7 @@ function handleFile(e, field) {
                     <AcademicCapIcon class="h-6 w-6 text-blue-600" />
                     Choix du Parcours
                 </h2>
-                <div class="grid grid-cols-1 gap-4">
+                <div v-if="modules.length > 0" class="grid grid-cols-1 gap-4">
                     <div 
                         v-for="module in modules" 
                         :key="module.id"
@@ -218,6 +243,11 @@ function handleFile(e, field) {
                         <p class="font-black text-gray-900">{{ module.titre || module.nom_module }}</p>
                         <p class="text-xs text-gray-500 mt-1">Formation intensive au CRE Kolda</p>
                     </div>
+                </div>
+                <div v-else class="text-center py-10 bg-gray-50 rounded-3xl border border-dashed border-gray-200">
+                    <AcademicCapIcon class="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                    <p class="text-gray-500 font-bold">Aucune formation n'est actuellement disponible pour inscription.</p>
+                    <p class="text-[10px] text-gray-400 font-black uppercase tracking-widest mt-2">Revenez vers nous prochainement.</p>
                 </div>
                 <div class="flex gap-4 mt-8">
                     <button @click="prevStep" class="flex-1 py-4 bg-gray-100 text-gray-600 rounded-2xl font-black flex items-center justify-center gap-2">
@@ -239,22 +269,22 @@ function handleFile(e, field) {
                 </h2>
                 <div class="space-y-6">
                     <div>
-                        <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-3">Copie de la CNI (PDF/Image)</label>
+                        <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-3">Copie de la CNI (PDF/Image) <span class="text-red-500">*</span></label>
                         <div class="relative group">
-                            <input @change="e => handleFile(e, 'cni')" type="file" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
+                            <input @change="e => handleFile(e, 'cni')" type="file" accept=".pdf,.jpg,.jpeg,.png" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
                             <div class="p-6 border-2 border-dashed border-gray-200 rounded-2xl text-center group-hover:border-blue-400 transition">
                                 <p class="text-sm font-bold text-gray-600">{{ form.cni ? form.cni.name : 'Cliquez pour choisir un fichier' }}</p>
-                                <p class="text-[10px] text-gray-400 mt-1">Format supporté: PDF, JPG, PNG (Max 2Mo)</p>
+                                <p class="text-[10px] text-gray-400 mt-1">Format supporté: PDF, JPG, JPEG, PNG (Max 2Mo)</p>
                             </div>
                         </div>
                     </div>
                     <div>
-                        <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-3">Dernier Diplôme (Scan PDF/Image)</label>
+                        <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-3">Dernier Diplôme (Scan PDF/Image) <span class="text-red-500">*</span></label>
                         <div class="relative group">
-                            <input @change="e => handleFile(e, 'diploma')" type="file" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
+                            <input @change="e => handleFile(e, 'diploma')" type="file" accept=".pdf,.jpg,.jpeg,.png" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
                             <div class="p-6 border-2 border-dashed border-gray-200 rounded-2xl text-center group-hover:border-blue-400 transition">
                                 <p class="text-sm font-bold text-gray-600">{{ form.diploma ? form.diploma.name : 'Cliquez pour choisir un fichier' }}</p>
-                                <p class="text-[10px] text-gray-400 mt-1">Format supporté: PDF, JPG, PNG (Max 2Mo)</p>
+                                <p class="text-[10px] text-gray-400 mt-1">Format supporté: PDF, JPG, JPEG, PNG (Max 2Mo)</p>
                             </div>
                         </div>
                     </div>
@@ -339,7 +369,7 @@ function handleFile(e, field) {
                 <p class="text-gray-500 font-medium leading-relaxed">
                     Merci pour votre intérêt pour le CRE Kolda. <br>
                     Votre dossier est en cours de traitement par notre équipe pédagogique. <br>
-                    Vous recevrez une réponse par email dans les plus brefs délais.
+                    Vous recevrez une réponse par email ou un appel téléphonique dans les plus brefs délais.
                 </p>
                 <div class="mt-10">
                     <a href="/" class="text-blue-600 font-black flex items-center justify-center gap-2 hover:underline">

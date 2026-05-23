@@ -14,6 +14,7 @@ use App\Http\Controllers\ExamController;
 use App\Http\Controllers\Scolarite\AdminExamController;
 use App\Http\Controllers\Scolarite\AdminExerciseController;
 use App\Http\Controllers\Scolarite\ReportController;
+use App\Http\Controllers\CivilCertificateController;
 use App\Http\Middleware\EnsureWithinPremises;
 use Illuminate\Support\Facades\Route;
 
@@ -70,6 +71,9 @@ Route::get('/certificates/{certificate}/download', [CertificateVerificationContr
 
 Route::get('/contact', [ContactController::class, 'index'])->name('contact.index');
 Route::post('/contact', [ContactController::class, 'store'])->name('contact.store');
+
+// Assistant ASSANE (Public access for Vitrine)
+Route::post('/assane/chat', [\App\Http\Controllers\Scolarite\AssaneChatController::class, 'chat'])->name('assane.chat');
 
 // -----------------------------------------------------------------------
 // Authenticated Routes
@@ -164,14 +168,16 @@ Route::middleware(['auth'])->group(function (): void {
         ->name('loans.return');
 
     // Ecosystem & CRM
-    Route::get('/users', [\App\Http\Controllers\UserController::class, 'index'])
-        ->name('users.index');
-    Route::post('/users', [\App\Http\Controllers\UserController::class, 'store'])
-        ->name('users.store');
-    Route::put('/users/{user}', [\App\Http\Controllers\UserController::class, 'update'])
-        ->name('users.update');
-    Route::delete('/users/{user}', [\App\Http\Controllers\UserController::class, 'destroy'])
-        ->name('users.destroy');
+    Route::middleware('role:Directeur')->group(function () {
+        Route::get('/users', [\App\Http\Controllers\UserController::class, 'index'])
+            ->name('users.index');
+        Route::post('/users', [\App\Http\Controllers\UserController::class, 'store'])
+            ->name('users.store');
+        Route::put('/users/{user}', [\App\Http\Controllers\UserController::class, 'update'])
+            ->name('users.update');
+        Route::delete('/users/{user}', [\App\Http\Controllers\UserController::class, 'destroy'])
+            ->name('users.destroy');
+    });
 
     // Students Management
     Route::get('/apprenants', [\App\Http\Controllers\StudentsController::class, 'index'])
@@ -320,9 +326,11 @@ Route::middleware(['auth'])->group(function (): void {
 
     // Gestion des rapports
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
-    Route::get('/reports/generate', [ReportController::class, 'generate'])->name('reports.generate');
-
-    // Assistant ASSANE
-    Route::post('/assane/chat', [\App\Http\Controllers\Scolarite\AssaneChatController::class, 'chat'])->name('assane.chat');
+    // Civil Certificates
+    Route::get('/civil-certificates', [CivilCertificateController::class, 'index'])->name('civil-certificates.index');
+    Route::get('/civil-certificates/create', [CivilCertificateController::class, 'create'])->name('civil-certificates.create');
+    Route::post('/civil-certificates', [CivilCertificateController::class, 'store'])->name('civil-certificates.store');
+    Route::get('/civil-certificates/{civilCertificate}', [CivilCertificateController::class, 'show'])->name('civil-certificates.show');
+    Route::post('/civil-certificates/{civilCertificate}/approve', [CivilCertificateController::class, 'approve'])->name('civil-certificates.approve');
 
 });
