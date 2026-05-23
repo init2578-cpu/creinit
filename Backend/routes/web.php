@@ -77,11 +77,11 @@ Route::post('/contact', [ContactController::class, 'store'])->name('contact.stor
 Route::middleware(['auth'])->group(function (): void {
     // Student LMS (PROMPT 9)
     // -----------------------------------------------------------------------
-    Route::group(['prefix' => 'student', 'as' => 'student.'], function() {
+    Route::group(['prefix' => 'student', 'as' => 'student.'], function () {
         Route::get('/dashboard', [StudentDashboardController::class, 'index'])->name('dashboard');
         Route::get('/courses', [CourseController::class, 'index'])->name('courses');
         Route::get('/courses/{module}/{chapter}', [CourseController::class, 'showChapter'])->name('courses.show');
-        
+
         // Exercises
         Route::get('/exercises', [ExerciseController::class, 'index'])->name('exercises.index');
         Route::get('/exercises/{chapter}/start', [ExerciseController::class, 'showOnline'])->name('exercises.start');
@@ -174,8 +174,8 @@ Route::middleware(['auth'])->group(function (): void {
         ->name('users.destroy');
 
     // Students Management
-    Route::get('/apprenants', [\App\Http\Controllers\StudentsController::class, 'index'])
-        ->name('students.index');
+    //Route::get('/apprenants', [\App\Http\Controllers\StudentsController::class, 'index'])
+    //    ->name('students.index');
 
     // Logistics & Physical Inventory
     Route::resource('assets', \App\Http\Controllers\AssetController::class);
@@ -212,7 +212,7 @@ Route::middleware(['auth'])->group(function (): void {
     // Admissions (Scolarité)
     Route::get('/applications', [\App\Http\Controllers\ApplicationController::class, 'index'])
         ->name('applications.index');
-    
+
     // Group Management
     Route::get('/groups', [\App\Http\Controllers\Scolarite\GroupController::class, 'index'])
         ->name('groups.index');
@@ -222,7 +222,7 @@ Route::middleware(['auth'])->group(function (): void {
         ->name('groups.update');
     Route::delete('/groups/{group}', [\App\Http\Controllers\Scolarite\GroupController::class, 'destroy'])
         ->name('groups.destroy');
-    
+
     // Group Student Management
     Route::get('/groups/{group}/students', [\App\Http\Controllers\Scolarite\GroupStudentController::class, 'index'])
         ->name('groups.students.index');
@@ -234,7 +234,7 @@ Route::middleware(['auth'])->group(function (): void {
     // Room Management
     Route::resource('rooms', \App\Http\Controllers\Scolarite\RoomController::class)
         ->only(['index', 'store', 'update', 'destroy']);
-    
+
     // Curriculum Management
     Route::resource('modules', \App\Http\Controllers\ModuleController::class);
     Route::post('/modules/{module}/chapters', [\App\Http\Controllers\ModuleController::class, 'storeChapter'])
@@ -261,19 +261,19 @@ Route::middleware(['auth'])->group(function (): void {
         ->name('trainees.preview');
 
     // Administration des Examens et Exercices
-    Route::group(['prefix' => 'admin-scolarite'], function() {
+    Route::group(['prefix' => 'admin-scolarite'], function () {
         Route::resource('exams', AdminExamController::class);
         Route::get('exams/{exam}/results', [AdminExamController::class, 'getResults'])->name('exams.results');
         Route::post('exams/{exam}/grades', [AdminExamController::class, 'enterGrades'])->name('exams.enter-grades');
-        
+
         Route::get('exercises', [AdminExerciseController::class, 'index'])->name('exercises.index');
         Route::put('exercises/{chapter}', [AdminExerciseController::class, 'update'])->name('exercises.update');
         Route::post('exercises/{submission}/grade', [AdminExerciseController::class, 'gradeSubmission'])->name('exercises.grade-submission');
-        
+
         // Questions (Chapters & Exams)
         Route::post('exercises/{chapter}/questions', [AdminExerciseController::class, 'storeQuestion'])->name('exercises.questions.store');
         Route::post('exams/{exam}/questions', [AdminExamController::class, 'storeQuestion'])->name('exams.questions.store');
-        
+
         Route::patch('questions/{question}', [AdminExerciseController::class, 'updateQuestion'])->name('questions.update');
         Route::delete('questions/{question}', [AdminExerciseController::class, 'destroyQuestion'])->name('questions.destroy');
 
@@ -283,7 +283,7 @@ Route::middleware(['auth'])->group(function (): void {
         Route::delete('certificates/{certificate}', [\App\Http\Controllers\Scolarite\AdminCertificateController::class, 'destroy'])->name('certificates.destroy');
     });
 
-    Route::group(['prefix' => 'student', 'as' => 'student.'], function() {
+    Route::group(['prefix' => 'student', 'as' => 'student.'], function () {
         Route::get('my-certificates', [App\Http\Controllers\StudentDashboardController::class, 'myCertificates'])->name('certificates');
     });
 

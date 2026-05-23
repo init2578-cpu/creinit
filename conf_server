@@ -1,0 +1,5 @@
+DATA_BASE_NAME = "creedit_db"
+DATA_BASE_USER = "creedit_user"
+DATA_BASE_PASSWORD = "@Creinit/CRE2026"
+DATA_BASE_HOST = "creinit.com"
+DATA_BASE_PORT = "3306"
