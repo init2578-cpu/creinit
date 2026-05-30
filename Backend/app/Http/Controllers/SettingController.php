@@ -19,12 +19,17 @@ class SettingController extends Controller
 
     public function update(Request $request): RedirectResponse
     {
+        $request->validate([
+            'settings' => 'required|array',
+        ]);
+
         $settings = $request->input('settings');
 
         foreach ($settings as $key => $value) {
+            // Only update if the setting exists to avoid issues
             Setting::where('key', $key)->update(['value' => $value]);
         }
 
-        return back()->with('success', 'Paramètres mis à jour avec succès.');
+        return back()->with('success', 'Tous les paramètres ont été mis à jour.');
     }
 }

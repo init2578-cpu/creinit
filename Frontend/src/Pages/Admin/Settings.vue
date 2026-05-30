@@ -24,7 +24,8 @@ const activeTab = ref('general')
 
 // Prepare form data
 const initialData = {}
-Object.values(props.settings).flat().forEach(s => {
+const allSettings = Object.values(props.settings).flat()
+allSettings.forEach(s => {
     initialData[s.key] = s.value
 })
 
@@ -103,7 +104,12 @@ const formatKey = (key) => {
                                     v-model="form.settings[setting.key]" 
                                     :type="setting.type === 'integer' ? 'number' : 'text'"
                                     class="w-full bg-white border border-gray-100 rounded-2xl font-bold py-4 px-6 focus:ring-4 focus:ring-blue-100 focus:border-blue-600 transition-all outline-none"
+                                    :placeholder="'Entrez ' + formatKey(setting.key).toLowerCase()"
                                 >
+                                
+                                <div v-if="form.errors['settings.' + setting.key]" class="text-xs text-red-500 font-bold mt-1">
+                                    {{ form.errors['settings.' + setting.key] }}
+                                </div>
                                 
                                 <div v-else-if="setting.type === 'boolean'" class="flex items-center gap-3 pt-2">
                                     <button 
