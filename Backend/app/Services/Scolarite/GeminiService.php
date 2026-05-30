@@ -8,8 +8,8 @@ use Illuminate\Support\Facades\Log;
 class GeminiService
 {
     protected string $apiKey;
-    protected string $model = 'gemini-flash-latest'; 
-    protected int $timeout = 30; // Reduced timeout for better UX
+    protected string $model = 'gemini-2.5-flash-lite'; 
+    protected int $timeout = 60; // Increased timeout for heavier models
 
     public function __construct()
     {
@@ -46,9 +46,9 @@ class GeminiService
                 return json_decode($content, true) ?: [];
             }
 
-            Log::error('GeminiService API Error: ' . $response->body());
+            Log::error('GeminiService API Error (' . $this->model . '): ' . $response->body());
         } catch (\Exception $e) {
-            Log::error('GeminiService Exception: ' . $e->getMessage());
+            Log::error('GeminiService Exception (' . $this->model . '): ' . $e->getMessage());
         }
 
         return [];
@@ -107,12 +107,12 @@ class GeminiService
                 return $response->json('candidates.0.content.parts.0.text') ?? "Je n'ai pas pu générer de réponse.";
             }
 
-            Log::error('Assane Chat API Error: ' . $response->body());
+            Log::error('Assane Chat API Error (' . $this->model . '): ' . $response->body());
         } catch (\Exception $e) {
-            Log::error('Assane Chat Exception: ' . $e->getMessage());
+            Log::error('Assane Chat Exception (' . $this->model . '): ' . $e->getMessage());
         }
 
-        return "Oups ! J'ai eu un petit problème technique. Peux-tu reformuler ta question ?";
+        return "Oups ! J'ai eu un petit problème technique (Quota ou Modèle). Peux-tu reformuler ta question ou réessayer dans une minute ?";
     }
 
     private function buildPrompt(array $data): string
