@@ -162,7 +162,15 @@ function deleteTrainee(id) {
 }
 
 function getInternshipTypeLabel(type) {
-    return type === 'course_assistant' ? 'Assistant de Cours' : 'Assistant de Direction'
+    switch(type) {
+        case 'course_assistant': return 'Assistant de Cours'
+        case 'course_substitute': return 'Suppléant Formateur'
+        case 'management_assistant': return 'Assistant de Gestion'
+        case 'secretary_assistant': return 'Assistant Secrétariat'
+        case 'director_assistant': return 'Assistant de Direction'
+        case 'field_internship': return 'Stage sur le terrain'
+        default: return type
+    }
 }
 
 function getStatusLabel(status) {
@@ -393,7 +401,11 @@ function getStatusClass(status) {
                                 <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Type d'Assistanat</label>
                                 <select v-model="traineeForm.internship_type" class="w-full bg-gray-50 border-0 rounded-2xl p-4 font-bold text-gray-700 focus:ring-2 focus:ring-indigo-600 appearance-none transition-all outline-none">
                                     <option value="course_assistant">Assistant de Cours</option>
-                                    <option value="management_assistant">Assistant de Direction</option>
+                                    <option value="course_substitute">Suppléant Formateur (Salle de cours)</option>
+                                    <option value="management_assistant">Assistant de Gestion</option>
+                                    <option value="secretary_assistant">Assistant au Secrétariat</option>
+                                    <option value="director_assistant">Assistant au Directeur</option>
+                                    <option value="field_internship">Stage sur le Terrain (avec Formateur)</option>
                                 </select>
                             </div>
                             <div class="space-y-2">

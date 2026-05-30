@@ -66,7 +66,7 @@ class TraineesController extends Controller
             'telephone' => 'nullable|string|max:20',
             'adresse' => 'nullable|string|max:255',
             // Internship fields
-            'internship_type' => 'required|string|in:course_assistant,management_assistant',
+            'internship_type' => 'required|string|in:course_assistant,course_substitute,management_assistant,secretary_assistant,director_assistant,field_internship',
             'criteria' => 'nullable|string',
             'start_date' => 'nullable|date',
             'end_date' => 'nullable|date',
@@ -127,7 +127,7 @@ class TraineesController extends Controller
             'adresse' => 'nullable|string|max:255',
             'is_active' => 'required|boolean',
             // Internship fields
-            'internship_type' => 'required|string|in:course_assistant,management_assistant',
+            'internship_type' => 'required|string|in:course_assistant,course_substitute,management_assistant,secretary_assistant,director_assistant,field_internship',
             'criteria' => 'nullable|string',
             'start_date' => 'nullable|date',
             'end_date' => 'nullable|date',
