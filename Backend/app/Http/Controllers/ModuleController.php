@@ -88,6 +88,10 @@ class ModuleController extends Controller
             $validated['ordre'] = $module->chapters()->count() + 1;
         }
 
+        // Add default values for required exercise fields
+        $validated['exercise_points'] = 20.00;
+        $validated['exercise_type'] = 'none';
+
         $module->chapters()->create($validated);
 
         return back()->with('success', 'Le chapitre a été ajouté.');
