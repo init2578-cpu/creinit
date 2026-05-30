@@ -97,7 +97,11 @@ const formatKey = (key) => {
                                 Paramètres {{ tabs.find(t => t.id === activeTab).name }}
                             </h2>
 
-                            <div v-for="setting in settings[activeTab]" :key="setting.id" class="space-y-2 p-6 bg-gray-50/50 rounded-2xl border border-gray-50 group hover:border-gray-200 transition">
+                            <div v-if="!props.settings[activeTab] || props.settings[activeTab].length === 0" class="text-center py-20 text-gray-400">
+                                <p class="text-sm font-medium">Aucun paramètre trouvé dans cette catégorie.</p>
+                            </div>
+
+                            <div v-for="setting in props.settings[activeTab]" :key="setting.id" class="space-y-2 p-6 bg-gray-50/50 rounded-2xl border border-gray-50 group hover:border-gray-200 transition">
                                 <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest group-hover:text-blue-600 transition">{{ formatKey(setting.key) }}</label>
                                 
                                 <input v-if="setting.type === 'string' || setting.type === 'integer'" 

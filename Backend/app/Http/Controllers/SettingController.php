@@ -13,7 +13,7 @@ class SettingController extends Controller
     public function index(): Response
     {
         return Inertia::render('Admin/Settings', [
-            'settings' => Setting::all()->groupBy('group'),
+            'settings' => Setting::all()->groupBy('group')->toArray(),
         ]);
     }
 
