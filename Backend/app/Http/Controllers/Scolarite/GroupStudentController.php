@@ -22,8 +22,8 @@ class GroupStudentController extends Controller
             })
             ->get(['users.id', 'users.name', 'users.email', 'users.telephone', 'users.profile_photo_path', 'applications.sexe']);
 
-        // Available students: admitted for the same module but not in THIS group
-        $availableStudents = User::role('Apprenant')
+        // Available users: admitted for the same module but not in THIS group
+        $availableStudents = User::role(['Apprenant', 'Stagiaire'])
             ->join('applications', function ($join) use ($group) {
                 $join->on('users.id', '=', 'applications.user_id')
                      ->where('applications.module_id', '=', $group->module_id)

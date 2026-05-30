@@ -58,23 +58,39 @@ class AttendanceController extends Controller
         // Students in the group
         $students = $group->students()->get(['users.id', 'users.name', 'users.email']);
         
+        // Trainer of the session
+        $trainer = $schedule->formateur;
+
         // Existing records for this session
         $existingAttendance = Attendance::where('schedule_id', $schedule->id)
             ->where('date', $date)
             ->get(['user_id', 'status'])
             ->keyBy('user_id');
 
+        $participants = $students->map(function ($student) use ($existingAttendance) {
+            return [
+                'id' => $student->id,
+                'name' => $student->name,
+                'email' => $student->email,
+                'status' => $existingAttendance->get($student->id)?->status ?? 'present',
+                'is_trainer' => false,
+            ];
+        });
+
+        if ($trainer) {
+            $participants->prepend([
+                'id' => $trainer->id,
+                'name' => "[FORMATEUR] " . $trainer->name,
+                'email' => $trainer->email,
+                'status' => $existingAttendance->get($trainer->id)?->status ?? 'present',
+                'is_trainer' => true,
+            ]);
+        }
+
         return Inertia::render('Scolarite/AttendanceTake', [
             'schedule' => $schedule->load(['group.module', 'formateur', 'room']),
             'date' => $date,
-            'students' => $students->map(function ($student) use ($existingAttendance) {
-                return [
-                    'id' => $student->id,
-                    'name' => $student->name,
-                    'email' => $student->email,
-                    'status' => $existingAttendance->get($student->id)?->status ?? 'present',
-                ];
-            }),
+            'students' => $participants,
             'settings' => [
                 'latitude' => Setting::getValue('cre_latitude'),
                 'longitude' => Setting::getValue('cre_longitude'),

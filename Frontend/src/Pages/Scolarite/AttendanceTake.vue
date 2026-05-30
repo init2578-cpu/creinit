@@ -160,14 +160,22 @@ const statusConfig = {
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-50">
-                            <tr v-for="student in form.students" :key="student.id" class="group hover:bg-gray-50/30 transition">
+                            <tr v-for="student in form.students" :key="student.id" 
+                                class="group transition"
+                                :class="student.is_trainer ? 'bg-indigo-50/50 hover:bg-indigo-50' : 'hover:bg-gray-50/30'"
+                            >
                                 <td class="px-10 py-6">
                                     <div class="flex items-center gap-4">
-                                        <div class="w-10 h-10 bg-gray-100 rounded-2xl flex items-center justify-center font-black text-gray-400 text-sm">
+                                        <div class="w-10 h-10 rounded-2xl flex items-center justify-center font-black text-sm"
+                                            :class="student.is_trainer ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-400'"
+                                        >
                                             {{ student.name.charAt(0) }}
                                         </div>
                                         <div>
-                                            <div class="font-black text-gray-900 leading-none">{{ student.name }}</div>
+                                            <div class="flex items-center gap-2">
+                                                <div class="font-black text-gray-900 leading-none">{{ student.name }}</div>
+                                                <span v-if="student.is_trainer" class="px-2 py-0.5 bg-indigo-600 text-white text-[8px] font-black rounded uppercase tracking-widest">Formateur</span>
+                                            </div>
                                             <div class="text-[10px] font-bold text-gray-400 mt-1 uppercase tracking-tighter">{{ props.students.find(s => s.id === student.id).email }}</div>
                                         </div>
                                     </div>
