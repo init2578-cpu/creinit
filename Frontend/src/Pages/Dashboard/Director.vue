@@ -357,9 +357,78 @@ onMounted(() => {
                                     <span class="text-xs font-black">{{ risk.total_absences }} Absences</span>
                                 </div>
                             </div>
-                            <button class="h-10 w-10 rounded-full bg-gray-50 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-50 hover:text-red-500">
-                                <UsersIcon class="h-5 w-5 mx-auto" />
-                            </button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section 5: Elite & Performance (Leaderboards) -->
+                <section>
+                    <div class="flex items-center gap-2 mb-6">
+                        <h2 class="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">Élite & Performance</h2>
+                        <div class="h-px flex-1 bg-gray-100"></div>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <!-- Top Learners Leaderboard -->
+                        <div class="bg-white p-8 rounded-[3rem] border border-gray-100 shadow-sm">
+                            <div class="flex items-center justify-between mb-8">
+                                <div>
+                                    <h3 class="text-2xl font-black text-gray-900 tracking-tight leading-none mb-2">Major de Promotion</h3>
+                                    <p class="text-sm text-gray-500 font-medium">Top 5 des meilleurs stagiaires par examens</p>
+                                </div>
+                                <div class="h-12 w-12 bg-yellow-50 text-yellow-600 rounded-2xl flex items-center justify-center border border-yellow-100">
+                                    <AcademicCapIcon class="h-6 w-6" />
+                                </div>
+                            </div>
+
+                            <div class="space-y-4">
+                                <div v-for="(learner, index) in dashboardKpis.top_learners" :key="index" class="flex items-center justify-between p-4 bg-gray-50/50 rounded-2xl border border-gray-100/50 hover:bg-white hover:border-gray-200 hover:shadow-lg transition-all group">
+                                    <div class="flex items-center gap-4">
+                                        <div class="h-10 w-10 flex items-center justify-center font-black rounded-xl" :class="index === 0 ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-500'">
+                                            #{{ index + 1 }}
+                                        </div>
+                                        <div>
+                                            <p class="text-sm font-black text-gray-900">{{ learner.name }}</p>
+                                            <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">{{ learner.email }}</p>
+                                        </div>
+                                    </div>
+                                    <div class="text-right">
+                                        <p class="text-lg font-black text-indigo-600 leading-none">{{ learner.score }}</p>
+                                        <p class="text-[8px] font-black text-gray-400 uppercase tracking-widest mt-1">Pointage Moy.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Trainers Productivity -->
+                        <div class="bg-white p-8 rounded-[3rem] border border-gray-100 shadow-sm">
+                            <div class="flex items-center justify-between mb-8">
+                                <div>
+                                    <h3 class="text-2xl font-black text-gray-900 tracking-tight leading-none mb-2">Activités Formateurs</h3>
+                                    <p class="text-sm text-gray-500 font-medium">Validations de modules par formateur</p>
+                                </div>
+                                <div class="h-12 w-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center border border-blue-100">
+                                    <ClipboardDocumentCheckIcon class="h-6 w-6" />
+                                </div>
+                            </div>
+
+                            <div class="space-y-4">
+                                <div v-for="(trainer, index) in dashboardKpis.trainers_performance" :key="index" class="flex items-center justify-between p-4 bg-white border border-gray-100 rounded-2xl hover:shadow-xl transition-all">
+                                    <div class="flex items-center gap-4">
+                                        <div class="h-10 w-10 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center font-black">
+                                            {{ trainer.name.charAt(0) }}
+                                        </div>
+                                        <p class="text-sm font-black text-gray-900">{{ trainer.name }}</p>
+                                    </div>
+                                    <div class="flex items-center gap-3">
+                                        <span class="text-2xl font-black text-gray-900">{{ trainer.count }}</span>
+                                        <span class="text-[8px] font-black text-gray-400 uppercase tracking-widest">Validations</span>
+                                    </div>
+                                </div>
+                                <div v-if="!dashboardKpis.trainers_performance || dashboardKpis.trainers_performance.length === 0" class="py-12 flex flex-col items-center text-gray-400 gap-3">
+                                    <p class="text-xs font-bold italic">Aucune donnée de performance enregistrée.</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </section>

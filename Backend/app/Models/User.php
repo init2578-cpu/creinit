@@ -141,6 +141,14 @@ class User extends Authenticatable
     }
 
     /**
+     * Chapters submitted for validation by this trainer.
+     */
+    public function submittedChapters(): HasMany
+    {
+        return $this->hasMany(ChapterGroupProgress::class, 'submitted_by');
+    }
+
+    /**
      * Certificates earned by this user.
      */
     public function certificates(): HasMany

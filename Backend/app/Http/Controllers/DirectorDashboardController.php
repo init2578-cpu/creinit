@@ -70,8 +70,53 @@ class DirectorDashboardController extends Controller
             'logistics'                => $this->getLogisticsStats(),
             'ecosystem'                => $this->getEcosystemStats(),
             'pedagogical'              => $this->getPedagogicalStats(),
+            'trainers_performance'    => $this->getTrainersPerformance(),
+            'top_learners'            => $this->getTopLearners(),
             'alerts'                   => $this->getAlerts(),
         ];
+    }
+
+    /**
+     * KPI: Trainers productivity based on chapter validations.
+     */
+    private function getTrainersPerformance(): array
+    {
+        return User::role('Formateur')
+            ->withCount(['submittedChapters as chapters_validated_count' => function ($query) {
+                $query->where('status', 'approved');
+            }])
+            ->get()
+            ->map(function ($trainer) {
+                return [
+                    'id'    => $trainer->id,
+                    'name'  => $trainer->name,
+                    'count' => $trainer->chapters_validated_count,
+                ];
+            })
+            ->sortByDesc('count')
+            ->values()
+            ->toArray();
+    }
+
+    /**
+     * KPI: Top 5 learners based on exam scores.
+     */
+    private function getTopLearners(): array
+    {
+        return ExamResult::with('user:id,name,email')
+            ->select('user_id', DB::raw('AVG(score) as avg_score'))
+            ->groupBy('user_id')
+            ->orderByDesc('avg_score')
+            ->limit(5)
+            ->get()
+            ->map(function ($result) {
+                return [
+                    'name'  => $result->user->name ?? 'Inconnu',
+                    'email' => $result->user->email ?? '-',
+                    'score' => round((float)$result->avg_score, 1),
+                ];
+            })
+            ->toArray();
     }
 
     /**
