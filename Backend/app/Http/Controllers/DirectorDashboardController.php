@@ -11,6 +11,10 @@ use App\Models\User;
 use App\Models\Application;
 use App\Models\Module;
 use App\Models\Asset;
+use App\Models\Loan;
+use App\Models\Chapter;
+use App\Models\ChapterGroupProgress;
+use App\Models\ExamResult;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
@@ -62,6 +66,10 @@ class DirectorDashboardController extends Controller
             'total_certificates'       => Certificate::count(),
             'operational_hardware'     => $this->getOperationalHardwareRate(),
             'module_validation_rates'  => $this->getModuleValidationRates(),
+            'admissions'               => $this->getAdmissionsStats(),
+            'logistics'                => $this->getLogisticsStats(),
+            'ecosystem'                => $this->getEcosystemStats(),
+            'pedagogical'              => $this->getPedagogicalStats(),
             'alerts'                   => $this->getAlerts(),
         ];
     }
@@ -176,6 +184,61 @@ class DirectorDashboardController extends Controller
     }
 
     /**
+     * KPI: Admissions statistics.
+     */
+    private function getAdmissionsStats(): array
+    {
+        return [
+            'total'               => Application::count(),
+            'pending'             => Application::where('status', 'pending')->count(),
+            'accepted_this_month' => Application::where('status', 'accepted')
+                ->where('created_at', '>=', now()->startOfMonth())
+                ->count(),
+        ];
+    }
+
+    /**
+     * KPI: Logistics and Assets statistics.
+     */
+    private function getLogisticsStats(): array
+    {
+        return [
+            'total_assets'     => Asset::count(),
+            'active_loans'     => Loan::whereNull('returned_at')->count(),
+            'defective_assets' => Asset::where('etat', 'hors_service')->count(),
+        ];
+    }
+
+    /**
+     * KPI: Ecosystem and Partnerships statistics.
+     */
+    private function getEcosystemStats(): array
+    {
+        return [
+            'total_partners'  => \App\Models\Partnership::where('status', 'actif')->count(),
+            'upcoming_events' => \App\Models\Event::where('status', 'actif')
+                ->where('date_evenement', '>=', now())
+                ->count(),
+        ];
+    }
+
+    /**
+     * KPI: Pedagogical performance statistics.
+     */
+    private function getPedagogicalStats(): array
+    {
+        $avgExamScore = \App\Models\ExamResult::avg('total_points') ?? 0;
+        
+        $totalChapters = \App\Models\Chapter::count();
+        $validatedChapters = \App\Models\ChapterGroupProgress::where('status', 'approved')->count();
+
+        return [
+            'avg_exam_score'           => round((float)$avgExamScore, 1),
+            'chapters_validated_rate'  => $totalChapters > 0 ? round(($validatedChapters / $totalChapters) * 100, 1) : 0.0,
+        ];
+    }
+
+    /**
      * Get statistics for the dashboard via API.
      */
     public function apiStats()
@@ -189,6 +252,10 @@ class DirectorDashboardController extends Controller
             'parity_rate' => $parity['ratio'],
             'gender_distribution' => [$parity['male'], $parity['female']],
             'validation_by_module' => $this->getModuleValidationRates(),
+            'admissions' => $this->getAdmissionsStats(),
+            'logistics' => $this->getLogisticsStats(),
+            'ecosystem' => $this->getEcosystemStats(),
+            'pedagogical' => $this->getPedagogicalStats(),
         ]);
     }
 }
