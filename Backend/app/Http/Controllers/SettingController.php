@@ -12,12 +12,25 @@ class SettingController extends Controller
 {
     public function index(): Response
     {
+        $all = Setting::all();
+        $grouped = [
+            'general' => Setting::where('group', 'general')->get()->values()->toArray(),
+            'attendance' => Setting::where('group', 'attendance')->get()->values()->toArray(),
+            'notifications' => Setting::where('group', 'notifications')->get()->values()->toArray(),
+        ];
+
+        \Illuminate\Support\Facades\Log::info('Settings Page Loaded', [
+            'total_count' => $all->count(),
+            'groups_found' => $all->pluck('group')->unique()->toArray(),
+            'general_count' => count($grouped['general']),
+        ]);
+
         return Inertia::render('Admin/Settings', [
-            'settings' => [
-                'general' => Setting::where('group', 'general')->get()->toArray(),
-                'attendance' => Setting::where('group', 'attendance')->get()->toArray(),
-                'notifications' => Setting::where('group', 'notifications')->get()->toArray(),
-            ],
+            'settings' => $grouped,
+            'debug_info' => [
+                'count' => $all->count(),
+                'groups' => $all->pluck('group')->unique()->values()->toArray()
+            ]
         ]);
     }
 

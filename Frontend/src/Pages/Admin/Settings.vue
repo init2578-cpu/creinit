@@ -11,7 +11,8 @@ import {
 } from '@heroicons/vue/24/outline'
 
 const props = defineProps({
-    settings: Object // Grouped by 'group'
+    settings: Object, // Grouped by 'group'
+    debug_info: Object
 })
 
 const tabs = [
@@ -79,6 +80,11 @@ const formatKey = (key) => {
             <header class="mb-10">
                 <h1 class="text-4xl font-black text-gray-900 tracking-tight">Configuration Système</h1>
                 <p class="text-gray-500 mt-2 font-medium">Gérez les paramètres globaux de la plateforme E-CRE.</p>
+                <div v-if="props.debug_info" class="mt-4 inline-flex items-center gap-2 px-3 py-1 bg-gray-100 rounded-full text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                    <span>{{ props.debug_info.count }} paramètres chargés</span>
+                    <span class="w-1 h-1 bg-gray-300 rounded-full"></span>
+                    <span>Groupes: {{ props.debug_info.groups.join(', ') }}</span>
+                </div>
             </header>
 
             <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
