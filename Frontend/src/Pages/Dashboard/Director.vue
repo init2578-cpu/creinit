@@ -144,7 +144,10 @@ onMounted(() => {
                                     <BoltIcon class="h-6 w-6" />
                                 </div>
                                 <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Absence Stagiaires</p>
-                                <h3 class="text-4xl font-black text-gray-900 tracking-tighter">{{ dashboardKpis.attendance_stats?.learners_absence_rate || 0 }}%</h3>
+                                <div class="flex items-baseline gap-2">
+                                    <h3 class="text-4xl font-black text-gray-900 tracking-tighter">{{ dashboardKpis.attendance_stats?.learners_absence_rate || 0 }}%</h3>
+                                    <p class="text-[10px] font-black text-red-500 uppercase tracking-widest">{{ dashboardKpis.attendance_stats?.learners_absence_hours || 0 }}h cumulées</p>
+                                </div>
                                 <div class="mt-6 w-full bg-gray-100 h-2 rounded-full overflow-hidden p-0.5 shadow-inner">
                                     <div class="bg-gradient-to-r from-red-400 to-red-600 h-full rounded-full transition-all duration-1000 shadow-sm" :style="{ width: (dashboardKpis.attendance_stats?.learners_absence_rate || 0) + '%' }"></div>
                                 </div>
@@ -159,7 +162,10 @@ onMounted(() => {
                                     <ClockIcon class="h-6 w-6" />
                                 </div>
                                 <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Absence Formateurs</p>
-                                <h3 class="text-4xl font-black text-gray-900 tracking-tighter">{{ dashboardKpis.attendance_stats?.trainers_absence_rate || 0 }}%</h3>
+                                <div class="flex items-baseline gap-2">
+                                    <h3 class="text-4xl font-black text-gray-900 tracking-tighter">{{ dashboardKpis.attendance_stats?.trainers_absence_rate || 0 }}%</h3>
+                                    <p class="text-[10px] font-black text-orange-500 uppercase tracking-widest">{{ dashboardKpis.attendance_stats?.trainers_absence_hours || 0 }}h cumulées</p>
+                                </div>
                                 <div class="mt-6 w-full bg-gray-100 h-2 rounded-full overflow-hidden p-0.5 shadow-inner">
                                     <div class="bg-gradient-to-r from-orange-400 to-orange-600 h-full rounded-full transition-all duration-1000 shadow-sm" :style="{ width: (dashboardKpis.attendance_stats?.trainers_absence_rate || 0) + '%' }"></div>
                                 </div>
