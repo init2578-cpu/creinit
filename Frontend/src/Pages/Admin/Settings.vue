@@ -146,4 +146,6 @@ const formatKey = (key) => {
             </div>
         </div>
     </AuthenticatedLayout>
+    <!-- DEBUG ONLY -->
+    <!-- <pre class="fixed bottom-0 right-0 bg-black/80 text-white text-[8px] p-2 max-w-xs overflow-auto z-[9999] opacity-5 hover:opacity-100">{{ JSON.stringify(props.settings, null, 2) }}</pre> -->
 </template>
