@@ -4,7 +4,14 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
-        <title inertia>{{ config('app.name', 'E-CRE Kolda') }}</title>
+        <title inertia>{{ config('app.name', 'CRE iNiT Kolda') }}</title>
+        
+        <!-- Social Media Meta Tags -->
+        <meta property="og:title" content="CRE iNiT Kolda">
+        <meta property="og:description" content="Plateforme de gestion de l'établissement CRE iNiT Kolda.">
+        <meta property="og:image" content="{{ asset('images/logo-cre.png') }}">
+        <meta property="og:type" content="website">
+        <meta name="twitter:card" content="summary_large_image">
         
         <!-- Favicon -->
         <link rel="icon" type="image/png" href="{{ asset('images/logo-cre.png') }}">
