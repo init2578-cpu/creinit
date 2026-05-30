@@ -30,6 +30,12 @@ class SettingSeeder extends Seeder
 
             // NOTIFICATIONS
             ['key' => 'notify_new_application', 'value' => '1', 'group' => 'notifications', 'type' => 'boolean'],
+            ['key' => 'notify_exercise_graded', 'value' => '1', 'group' => 'notifications', 'type' => 'boolean'],
+            ['key' => 'notify_exam_result', 'value' => '1', 'group' => 'notifications', 'type' => 'boolean'],
+            ['key' => 'notify_certificate_issued', 'value' => '1', 'group' => 'notifications', 'type' => 'boolean'],
+            ['key' => 'notify_new_exercise', 'value' => '1', 'group' => 'notifications', 'type' => 'boolean'],
+            ['key' => 'notify_new_exam', 'value' => '1', 'group' => 'notifications', 'type' => 'boolean'],
+            ['key' => 'notify_chapter_submitted', 'value' => '1', 'group' => 'notifications', 'type' => 'boolean'],
             ['key' => 'notify_absence_student', 'value' => '0', 'group' => 'notifications', 'type' => 'boolean'],
             ['key' => 'notify_schedule_change', 'value' => '1', 'group' => 'notifications', 'type' => 'boolean'],
             ['key' => 'email_sender_name', 'value' => 'E-CRE Kolda', 'group' => 'notifications', 'type' => 'string'],

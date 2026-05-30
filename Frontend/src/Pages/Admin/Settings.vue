@@ -68,18 +68,27 @@ const initializeDefaults = () => {
 }
 
 const labelMap = {
+    // Émargement & Géo
     cre_latitude: 'Latitude du CRE',
     cre_longitude: 'Longitude du CRE',
     cre_radius: 'Rayon de tolérance (mètres)',
     attendance_buffer_before: 'Délai d\'ouverture avant le cours (min)',
     attendance_buffer_after: 'Délai de fermeture après le cours (min)',
+    // Général
     site_name: 'Nom de la plateforme (Vitrine)',
     site_description: 'Description de l\'établissement',
     contact_email: 'Email de contact support',
     enable_registration: 'Ouverture des inscriptions publiques',
-    notify_new_application: 'Notifier Admin (Nouvelle inscription)',
-    notify_absence_student: 'Notifier Parent/Élève (Absence)',
-    notify_schedule_change: 'Notifier Formateur (Changement planning)',
+    // Notifications
+    notify_new_application: 'Notifier Admin (Nouvelle pré-inscription)',
+    notify_exercise_graded: 'Notifier Apprenant (Exercice corrigé)',
+    notify_exam_result: 'Notifier Apprenant (Résultat d\'examen)',
+    notify_certificate_issued: 'Notifier Apprenant (Certificat délivré)',
+    notify_new_exercise: 'Notifier Apprenant (Nouvel exercice disponible)',
+    notify_new_exam: 'Notifier Apprenant (Nouvel examen disponible)',
+    notify_chapter_submitted: 'Notifier Formateur (Chapitre soumis pour validation)',
+    notify_absence_student: 'Notifier Apprenant/Parent (Absence détectée)',
+    notify_schedule_change: 'Notifier Formateur (Changement de planning)',
     email_sender_name: "Nom de l'expéditeur des emails"
 }
 
