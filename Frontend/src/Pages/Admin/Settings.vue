@@ -1,6 +1,6 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
-import { Head, useForm } from '@inertiajs/vue3'
+import { Head, useForm, router } from '@inertiajs/vue3'
 import { ref, onMounted } from 'vue'
 import { 
     Cog6ToothIcon, 
@@ -51,6 +51,22 @@ const submit = () => {
     })
 }
 
+const isInitializing = ref(false)
+const initializeDefaults = () => {
+    if (!confirm('Voulez-vous vraiment restaurer les paramètres par défaut ?')) return
+    
+    isInitializing.value = true
+    router.post(route('settings.initialize'), {}, {
+        onSuccess: () => {
+            isInitializing.value = false
+            initForm()
+        },
+        onError: () => {
+            isInitializing.value = false
+        }
+    })
+}
+
 const labelMap = {
     cre_latitude: 'Latitude du CRE',
     cre_longitude: 'Longitude du CRE',
@@ -80,11 +96,6 @@ const formatKey = (key) => {
             <header class="mb-10">
                 <h1 class="text-4xl font-black text-gray-900 tracking-tight">Configuration Système</h1>
                 <p class="text-gray-500 mt-2 font-medium">Gérez les paramètres globaux de la plateforme E-CRE.</p>
-                <div v-if="props.debug_info" class="mt-4 inline-flex items-center gap-2 px-3 py-1 bg-gray-100 rounded-full text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                    <span>{{ props.debug_info.count }} paramètres chargés</span>
-                    <span class="w-1 h-1 bg-gray-300 rounded-full"></span>
-                    <span>Groupes: {{ props.debug_info.groups.join(', ') }}</span>
-                </div>
             </header>
 
             <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
@@ -111,8 +122,16 @@ const formatKey = (key) => {
                                 Paramètres {{ tabs.find(t => t.id === activeTab).name }}
                             </h2>
 
-                            <div v-if="!props.settings[activeTab] || props.settings[activeTab].length === 0" class="text-center py-20 text-gray-400">
-                                <p class="text-sm font-medium">Aucun paramètre trouvé dans cette catégorie.</p>
+                            <div v-if="!props.settings[activeTab] || props.settings[activeTab].length === 0" class="text-center py-20 text-gray-400 bg-gray-50/30 rounded-3xl border-2 border-dashed border-gray-100">
+                                <Cog6ToothIcon class="h-12 w-12 mx-auto mb-4 text-gray-200" />
+                                <p class="text-sm font-medium mb-6">Aucun paramètre trouvé dans cette catégorie.</p>
+                                <button 
+                                    @click="initializeDefaults"
+                                    :disabled="isInitializing"
+                                    class="px-6 py-3 bg-blue-600 text-white rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-blue-700 transition-all disabled:opacity-50"
+                                >
+                                    {{ isInitializing ? 'Initialisation...' : 'Initialiser les paramètres par défaut' }}
+                                </button>
                             </div>
 
                             <div v-for="setting in props.settings[activeTab]" :key="setting.id" class="space-y-2 p-6 bg-gray-50/50 rounded-2xl border border-gray-50 group hover:border-gray-200 transition">

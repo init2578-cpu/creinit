@@ -34,6 +34,14 @@ class SettingController extends Controller
         ]);
     }
 
+    public function initialize(): RedirectResponse
+    {
+        $seeder = new \Database\Seeders\SettingSeeder();
+        $seeder->run();
+
+        return back()->with('success', 'Les paramètres par défaut ont été initialisés avec succès.');
+    }
+
     public function update(Request $request): RedirectResponse
     {
         $request->validate([

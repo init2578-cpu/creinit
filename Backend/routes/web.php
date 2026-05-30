@@ -305,6 +305,8 @@ Route::middleware(['auth'])->group(function (): void {
         ->name('settings.index');
     Route::post('/settings', [\App\Http\Controllers\SettingController::class, 'update'])
         ->name('settings.update');
+    Route::post('/settings/initialize', [\App\Http\Controllers\SettingController::class, 'initialize'])
+        ->name('settings.initialize');
 
     Route::post('/schedules', [\App\Http\Controllers\ScheduleController::class, 'store'])
         ->name('schedules.store');
