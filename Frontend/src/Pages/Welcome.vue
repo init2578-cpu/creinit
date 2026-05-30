@@ -47,10 +47,10 @@ const pillars = [
 ]
 
 const modules = [
-    { name: 'Développement Web & IA', level: 'Avancé', duration: '6 mois', students: 45 },
-    { name: 'Data Analytics', level: 'Intermédiaire', duration: '4 mois', students: 32 },
-    { name: 'Design Systèmes', level: 'Intermédiaire', duration: '3 mois', students: 28 },
-    { name: 'Entrepreneuriat Digital', level: 'Tout public', duration: '2 mois', students: 50 },
+    { name: 'Développement Web & IA', level: 'Avancé', duration: '6 mois', students: 45, image: '/images/modules/web-ai.png' },
+    { name: 'Data Analytics', level: 'Intermédiaire', duration: '4 mois', students: 32, image: '/images/modules/data-analytics.png' },
+    { name: 'Design Systèmes', level: 'Intermédiaire', duration: '3 mois', students: 28, image: '/images/modules/design-systems.png' },
+    { name: 'Entrepreneuriat Digital', level: 'Tout public', duration: '2 mois', students: 50, image: '/images/modules/entrepreneurship.png' },
 ]
 
 // Scroll Reveal & Typing Logic
@@ -275,10 +275,16 @@ onMounted(() => {
                         data-reveal :id="'mod-' + mod.name"
                         :style="`transition-delay: ${index * 100}ms`"
                     >
+                        <!-- Module Image -->
+                        <div class="absolute inset-0 z-0">
+                            <img :src="mod.image" alt="Module Image" class="w-full h-full object-cover opacity-20 group-hover:opacity-40 transition-opacity duration-700">
+                            <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent"></div>
+                        </div>
+
                         <!-- Digital Pulse Circle -->
-                        <div class="absolute -right-10 -top-10 h-32 w-32 bg-cyan-500/5 rounded-full blur-3xl group-hover:bg-cyan-500/10 transition-all duration-700"></div>
+                        <div class="absolute -right-10 -top-10 h-32 w-32 bg-cyan-500/5 rounded-full blur-3xl group-hover:bg-cyan-500/10 transition-all duration-700 z-10"></div>
                         
-                        <div>
+                        <div class="relative z-20">
                             <div class="flex justify-between items-start mb-10">
                                 <span class="px-3 py-1 bg-slate-800/50 text-slate-400 text-[8px] font-black rounded-lg border border-white/5 group-hover:bg-cyan-500 group-hover:text-slate-950 transition-all uppercase tracking-[0.2em]">
                                     LEVEL: {{ mod.level }}
@@ -292,7 +298,7 @@ onMounted(() => {
                             </p>
                         </div>
                         
-                        <div class="mt-auto pt-8 border-t border-white/5 flex items-center justify-between text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                        <div class="mt-auto pt-8 border-t border-white/5 flex items-center justify-between text-[10px] font-black text-slate-500 uppercase tracking-widest relative z-20">
                             <span class="flex items-center gap-2">
                                 <ChartBarIcon class="h-3 w-3 text-cyan-500" />
                                 {{ mod.duration }}
