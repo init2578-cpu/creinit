@@ -47,7 +47,7 @@ import AIAssistant from '@/Components/AIAssistant.vue'
             </div>
         </header>
 
-        <main class="flex-1">
+        <main class="flex-1 pt-20">
             <slot />
         </main>
 

@@ -136,7 +136,7 @@ watch(() => page.props.flash, (flash) => {
             />
 
             <!-- Page Management -->
-            <main class="flex-1 p-4 sm:p-6 lg:p-8">
+            <main class="flex-1 p-4 sm:p-6 lg:p-8 pt-20 sm:pt-24 lg:pt-28">
                 <slot />
             </main>
 
