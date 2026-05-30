@@ -72,7 +72,29 @@ class DirectorDashboardController extends Controller
             'pedagogical'              => $this->getPedagogicalStats(),
             'trainers_performance'    => $this->getTrainersPerformance(),
             'top_learners'            => $this->getTopLearners(),
+            'attendance_stats'         => $this->getAttendanceStats(),
             'alerts'                   => $this->getAlerts(),
+        ];
+    }
+
+    /**
+     * KPI: Detailed attendance statistics by role.
+     *
+     * @return array{learners: float, trainers: float}
+     */
+    private function getAttendanceStats(): array
+    {
+        $learnerTotal = Attendance::whereHas('user', function($q) { $q->role('Apprenant'); })->count();
+        $learnerAbsent = Attendance::whereHas('user', function($q) { $q->role('Apprenant'); })
+            ->where('status', '!=', 'present')->count();
+
+        $trainerTotal = Attendance::whereHas('user', function($q) { $q->role('Formateur'); })->count();
+        $trainerAbsent = Attendance::whereHas('user', function($q) { $q->role('Formateur'); })
+            ->where('status', '!=', 'present')->count();
+
+        return [
+            'learners_absence_rate' => $learnerTotal > 0 ? round(($learnerAbsent / $learnerTotal) * 100, 1) : 0.0,
+            'trainers_absence_rate' => $trainerTotal > 0 ? round(($trainerAbsent / $trainerTotal) * 100, 1) : 0.0,
         ];
     }
 

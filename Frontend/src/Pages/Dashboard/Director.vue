@@ -136,17 +136,32 @@ onMounted(() => {
                             </div>
                         </div>
 
-                        <!-- Assiduité Realtime -->
-                        <div class="group relative bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm transition-all hover:shadow-2xl hover:border-emerald-100">
-                             <div class="absolute top-0 right-0 w-24 h-24 -mr-8 -mt-8 bg-emerald-50 rounded-full blur-2xl group-hover:bg-emerald-100 transition-colors"></div>
+                        <!-- Absence Apprenants -->
+                        <div class="group relative bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm transition-all hover:shadow-2xl hover:border-red-100 overflow-hidden">
+                             <div class="absolute top-0 right-0 w-24 h-24 -mr-8 -mt-8 bg-red-50 rounded-full blur-2xl group-hover:bg-red-100 transition-colors"></div>
                             <div class="relative z-10">
-                                <div class="h-12 w-12 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-600 mb-6 group-hover:bg-emerald-600 group-hover:text-white transition-all transform group-hover:-rotate-6 shadow-sm">
+                                <div class="h-12 w-12 bg-red-50 rounded-2xl flex items-center justify-center text-red-600 mb-6 group-hover:bg-red-600 group-hover:text-white transition-all transform group-hover:-rotate-6 shadow-sm">
                                     <BoltIcon class="h-6 w-6" />
                                 </div>
-                                <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Taux d'Engagement</p>
-                                <h3 class="text-4xl font-black text-gray-900 tracking-tighter">{{ dashboardKpis.attendance_rate }}%</h3>
+                                <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Absence Stagiaires</p>
+                                <h3 class="text-4xl font-black text-gray-900 tracking-tighter">{{ dashboardKpis.attendance_stats?.learners_absence_rate || 0 }}%</h3>
                                 <div class="mt-6 w-full bg-gray-100 h-2 rounded-full overflow-hidden p-0.5 shadow-inner">
-                                    <div class="bg-gradient-to-r from-emerald-400 to-emerald-600 h-full rounded-full transition-all duration-1000 shadow-sm" :style="{ width: dashboardKpis.attendance_rate + '%' }"></div>
+                                    <div class="bg-gradient-to-r from-red-400 to-red-600 h-full rounded-full transition-all duration-1000 shadow-sm" :style="{ width: (dashboardKpis.attendance_stats?.learners_absence_rate || 0) + '%' }"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Absence Formateurs -->
+                        <div class="group relative bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm transition-all hover:shadow-2xl hover:border-orange-100 overflow-hidden">
+                             <div class="absolute top-0 right-0 w-24 h-24 -mr-8 -mt-8 bg-orange-50 rounded-full blur-2xl group-hover:bg-orange-100 transition-colors"></div>
+                            <div class="relative z-10">
+                                <div class="h-12 w-12 bg-orange-50 rounded-2xl flex items-center justify-center text-orange-600 mb-6 group-hover:bg-orange-600 group-hover:text-white transition-all transform group-hover:rotate-6 shadow-sm">
+                                    <ClockIcon class="h-6 w-6" />
+                                </div>
+                                <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Absence Formateurs</p>
+                                <h3 class="text-4xl font-black text-gray-900 tracking-tighter">{{ dashboardKpis.attendance_stats?.trainers_absence_rate || 0 }}%</h3>
+                                <div class="mt-6 w-full bg-gray-100 h-2 rounded-full overflow-hidden p-0.5 shadow-inner">
+                                    <div class="bg-gradient-to-r from-orange-400 to-orange-600 h-full rounded-full transition-all duration-1000 shadow-sm" :style="{ width: (dashboardKpis.attendance_stats?.trainers_absence_rate || 0) + '%' }"></div>
                                 </div>
                             </div>
                         </div>
