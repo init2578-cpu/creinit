@@ -191,7 +191,7 @@ class DirectorDashboardController extends Controller
         return [
             'total'               => Application::count(),
             'pending'             => Application::where('status', 'pending')->count(),
-            'accepted_this_month' => Application::where('status', 'accepted')
+            'accepted_this_month' => Application::where('status', 'admitted')
                 ->where('created_at', '>=', now()->startOfMonth())
                 ->count(),
         ];
@@ -217,7 +217,7 @@ class DirectorDashboardController extends Controller
         return [
             'total_partners'  => \App\Models\Partnership::where('status', 'actif')->count(),
             'upcoming_events' => \App\Models\Event::where('status', 'actif')
-                ->where('date_evenement', '>=', now())
+                ->where('date', '>=', now())
                 ->count(),
         ];
     }
@@ -227,7 +227,7 @@ class DirectorDashboardController extends Controller
      */
     private function getPedagogicalStats(): array
     {
-        $avgExamScore = \App\Models\ExamResult::avg('total_points') ?? 0;
+        $avgExamScore = \App\Models\ExamResult::avg('score') ?? 0;
         
         $totalChapters = \App\Models\Chapter::count();
         $validatedChapters = \App\Models\ChapterGroupProgress::where('status', 'approved')->count();
