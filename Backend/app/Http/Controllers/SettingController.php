@@ -12,13 +12,11 @@ class SettingController extends Controller
 {
     public function index(): Response
     {
-        $settings = Setting::all();
-        
         return Inertia::render('Admin/Settings', [
             'settings' => [
-                'general' => $settings->where('group', 'general')->values()->toArray(),
-                'attendance' => $settings->where('group', 'attendance')->values()->toArray(),
-                'notifications' => $settings->where('group', 'notifications')->values()->toArray(),
+                'general' => Setting::where('group', 'general')->get()->toArray(),
+                'attendance' => Setting::where('group', 'attendance')->get()->toArray(),
+                'notifications' => Setting::where('group', 'notifications')->get()->toArray(),
             ],
         ]);
     }

@@ -23,14 +23,22 @@ const tabs = [
 const activeTab = ref('general')
 
 // Prepare form data
-const initialData = {}
-const allSettings = Object.values(props.settings).flat()
-allSettings.forEach(s => {
-    initialData[s.key] = s.value
+const form = useForm({
+    settings: {}
 })
 
-const form = useForm({
-    settings: initialData
+// Initialize form data from props
+const initForm = () => {
+    if (!props.settings) return
+    const initialData = {}
+    Object.values(props.settings).flat().forEach(s => {
+        initialData[s.key] = s.value
+    })
+    form.settings = { ...initialData }
+}
+
+onMounted(() => {
+    initForm()
 })
 
 const submit = () => {
@@ -146,6 +154,4 @@ const formatKey = (key) => {
             </div>
         </div>
     </AuthenticatedLayout>
-    <!-- DEBUG ONLY -->
-    <!-- <pre class="fixed bottom-0 right-0 bg-black/80 text-white text-[8px] p-2 max-w-xs overflow-auto z-[9999] opacity-5 hover:opacity-100">{{ JSON.stringify(props.settings, null, 2) }}</pre> -->
 </template>
