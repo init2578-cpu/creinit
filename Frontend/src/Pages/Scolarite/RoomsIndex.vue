@@ -113,7 +113,12 @@ const deleteRoom = (id) => {
                                 </div>
                             </td>
                             <td class="px-8 py-6">
-                                <span class="px-4 py-1.5 bg-gray-100 text-gray-600 text-[10px] font-black uppercase tracking-widest rounded-full">
+                                <span 
+                                    class="px-4 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-full"
+                                    :class="room.type_salle === 'Site de Stage' || room.type_salle === 'Espace Extérieur' 
+                                        ? 'bg-amber-100 text-amber-700'
+                                        : 'bg-gray-100 text-gray-600'"
+                                >
                                     {{ room.type_salle }}
                                 </span>
                             </td>
@@ -192,7 +197,9 @@ const deleteRoom = (id) => {
                                 <option value="Salle de cours">Salle de cours</option>
                                 <option value="Labo Informatique">Labo Informatique</option>
                                 <option value="Atelier">Atelier</option>
-                                <option value="Conférence">Conférence</option>
+                                <option value="Conférence">Salle de Conférence</option>
+                                <option value="Site de Stage">Site de Stage (Chantier Terrain)</option>
+                                <option value="Espace Extérieur">Espace Extérieur / Terrain</option>
                             </select>
                             <p v-if="form.errors.type_salle" class="text-red-500 text-xs mt-1 font-bold">{{ form.errors.type_salle }}</p>
                         </div>
