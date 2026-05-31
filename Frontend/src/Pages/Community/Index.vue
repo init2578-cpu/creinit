@@ -194,7 +194,10 @@ const deleteAnnouncement = (id) => {
 
             <!-- main feed -->
             <div class="space-y-6">
-                <h3 class="text-xs font-black text-gray-400 uppercase tracking-widest px-2">Fil d'actualité</h3>
+                <div class="flex items-center justify-between">
+                    <h3 class="text-xs font-black text-gray-400 uppercase tracking-widest px-2">Fil d'actualité</h3>
+                    <span class="text-xs text-red-500 font-bold">Diagnostic ID reçu : {{ announcements.data.map(m => m.id).join(', ') }}</span>
+                </div>
                 
                 <div v-if="announcements.data.filter(a => !a.is_pinned).length === 0" class="bg-gray-50 rounded-2xl p-12 text-center border-2 border-dashed border-gray-200">
                     <MegaphoneIcon class="h-12 w-12 text-gray-300 mx-auto mb-4" />
