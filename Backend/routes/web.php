@@ -112,217 +112,181 @@ Route::middleware(['auth'])->group(function (): void {
 
 
 
-    // Director Dashboard
-    Route::get('/dashboard/director', [DirectorDashboardController::class, 'index'])
-        ->name('dashboard.director');
-    Route::get('/dashboard/director/export-pdf', [DirectorDashboardController::class, 'exportPdf'])
-        ->name('dashboard.director.export-pdf');
+    // -----------------------------------------------------------------------
+    // Staff & Management (Directeur & Secrétaire)
+    // -----------------------------------------------------------------------
+    Route::middleware(['role:Directeur|Secrétaire'])->group(function () {
+        // Director Dashboard
+        Route::get('/dashboard/director', [DirectorDashboardController::class, 'index'])
+            ->name('dashboard.director');
+        Route::get('/dashboard/director/export-pdf', [DirectorDashboardController::class, 'exportPdf'])
+            ->name('dashboard.director.export-pdf');
 
-    // Nominations
-    Route::get('/nominations', [NominationController::class, 'index'])
-        ->name('nominations.index');
-    Route::post('/nominations', [NominationController::class, 'store'])
-        ->name('nominations.store');
-    Route::patch('/nominations/{nomination}/approve', [NominationController::class, 'approve'])
-        ->name('nominations.approve');
+        // Ecosystem & CRM
+        Route::get('/users', [\App\Http\Controllers\UserController::class, 'index'])
+            ->name('users.index');
+        Route::post('/users', [\App\Http\Controllers\UserController::class, 'store'])
+            ->name('users.store');
+        Route::put('/users/{user}', [\App\Http\Controllers\UserController::class, 'update'])
+            ->name('users.update');
+        Route::delete('/users/{user}', [\App\Http\Controllers\UserController::class, 'destroy'])
+            ->name('users.destroy');
 
-    // Chapter Progress
-    Route::get('/chapter-progress/groups', [ChapterProgressController::class, 'groupsIndex'])
-        ->name('chapter-progress.groups');
-    Route::get('/groups/{group}/chapter-progress', [ChapterProgressController::class, 'index'])
-        ->name('chapter-progress.index');
-    Route::post('/chapter-progress', [ChapterProgressController::class, 'submit'])
-        ->name('chapter-progress.submit');
-    Route::patch('/chapter-progress/{chapterGroupProgress}/approve', [ChapterProgressController::class, 'approve'])
-        ->name('chapter-progress.approve');
-    Route::patch('/chapter-progress/{chapterGroupProgress}/reject', [ChapterProgressController::class, 'reject'])
-        ->name('chapter-progress.reject');
+        // Advanced Stats
+        Route::get('/stats/reports', [\App\Http\Controllers\StatsController::class, 'index'])
+            ->name('stats.index');
 
-    // Attendances (Trainer & History)
-    Route::get('/attendances/groups', [AttendanceController::class, 'trainerGroups'])
-        ->name('attendances.trainer-groups');
-    Route::get('/attendances/take/{group}', [AttendanceController::class, 'takeAttendance'])
-        ->name('attendances.take');
-    Route::post('/attendances/store-batch', [AttendanceController::class, 'storeBatch'])
-        ->middleware(EnsureWithinPremises::class)
-        ->name('attendances.store-batch');
-    Route::get('/groups/{group}/history', [AttendanceController::class, 'index'])
-        ->name('attendances.history');
-    Route::post('/attendances/individual', [AttendanceController::class, 'store'])
-        ->middleware(EnsureWithinPremises::class)
-        ->name('attendances.store');
+        // Admissions (Scolarité)
+        Route::get('/applications', [\App\Http\Controllers\ApplicationController::class, 'index'])
+            ->name('applications.index');
+        Route::get('/applications/preview/{application}/{type}', [\App\Http\Controllers\ApplicationController::class, 'previewFile'])
+            ->name('applications.preview');
+        Route::patch('/applications/{application}/status', [\App\Http\Controllers\ApplicationController::class, 'updateStatus'])
+            ->name('applications.status.update');
+        Route::post('/applications/enroll-manual', [\App\Http\Controllers\ApplicationController::class, 'enrollManual'])
+            ->name('applications.enroll.manual');
+        Route::put('/applications/{application}', [\App\Http\Controllers\ApplicationController::class, 'update'])
+            ->name('applications.update');
 
+        // Group Management
+        Route::post('/groups', [\App\Http\Controllers\Scolarite\GroupController::class, 'store'])
+            ->name('groups.store');
+        Route::put('/groups/{group}', [\App\Http\Controllers\Scolarite\GroupController::class, 'update'])
+            ->name('groups.update');
+        Route::delete('/groups/{group}', [\App\Http\Controllers\Scolarite\GroupController::class, 'destroy'])
+            ->name('groups.destroy');
 
-    // Loans (Logistics)
-    Route::get('/loans', [LoanController::class, 'index'])
-        ->name('loans.index');
-    Route::get('/loans/create', [LoanController::class, 'index']) // Reusing index and passing props as it handles data
-        ->name('loans.create');
-    Route::post('/loans/checkout', [LoanController::class, 'checkout'])
-        ->name('loans.checkout');
-    Route::patch('/loans/{loan}/return', [LoanController::class, 'returnAsset'])
-        ->name('loans.return');
+        // Group Student Management
+        Route::post('/groups/{group}/students', [\App\Http\Controllers\Scolarite\GroupStudentController::class, 'store'])
+            ->name('groups.students.store');
+        Route::delete('/groups/{group}/students/{student}', [\App\Http\Controllers\Scolarite\GroupStudentController::class, 'destroy'])
+            ->name('groups.students.destroy');
 
-    // Ecosystem & CRM
-    Route::get('/users', [\App\Http\Controllers\UserController::class, 'index'])
-        ->name('users.index');
-    Route::post('/users', [\App\Http\Controllers\UserController::class, 'store'])
-        ->name('users.store');
-    Route::put('/users/{user}', [\App\Http\Controllers\UserController::class, 'update'])
-        ->name('users.update');
-    Route::delete('/users/{user}', [\App\Http\Controllers\UserController::class, 'destroy'])
-        ->name('users.destroy');
+        // Room Management
+        Route::post('/rooms', [\App\Http\Controllers\Scolarite\RoomController::class, 'store'])
+            ->name('rooms.store');
+        Route::put('/rooms/{room}', [\App\Http\Controllers\Scolarite\RoomController::class, 'update'])
+            ->name('rooms.update');
+        Route::delete('/rooms/{room}', [\App\Http\Controllers\Scolarite\RoomController::class, 'destroy'])
+            ->name('rooms.destroy');
 
-    // Students Management
-    //Route::get('/apprenants', [\App\Http\Controllers\StudentsController::class, 'index'])
-    //    ->name('students.index');
+        // Curriculum Management
+        Route::resource('modules', \App\Http\Controllers\ModuleController::class)->except(['index', 'show']);
+        Route::post('/modules/{module}/chapters', [\App\Http\Controllers\ModuleController::class, 'storeChapter'])
+            ->name('modules.chapters.store');
+        Route::post('/modules/{module}/chapters/reorder', [\App\Http\Controllers\ModuleController::class, 'reorderChapters'])
+            ->name('modules.chapters.reorder');
+        Route::post('/chapters/{chapter}/update', [\App\Http\Controllers\ModuleController::class, 'updateChapter'])
+            ->name('modules.chapters.update');
+        Route::delete('/chapters/{chapter}', [\App\Http\Controllers\ModuleController::class, 'destroyChapter'])
+            ->name('modules.chapters.destroy');
+        Route::delete('/chapters/{chapter}/attachments/{index}', [\App\Http\Controllers\ModuleController::class, 'destroyAttachment'])
+            ->name('modules.chapters.attachments.destroy');
+
+        // Student & Trainee Management
+        Route::resource('students', \App\Http\Controllers\StudentsController::class)->except(['index']);
+        Route::resource('trainees', \App\Http\Controllers\TraineesController::class)->except(['index']);
+
+        // Settings
+        Route::get('/settings', [\App\Http\Controllers\SettingController::class, 'index'])
+            ->name('settings.index');
+        Route::post('/settings', [\App\Http\Controllers\SettingController::class, 'update'])
+            ->name('settings.update');
+        Route::post('/settings/initialize', [\App\Http\Controllers\SettingController::class, 'initialize'])
+            ->name('settings.initialize');
+
+        // Nominations Approval
+        Route::patch('/nominations/{nomination}/approve', [NominationController::class, 'approve'])
+            ->name('nominations.approve');
+
+        // Admin Reports
+        Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
+        Route::get('/reports/generate', [ReportController::class, 'generate'])->name('reports.generate');
+    });
+
+    // -----------------------------------------------------------------------
+    // Staff & Trainers (Directeur, Secrétaire & Formateur)
+    // -----------------------------------------------------------------------
+    Route::middleware(['role:Directeur|Secrétaire|Formateur'])->group(function () {
+        // Attendance Management
+        Route::get('/attendances/groups', [AttendanceController::class, 'trainerGroups'])->name('attendances.trainer-groups');
+        Route::get('/attendances/take/{group}', [AttendanceController::class, 'takeAttendance'])->name('attendances.take');
+        Route::post('/attendances/store-batch', [AttendanceController::class, 'storeBatch'])
+            ->middleware(EnsureWithinPremises::class)->name('attendances.store-batch');
+        Route::post('/attendances/individual', [AttendanceController::class, 'store'])
+            ->middleware(EnsureWithinPremises::class)->name('attendances.store');
+        Route::get('/attendance', [\App\Http\Controllers\Scolarite\AttendanceController::class, 'index'])->name('attendance.index');
+        Route::get('/attendance/{schedule}/{date}', [\App\Http\Controllers\Scolarite\AttendanceController::class, 'take'])->name('attendance.take');
+        Route::post('/attendance', [\App\Http\Controllers\Scolarite\AttendanceController::class, 'store'])->name('attendance.store');
+
+        // Chapter Progress
+        Route::get('/chapter-progress/groups', [ChapterProgressController::class, 'groupsIndex'])->name('chapter-progress.groups');
+        Route::get('/groups/{group}/chapter-progress', [ChapterProgressController::class, 'index'])->name('chapter-progress.index');
+        Route::post('/chapter-progress', [ChapterProgressController::class, 'submit'])->name('chapter-progress.submit');
+        Route::patch('/chapter-progress/{chapterGroupProgress}/approve', [ChapterProgressController::class, 'approve'])->name('chapter-progress.approve');
+        Route::patch('/chapter-progress/{chapterGroupProgress}/reject', [ChapterProgressController::class, 'reject'])->name('chapter-progress.reject');
+
+        // Trainer Resources
+        Route::get('/trainer/groups', [App\Http\Controllers\TrainerGroupsController::class, 'index'])->name('trainer.groups');
+        Route::post('/trainer/exercises/{submission}/grade', [ExerciseController::class, 'grade'])->name('trainer.exercises.grade');
+
+        // Admin Exam/Exercise Management (Scolarité)
+        Route::group(['prefix' => 'admin-scolarite'], function () {
+            Route::resource('exams', AdminExamController::class);
+            Route::get('exams/{exam}/results', [AdminExamController::class, 'getResults'])->name('exams.results');
+            Route::post('exams/{exam}/grades', [AdminExamController::class, 'enterGrades'])->name('exams.enter-grades');
+            Route::get('exercises', [AdminExerciseController::class, 'index'])->name('exercises.index');
+            Route::put('exercises/{chapter}', [AdminExerciseController::class, 'update'])->name('exercises.update');
+            Route::post('exercises/{submission}/grade', [AdminExerciseController::class, 'gradeSubmission'])->name('exercises.grade-submission');
+            Route::post('exercises/{chapter}/questions', [AdminExerciseController::class, 'storeQuestion'])->name('exercises.questions.store');
+            Route::post('exams/{exam}/questions', [AdminExamController::class, 'storeQuestion'])->name('exams.questions.store');
+            Route::patch('questions/{question}', [AdminExerciseController::class, 'updateQuestion'])->name('questions.update');
+            Route::delete('questions/{question}', [AdminExerciseController::class, 'destroyQuestion'])->name('questions.destroy');
+            Route::resource('certificates', \App\Http\Controllers\Scolarite\AdminCertificateController::class)->only(['index', 'destroy']);
+            Route::post('certificates/{student}/{module}', [\App\Http\Controllers\Scolarite\AdminCertificateController::class, 'generate'])->name('certificates.generate');
+        });
+
+        // Schedules
+        Route::get('/schedules', [\App\Http\Controllers\ScheduleController::class, 'index'])->name('schedules.index');
+        Route::post('/schedules', [\App\Http\Controllers\ScheduleController::class, 'store'])->name('schedules.store');
+        Route::put('/schedules/{schedule}', [\App\Http\Controllers\ScheduleController::class, 'update'])->name('schedules.update');
+        Route::delete('/schedules/{schedule}', [\App\Http\Controllers\ScheduleController::class, 'destroy'])->name('schedules.destroy');
+    });
+
+    // -----------------------------------------------------------------------
+    // All Authenticated Users (Common Resources)
+    // -----------------------------------------------------------------------
+    // User Profile
+    Route::get('/profile', [\App\Http\Controllers\ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile', [\App\Http\Controllers\ProfileController::class, 'update'])->name('profile.update');
+    Route::get('/profile/settings', [\App\Http\Controllers\ProfileController::class, 'settings'])->name('profile.settings');
+    Route::post('/notifications/mark-all-as-read', [App\Http\Controllers\NotificationController::class, 'markAllAsRead'])->name('notifications.mark-all-as-read');
+
+    // Ecosystem View
+    Route::get('/ecosystem', [\App\Http\Controllers\EcosystemController::class, 'index'])->name('ecosystem.index');
+    Route::get('/ecosystem/partnerships', [\App\Http\Controllers\EcosystemController::class, 'partnerships'])->name('ecosystem.partnerships');
+    Route::get('/ecosystem/events', [\App\Http\Controllers\EcosystemController::class, 'events'])->name('ecosystem.events');
+
+    // Lists (Read Only for most)
+    Route::get('/groups', [\App\Http\Controllers\Scolarite\GroupController::class, 'index'])->name('groups.index');
+    Route::get('/groups/{group}/students', [\App\Http\Controllers\Scolarite\GroupStudentController::class, 'index'])->name('groups.students.index');
+    Route::get('/rooms', [\App\Http\Controllers\Scolarite\RoomController::class, 'index'])->name('rooms.index');
+    Route::get('/modules', [\App\Http\Controllers\ModuleController::class, 'index'])->name('modules.index');
+    Route::get('/modules/{module}', [\App\Http\Controllers\ModuleController::class, 'show'])->name('modules.show');
+    Route::get('/students', [\App\Http\Controllers\StudentsController::class, 'index'])->name('students.index');
+    Route::get('/trainees', [\App\Http\Controllers\TraineesController::class, 'index'])->name('trainees.index');
+    Route::get('/trainees/preview/{trainee}/{type}', [\App\Http\Controllers\TraineesController::class, 'previewFile'])->name('trainees.preview');
 
     // Logistics & Physical Inventory
     Route::resource('assets', \App\Http\Controllers\AssetController::class);
+    Route::get('/loans', [LoanController::class, 'index'])->name('loans.index');
+    Route::post('/loans/checkout', [LoanController::class, 'checkout'])->name('loans.checkout');
+    Route::patch('/loans/{loan}/return', [LoanController::class, 'returnAsset'])->name('loans.return');
 
-    // Advanced Stats
-    Route::get('/stats/reports', [\App\Http\Controllers\StatsController::class, 'index'])
-        ->name('stats.index');
+    // Nominations Creation
+    Route::get('/nominations', [NominationController::class, 'index'])->name('nominations.index');
+    Route::post('/nominations', [NominationController::class, 'store'])->name('nominations.store');
 
-    Route::get('/ecosystem', [\App\Http\Controllers\EcosystemController::class, 'index'])
-        ->name('ecosystem.index');
-    Route::get('/ecosystem/partnerships', [\App\Http\Controllers\EcosystemController::class, 'partnerships'])
-        ->name('ecosystem.partnerships');
-    Route::get('/ecosystem/events', [\App\Http\Controllers\EcosystemController::class, 'events'])
-        ->name('ecosystem.events');
-    Route::post('/ecosystem/partnerships', [\App\Http\Controllers\EcosystemController::class, 'storePartnership'])
-        ->name('ecosystem.partnerships.store');
-
-    Route::put('/ecosystem/partnerships/{partnership}', [\App\Http\Controllers\EcosystemController::class, 'updatePartnership'])
-        ->name('ecosystem.partnerships.update');
-    Route::patch('/ecosystem/partnerships/{partnership}/toggle', [\App\Http\Controllers\EcosystemController::class, 'togglePartnershipStatus'])
-        ->name('ecosystem.partnerships.toggle');
-    Route::delete('/ecosystem/partnerships/{partnership}', [\App\Http\Controllers\EcosystemController::class, 'destroyPartnership'])
-        ->name('ecosystem.partnerships.destroy');
-
-    Route::put('/ecosystem/events/{event}', [\App\Http\Controllers\EcosystemController::class, 'updateEvent'])
-        ->name('ecosystem.events.update');
-    Route::patch('/ecosystem/events/{event}/toggle', [\App\Http\Controllers\EcosystemController::class, 'toggleEventStatus'])
-        ->name('ecosystem.events.toggle');
-    Route::delete('/ecosystem/events/{event}', [\App\Http\Controllers\EcosystemController::class, 'destroyEvent'])
-        ->name('ecosystem.events.destroy');
-    Route::post('/ecosystem/media', [\App\Http\Controllers\EcosystemController::class, 'storeMediaMention'])
-        ->name('ecosystem.media.store');
-
-    // Admissions (Scolarité)
-    Route::get('/applications', [\App\Http\Controllers\ApplicationController::class, 'index'])
-        ->name('applications.index');
-
-    // Group Management
-    Route::get('/groups', [\App\Http\Controllers\Scolarite\GroupController::class, 'index'])
-        ->name('groups.index');
-    Route::post('/groups', [\App\Http\Controllers\Scolarite\GroupController::class, 'store'])
-        ->name('groups.store');
-    Route::put('/groups/{group}', [\App\Http\Controllers\Scolarite\GroupController::class, 'update'])
-        ->name('groups.update');
-    Route::delete('/groups/{group}', [\App\Http\Controllers\Scolarite\GroupController::class, 'destroy'])
-        ->name('groups.destroy');
-
-    // Group Student Management
-    Route::get('/groups/{group}/students', [\App\Http\Controllers\Scolarite\GroupStudentController::class, 'index'])
-        ->name('groups.students.index');
-    Route::post('/groups/{group}/students', [\App\Http\Controllers\Scolarite\GroupStudentController::class, 'store'])
-        ->name('groups.students.store');
-    Route::delete('/groups/{group}/students/{student}', [\App\Http\Controllers\Scolarite\GroupStudentController::class, 'destroy'])
-        ->name('groups.students.destroy');
-
-    // Room Management
-    Route::resource('rooms', \App\Http\Controllers\Scolarite\RoomController::class)
-        ->only(['index', 'store', 'update', 'destroy']);
-
-    // Curriculum Management
-    Route::resource('modules', \App\Http\Controllers\ModuleController::class);
-    Route::post('/modules/{module}/chapters', [\App\Http\Controllers\ModuleController::class, 'storeChapter'])
-        ->name('modules.chapters.store');
-    Route::post('/modules/{module}/chapters/reorder', [\App\Http\Controllers\ModuleController::class, 'reorderChapters'])
-        ->name('modules.chapters.reorder');
-    Route::post('/chapters/{chapter}/update', [\App\Http\Controllers\ModuleController::class, 'updateChapter'])
-        ->name('modules.chapters.update');
-    Route::delete('/chapters/{chapter}', [\App\Http\Controllers\ModuleController::class, 'destroyChapter'])
-        ->name('modules.chapters.destroy');
-    Route::get('/chapters/{chapter}/attachments/{index}/download', [\App\Http\Controllers\ModuleController::class, 'downloadAttachment'])
-        ->name('modules.chapters.attachments.download');
-    Route::delete('/chapters/{chapter}/attachments/{index}', [\App\Http\Controllers\ModuleController::class, 'destroyAttachment'])
-        ->name('modules.chapters.attachments.destroy');
-
-    // Student Management (Apprenants/Learners)
-    Route::resource('students', \App\Http\Controllers\StudentsController::class)
-        ->only(['index', 'store', 'update', 'destroy']);
-
-    // Trainee Management (Stagiaires/Assistants)
-    Route::resource('trainees', \App\Http\Controllers\TraineesController::class)
-        ->only(['index', 'store', 'update', 'destroy']);
-    Route::get('/trainees/preview/{trainee}/{type}', [\App\Http\Controllers\TraineesController::class, 'previewFile'])
-        ->name('trainees.preview');
-
-    // Administration des Examens et Exercices
-    Route::group(['prefix' => 'admin-scolarite'], function () {
-        Route::resource('exams', AdminExamController::class);
-        Route::get('exams/{exam}/results', [AdminExamController::class, 'getResults'])->name('exams.results');
-        Route::post('exams/{exam}/grades', [AdminExamController::class, 'enterGrades'])->name('exams.enter-grades');
-
-        Route::get('exercises', [AdminExerciseController::class, 'index'])->name('exercises.index');
-        Route::put('exercises/{chapter}', [AdminExerciseController::class, 'update'])->name('exercises.update');
-        Route::post('exercises/{submission}/grade', [AdminExerciseController::class, 'gradeSubmission'])->name('exercises.grade-submission');
-
-        // Questions (Chapters & Exams)
-        Route::post('exercises/{chapter}/questions', [AdminExerciseController::class, 'storeQuestion'])->name('exercises.questions.store');
-        Route::post('exams/{exam}/questions', [AdminExamController::class, 'storeQuestion'])->name('exams.questions.store');
-
-        Route::patch('questions/{question}', [AdminExerciseController::class, 'updateQuestion'])->name('questions.update');
-        Route::delete('questions/{question}', [AdminExerciseController::class, 'destroyQuestion'])->name('questions.destroy');
-
-        // Certificates Management
-        Route::get('certificates', [\App\Http\Controllers\Scolarite\AdminCertificateController::class, 'index'])->name('certificates.index');
-        Route::post('certificates/{student}/{module}', [\App\Http\Controllers\Scolarite\AdminCertificateController::class, 'generate'])->name('certificates.generate');
-        Route::delete('certificates/{certificate}', [\App\Http\Controllers\Scolarite\AdminCertificateController::class, 'destroy'])->name('certificates.destroy');
-    });
-
-    Route::group(['prefix' => 'student', 'as' => 'student.'], function () {
-        Route::get('my-certificates', [App\Http\Controllers\StudentDashboardController::class, 'myCertificates'])->name('certificates');
-    });
-
-    Route::get('/applications/preview/{application}/{type}', [\App\Http\Controllers\ApplicationController::class, 'previewFile'])
-        ->name('applications.preview');
-    Route::patch('/applications/{application}/status', [\App\Http\Controllers\ApplicationController::class, 'updateStatus'])
-        ->name('applications.status.update');
-    Route::post('/applications/enroll-manual', [\App\Http\Controllers\ApplicationController::class, 'enrollManual'])
-        ->name('applications.enroll.manual');
-    Route::put('/applications/{application}', [\App\Http\Controllers\ApplicationController::class, 'update'])
-        ->name('applications.update');
-
-
-    // Emplois du temps
-    Route::get('/schedules', [\App\Http\Controllers\ScheduleController::class, 'index'])
-        ->name('schedules.index');
-    // Paramètres
-    Route::get('/settings', [\App\Http\Controllers\SettingController::class, 'index'])
-        ->name('settings.index');
-    Route::post('/settings', [\App\Http\Controllers\SettingController::class, 'update'])
-        ->name('settings.update');
-    Route::post('/settings/initialize', [\App\Http\Controllers\SettingController::class, 'initialize'])
-        ->name('settings.initialize');
-
-    Route::post('/schedules', [\App\Http\Controllers\ScheduleController::class, 'store'])
-        ->name('schedules.store');
-    Route::put('/schedules/{schedule}', [\App\Http\Controllers\ScheduleController::class, 'update'])
-        ->name('schedules.update');
-    Route::delete('/schedules/{schedule}', [\App\Http\Controllers\ScheduleController::class, 'destroy'])
-        ->name('schedules.destroy');
-
-    // Gestion des présences
-    Route::get('/attendance', [\App\Http\Controllers\Scolarite\AttendanceController::class, 'index'])->name('attendance.index');
-    Route::get('/attendance/{schedule}/{date}', [\App\Http\Controllers\Scolarite\AttendanceController::class, 'take'])->name('attendance.take');
-    Route::post('/attendance', [\App\Http\Controllers\Scolarite\AttendanceController::class, 'store'])->name('attendance.store');
-
-    // Gestion des rapports
-    Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
-    Route::get('/reports/generate', [ReportController::class, 'generate'])->name('reports.generate');
 
     // Assistant ASSANE
     Route::post('/assane/chat', [\App\Http\Controllers\Scolarite\AssaneChatController::class, 'chat'])->name('assane.chat');
