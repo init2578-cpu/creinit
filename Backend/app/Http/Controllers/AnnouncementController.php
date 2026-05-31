@@ -35,6 +35,16 @@ class AnnouncementController extends Controller
             ->orderByDesc('created_at')
             ->paginate(15);
 
+        // Mask author data for anonymous posts if the user is not a Directeur
+        if (!$user->hasRole('Directeur')) {
+            $announcements->getCollection()->transform(function ($announcement) {
+                if ($announcement->is_anonymous) {
+                    $announcement->user = null; // We'll handle "Anonyme" display in the frontend
+                }
+                return $announcement;
+            });
+        }
+
         return Inertia::render('Community/Index', [
             'announcements' => $announcements,
             'availableRoles' => Role::all(['id', 'name']),
@@ -55,6 +65,7 @@ class AnnouncementController extends Controller
             'category'         => 'required|string|in:info,warning,event,success',
             'visibility_roles' => 'nullable|array',
             'is_pinned'        => 'boolean',
+            'is_anonymous'     => 'boolean',
             'expires_at'       => 'nullable|date',
             'files'            => 'nullable|array',
             'files.*'          => 'file|max:20480', // 20MB limit

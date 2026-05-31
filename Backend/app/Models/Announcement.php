@@ -16,6 +16,7 @@ class Announcement extends Model
         'category',
         'visibility_roles',
         'attachments',
+        'is_anonymous',
         'is_pinned',
         'expires_at',
     ];
@@ -26,6 +27,7 @@ class Announcement extends Model
     protected $casts = [
         'visibility_roles' => 'array',
         'attachments'      => 'array',
+        'is_anonymous'     => 'boolean',
         'is_pinned'        => 'boolean',
         'expires_at'       => 'datetime',
     ];
