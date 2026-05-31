@@ -1,7 +1,8 @@
 #!/bin/bash
+set -e
 
 # Configuration
-PROJECT_ROOT="/home/codefire/e-CRE"
+PROJECT_ROOT="/home/crekolda/creinit"
 BACKEND_DIR="$PROJECT_ROOT/Backend"
 FRONTEND_DIR="$PROJECT_ROOT/Frontend"
 
