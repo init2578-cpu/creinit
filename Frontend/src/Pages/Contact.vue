@@ -61,7 +61,7 @@ const submit = () => {
 
                         <div class="space-y-6">
                             <div v-for="(item, i) in [
-                                { label: 'Localisation', val: 'Quartier Bouna, Kolda, Sénégal', icon: MapPinIcon },
+                                { label: 'Localisation', val: 'Doumassou en face des arènes, Kolda (V3W5+49)', icon: MapPinIcon },
                                 { label: 'Signal Email', val: settings?.contact_email || 'contact@cre-kolda.sn', icon: EnvelopeIcon },
                                 { label: 'Fréquence Mobile', val: '+221 33 996 00 00', icon: PhoneIcon }
                             ]" :key="i" class="flex items-center gap-6 p-6 glass-dark rounded-3xl border border-white/5 group hover:border-cyan-500/30 transition-all">
