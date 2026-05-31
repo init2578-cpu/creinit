@@ -21,9 +21,10 @@ cd "$BACKEND_DIR"
 # Nettoyage des caches existants
 php artisan optimize:clear
 
-# Migration de la base de données
-echo "🗄️  Exécution des migrations..."
+# Migration de la base de données et lien de stockage
+echo "🗄️  Exécution des migrations et création du lien de stockage..."
 php artisan migrate --force
+php artisan storage:link || true # Ne pas planter si le lien existe déjà
 
 # Optimisation de Laravel
 echo "✨ Optimisation du cache Laravel..."
