@@ -20,6 +20,7 @@ import {
 } from '@heroicons/vue/24/outline'
 import { BookmarkIcon, ChatBubbleLeftRightIcon, HeartIcon as HeartSolid } from '@heroicons/vue/24/solid'
 import CreateAnnouncement from './Partials/CreateAnnouncement.vue'
+import AttachmentViewer from './Partials/AttachmentViewer.vue'
 
 const props = defineProps({
     announcements: Object,
@@ -45,6 +46,26 @@ const formatSize = (bytes) => {
 }
 
 const showCreateModal = ref(false)
+const editingAnnouncement = ref(null)
+const viewingAttachment = ref(null)
+
+const openViewer = (attachment) => {
+    viewingAttachment.value = attachment
+}
+
+const closeViewer = () => {
+    viewingAttachment.value = null
+}
+
+const openEditModal = (announcement) => {
+    editingAnnouncement.value = announcement
+    showCreateModal.value = true
+}
+
+const handleModalClose = () => {
+    showCreateModal.value = false
+    editingAnnouncement.value = null
+}
 
 const getCategoryIcon = (category) => {
     switch (category) {
@@ -127,13 +148,22 @@ const toggleLike = (announcementId) => {
                 
                 <button 
                     v-if="canPost"
-                    @click="showCreateModal = true"
-                    class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-xl font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 transition ease-in-out duration-150 shadow-md shadow-blue-200"
+                    @click="showCreateModal = true; editingAnnouncement = null"
+                    class="inline-flex items-center px-5 py-2.5 bg-blue-600 text-white rounded-2xl text-[11px] font-bold uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-200 group"
                 >
-                    <PlusIcon class="h-4 w-4 mr-2" />
-                    Nouveau Message
+                    <PlusIcon class="h-4 w-4 mr-2 group-hover:rotate-90 transition-transform" />
+                    Nouveau message
                 </button>
             </div>
+
+            <!-- Create / Edit Modal -->
+            <CreateAnnouncement 
+                :show="showCreateModal" 
+                :roles="availableRoles"
+                :announcement="editingAnnouncement"
+                @close="handleModalClose" 
+            />
+
             <!-- pinned announcements -->
             <div v-if="announcements.data.some(a => a.is_pinned)" class="mb-8 space-y-4">
                 <h3 class="text-xs font-black text-gray-400 uppercase tracking-widest px-2">Messages Épinglés</h3>
@@ -159,13 +189,28 @@ const toggleLike = (announcementId) => {
                             <!-- Attachments (Pinned) -->
                             <div v-if="announcement.attachments && announcement.attachments.length > 0" class="mb-6 space-y-4">
                                 <div v-if="announcement.attachments.some(a => isImage(a.mime_type))" class="flex flex-wrap gap-2">
-                                    <div v-for="img in announcement.attachments.filter(a => isImage(a.mime_type))" :key="img.path" class="h-28 w-28 rounded-xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-md transition-shadow cursor-pointer">
-                                        <img :src="'/storage/' + img.path" class="h-full w-full object-cover">
+                                    <div v-for="img in announcement.attachments.filter(a => isImage(a.mime_type))" 
+                                        :key="img.path" 
+                                        @click="openViewer(img)"
+                                        class="h-28 w-28 rounded-xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-md transition-shadow cursor-pointer group"
+                                    >
+                                        <img :src="'/storage/' + img.path" class="h-full w-full object-cover group-hover:scale-110 transition-transform duration-500">
                                     </div>
                                 </div>
                                 <div v-if="announcement.attachments.some(a => isVideo(a.mime_type))" class="space-y-2">
-                                    <div v-for="vid in announcement.attachments.filter(a => isVideo(a.mime_type))" :key="vid.path" class="max-w-md rounded-2xl overflow-hidden border border-gray-200 bg-black shadow-sm">
-                                        <video controls class="w-full h-auto max-h-[300px]">
+                                    <div v-for="vid in announcement.attachments.filter(a => isVideo(a.mime_type))" 
+                                        :key="vid.path" 
+                                        @click="openViewer(vid)"
+                                        class="max-w-md rounded-2xl overflow-hidden border border-gray-200 bg-black shadow-sm cursor-pointer group relative"
+                                    >
+                                        <div class="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/40 transition-colors z-10">
+                                            <div class="h-12 w-12 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center transform group-hover:scale-110 transition-transform">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                                                </svg>
+                                            </div>
+                                        </div>
+                                        <video class="w-full h-auto max-h-[300px]">
                                             <source :src="'/storage/' + vid.path" :type="vid.mime_type">
                                         </video>
                                     </div>
@@ -213,6 +258,13 @@ const toggleLike = (announcementId) => {
                                     >
                                         <component :is="announcement.liked_by_user ? HeartSolid : HeartIcon" class="h-4 w-4" />
                                         <span class="text-[11px] font-bold">{{ announcement.likes_count || 0 }}</span>
+                                    </button>
+                                    <button 
+                                        v-if="$page.props.auth.user.id === announcement.user_id || $page.props.auth.user.roles.includes('Directeur')"
+                                        @click="openEditModal(announcement)"
+                                        class="text-blue-500 hover:text-blue-700 transition-colors mr-3"
+                                    >
+                                        Modifier
                                     </button>
                                     <button 
                                         v-if="$page.props.auth.user.id === announcement.user_id || $page.props.auth.user.roles.includes('Directeur')"
@@ -317,13 +369,28 @@ const toggleLike = (announcementId) => {
                             <!-- Attachments (Normal) -->
                             <div v-if="announcement.attachments && announcement.attachments.length > 0" class="mb-6 space-y-4">
                                 <div v-if="announcement.attachments.some(a => isImage(a.mime_type))" class="flex flex-wrap gap-2">
-                                    <div v-for="img in announcement.attachments.filter(a => isImage(a.mime_type))" :key="img.path" class="h-28 w-28 rounded-xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-md transition-shadow cursor-pointer">
-                                        <img :src="'/storage/' + img.path" class="h-full w-full object-cover">
+                                    <div v-for="img in announcement.attachments.filter(a => isImage(a.mime_type))" 
+                                        :key="img.path" 
+                                        @click="openViewer(img)"
+                                        class="h-28 w-28 rounded-xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-md transition-shadow cursor-pointer group"
+                                    >
+                                        <img :src="'/storage/' + img.path" class="h-full w-full object-cover group-hover:scale-110 transition-transform duration-500">
                                     </div>
                                 </div>
                                 <div v-if="announcement.attachments.some(a => isVideo(a.mime_type))" class="space-y-2">
-                                    <div v-for="vid in announcement.attachments.filter(a => isVideo(a.mime_type))" :key="vid.path" class="max-w-md rounded-2xl overflow-hidden border border-gray-200 bg-black shadow-sm">
-                                        <video controls class="w-full h-auto max-h-[300px]">
+                                    <div v-for="vid in announcement.attachments.filter(a => isVideo(a.mime_type))" 
+                                        :key="vid.path" 
+                                        @click="openViewer(vid)"
+                                        class="max-w-md rounded-2xl overflow-hidden border border-gray-200 bg-black shadow-sm cursor-pointer group relative"
+                                    >
+                                        <div class="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/40 transition-colors z-10">
+                                            <div class="h-12 w-12 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center transform group-hover:scale-110 transition-transform">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                                                </svg>
+                                            </div>
+                                        </div>
+                                        <video class="w-full h-auto max-h-[300px]">
                                             <source :src="'/storage/' + vid.path" :type="vid.mime_type">
                                         </video>
                                     </div>
@@ -371,6 +438,13 @@ const toggleLike = (announcementId) => {
                                     >
                                         <component :is="announcement.liked_by_user ? HeartSolid : HeartIcon" class="h-4 w-4" />
                                         <span class="text-[11px] font-bold">{{ announcement.likes_count || 0 }}</span>
+                                    </button>
+                                    <button 
+                                        v-if="$page.props.auth.user.id === announcement.user_id || $page.props.auth.user.roles.includes('Directeur')"
+                                        @click="openEditModal(announcement)"
+                                        class="text-blue-500 hover:text-blue-700 transition-colors mr-3"
+                                    >
+                                        Modifier
                                     </button>
                                     <button 
                                         v-if="$page.props.auth.user.id === announcement.user_id || $page.props.auth.user.roles.includes('Directeur')"
@@ -468,11 +542,13 @@ const toggleLike = (announcementId) => {
             </div>
         </div>
 
-        <CreateAnnouncement 
-            v-if="showCreateModal" 
-            :show="showCreateModal" 
-            :roles="availableRoles"
-            @close="showCreateModal = false" 
+
+
+        <!-- Attachment Viewer Lightbox -->
+        <AttachmentViewer 
+            :show="!!viewingAttachment" 
+            :attachment="viewingAttachment" 
+            @close="closeViewer" 
         />
     </AuthenticatedLayout>
 </template>

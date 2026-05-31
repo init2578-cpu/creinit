@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { useForm } from '@inertiajs/vue3'
 import { 
     XMarkIcon, 
@@ -15,7 +15,8 @@ import {
 
 const props = defineProps({
     show: Boolean,
-    roles: Array
+    roles: Array,
+    announcement: Object
 })
 
 const emit = defineEmits(['close'])
@@ -23,12 +24,27 @@ const emit = defineEmits(['close'])
 const form = useForm({
     title: '',
     content: '',
-    category: 'info',
+    type: 'info',
     visibility_roles: [],
     is_pinned: false,
     is_anonymous: false,
     expires_at: '',
     files: []
+})
+
+watch(() => props.show, (newShow) => {
+    if (newShow && props.announcement) {
+        form.title = props.announcement.title
+        form.content = props.announcement.content
+        form.type = props.announcement.type || 'info'
+        form.visibility_roles = props.announcement.visibility_roles || []
+        form.is_pinned = !!props.announcement.is_pinned
+        form.is_anonymous = !!props.announcement.is_anonymous
+        form.expires_at = props.announcement.expires_at ? props.announcement.expires_at.slice(0, 16) : ''
+    } else if (!newShow) {
+        form.reset()
+        previews.value = []
+    }
 })
 
 const fileInput = ref(null)
@@ -64,14 +80,22 @@ const categories = [
 ]
 
 const submit = () => {
-    form.post(route('community.store'), {
-        forceFormData: true,
-        onSuccess: () => {
-            form.reset()
-            emit('close')
-            previews.value = []
-        }
-    })
+    if (props.announcement) {
+        form.put(route('community.update', props.announcement.id), {
+            onSuccess: () => {
+                emit('close')
+            }
+        })
+    } else {
+        form.post(route('community.store'), {
+            forceFormData: true,
+            onSuccess: () => {
+                form.reset()
+                emit('close')
+                previews.value = []
+            }
+        })
+    }
 }
 
 const toggleRole = (roleName) => {
@@ -95,8 +119,12 @@ const toggleRole = (roleName) => {
                 <div class="bg-white px-8 pt-8 pb-6">
                     <div class="flex items-center justify-between mb-8">
                         <div>
-                            <h3 class="text-2xl font-black text-gray-900" id="modal-title">Publier un message</h3>
-                            <p class="text-sm font-medium text-gray-500">Partagez des informations avec la communauté</p>
+                            <h3 class="text-2xl font-black text-gray-900" id="modal-title">
+                                {{ announcement ? 'Modifier le message' : 'Publier un message' }}
+                            </h3>
+                            <p class="text-sm font-medium text-gray-500">
+                                {{ announcement ? 'Mettez à jour vos informations' : 'Partagez des informations avec la communauté' }}
+                            </p>
                         </div>
                         <button @click="emit('close')" class="p-2 rounded-xl hover:bg-gray-100 transition-colors">
                             <XMarkIcon class="h-6 w-6 text-gray-400" />
@@ -112,16 +140,16 @@ const toggleRole = (roleName) => {
                                     v-for="cat in categories" 
                                     :key="cat.id" 
                                     type="button"
-                                    @click="form.category = cat.id"
+                                    @click="form.type = cat.id"
                                     :class="[
                                         'p-3 rounded-2xl border-2 transition-all duration-200 flex flex-col items-center gap-2 group',
-                                        form.category === cat.id 
+                                        form.type === cat.id 
                                             ? 'border-blue-600 bg-blue-50/50 ring-4 ring-blue-50' 
                                             : 'border-gray-100 hover:border-gray-200 bg-white'
                                     ]"
                                 >
-                                    <component :is="cat.icon" :class="['h-6 w-6', form.category === cat.id ? 'text-blue-600' : 'text-gray-400']" />
-                                    <span :class="['text-[10px] font-bold uppercase tracking-tight', form.category === cat.id ? 'text-blue-700' : 'text-gray-500']">
+                                    <component :is="cat.icon" :class="['h-6 w-6', form.type === cat.id ? 'text-blue-600' : 'text-gray-400']" />
+                                    <span :class="['text-[10px] font-bold uppercase tracking-tight', form.type === cat.id ? 'text-blue-700' : 'text-gray-500']">
                                         {{ cat.name }}
                                     </span>
                                 </button>
@@ -295,7 +323,7 @@ const toggleRole = (roleName) => {
                                 :disabled="form.processing"
                                 class="flex-[2] px-6 py-4 bg-blue-600 text-white rounded-2xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-200 border-none"
                             >
-                                {{ form.processing ? 'Chargement...' : 'Publier le message' }}
+                                {{ form.processing ? 'Chargement...' : (announcement ? 'Enregistrer les modifications' : 'Publier le message') }}
                             </button>
                         </div>
                     </form>

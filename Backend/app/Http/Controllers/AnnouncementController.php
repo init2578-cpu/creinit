@@ -98,20 +98,49 @@ class AnnouncementController extends Controller
     }
 
     /**
+     * Update the specified announcement in storage.
+     */
+    public function update(Request $request, Announcement $announcement): RedirectResponse
+    {
+        if ($request->user()->id !== $announcement->user_id && !$request->user()->hasRole('Directeur')) {
+            abort(403, 'Action non autorisée.');
+        }
+
+        $validated = $request->validate([
+            'title' => 'required|string|max:255',
+            'content' => 'required|string',
+            'type' => 'required|string|in:info,warning,danger,success',
+            'expires_at' => 'nullable|date|after:now',
+            'is_pinned' => 'boolean',
+            'is_anonymous' => 'boolean',
+            'visibility_roles' => 'nullable|array',
+        ]);
+
+        $announcement->update($validated);
+
+        return redirect()->route('community.index')
+            ->with('success', 'Le message a été mis à jour.');
+    }
+
+    /**
      * Remove the specified announcement.
      */
     public function destroy(Announcement $announcement, Request $request): RedirectResponse
     {
-        if ($request->user()->id !== $announcement->user_id && !$request->user()->hasRole(['Directeur', 'Secrétaire'])) {
+        if ($request->user()->id !== $announcement->user_id && !$request->user()->hasRole('Directeur')) {
             abort(403);
         }
 
         // Delete associated files
+        // When using soft deletes, we keep the attachments in case the message is restored.
+        // If we want to purge them, we should do it in a forceDelete operation.
+        /*
         if ($announcement->attachments) {
             foreach ($announcement->attachments as $attachment) {
                 \Illuminate\Support\Facades\Storage::disk('public')->delete($attachment['path']);
             }
         }
+        */
 
         $announcement->delete();
 
