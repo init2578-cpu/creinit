@@ -62,7 +62,7 @@ const submit = () => {
                         <div class="space-y-6">
                             <div v-for="(item, i) in [
                                 { label: 'Localisation', val: 'Doumassou en face des arènes, Kolda', link: 'https://www.google.com/maps?q=12.895385642821164,-14.941531705909265', icon: MapPinIcon },
-                                { label: 'Signal Email', val: settings?.contact_email || 'contact@cre-kolda.sn', icon: EnvelopeIcon },
+                                { label: 'Signal Email', val: settings?.contact_email || 'crekolda2014@gmail.com', icon: EnvelopeIcon },
                                 { label: 'Fréquence Mobile', val: '+221 33 996 00 00', icon: PhoneIcon }
                             ]" :key="i" class="flex items-center gap-6 p-6 glass-dark rounded-3xl border border-white/5 group hover:border-cyan-500/30 transition-all">
                                 <div class="h-12 w-12 rounded-2xl bg-slate-900 border border-white/5 flex items-center justify-center text-cyan-400 group-hover:bg-cyan-500 group-hover:text-slate-950 transition-all">
