@@ -22,10 +22,12 @@ class AnnouncementController extends Controller
         $user = $request->user();
         $userRoles = $user->getRoleNames()->toArray();
 
-        $announcements = Announcement::with('user:id,name,email,profile_photo_path')
-            ->where(function ($query) use ($userRoles) {
-                $query->whereNull('visibility_roles')
+        $announcements = Announcement::with(['user:id,name,email,profile_photo_path', 'replies.user:id,name,profile_photo_path', 'likes'])
+            ->when(!$user->hasRole('Directeur'), function ($query) use ($userRoles) {
+                $query->where(function ($q) use ($userRoles) {
+                    $q->whereNull('visibility_roles')
                       ->orWhereJsonContains('visibility_roles', $userRoles);
+                });
             })
             ->where(function ($query) {
                 $query->whereNull('expires_at')
@@ -35,15 +37,17 @@ class AnnouncementController extends Controller
             ->orderByDesc('created_at')
             ->paginate(15);
 
-        // Mask author data for anonymous posts if the user is not a Directeur
-        if (!$user->hasRole('Directeur')) {
-            $announcements->getCollection()->transform(function ($announcement) {
-                if ($announcement->is_anonymous) {
-                    $announcement->user = null; // We'll handle "Anonyme" display in the frontend
-                }
-                return $announcement;
-            });
-        }
+        // Annotate each announcement with likes_count and liked_by_user; mask anonymous authors
+        $announcements->getCollection()->transform(function ($announcement) use ($user) {
+            $announcement->likes_count  = $announcement->likes->count();
+            $announcement->liked_by_user = $announcement->isLikedBy($user->id);
+            unset($announcement->likes); // don't leak full likes list to frontend
+
+            if (!$user->hasRole('Directeur') && $announcement->is_anonymous) {
+                $announcement->user = null;
+            }
+            return $announcement;
+        });
 
         return Inertia::render('Community/Index', [
             'announcements' => $announcements,

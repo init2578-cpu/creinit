@@ -292,4 +292,7 @@ Route::middleware(['auth'])->group(function (): void {
     Route::get('/community', [\App\Http\Controllers\AnnouncementController::class, 'index'])->name('community.index');
     Route::post('/community', [\App\Http\Controllers\AnnouncementController::class, 'store'])->name('community.store');
     Route::delete('/community/{announcement}', [\App\Http\Controllers\AnnouncementController::class, 'destroy'])->name('community.destroy');
+    Route::post('/community/{announcement}/replies', [\App\Http\Controllers\AnnouncementReplyController::class, 'store'])->name('community.replies.store');
+    Route::delete('/community/replies/{reply}', [\App\Http\Controllers\AnnouncementReplyController::class, 'destroy'])->name('community.replies.destroy');
+    Route::post('/community/{announcement}/like', [\App\Http\Controllers\AnnouncementLikeController::class, 'toggle'])->name('community.likes.toggle');
 });

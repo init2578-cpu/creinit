@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+use App\Models\AnnouncementLike;
+
 class Announcement extends Model
 {
     /**
@@ -38,5 +40,29 @@ class Announcement extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Get the replies associated with the announcement.
+     */
+    public function replies()
+    {
+        return $this->hasMany(AnnouncementReply::class);
+    }
+
+    /**
+     * Get the likes for this announcement.
+     */
+    public function likes()
+    {
+        return $this->hasMany(AnnouncementLike::class);
+    }
+
+    /**
+     * Check if a given user has liked this announcement.
+     */
+    public function isLikedBy(int $userId): bool
+    {
+        return $this->likes->contains('user_id', $userId);
     }
 }

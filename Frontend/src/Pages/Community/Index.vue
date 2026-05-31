@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
-import { Head, useForm, Link } from '@inertiajs/vue3'
+import { Head, useForm, Link, router } from '@inertiajs/vue3'
 import { 
     PlusIcon, 
     MegaphoneIcon, 
@@ -15,9 +15,10 @@ import {
     FunnelIcon,
     VideoCameraIcon,
     DocumentTextIcon,
-    ArrowDownTrayIcon
+    ArrowDownTrayIcon,
+    HeartIcon
 } from '@heroicons/vue/24/outline'
-import { BookmarkIcon, ChatBubbleLeftRightIcon } from '@heroicons/vue/24/solid'
+import { BookmarkIcon, ChatBubbleLeftRightIcon, HeartIcon as HeartSolid } from '@heroicons/vue/24/solid'
 import CreateAnnouncement from './Partials/CreateAnnouncement.vue'
 
 const props = defineProps({
@@ -79,6 +80,31 @@ const deleteAnnouncement = (id) => {
     if (confirm('Voulez-vous vraiment supprimer ce message ?')) {
         deleteForm.delete(route('community.destroy', id))
     }
+}
+
+const replies = ref({})
+
+const submitReply = (announcementId) => {
+    if (!replies.value[announcementId]?.trim()) return
+    
+    router.post(route('community.replies.store', announcementId), {
+        content: replies.value[announcementId]
+    }, {
+        preserveScroll: true,
+        onSuccess: () => {
+            replies.value[announcementId] = ''
+        }
+    })
+}
+
+const deleteReply = (replyId) => {
+    if (confirm('Voulez-vous supprimer cette réponse ?')) {
+        router.delete(route('community.replies.destroy', replyId), { preserveScroll: true })
+    }
+}
+
+const toggleLike = (announcementId) => {
+    router.post(route('community.likes.toggle', announcementId), {}, { preserveScroll: true })
 }
 </script>
 
@@ -179,13 +205,87 @@ const deleteAnnouncement = (id) => {
                                     <span>•</span>
                                     <span>{{ formatDate(announcement.created_at) }}</span>
                                 </div>
-                                <button 
-                                    v-if="$page.props.auth.user.id === announcement.user_id || $page.props.auth.user.roles.includes('Directeur')"
-                                    @click="deleteAnnouncement(announcement.id)"
-                                    class="text-red-400 hover:text-red-600 transition-colors"
-                                >
-                                    Supprimer
-                                </button>
+                                <div class="flex items-center gap-3">
+                                    <button
+                                        @click="toggleLike(announcement.id)"
+                                        class="flex items-center gap-1.5 transition-all"
+                                        :class="announcement.liked_by_user ? 'text-pink-500' : 'text-gray-400 hover:text-pink-400'"
+                                    >
+                                        <component :is="announcement.liked_by_user ? HeartSolid : HeartIcon" class="h-4 w-4" />
+                                        <span class="text-[11px] font-bold">{{ announcement.likes_count || 0 }}</span>
+                                    </button>
+                                    <button 
+                                        v-if="$page.props.auth.user.id === announcement.user_id || $page.props.auth.user.roles.includes('Directeur')"
+                                        @click="deleteAnnouncement(announcement.id)"
+                                        class="text-red-400 hover:text-red-600 transition-colors"
+                                    >
+                                        Supprimer
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Replies Section (Pinned) -->
+                            <div class="mt-6 border-t border-gray-100 pt-4">
+                                <h5 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4">Réponses ({{ announcement.replies?.length || 0 }})</h5>
+                                
+                                <div v-if="announcement.replies?.length > 0" class="space-y-4 mb-4">
+                                    <div v-for="reply in announcement.replies" :key="reply.id" class="flex gap-3 bg-gray-50/50 p-4 rounded-2xl border border-gray-100">
+                                        <div class="h-8 w-8 rounded-full overflow-hidden flex-shrink-0 border border-gray-200">
+                                            <template v-if="reply.user">
+                                                <img v-if="reply.user.profile_photo_url" :src="reply.user.profile_photo_url" class="h-full w-full object-cover">
+                                                <UserIcon v-else class="h-full w-full p-1 text-gray-300" />
+                                            </template>
+                                            <template v-else>
+                                                <div class="h-full w-full bg-gray-100 flex items-center justify-center">
+                                                    <UserIcon class="h-3 w-3 text-gray-400" />
+                                                </div>
+                                            </template>
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <div class="flex items-center justify-between">
+                                                <span class="text-[11px] font-bold text-gray-700">{{ reply.user ? reply.user.name : 'Utilisateur Anonyme' }}</span>
+                                                <div class="flex items-center gap-2">
+                                                    <span class="text-[10px] text-gray-400 font-medium">{{ formatDate(reply.created_at) }}</span>
+                                                    <button 
+                                                        v-if="$page.props.auth.user.id === reply.user_id || $page.props.auth.user.roles.includes('Directeur')"
+                                                        @click="deleteReply(reply.id)"
+                                                        class="text-red-400 hover:text-red-600 transition-colors"
+                                                    >
+                                                        <TrashIcon class="h-3 w-3" />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <p class="text-xs text-gray-600 mt-1 whitespace-pre-wrap leading-relaxed">{{ reply.content }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="flex gap-3 mt-4">
+                                    <div class="h-10 w-10 rounded-full overflow-hidden flex-shrink-0 border border-gray-200 bg-gray-100 flex items-center justify-center">
+                                        <template v-if="$page.props.auth.user.profile_photo_url">
+                                            <img :src="$page.props.auth.user.profile_photo_url" class="h-full w-full object-cover">
+                                        </template>
+                                        <template v-else>
+                                            <UserIcon class="h-5 w-5 text-gray-400" />
+                                        </template>
+                                    </div>
+                                    <div class="flex-1 flex gap-2">
+                                        <input 
+                                            v-model="replies[announcement.id]"
+                                            @keyup.enter="submitReply(announcement.id)"
+                                            type="text" 
+                                            placeholder="Écrire une réponse..."
+                                            class="flex-1 rounded-2xl border-gray-100 bg-gray-50/50 px-4 py-2 text-xs focus:ring-blue-500 focus:border-blue-500 transition-all placeholder-gray-400 font-medium"
+                                        />
+                                        <button 
+                                            @click="submitReply(announcement.id)"
+                                            :disabled="!replies[announcement.id]?.trim()"
+                                            class="px-5 py-2 bg-blue-600 text-white rounded-2xl text-[11px] font-bold uppercase tracking-wider hover:bg-blue-700 transition-all shadow-md shadow-blue-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Répondre
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -194,10 +294,7 @@ const deleteAnnouncement = (id) => {
 
             <!-- main feed -->
             <div class="space-y-6">
-                <div class="flex items-center justify-between">
-                    <h3 class="text-xs font-black text-gray-400 uppercase tracking-widest px-2">Fil d'actualité</h3>
-                    <span class="text-xs text-red-500 font-bold">Diagnostic ID reçu : {{ announcements.data.map(m => m.id).join(', ') }}</span>
-                </div>
+                <h3 class="text-xs font-black text-gray-400 uppercase tracking-widest px-2">Fil d'actualité</h3>
                 
                 <div v-if="announcements.data.filter(a => !a.is_pinned).length === 0" class="bg-gray-50 rounded-2xl p-12 text-center border-2 border-dashed border-gray-200">
                     <MegaphoneIcon class="h-12 w-12 text-gray-300 mx-auto mb-4" />
@@ -266,13 +363,87 @@ const deleteAnnouncement = (id) => {
                                     <span>•</span>
                                     <span>{{ formatDate(announcement.created_at) }}</span>
                                 </div>
-                                <button 
-                                    v-if="$page.props.auth.user.id === announcement.user_id || $page.props.auth.user.roles.includes('Directeur')"
-                                    @click="deleteAnnouncement(announcement.id)"
-                                    class="text-red-400 hover:text-red-600 transition-colors"
-                                >
-                                    Supprimer
-                                </button>
+                                <div class="flex items-center gap-3">
+                                    <button
+                                        @click="toggleLike(announcement.id)"
+                                        class="flex items-center gap-1.5 transition-all"
+                                        :class="announcement.liked_by_user ? 'text-pink-500' : 'text-gray-400 hover:text-pink-400'"
+                                    >
+                                        <component :is="announcement.liked_by_user ? HeartSolid : HeartIcon" class="h-4 w-4" />
+                                        <span class="text-[11px] font-bold">{{ announcement.likes_count || 0 }}</span>
+                                    </button>
+                                    <button 
+                                        v-if="$page.props.auth.user.id === announcement.user_id || $page.props.auth.user.roles.includes('Directeur')"
+                                        @click="deleteAnnouncement(announcement.id)"
+                                        class="text-red-400 hover:text-red-600 transition-colors"
+                                    >
+                                        Supprimer
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Replies Section (Normal) -->
+                            <div class="mt-6 border-t border-gray-100 pt-4">
+                                <h5 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4">Réponses ({{ announcement.replies?.length || 0 }})</h5>
+                                
+                                <div v-if="announcement.replies?.length > 0" class="space-y-4 mb-4">
+                                    <div v-for="reply in announcement.replies" :key="reply.id" class="flex gap-3 bg-gray-50/50 p-4 rounded-2xl border border-gray-100">
+                                        <div class="h-8 w-8 rounded-full overflow-hidden flex-shrink-0 border border-gray-200">
+                                            <template v-if="reply.user">
+                                                <img v-if="reply.user.profile_photo_url" :src="reply.user.profile_photo_url" class="h-full w-full object-cover">
+                                                <UserIcon v-else class="h-full w-full p-1 text-gray-300" />
+                                            </template>
+                                            <template v-else>
+                                                <div class="h-full w-full bg-gray-100 flex items-center justify-center">
+                                                    <UserIcon class="h-3 w-3 text-gray-400" />
+                                                </div>
+                                            </template>
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <div class="flex items-center justify-between">
+                                                <span class="text-[11px] font-bold text-gray-700">{{ reply.user ? reply.user.name : 'Utilisateur Anonyme' }}</span>
+                                                <div class="flex items-center gap-2">
+                                                    <span class="text-[10px] text-gray-400 font-medium">{{ formatDate(reply.created_at) }}</span>
+                                                    <button 
+                                                        v-if="$page.props.auth.user.id === reply.user_id || $page.props.auth.user.roles.includes('Directeur')"
+                                                        @click="deleteReply(reply.id)"
+                                                        class="text-red-400 hover:text-red-600 transition-colors"
+                                                    >
+                                                        <TrashIcon class="h-3 w-3" />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <p class="text-xs text-gray-600 mt-1 whitespace-pre-wrap leading-relaxed">{{ reply.content }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="flex gap-3 mt-4">
+                                    <div class="h-10 w-10 rounded-full overflow-hidden flex-shrink-0 border border-gray-200 bg-gray-100 flex items-center justify-center">
+                                        <template v-if="$page.props.auth.user.profile_photo_url">
+                                            <img :src="$page.props.auth.user.profile_photo_url" class="h-full w-full object-cover">
+                                        </template>
+                                        <template v-else>
+                                            <UserIcon class="h-5 w-5 text-gray-400" />
+                                        </template>
+                                    </div>
+                                    <div class="flex-1 flex gap-2">
+                                        <input 
+                                            v-model="replies[announcement.id]"
+                                            @keyup.enter="submitReply(announcement.id)"
+                                            type="text" 
+                                            placeholder="Écrire une réponse..."
+                                            class="flex-1 rounded-2xl border-gray-100 bg-gray-50/50 px-4 py-2 text-xs focus:ring-blue-500 focus:border-blue-500 transition-all placeholder-gray-400 font-medium"
+                                        />
+                                        <button 
+                                            @click="submitReply(announcement.id)"
+                                            :disabled="!replies[announcement.id]?.trim()"
+                                            class="px-5 py-2 bg-blue-600 text-white rounded-2xl text-[11px] font-bold uppercase tracking-wider hover:bg-blue-700 transition-all shadow-md shadow-blue-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Répondre
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
