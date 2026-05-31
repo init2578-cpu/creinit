@@ -296,4 +296,7 @@ Route::middleware(['auth'])->group(function (): void {
     Route::post('/community/{announcement}/replies', [\App\Http\Controllers\AnnouncementReplyController::class, 'store'])->name('community.replies.store');
     Route::delete('/community/replies/{reply}', [\App\Http\Controllers\AnnouncementReplyController::class, 'destroy'])->name('community.replies.destroy');
     Route::post('/community/{announcement}/like', [\App\Http\Controllers\AnnouncementLikeController::class, 'toggle'])->name('community.likes.toggle');
+
+    // AI Agent Assane
+    Route::post('/assane/chat', [\App\Http\Controllers\Scolarite\AssaneChatController::class, 'chat'])->name('assane.chat');
 });
