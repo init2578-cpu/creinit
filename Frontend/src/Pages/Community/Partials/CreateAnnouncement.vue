@@ -278,7 +278,7 @@ const toggleRole = (roleName) => {
                                 </div>
                             </div>
                             <p v-if="form.is_anonymous" class="mt-2 px-4 text-[10px] text-indigo-500 font-bold italic">
-                                * Seul le Directeur pourra voir l'auteur original de ce message.
+                                * Personne ne pourra voir l'auteur original de ce message.
                             </p>
                         </div>
 
