@@ -12,9 +12,12 @@ import {
     MapPinIcon,
     CalendarIcon,
     UserIcon,
-    FunnelIcon
+    FunnelIcon,
+    VideoCameraIcon,
+    DocumentTextIcon,
+    ArrowDownTrayIcon
 } from '@heroicons/vue/24/outline'
-import { BookmarkIcon } from '@heroicons/vue/24/solid'
+import { BookmarkIcon, ChatBubbleLeftRightIcon } from '@heroicons/vue/24/solid'
 import CreateAnnouncement from './Partials/CreateAnnouncement.vue'
 
 const props = defineProps({
@@ -22,6 +25,23 @@ const props = defineProps({
     availableRoles: Array,
     canPost: Boolean
 })
+
+const isImage = (mimeType) => mimeType?.startsWith('image/')
+const isVideo = (mimeType) => mimeType?.startsWith('video/')
+
+const getFileIcon = (mimeType) => {
+    if (mimeType?.includes('pdf')) return DocumentTextIcon
+    if (mimeType?.includes('word') || mimeType?.includes('office')) return DocumentTextIcon
+    return DocumentTextIcon
+}
+
+const formatSize = (bytes) => {
+    if (bytes === 0) return '0 B'
+    const k = 1024
+    const sizes = ['B', 'KB', 'MB', 'GB']
+    const i = Math.floor(Math.log(bytes) / Math.log(k))
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i]
+}
 
 const showCreateModal = ref(false)
 
@@ -111,6 +131,34 @@ const deleteAnnouncement = (id) => {
                                 <h4 class="text-lg font-bold text-gray-900">{{ announcement.title }}</h4>
                             </div>
                             <p class="text-gray-600 text-sm mb-4 whitespace-pre-wrap leading-relaxed">{{ announcement.content }}</p>
+
+                            <!-- Attachments (Pinned) -->
+                            <div v-if="announcement.attachments && announcement.attachments.length > 0" class="mb-6 space-y-4">
+                                <div v-if="announcement.attachments.some(a => isImage(a.mime_type))" class="flex flex-wrap gap-2">
+                                    <div v-for="img in announcement.attachments.filter(a => isImage(a.mime_type))" :key="img.path" class="h-28 w-28 rounded-xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-md transition-shadow cursor-pointer">
+                                        <img :src="'/storage/' + img.path" class="h-full w-full object-cover">
+                                    </div>
+                                </div>
+                                <div v-if="announcement.attachments.some(a => isVideo(a.mime_type))" class="space-y-2">
+                                    <div v-for="vid in announcement.attachments.filter(a => isVideo(a.mime_type))" :key="vid.path" class="max-w-md rounded-2xl overflow-hidden border border-gray-200 bg-black shadow-sm">
+                                        <video controls class="w-full h-auto max-h-[300px]">
+                                            <source :src="'/storage/' + vid.path" :type="vid.mime_type">
+                                        </video>
+                                    </div>
+                                </div>
+                                <div v-if="announcement.attachments.some(a => !isImage(a.mime_type) && !isVideo(a.mime_type))" class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                    <a v-for="doc in announcement.attachments.filter(a => !isImage(a.mime_type) && !isVideo(a.mime_type))" :key="doc.path" :href="'/storage/' + doc.path" target="_blank" download class="flex items-center p-3 rounded-xl border border-gray-100 bg-gray-50/50 hover:bg-white hover:border-blue-200 hover:shadow-sm transition-all group">
+                                        <div class="h-10 w-10 flex-shrink-0 bg-white rounded-lg flex items-center justify-center border border-gray-100 group-hover:border-blue-100 mr-3">
+                                            <component :is="getFileIcon(doc.mime_type)" class="h-5 w-5 text-gray-500 group-hover:text-blue-500" />
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <p class="text-xs font-bold text-gray-700 truncate group-hover:text-blue-700">{{ doc.name }}</p>
+                                            <p class="text-[10px] text-gray-400 font-medium tracking-tighter">{{ formatSize(doc.size) }} • {{ doc.mime_type.split('/')[1] }}</p>
+                                        </div>
+                                        <ArrowDownTrayIcon class="h-4 w-4 text-gray-300 group-hover:text-blue-500" />
+                                    </a>
+                                </div>
+                            </div>
                             
                             <div class="flex items-center justify-between text-[11px] text-gray-400 font-medium">
                                 <div class="flex items-center gap-3">
@@ -158,6 +206,34 @@ const deleteAnnouncement = (id) => {
                         <div class="flex-1 min-w-0">
                             <h4 class="text-lg font-bold text-gray-900 mb-1">{{ announcement.title }}</h4>
                             <p class="text-gray-600 text-sm mb-4 whitespace-pre-wrap leading-relaxed">{{ announcement.content }}</p>
+
+                            <!-- Attachments (Normal) -->
+                            <div v-if="announcement.attachments && announcement.attachments.length > 0" class="mb-6 space-y-4">
+                                <div v-if="announcement.attachments.some(a => isImage(a.mime_type))" class="flex flex-wrap gap-2">
+                                    <div v-for="img in announcement.attachments.filter(a => isImage(a.mime_type))" :key="img.path" class="h-28 w-28 rounded-xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-md transition-shadow cursor-pointer">
+                                        <img :src="'/storage/' + img.path" class="h-full w-full object-cover">
+                                    </div>
+                                </div>
+                                <div v-if="announcement.attachments.some(a => isVideo(a.mime_type))" class="space-y-2">
+                                    <div v-for="vid in announcement.attachments.filter(a => isVideo(a.mime_type))" :key="vid.path" class="max-w-md rounded-2xl overflow-hidden border border-gray-200 bg-black shadow-sm">
+                                        <video controls class="w-full h-auto max-h-[300px]">
+                                            <source :src="'/storage/' + vid.path" :type="vid.mime_type">
+                                        </video>
+                                    </div>
+                                </div>
+                                <div v-if="announcement.attachments.some(a => !isImage(a.mime_type) && !isVideo(a.mime_type))" class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                    <a v-for="doc in announcement.attachments.filter(a => !isImage(a.mime_type) && !isVideo(a.mime_type))" :key="doc.path" :href="'/storage/' + doc.path" target="_blank" download class="flex items-center p-3 rounded-xl border border-gray-100 bg-gray-50/50 hover:bg-white hover:border-blue-200 hover:shadow-sm transition-all group">
+                                        <div class="h-10 w-10 flex-shrink-0 bg-white rounded-lg flex items-center justify-center border border-gray-100 group-hover:border-blue-100 mr-3">
+                                            <component :is="getFileIcon(doc.mime_type)" class="h-5 w-5 text-gray-500 group-hover:text-blue-500" />
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <p class="text-xs font-bold text-gray-700 truncate group-hover:text-blue-700">{{ doc.name }}</p>
+                                            <p class="text-[10px] text-gray-400 font-medium tracking-tighter">{{ formatSize(doc.size) }} • {{ doc.mime_type.split('/')[1] }}</p>
+                                        </div>
+                                        <ArrowDownTrayIcon class="h-4 w-4 text-gray-300 group-hover:text-blue-500" />
+                                    </a>
+                                </div>
+                            </div>
                             
                             <div class="flex items-center justify-between text-[11px] text-gray-400 font-medium">
                                 <div class="flex items-center gap-3">

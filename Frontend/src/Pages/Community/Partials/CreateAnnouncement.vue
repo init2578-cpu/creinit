@@ -1,7 +1,17 @@
 <script setup>
 import { ref } from 'vue'
 import { useForm } from '@inertiajs/vue3'
-import { XMarkIcon, MegaphoneIcon, ExclamationTriangleIcon, CheckCircleIcon, CalendarIcon } from '@heroicons/vue/24/outline'
+import { 
+    XMarkIcon, 
+    MegaphoneIcon, 
+    ExclamationTriangleIcon, 
+    CheckCircleIcon, 
+    CalendarIcon,
+    PaperClipIcon,
+    PhotoIcon,
+    VideoCameraIcon,
+    DocumentTextIcon
+} from '@heroicons/vue/24/outline'
 
 const props = defineProps({
     show: Boolean,
@@ -16,8 +26,34 @@ const form = useForm({
     category: 'info',
     visibility_roles: [],
     is_pinned: false,
-    expires_at: ''
+    expires_at: '',
+    files: []
 })
+
+const fileInput = ref(null)
+const previews = ref([])
+
+const handleFileSelect = (event) => {
+    const selectedFiles = Array.from(event.target.files)
+    form.files = [...form.files, ...selectedFiles]
+    
+    selectedFiles.forEach(file => {
+        if (file.type.startsWith('image/')) {
+            const reader = new FileReader()
+            reader.onload = (e) => previews.value.push({ url: e.target.result, type: 'image', name: file.name })
+            reader.readAsDataURL(file)
+        } else if (file.type.startsWith('video/')) {
+            previews.value.push({ type: 'video', name: file.name })
+        } else {
+            previews.value.push({ type: 'doc', name: file.name })
+        }
+    })
+}
+
+const removeFile = (index) => {
+    form.files.splice(index, 1)
+    previews.value.splice(index, 1)
+}
 
 const categories = [
     { id: 'info', name: 'Information', icon: MegaphoneIcon, color: 'text-blue-600 bg-blue-50' },
@@ -130,6 +166,57 @@ const toggleRole = (roleName) => {
                                 >
                                     {{ role.name }}
                                 </button>
+                            </div>
+                        </div>
+
+                        <!-- Attachments Section -->
+                        <div>
+                            <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-3">Pièces Jointes (Images, Vidéos, Documents)</label>
+                            
+                            <div class="space-y-4">
+                                <div class="flex items-center gap-4">
+                                    <button 
+                                        type="button"
+                                        @click="fileInput.click()"
+                                        class="inline-flex items-center px-4 py-2 bg-white border-2 border-dashed border-gray-200 rounded-xl text-xs font-bold text-gray-600 hover:border-blue-400 hover:text-blue-600 transition-all group"
+                                    >
+                                        <PaperClipIcon class="h-4 w-4 mr-2 group-hover:rotate-12 transition-transform" />
+                                        Ajouter des fichiers
+                                    </button>
+                                    <input 
+                                        ref="fileInput" 
+                                        type="file" 
+                                        multiple 
+                                        class="hidden" 
+                                        @change="handleFileSelect"
+                                        accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx"
+                                    />
+                                    <span class="text-[10px] text-gray-400 font-medium">Taille max : 20Mo par fichier</span>
+                                </div>
+
+                                <!-- Previews Grid -->
+                                <div v-if="previews.length > 0" class="grid grid-cols-3 sm:grid-cols-4 gap-4">
+                                    <div 
+                                        v-for="(file, index) in previews" 
+                                        :key="index"
+                                        class="relative group rounded-2xl overflow-hidden aspect-square bg-gray-50 border border-gray-100 flex flex-col items-center justify-center p-2"
+                                    >
+                                        <img v-if="file.type === 'image'" :src="file.url" class="absolute inset-0 w-full h-full object-cover" />
+                                        
+                                        <template v-else>
+                                            <component :is="file.type === 'video' ? VideoCameraIcon : DocumentTextIcon" class="h-8 w-8 text-gray-400 mb-1" />
+                                            <span class="text-[8px] font-bold text-gray-500 text-center truncate w-full px-1">{{ file.name }}</span>
+                                        </template>
+
+                                        <button 
+                                            @click="removeFile(index)"
+                                            type="button" 
+                                            class="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                                        >
+                                            <XMarkIcon class="h-3 w-3" />
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 

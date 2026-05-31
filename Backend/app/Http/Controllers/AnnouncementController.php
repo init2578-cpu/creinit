@@ -56,9 +56,27 @@ class AnnouncementController extends Controller
             'visibility_roles' => 'nullable|array',
             'is_pinned'        => 'boolean',
             'expires_at'       => 'nullable|date|after:now',
+            'files'            => 'nullable|array',
+            'files.*'          => 'file|max:20480', // 20MB limit
         ]);
 
-        $request->user()->announcements()->create($validated);
+        $attachments = [];
+        if ($request->hasFile('files')) {
+            foreach ($request->file('files') as $file) {
+                $path = $file->store('announcements', 'public');
+                $attachments[] = [
+                    'path'      => $path,
+                    'name'      => $file->getClientOriginalName(),
+                    'mime_type' => $file->getClientMimeType(),
+                    'size'      => $file->getSize(),
+                ];
+            }
+        }
+
+        $announcementData = array_merge($validated, ['attachments' => $attachments]);
+        unset($announcementData['files']);
+
+        $request->user()->announcements()->create($announcementData);
 
         return redirect()->route('community.index')
             ->with('success', 'Votre message a été publié dans l\'espace communauté.');
@@ -71,6 +89,13 @@ class AnnouncementController extends Controller
     {
         if ($request->user()->id !== $announcement->user_id && !$request->user()->hasRole(['Directeur', 'Secrétaire'])) {
             abort(403);
+        }
+
+        // Delete associated files
+        if ($announcement->attachments) {
+            foreach ($announcement->attachments as $attachment) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($attachment['path']);
+            }
         }
 
         $announcement->delete();
