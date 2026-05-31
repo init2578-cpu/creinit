@@ -33,9 +33,10 @@ php artisan optimize
 echo "🎨 Mise à jour du Frontend (Vite)..."
 cd "$FRONTEND_DIR"
 
-# Suppression de l'ancien build pour repartir sur du propre
+# Suppression de l'ancien build et du fichier hot pour forcer le mode production
 echo "🧹 Nettoyage de l'ancien build..."
 rm -rf "$BACKEND_DIR/public/build"
+rm -f "$BACKEND_DIR/public/hot"
 
 # Installation des dépendances NPM
 echo "📦 Installation des dépendances NPM..."
