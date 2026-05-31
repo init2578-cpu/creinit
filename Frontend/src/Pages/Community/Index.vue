@@ -86,8 +86,9 @@ const deleteAnnouncement = (id) => {
     <Head title="Communauté" />
 
     <AuthenticatedLayout>
-        <template #header>
-            <div class="flex items-center justify-between">
+        <div class="py-8 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            <!-- Header Section -->
+            <div class="flex items-center justify-between mb-8 pb-6 border-b border-gray-100">
                 <div class="flex items-center gap-3">
                     <div class="p-2 bg-blue-600 rounded-xl shadow-lg shadow-blue-200">
                         <ChatBubbleLeftRightIcon class="h-6 w-6 text-white" />
@@ -101,15 +102,12 @@ const deleteAnnouncement = (id) => {
                 <button 
                     v-if="canPost"
                     @click="showCreateModal = true"
-                    class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-xl font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 active:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition ease-in-out duration-150 shadow-md shadow-blue-200"
+                    class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-xl font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 transition ease-in-out duration-150 shadow-md shadow-blue-200"
                 >
                     <PlusIcon class="h-4 w-4 mr-2" />
                     Nouveau Message
                 </button>
             </div>
-        </template>
-
-        <div class="py-8 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
             <!-- pinned announcements -->
             <div v-if="announcements.data.some(a => a.is_pinned)" class="mb-8 space-y-4">
                 <h3 class="text-xs font-black text-gray-400 uppercase tracking-widest px-2">Messages Épinglés</h3>
