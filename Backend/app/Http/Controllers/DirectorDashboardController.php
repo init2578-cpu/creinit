@@ -56,25 +56,27 @@ class DirectorDashboardController extends Controller
      */
     public function getKpis(): array
     {
-        return [
-            'attendance_rate'          => $this->getAttendanceRate(),
-            'gender_parity'            => $this->getGenderParity(),
-            'success_rate'             => $this->getSuccessRate(),
-            'total_learners'           => $this->getTotalLearners(),
-            'total_trainers'           => User::role('Formateur')->count(),
-            'total_groups'             => Group::count(),
-            'total_certificates'       => Certificate::count(),
-            'operational_hardware'     => $this->getOperationalHardwareRate(),
-            'module_validation_rates'  => $this->getModuleValidationRates(),
-            'admissions'               => $this->getAdmissionsStats(),
-            'logistics'                => $this->getLogisticsStats(),
-            'ecosystem'                => $this->getEcosystemStats(),
-            'pedagogical'              => $this->getPedagogicalStats(),
-            'trainers_performance'    => $this->getTrainersPerformance(),
-            'top_learners'            => $this->getTopLearners(),
-            'attendance_stats'         => $this->getAttendanceStats(),
-            'alerts'                   => $this->getAlerts(),
-        ];
+        return \Illuminate\Support\Facades\Cache::remember('director_dashboard_kpis', 600, function () {
+            return [
+                'attendance_rate'          => $this->getAttendanceRate(),
+                'gender_parity'            => $this->getGenderParity(),
+                'success_rate'             => $this->getSuccessRate(),
+                'total_learners'           => $this->getTotalLearners(),
+                'total_trainers'           => User::role('Formateur')->count(),
+                'total_groups'             => Group::count(),
+                'total_certificates'       => Certificate::count(),
+                'operational_hardware'     => $this->getOperationalHardwareRate(),
+                'module_validation_rates'  => $this->getModuleValidationRates(),
+                'admissions'               => $this->getAdmissionsStats(),
+                'logistics'                => $this->getLogisticsStats(),
+                'ecosystem'                => $this->getEcosystemStats(),
+                'pedagogical'              => $this->getPedagogicalStats(),
+                'trainers_performance'    => $this->getTrainersPerformance(),
+                'top_learners'            => $this->getTopLearners(),
+                'attendance_stats'         => $this->getAttendanceStats(),
+                'alerts'                   => $this->getAlerts(),
+            ];
+        });
     }
 
     /**

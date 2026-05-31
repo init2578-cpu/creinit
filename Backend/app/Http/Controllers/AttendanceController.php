@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Attendance\StoreAttendanceRequest;
 use App\Http\Requests\Attendance\StoreBatchAttendanceRequest;
 use App\Models\Attendance;
 use App\Models\Group;
@@ -61,6 +62,9 @@ class AttendanceController extends Controller
                 ]
             );
         }
+
+        // Clear dashboard cache to reflect new attendance data
+        \Illuminate\Support\Facades\Cache::forget('director_dashboard_kpis');
 
         return redirect()
             ->route('attendances.trainer-groups')

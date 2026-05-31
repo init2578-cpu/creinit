@@ -52,6 +52,29 @@ export default defineConfig({
             },
         },
     },
+    build: {
+        rollupOptions: {
+            output: {
+                manualChunks(id) {
+                    if (id.includes('node_modules')) {
+                        if (id.includes('@heroicons')) {
+                            return 'heroicons';
+                        }
+                        if (id.includes('chart.js')) {
+                            return 'chartjs';
+                        }
+                        if (id.includes('lodash')) {
+                            return 'lodash';
+                        }
+                        if (id.includes('axios')) {
+                            return 'axios';
+                        }
+                        return 'vendor';
+                    }
+                },
+            },
+        },
+    },
     resolve: {
         alias: {
             '@': path.resolve(__dirname, 'src'),
