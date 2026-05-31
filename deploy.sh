@@ -10,7 +10,9 @@ echo "🚀 Démarrage du déploiement E-CRE - $(date)"
 
 # 1. Mise à jour du code
 echo "📥 Récupération des derniers changements (Git)..."
-git pull origin main
+git fetch origin main
+git reset --hard origin/main
+git clean -fd
 
 # 2. Backend (Laravel)
 echo "🐘 Mise à jour du Backend (Laravel)..."
