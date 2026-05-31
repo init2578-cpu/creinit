@@ -61,7 +61,7 @@ const submit = () => {
 
                         <div class="space-y-6">
                             <div v-for="(item, i) in [
-                                { label: 'Localisation', val: 'Doumassou en face des arènes, Kolda (V3W5+49)', icon: MapPinIcon },
+                                { label: 'Localisation', val: 'Doumassou en face des arènes, Kolda', link: 'https://www.google.com/maps/search/V3W5%2B49+Kolda', icon: MapPinIcon },
                                 { label: 'Signal Email', val: settings?.contact_email || 'contact@cre-kolda.sn', icon: EnvelopeIcon },
                                 { label: 'Fréquence Mobile', val: '+221 33 996 00 00', icon: PhoneIcon }
                             ]" :key="i" class="flex items-center gap-6 p-6 glass-dark rounded-3xl border border-white/5 group hover:border-cyan-500/30 transition-all">
@@ -70,7 +70,8 @@ const submit = () => {
                                 </div>
                                 <div>
                                     <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">{{ item.label }}</p>
-                                    <p class="text-white font-bold">{{ item.val }}</p>
+                                    <a v-if="item.link" :href="item.link" target="_blank" rel="noopener noreferrer" class="text-white font-bold hover:text-cyan-400 transition-colors">{{ item.val }}</a>
+                                    <p v-else class="text-white font-bold">{{ item.val }}</p>
                                 </div>
                             </div>
                         </div>

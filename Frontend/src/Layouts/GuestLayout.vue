@@ -68,11 +68,16 @@ import AIAssistant from '@/Components/AIAssistant.vue'
                     <div class="flex items-center gap-3">
                         <div class="glass-dark p-4 rounded-xl border border-white/5 w-full">
                             <p class="text-[9px] uppercase text-cyan-500 font-black tracking-widest mb-2">Localisation Signal</p>
-                            <p class="text-xs text-slate-300 font-bold leading-relaxed">
+                            <a 
+                                href="https://www.google.com/maps/search/V3W5%2B49+Kolda" 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                class="text-xs text-slate-300 font-bold leading-relaxed hover:text-cyan-400 transition-colors block"
+                            >
                                 Doumassou en face des arènes, <br>
                                 non loin de l'arbre Moussa Molo Baldé <br>
                                 <span class="text-cyan-400">Coord: V3W5+49 Kolda</span>
-                            </p>
+                            </a>
                         </div>
                     </div>
                 </div>
