@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class AnnouncementLike extends Model
 {
-    protected $fillable = ['announcement_id', 'user_id'];
+    protected $fillable = ['announcement_id', 'user_id', 'type'];
 
     public function user(): BelongsTo
     {

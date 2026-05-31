@@ -37,10 +37,15 @@ class AnnouncementController extends Controller
             ->orderByDesc('created_at')
             ->paginate(15);
 
-        // Annotate each announcement with likes_count and liked_by_user; mask anonymous authors
+        // Annotate each announcement with reaction counts and user's selection; mask anonymous authors
         $announcements->getCollection()->transform(function ($announcement) use ($user) {
-            $announcement->likes_count  = $announcement->likes->count();
-            $announcement->liked_by_user = $announcement->isLikedBy($user->id);
+            $announcement->heart_count      = $announcement->likes->where('type', 'heart')->count();
+            $announcement->thumb_up_count   = $announcement->likes->where('type', 'thumb_up')->count();
+            $announcement->thumb_down_count = $announcement->likes->where('type', 'thumb_down')->count();
+            
+            $userLike = $announcement->likes->where('user_id', $user->id)->first();
+            $announcement->user_reaction    = $userLike ? $userLike->type : null;
+            
             unset($announcement->likes); // don't leak full likes list to frontend
 
             if (!$user->hasRole('Directeur') && $announcement->is_anonymous) {
@@ -118,8 +123,7 @@ class AnnouncementController extends Controller
 
         $announcement->update($validated);
 
-        return redirect()->route('community.index')
-            ->with('success', 'Le message a été mis à jour.');
+        return redirect()->route('community.index');
     }
 
     /**
@@ -144,8 +148,7 @@ class AnnouncementController extends Controller
 
         $announcement->delete();
 
-        return redirect()->route('community.index')
-            ->with('success', 'Le message a été supprimé.');
+        return redirect()->route('community.index');
     }
 
     /**

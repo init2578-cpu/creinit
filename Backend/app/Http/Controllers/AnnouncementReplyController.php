@@ -23,7 +23,7 @@ class AnnouncementReplyController extends Controller
             'content' => $validated['content'],
         ]);
 
-        return back()->with('success', 'Votre réponse a été publiée.');
+        return back();
     }
 
     /**
@@ -37,6 +37,6 @@ class AnnouncementReplyController extends Controller
 
         $reply->delete();
 
-        return back()->with('success', 'La réponse a été supprimée.');
+        return back();
     }
 }

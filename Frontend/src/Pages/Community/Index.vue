@@ -16,9 +16,17 @@ import {
     VideoCameraIcon,
     DocumentTextIcon,
     ArrowDownTrayIcon,
-    HeartIcon
+    HeartIcon,
+    HandThumbUpIcon,
+    HandThumbDownIcon
 } from '@heroicons/vue/24/outline'
-import { BookmarkIcon, ChatBubbleLeftRightIcon, HeartIcon as HeartSolid } from '@heroicons/vue/24/solid'
+import { 
+    BookmarkIcon, 
+    ChatBubbleLeftRightIcon, 
+    HeartIcon as HeartSolid,
+    HandThumbUpIcon as HandThumbUpSolid,
+    HandThumbDownIcon as HandThumbDownSolid
+} from '@heroicons/vue/24/solid'
 import CreateAnnouncement from './Partials/CreateAnnouncement.vue'
 import AttachmentViewer from './Partials/AttachmentViewer.vue'
 
@@ -124,8 +132,8 @@ const deleteReply = (replyId) => {
     }
 }
 
-const toggleLike = (announcementId) => {
-    router.post(route('community.likes.toggle', announcementId), {}, { preserveScroll: true })
+const toggleLike = (announcementId, type = 'heart') => {
+    router.post(route('community.likes.toggle', announcementId), { type }, { preserveScroll: true })
 }
 </script>
 
@@ -251,14 +259,34 @@ const toggleLike = (announcementId) => {
                                     <span>{{ formatDate(announcement.created_at) }}</span>
                                 </div>
                                 <div class="flex items-center gap-3">
-                                    <button
-                                        @click="toggleLike(announcement.id)"
-                                        class="flex items-center gap-1.5 transition-all"
-                                        :class="announcement.liked_by_user ? 'text-pink-500' : 'text-gray-400 hover:text-pink-400'"
-                                    >
-                                        <component :is="announcement.liked_by_user ? HeartSolid : HeartIcon" class="h-4 w-4" />
-                                        <span class="text-[11px] font-bold">{{ announcement.likes_count || 0 }}</span>
-                                    </button>
+                                    <div class="flex items-center gap-1.5 p-1 bg-gray-50 rounded-xl border border-gray-100 shadow-sm">
+                                        <button
+                                            @click="toggleLike(announcement.id, 'heart')"
+                                            class="flex items-center gap-1 p-1 rounded-lg transition-all"
+                                            :class="announcement.user_reaction === 'heart' ? 'text-pink-500 bg-pink-50 shadow-sm' : 'text-gray-400 hover:text-pink-400 hover:bg-pink-50/50'"
+                                        >
+                                            <component :is="announcement.user_reaction === 'heart' ? HeartSolid : HeartIcon" class="h-4 w-4" />
+                                            <span class="text-[10px] font-bold">{{ announcement.heart_count || 0 }}</span>
+                                        </button>
+                                        <div class="w-px h-3 bg-gray-200"></div>
+                                        <button
+                                            @click="toggleLike(announcement.id, 'thumb_up')"
+                                            class="flex items-center gap-1 p-1 rounded-lg transition-all"
+                                            :class="announcement.user_reaction === 'thumb_up' ? 'text-blue-500 bg-blue-50 shadow-sm' : 'text-gray-400 hover:text-blue-400 hover:bg-blue-50/50'"
+                                        >
+                                            <component :is="announcement.user_reaction === 'thumb_up' ? HandThumbUpSolid : HandThumbUpIcon" class="h-4 w-4" />
+                                            <span class="text-[10px] font-bold">{{ announcement.thumb_up_count || 0 }}</span>
+                                        </button>
+                                        <div class="w-px h-3 bg-gray-200"></div>
+                                        <button
+                                            @click="toggleLike(announcement.id, 'thumb_down')"
+                                            class="flex items-center gap-1 p-1 rounded-lg transition-all"
+                                            :class="announcement.user_reaction === 'thumb_down' ? 'text-amber-600 bg-amber-50 shadow-sm' : 'text-gray-400 hover:text-amber-500 hover:bg-amber-50/50'"
+                                        >
+                                            <component :is="announcement.user_reaction === 'thumb_down' ? HandThumbDownSolid : HandThumbDownIcon" class="h-4 w-4" />
+                                            <span class="text-[10px] font-bold">{{ announcement.thumb_down_count || 0 }}</span>
+                                        </button>
+                                    </div>
                                     <button 
                                         v-if="$page.props.auth.user.id === announcement.user_id || $page.props.auth.user.roles.includes('Directeur')"
                                         @click="openEditModal(announcement)"
@@ -431,14 +459,34 @@ const toggleLike = (announcementId) => {
                                     <span>{{ formatDate(announcement.created_at) }}</span>
                                 </div>
                                 <div class="flex items-center gap-3">
-                                    <button
-                                        @click="toggleLike(announcement.id)"
-                                        class="flex items-center gap-1.5 transition-all"
-                                        :class="announcement.liked_by_user ? 'text-pink-500' : 'text-gray-400 hover:text-pink-400'"
-                                    >
-                                        <component :is="announcement.liked_by_user ? HeartSolid : HeartIcon" class="h-4 w-4" />
-                                        <span class="text-[11px] font-bold">{{ announcement.likes_count || 0 }}</span>
-                                    </button>
+                                    <div class="flex items-center gap-1.5 p-1 bg-gray-50 rounded-xl border border-gray-100 shadow-sm">
+                                        <button
+                                            @click="toggleLike(announcement.id, 'heart')"
+                                            class="flex items-center gap-1 p-1 rounded-lg transition-all"
+                                            :class="announcement.user_reaction === 'heart' ? 'text-pink-500 bg-pink-50 shadow-sm' : 'text-gray-400 hover:text-pink-400 hover:bg-pink-50/50'"
+                                        >
+                                            <component :is="announcement.user_reaction === 'heart' ? HeartSolid : HeartIcon" class="h-4 w-4" />
+                                            <span class="text-[10px] font-bold">{{ announcement.heart_count || 0 }}</span>
+                                        </button>
+                                        <div class="w-px h-3 bg-gray-200"></div>
+                                        <button
+                                            @click="toggleLike(announcement.id, 'thumb_up')"
+                                            class="flex items-center gap-1 p-1 rounded-lg transition-all"
+                                            :class="announcement.user_reaction === 'thumb_up' ? 'text-blue-500 bg-blue-50 shadow-sm' : 'text-gray-400 hover:text-blue-400 hover:bg-blue-50/50'"
+                                        >
+                                            <component :is="announcement.user_reaction === 'thumb_up' ? HandThumbUpSolid : HandThumbUpIcon" class="h-4 w-4" />
+                                            <span class="text-[10px] font-bold">{{ announcement.thumb_up_count || 0 }}</span>
+                                        </button>
+                                        <div class="w-px h-3 bg-gray-200"></div>
+                                        <button
+                                            @click="toggleLike(announcement.id, 'thumb_down')"
+                                            class="flex items-center gap-1 p-1 rounded-lg transition-all"
+                                            :class="announcement.user_reaction === 'thumb_down' ? 'text-amber-600 bg-amber-50 shadow-sm' : 'text-gray-400 hover:text-amber-500 hover:bg-amber-50/50'"
+                                        >
+                                            <component :is="announcement.user_reaction === 'thumb_down' ? HandThumbDownSolid : HandThumbDownIcon" class="h-4 w-4" />
+                                            <span class="text-[10px] font-bold">{{ announcement.thumb_down_count || 0 }}</span>
+                                        </button>
+                                    </div>
                                     <button 
                                         v-if="$page.props.auth.user.id === announcement.user_id || $page.props.auth.user.roles.includes('Directeur')"
                                         @click="openEditModal(announcement)"

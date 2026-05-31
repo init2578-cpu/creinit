@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Configuration
-PROJECT_ROOT="/home/crekolda/creinit"
+PROJECT_ROOT="/home/codefire/e-CRE"
 BACKEND_DIR="$PROJECT_ROOT/Backend"
 FRONTEND_DIR="$PROJECT_ROOT/Frontend"
 
@@ -15,8 +15,8 @@ git pull origin main
 echo "🐘 Mise à jour du Backend (Laravel)..."
 cd "$BACKEND_DIR"
 
-# Installation des dépendances Composer (si nécessaire)
-# composer install --no-interaction --prefer-dist --optimize-autoloader
+# Nettoyage des caches existants
+php artisan optimize:clear
 
 # Migration de la base de données
 echo "🗄️  Exécution des migrations..."
@@ -30,8 +30,13 @@ php artisan optimize
 echo "🎨 Mise à jour du Frontend (Vite)..."
 cd "$FRONTEND_DIR"
 
-# Installation des dépendances NPM (si nécessaire)
-# npm install
+# Suppression de l'ancien build pour repartir sur du propre
+echo "🧹 Nettoyage de l'ancien build..."
+rm -rf "$BACKEND_DIR/public/build"
+
+# Installation des dépendances NPM
+echo "📦 Installation des dépendances NPM..."
+npm install
 
 # Build du frontend
 echo "🛠️  Compilation des assets frontend..."
