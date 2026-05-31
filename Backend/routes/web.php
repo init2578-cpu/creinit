@@ -288,7 +288,8 @@ Route::middleware(['auth'])->group(function (): void {
     Route::post('/nominations', [NominationController::class, 'store'])->name('nominations.store');
 
 
-    // Assistant ASSANE
-    Route::post('/assane/chat', [\App\Http\Controllers\Scolarite\AssaneChatController::class, 'chat'])->name('assane.chat');
-
+    // Community Hub
+    Route::get('/community', [\App\Http\Controllers\AnnouncementController::class, 'index'])->name('community.index');
+    Route::post('/community', [\App\Http\Controllers\AnnouncementController::class, 'store'])->name('community.store');
+    Route::delete('/community/{announcement}', [\App\Http\Controllers\AnnouncementController::class, 'destroy'])->name('community.destroy');
 });

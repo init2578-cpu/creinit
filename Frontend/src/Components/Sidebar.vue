@@ -19,7 +19,8 @@ import {
     ArchiveBoxIcon,
     HomeModernIcon,
     Cog6ToothIcon,
-    UserIcon
+    UserIcon,
+    ChatBubbleLeftRightIcon
 } from '@heroicons/vue/24/outline'
 
 const props = defineProps({
@@ -39,6 +40,7 @@ const navigation = computed(() => {
     if (roles.value.includes('Directeur')) {
         menu.push(
             { name: 'Tableau de Bord', href: route('dashboard.director'), icon: HomeIcon },
+            { name: 'Communauté', href: route('community.index'), icon: ChatBubbleLeftRightIcon },
             { name: 'Inscriptions', href: route('applications.index'), icon: UserGroupIcon },
             { name: 'Groupes de Formation', href: route('groups.index'), icon: UserGroupIcon },
             { name: 'Apprenants', href: route('students.index'), icon: AcademicCapIcon },
@@ -63,6 +65,7 @@ const navigation = computed(() => {
 
     if (roles.value.includes('Secrétaire')) {
         menu.push(
+            { name: 'Communauté', href: route('community.index'), icon: ChatBubbleLeftRightIcon },
             { name: 'Inscriptions', href: route('applications.index'), icon: UserGroupIcon },
             { name: 'Groupes de Formation', href: route('groups.index'), icon: UserGroupIcon },
             { name: 'Validations', href: route('nominations.index'), icon: CheckBadgeIcon },
@@ -77,6 +80,7 @@ const navigation = computed(() => {
     if (roles.value.includes('Formateur')) {
         menu.push(
             { name: 'Mes Groupes', href: route('trainer.groups'), icon: AcademicCapIcon },
+            { name: 'Communauté', href: route('community.index'), icon: ChatBubbleLeftRightIcon },
             { name: 'Émargement', href: route('attendances.trainer-groups'), icon: ClipboardDocumentCheckIcon },
             { name: 'Gestion des Cours', href: route('modules.index'), icon: BookOpenIcon },
             { name: 'Examens', href: route('exams.index'), icon: PencilSquareIcon },
@@ -92,6 +96,7 @@ const navigation = computed(() => {
     if (roles.value.includes('Apprenant')) {
         menu.push(
             { name: 'Mon Parcours', href: route('student.dashboard'), icon: AcademicCapIcon },
+            { name: 'Communauté', href: route('community.index'), icon: ChatBubbleLeftRightIcon },
             { name: 'Mes Cours', href: route('student.courses'), icon: BookOpenIcon },
             { name: 'Exercices', href: route('student.exercises.index'), icon: BeakerIcon },
             { name: 'Examens', href: route('student.exams.index'), icon: PencilSquareIcon },

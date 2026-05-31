@@ -157,6 +157,14 @@ class User extends Authenticatable
     }
 
     /**
+     * Get the announcements posted by the user.
+     */
+    public function announcements(): HasMany
+    {
+        return $this->hasMany(Announcement::class);
+    }
+
+    /**
      * Get the URL of the user's profile photo.
      */
     public function getProfilePhotoUrlAttribute(): ?string
