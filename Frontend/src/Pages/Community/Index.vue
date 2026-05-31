@@ -162,10 +162,19 @@ const deleteAnnouncement = (id) => {
                                 <div class="flex items-center gap-3">
                                     <div class="flex items-center gap-1.5">
                                         <div class="h-5 w-5 rounded-full overflow-hidden border border-gray-200">
-                                            <img v-if="announcement.user.profile_photo_url" :src="announcement.user.profile_photo_url" class="h-full w-full object-cover">
-                                            <UserIcon v-else class="h-full w-full p-1 text-gray-300" />
+                                            <template v-if="announcement.user">
+                                                <img v-if="announcement.user.profile_photo_url" :src="announcement.user.profile_photo_url" class="h-full w-full object-cover">
+                                                <UserIcon v-else class="h-full w-full p-1 text-gray-300" />
+                                            </template>
+                                            <template v-else>
+                                                <div class="h-full w-full bg-gray-100 flex items-center justify-center">
+                                                    <UserIcon class="h-3 w-3 text-gray-400" />
+                                                </div>
+                                            </template>
                                         </div>
-                                        <span>{{ announcement.user.name }}</span>
+                                        <span :class="announcement.is_anonymous ? 'text-indigo-600 italic' : 'text-gray-600'">
+                                            {{ announcement.user ? announcement.user.name + (announcement.is_anonymous ? ' (Anonyme)' : '') : 'Utilisateur Anonyme' }}
+                                        </span>
                                     </div>
                                     <span>•</span>
                                     <span>{{ formatDate(announcement.created_at) }}</span>
@@ -237,10 +246,19 @@ const deleteAnnouncement = (id) => {
                                 <div class="flex items-center gap-3">
                                     <div class="flex items-center gap-1.5">
                                         <div class="h-5 w-5 rounded-full overflow-hidden border border-gray-200">
-                                            <img v-if="announcement.user.profile_photo_url" :src="announcement.user.profile_photo_url" class="h-full w-full object-cover">
-                                            <UserIcon v-else class="h-full w-full p-1 text-gray-300" />
+                                            <template v-if="announcement.user">
+                                                <img v-if="announcement.user.profile_photo_url" :src="announcement.user.profile_photo_url" class="h-full w-full object-cover">
+                                                <UserIcon v-else class="h-full w-full p-1 text-gray-300" />
+                                            </template>
+                                            <template v-else>
+                                                <div class="h-full w-full bg-gray-100 flex items-center justify-center">
+                                                    <UserIcon class="h-3 w-3 text-gray-400" />
+                                                </div>
+                                            </template>
                                         </div>
-                                        <span class="text-gray-600">{{ announcement.user.name }}</span>
+                                        <span :class="announcement.is_anonymous ? 'text-indigo-600 italic font-bold' : 'text-gray-600'">
+                                            {{ announcement.user ? announcement.user.name + (announcement.is_anonymous ? ' (Anonyme)' : '') : 'Utilisateur Anonyme' }}
+                                        </span>
                                     </div>
                                     <span>•</span>
                                     <span>{{ formatDate(announcement.created_at) }}</span>

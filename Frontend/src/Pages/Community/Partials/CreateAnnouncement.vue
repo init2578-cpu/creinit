@@ -26,6 +26,7 @@ const form = useForm({
     category: 'info',
     visibility_roles: [],
     is_pinned: false,
+    is_anonymous: false,
     expires_at: '',
     files: []
 })
@@ -253,6 +254,32 @@ const toggleRole = (roleName) => {
                                 />
                                 <p v-if="form.errors.expires_at" class="mt-1 text-[10px] text-red-500 font-bold uppercase tracking-tight">{{ form.errors.expires_at }}</p>
                             </div>
+                        </div>
+
+                        <!-- Anonymous Toggle -->
+                        <div class="pt-4 border-t border-gray-100">
+                            <div class="flex items-center justify-between p-4 bg-gray-50/50 rounded-2xl border border-gray-100/50 group cursor-pointer" @click="form.is_anonymous = !form.is_anonymous">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300"
+                                         :class="form.is_anonymous ? 'bg-indigo-100 text-indigo-600' : 'bg-gray-100 text-gray-400'">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18" />
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">Confidentialité</p>
+                                        <p class="text-xs font-bold text-gray-700">Publier de manière anonyme</p>
+                                    </div>
+                                </div>
+                                <div class="w-12 h-6 rounded-full p-1 transition-all duration-300 relative"
+                                     :class="form.is_anonymous ? 'bg-indigo-600' : 'bg-gray-200'">
+                                    <div class="w-4 h-4 bg-white rounded-full shadow-sm transition-all duration-300 transform"
+                                         :class="form.is_anonymous ? 'translate-x-6' : 'translate-x-0'"></div>
+                                </div>
+                            </div>
+                            <p v-if="form.is_anonymous" class="mt-2 px-4 text-[10px] text-indigo-500 font-bold italic">
+                                * Seul le Directeur pourra voir l'auteur original de ce message.
+                            </p>
                         </div>
 
                         <div class="flex items-center gap-3 pt-4 font-bold uppercase tracking-widest text-xs">
