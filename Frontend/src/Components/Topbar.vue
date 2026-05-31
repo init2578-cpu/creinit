@@ -125,8 +125,8 @@ function markAllAsRead() {
                         v-if="isProfileOpen" 
                         class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-100 py-1 transition transform origin-top-right"
                     >
-                        <Link :href="route('profile.edit')" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">Mon profil</Link>
-                        <Link :href="route('profile.settings')" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">Paramètres</Link>
+                        <Link :href="route('profile.edit')" @click="isProfileOpen = false" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">Mon profil</Link>
+                        <Link :href="route('profile.settings')" @click="isProfileOpen = false" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">Paramètres</Link>
                         <hr class="my-1 border-gray-100">
                         <Link 
                             :href="route('logout')" 
