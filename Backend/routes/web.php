@@ -60,6 +60,18 @@ Route::get('/apply', [\App\Http\Controllers\ApplicationController::class, 'creat
 Route::post('/apply', [\App\Http\Controllers\ApplicationController::class, 'store'])
     ->name('applications.store');
 
+Route::get('/vision', function () {
+    return Inertia::render('Vision');
+})->name('vision');
+
+Route::get('/curriculum', function () {
+    return Inertia::render('Curriculum');
+})->name('curriculum');
+
+Route::get('/plateforme', function () {
+    return Inertia::render('Plateforme');
+})->name('plateforme');
+
 Route::get('/verify-certificate/{uuid}', [CertificateVerificationController::class, 'verify'])
     ->name('certificates.verify');
 

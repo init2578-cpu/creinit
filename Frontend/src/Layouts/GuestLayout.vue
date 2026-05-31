@@ -85,9 +85,9 @@ import AIAssistant from '@/Components/AIAssistant.vue'
                 <div class="space-y-8">
                     <h4 class="text-[10px] font-black text-white uppercase tracking-[0.3em]">Navigation Core</h4>
                     <ul class="space-y-3">
-                        <li><Link :href="'/'" class="text-sm font-bold text-slate-500 hover:text-cyan-400 transition-colors">Vision</Link></li>
-                        <li><Link :href="'/'" class="text-sm font-bold text-slate-500 hover:text-cyan-400 transition-colors">Curriculum</Link></li>
-                        <li><Link :href="route('contact.index')" class="text-sm font-bold text-slate-500 hover:text-cyan-400 transition-colors">Plateforme</Link></li>
+                        <li><Link :href="route('vision')" class="text-sm font-bold text-slate-500 hover:text-cyan-400 transition-colors">Vision</Link></li>
+                        <li><Link :href="route('curriculum')" class="text-sm font-bold text-slate-500 hover:text-cyan-400 transition-colors">Curriculum</Link></li>
+                        <li><Link :href="route('plateforme')" class="text-sm font-bold text-slate-500 hover:text-cyan-400 transition-colors">Plateforme</Link></li>
                         <li><Link :href="route('contact.index')" class="text-sm font-bold text-slate-500 hover:text-cyan-400 transition-colors">Contact</Link></li>
                     </ul>
                 </div>
