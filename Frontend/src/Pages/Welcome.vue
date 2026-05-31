@@ -27,36 +27,36 @@ const props = defineProps({
 
 const pillars = [
     {
-        title: 'IA Générative',
-        description: 'Nous intégrons les derniers modèles de langage pour accélérer l\'apprentissage du code et de la conception.',
-        icon: CpuChipIcon,
+        title: 'Vulgarisation Scientifique',
+        description: 'Nous diffusons les résultats de la recherche et les technologies innovantes pour les rendre accessibles à tous.',
+        icon: LightBulbIcon,
         color: 'cyan'
     },
     {
-        title: 'Apprentissage Adaptatif',
-        description: 'Des parcours personnalisés boostés par l\'IA pour s\'adapter au rythme de chaque apprenant du Fouladou.',
-        icon: CommandLineIcon,
+        title: 'Renforcement de Capacités',
+        description: 'Programmes intensifs en informatique, maintenance et techniques artisanales pour l\'autonomisation locale.',
+        icon: AcademicCapIcon,
         color: 'blue'
     },
     {
-        title: 'Labs d\'Innovation',
-        description: 'Expérimentez avec le Machine Learning et la Robotique dans nos nouveaux espaces dédiés.',
-        icon: BeakerIcon,
+        title: 'Innovation & Énergie',
+        description: 'Solutions solaires et transformation agroalimentaire pour répondre aux défis du Fouladou.',
+        icon: RocketLaunchIcon,
         color: 'indigo'
     }
 ]
 
 const modules = [
-    { name: 'Développement Web & IA', level: 'Avancé', duration: '6 mois', students: 45, image: '/images/modules/web-ai.png' },
-    { name: 'Data Analytics', level: 'Intermédiaire', duration: '4 mois', students: 32, image: '/images/modules/data-analytics.png' },
-    { name: 'Design Systèmes', level: 'Intermédiaire', duration: '3 mois', students: 28, image: '/images/modules/design-systems.png' },
-    { name: 'Entrepreneuriat Digital', level: 'Tout public', duration: '2 mois', students: 50, image: '/images/modules/entrepreneurship.png' },
+    { name: 'Maintenance & Réseaux', level: 'Tout public', duration: '3 mois', students: 25, image: '/images/modules/maintenance.png' },
+    { name: 'Transformation Agroalimentaire', level: 'Producteurs', duration: '2 mois', students: 40, image: '/images/modules/agro.png' },
+    { name: 'Énergie Solaire', level: 'Technique', duration: '4 mois', students: 20, image: '/images/modules/solar.png' },
+    { name: 'Arts & Savonnerie', level: 'Tout public', duration: '1 mois', students: 30, image: '/images/modules/arts.png' },
 ]
 
 // Scroll Reveal & Typing Logic
 const revealed = ref(new Set())
 const typeText = ref('')
-const fullTitle = 'Penser Demain. Innover Maintenant.'
+const fullTitle = 'Diffuser le Savoir. Éveiller les Consciences.'
 let typeIdx = 0
 
 onMounted(() => {
@@ -121,8 +121,8 @@ onMounted(() => {
                             class="text-5xl md:text-8xl font-black text-white tracking-tighter leading-[1.1] mb-8 font-display"
                             id="hero-title"
                         >
-                            <span class="text-glow-cyan">{{ typeText.split('.')[0] }}</span><br>
-                            <span class="opacity-80 text-shimmer text-3xl md:text-5xl">{{ typeText.split('.')[1] }}</span>
+                            <span class="text-glow-cyan">Diffuser le Savoir.</span><br>
+                            <span class="opacity-80 text-shimmer text-3xl md:text-5xl">Éveiller les Consciences.</span>
                             <span class="inline-block w-2 h-10 md:h-14 bg-cyan-500 ml-2 animate-blink"></span>
                         </h1>
 
@@ -130,7 +130,7 @@ onMounted(() => {
                             class="text-lg md:text-xl text-slate-300 font-medium leading-relaxed mb-12 max-w-2xl border-l-4 border-cyan-500/50 pl-8 glass-dark py-6 rounded-r-2xl opacity-0 translate-x-[-20px] transition-all duration-1000"
                             id="hero-desc" data-reveal
                         >
-                            {{ settings?.site_description || "Le CRE de Kolda fusionne l'expertise humaine et l'intelligence artificielle pour forger les leaders de la nouvelle économie numérique." }}
+                            {{ settings?.site_description || "Le CRE de Kolda est l'interface entre la recherche et la population. Nous œuvrons pour la vulgarisation scientifique et le progrès technologique au cœur du Fouladou." }}
                         </p>
                         
                         <div 
