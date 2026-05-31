@@ -69,7 +69,7 @@ import AIAssistant from '@/Components/AIAssistant.vue'
                         <div class="glass-dark p-4 rounded-xl border border-white/5 w-full">
                             <p class="text-[9px] uppercase text-cyan-500 font-black tracking-widest mb-2">Localisation Signal</p>
                             <a 
-                                href="https://www.google.com/maps/search/V3W5%2B49+Kolda" 
+                                href="https://www.google.com/maps?q=12.895385642821164,-14.941531705909265" 
                                 target="_blank" 
                                 rel="noopener noreferrer"
                                 class="text-xs text-slate-300 font-bold leading-relaxed hover:text-cyan-400 transition-colors block"
