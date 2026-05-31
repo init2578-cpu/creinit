@@ -27,20 +27,20 @@ const props = defineProps({
 
 const pillars = [
     {
-        title: 'Vulgarisation Scientifique',
-        description: 'Nous diffusons les résultats de la recherche et les technologies innovantes pour les rendre accessibles à tous.',
+        title: 'Démocratisation du Savoir',
+        description: 'Offrir un accès universel aux connaissances scientifiques et technologiques pour tous les citoyens du Sénégal.',
         icon: LightBulbIcon,
         color: 'cyan'
     },
     {
-        title: 'Renforcement de Capacités',
-        description: 'Programmes intensifs en informatique, maintenance et techniques artisanales pour l\'autonomisation locale.',
+        title: 'Transfert de Technologie',
+        description: 'Transformer les innovations de laboratoire en solutions concrètes pour dynamiser l\'économie locale de Kolda.',
         icon: AcademicCapIcon,
         color: 'blue'
     },
     {
-        title: 'Innovation & Énergie',
-        description: 'Solutions solaires et transformation agroalimentaire pour répondre aux défis du Fouladou.',
+        title: 'Émergence Numérique',
+        description: 'Propulser le Fouladou au cœur du Plan Sénégal Émergent par la maîtrise des outils du futur.',
         icon: RocketLaunchIcon,
         color: 'indigo'
     }
@@ -56,7 +56,7 @@ const modules = [
 // Scroll Reveal & Typing Logic
 const revealed = ref(new Set())
 const typeText = ref('')
-const fullTitle = 'Diffuser le Savoir. Éveiller les Consciences.'
+const fullTitle = 'L\'Innovation à Portée de Tous. Démocratiser la Science.'
 let typeIdx = 0
 
 onMounted(() => {
@@ -121,8 +121,8 @@ onMounted(() => {
                             class="text-5xl md:text-8xl font-black text-white tracking-tighter leading-[1.1] mb-8 font-display"
                             id="hero-title"
                         >
-                            <span class="text-glow-cyan">Diffuser le Savoir.</span><br>
-                            <span class="opacity-80 text-shimmer text-3xl md:text-5xl">Éveiller les Consciences.</span>
+                            <span class="text-glow-cyan">L'Innovation à Portée de Tous.</span><br>
+                            <span class="opacity-80 text-shimmer text-3xl md:text-5xl">Démocratiser la Science.</span>
                             <span class="inline-block w-2 h-10 md:h-14 bg-cyan-500 ml-2 animate-blink"></span>
                         </h1>
 
@@ -130,7 +130,7 @@ onMounted(() => {
                             class="text-lg md:text-xl text-slate-300 font-medium leading-relaxed mb-12 max-w-2xl border-l-4 border-cyan-500/50 pl-8 glass-dark py-6 rounded-r-2xl opacity-0 translate-x-[-20px] transition-all duration-1000"
                             id="hero-desc" data-reveal
                         >
-                            {{ settings?.site_description || "Le CRE de Kolda est l'interface entre la recherche et la population. Nous œuvrons pour la vulgarisation scientifique et le progrès technologique au cœur du Fouladou." }}
+                            {{ settings?.site_description || "Outil stratégique du MESRI, le CRE de Kolda réduit la fracture numérique en transformant les résultats de la recherche en leviers concrets de progrès pour le Fouladou." }}
                         </p>
                         
                         <div 
