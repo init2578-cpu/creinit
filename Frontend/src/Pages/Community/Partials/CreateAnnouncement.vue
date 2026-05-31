@@ -64,9 +64,11 @@ const categories = [
 
 const submit = () => {
     form.post(route('community.store'), {
+        forceFormData: true,
         onSuccess: () => {
             form.reset()
             emit('close')
+            previews.value = []
         }
     })
 }
@@ -133,7 +135,9 @@ const toggleRole = (roleName) => {
                                 type="text"
                                 placeholder="Indiquez l'objet de votre message..."
                                 class="w-full rounded-2xl border-gray-100 bg-gray-50/50 px-4 py-3 text-sm font-medium focus:border-blue-500 focus:ring-blue-500 transition-all"
+                                :class="{ 'border-red-300 ring-1 ring-red-100': form.errors.title }"
                             />
+                            <p v-if="form.errors.title" class="mt-1 text-[10px] text-red-500 font-bold uppercase tracking-tight">{{ form.errors.title }}</p>
                         </div>
 
                         <!-- Content -->
@@ -144,7 +148,9 @@ const toggleRole = (roleName) => {
                                 rows="5"
                                 placeholder="Rédigez votre message ici..."
                                 class="w-full rounded-2xl border-gray-100 bg-gray-50/50 px-4 py-3 text-sm font-medium focus:border-blue-500 focus:ring-blue-500 transition-all resize-none"
+                                :class="{ 'border-red-300 ring-1 ring-red-100': form.errors.content }"
                             ></textarea>
+                            <p v-if="form.errors.content" class="mt-1 text-[10px] text-red-500 font-bold uppercase tracking-tight">{{ form.errors.content }}</p>
                         </div>
 
                         <!-- Visibility Filters -->
@@ -193,6 +199,9 @@ const toggleRole = (roleName) => {
                                     />
                                     <span class="text-[10px] text-gray-400 font-medium">Taille max : 20Mo par fichier</span>
                                 </div>
+                                <p v-if="form.errors.files || form.errors['files.0']" class="text-[10px] text-red-500 font-bold uppercase tracking-tight">
+                                    {{ form.errors.files || form.errors['files.0'] }}
+                                </p>
 
                                 <!-- Previews Grid -->
                                 <div v-if="previews.length > 0" class="grid grid-cols-3 sm:grid-cols-4 gap-4">
@@ -240,7 +249,9 @@ const toggleRole = (roleName) => {
                                     v-model="form.expires_at" 
                                     type="datetime-local"
                                     class="w-full rounded-xl border-gray-100 bg-gray-50/50 px-3 py-2 text-xs font-bold focus:border-blue-500 focus:ring-blue-500 transition-all"
+                                    :class="{ 'border-red-300 ring-1 ring-red-100': form.errors.expires_at }"
                                 />
+                                <p v-if="form.errors.expires_at" class="mt-1 text-[10px] text-red-500 font-bold uppercase tracking-tight">{{ form.errors.expires_at }}</p>
                             </div>
                         </div>
 

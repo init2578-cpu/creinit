@@ -55,7 +55,7 @@ class AnnouncementController extends Controller
             'category'         => 'required|string|in:info,warning,event,success',
             'visibility_roles' => 'nullable|array',
             'is_pinned'        => 'boolean',
-            'expires_at'       => 'nullable|date|after:now',
+            'expires_at'       => 'nullable|date',
             'files'            => 'nullable|array',
             'files.*'          => 'file|max:20480', // 20MB limit
         ]);
