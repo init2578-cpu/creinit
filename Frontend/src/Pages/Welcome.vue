@@ -89,7 +89,7 @@ onMounted(() => {
 
     <GuestLayout>
         <!-- Futuristic Hero Section -->
-        <section class="relative min-h-screen flex items-center overflow-hidden bg-slate-950">
+        <section class="relative min-h-screen flex items-center overflow-hidden bg-slate-950 bg-cyber-grid">
             <!-- Digital Overlays -->
             <div class="absolute inset-0 z-[5] pointer-events-none overflow-hidden opacity-30">
                 <div class="scanline"></div>
@@ -99,8 +99,18 @@ onMounted(() => {
             <!-- AI Grid & Background -->
             <div class="absolute inset-0 z-0 overflow-hidden">
                 <img src="/images/hero-premium.png" alt="Futuristic background" class="w-full h-full object-cover opacity-90 animate-hero-enhanced">
+                
+                <!-- Advanced Background Aura -->
+                <div class="absolute top-1/4 left-1/4 w-[50vw] h-[50vw] bg-cyan-500/20 rounded-full blur-[120px] animate-pulse-slow"></div>
+                <div class="absolute bottom-1/4 right-1/4 w-[40vw] h-[40vw] bg-indigo-500/20 rounded-full blur-[150px] animate-pulse-slow" style="animation-delay: 2s"></div>
+                
                 <div class="absolute inset-0 bg-gradient-to-b from-slate-950/20 via-transparent to-slate-950"></div>
                 <div class="absolute inset-0 bg-cyan-500/5 mix-blend-overlay animate-pulse-slow"></div>
+                
+                <!-- HUD Decorative Elements -->
+                <div class="absolute top-20 right-20 w-64 h-64 border-r border-t border-cyan-500/10 rounded-tr-[4rem] hidden lg:block animate-float"></div>
+                <div class="absolute bottom-20 left-20 w-48 h-48 border-l border-b border-indigo-500/10 rounded-bl-[3rem] hidden lg:block animate-float" style="animation-delay: 1.5s"></div>
+                
                 <!-- Glitch/Flash Overlays -->
                 <div class="absolute inset-0 opacity-0 bg-cyan-400/10 mix-blend-screen animate-glitch-flash pointer-events-none"></div>
                 <div class="absolute inset-0 opacity-0 bg-white/5 mix-blend-overlay animate-glitch-flash-fast pointer-events-none"></div>
@@ -139,8 +149,9 @@ onMounted(() => {
                         >
                             <Link 
                                 :href="route('applications.create')" 
-                                class="group relative w-full sm:w-auto px-10 py-5 bg-cyan-500 text-slate-950 rounded-xl font-black text-lg transition-all hover:bg-cyan-400 hover:shadow-[0_0_40px_rgba(6,182,212,0.5)] active:scale-95 flex items-center justify-center gap-3 overflow-hidden"
+                                class="group relative w-full sm:w-auto px-10 py-5 bg-cyan-500 text-slate-950 rounded-xl font-black text-lg transition-all hover:bg-cyan-400 hover:shadow-[0_0_40px_rgba(6,182,212,0.5)] hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-3 overflow-hidden"
                             >
+                                <div class="absolute inset-x-0 bottom-0 h-[2px] bg-white/20 scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></div>
                                 Déposer ma Candidature
                                 <ArrowRightIcon class="h-6 w-6 group-hover:translate-x-1 transition-transform" />
                             </Link>
@@ -420,6 +431,14 @@ body {
     background: linear-gradient(to right, transparent, rgba(6, 182, 212, 0.3), transparent);
     animation: scanline 8s linear infinite;
     z-index: 10;
+}
+
+/* Cyber Grid Background */
+.bg-cyber-grid {
+    background-size: 50px 50px;
+    background-image: 
+        linear-gradient(to right, rgba(6, 182, 212, 0.05) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(6, 182, 212, 0.05) 1px, transparent 1px);
 }
 
 .stream-line {
