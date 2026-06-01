@@ -1,118 +1,133 @@
 <script setup>
+import { ref } from 'vue'
 import { Link } from '@inertiajs/vue3'
-import { AcademicCapIcon } from '@heroicons/vue/24/outline'
 import AIAssistant from '@/Components/AIAssistant.vue'
+import { Bars3Icon, XMarkIcon } from '@heroicons/vue/24/outline'
+
+const mobileMenuOpen = ref(false)
+const toggleMenu = () => mobileMenuOpen.value = !mobileMenuOpen.value
+const closeMenu = () => mobileMenuOpen.value = false
+
+const navLinks = [
+    { label: 'Vision', route: 'vision' },
+    { label: 'Curriculum', route: 'curriculum' },
+    { label: 'Plateforme', route: 'plateforme' },
+    { label: 'Contact', route: 'contact.index' },
+    { label: 'Candidater', route: 'applications.create' },
+]
 </script>
 
 <template>
     <div class="min-h-screen bg-slate-950 flex flex-col font-sans selection:bg-cyan-500/30 selection:text-cyan-200">
-        <header class="fixed top-0 left-0 right-0 z-[60] bg-slate-950/20 backdrop-blur-md border-b border-white/5 py-0 px-4 transition-all duration-500">
-            <div class="max-w-7xl mx-auto flex items-center justify-between">
-                <Link :href="'/'" class="flex items-center gap-4 group">
-                    <img src="/images/logo-cre.png" alt="CRE Kolda Logo" class="h-16 w-16 object-contain drop-shadow-[0_0_10px_rgba(34,211,238,0.3)] transition-transform group-hover:scale-110">
+        <!-- Header -->
+        <header class="fixed top-0 left-0 right-0 z-[60] bg-slate-950/80 backdrop-blur-md border-b border-white/5 transition-all duration-500">
+            <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+                <!-- Logo -->
+                <Link :href="'/'" class="flex items-center gap-3 group shrink-0">
+                    <img src="/images/logo-cre.png" alt="CRE Kolda Logo" class="h-12 w-12 object-contain drop-shadow-[0_0_10px_rgba(34,211,238,0.3)] transition-transform group-hover:scale-110">
                     <div class="flex flex-col">
-                        <span class="text-xl font-black text-white tracking-tighter leading-none">E-CRE</span>
-                        <span class="text-[8px] font-black text-cyan-500 uppercase tracking-[0.4em]">KOLDA HUB</span>
+                        <span class="text-lg font-black text-white tracking-tighter leading-none">E-CRE</span>
+                        <span class="text-[7px] font-black text-cyan-500 uppercase tracking-[0.4em]">KOLDA HUB</span>
                     </div>
                 </Link>
                 
-                <div class="flex items-center gap-6">
-                    <Link 
-                        :href="route('vision')" 
-                        class="hidden md:block text-xs font-black text-slate-400 hover:text-cyan-400 transition uppercase tracking-widest"
+                <!-- Desktop Nav -->
+                <nav class="hidden md:flex items-center gap-5">
+                    <Link v-for="link in navLinks" :key="link.route"
+                        :href="route(link.route)" 
+                        class="text-[10px] font-black text-slate-400 hover:text-cyan-400 transition uppercase tracking-widest"
                     >
-                        Vision
+                        {{ link.label }}
                     </Link>
-                    <Link 
-                        :href="route('curriculum')" 
-                        class="hidden md:block text-xs font-black text-slate-400 hover:text-cyan-400 transition uppercase tracking-widest"
-                    >
-                        Curriculum
-                    </Link>
-                    <Link 
-                        :href="route('plateforme')" 
-                        class="hidden md:block text-xs font-black text-slate-400 hover:text-cyan-400 transition uppercase tracking-widest"
-                    >
-                        Plateforme
-                    </Link>
-                    <Link 
-                        :href="route('contact.index')" 
-                        class="hidden md:block text-xs font-black text-slate-400 hover:text-cyan-400 transition uppercase tracking-widest"
-                    >
-                        Contact
-                    </Link>
-                    <Link 
-                        :href="route('applications.create')" 
-                        class="hidden md:block text-xs font-black text-slate-400 hover:text-cyan-400 transition uppercase tracking-widest"
-                    >
-                        Candidater
-                    </Link>
+                </nav>
+
+                <!-- Right side -->
+                <div class="flex items-center gap-3">
                     <Link 
                         v-if="!$page.props.auth.user"
                         :href="route('login')" 
-                        class="px-5 py-2.5 bg-white text-slate-950 rounded-xl text-xs font-black shadow-2xl hover:bg-cyan-400 transition-colors"
+                        class="px-4 py-2 bg-white text-slate-950 rounded-xl text-xs font-black shadow-2xl hover:bg-cyan-400 transition-colors"
                     >
                         Accès Nexus
                     </Link>
                     <Link 
                         v-else
                         :href="route('dashboard.director')" 
-                        class="px-5 py-2.5 bg-slate-800 text-white rounded-xl text-xs font-black border border-slate-700 hover:bg-slate-700 transition"
+                        class="px-4 py-2 bg-slate-800 text-white rounded-xl text-xs font-black border border-slate-700 hover:bg-slate-700 transition"
                     >
-                        Console Admn
+                        Console
                     </Link>
+
+                    <!-- Hamburger (Mobile only) -->
+                    <button @click="toggleMenu" class="md:hidden p-2 rounded-xl text-slate-400 hover:text-cyan-400 hover:bg-slate-800 transition">
+                        <XMarkIcon v-if="mobileMenuOpen" class="h-6 w-6" />
+                        <Bars3Icon v-else class="h-6 w-6" />
+                    </button>
                 </div>
             </div>
+
+            <!-- Mobile Slide-Down Menu -->
+            <Transition enter-active-class="transition-all duration-300 ease-out" enter-from-class="opacity-0 -translate-y-2" enter-to-class="opacity-100 translate-y-0" leave-active-class="transition-all duration-200 ease-in" leave-from-class="opacity-100 translate-y-0" leave-to-class="opacity-0 -translate-y-2">
+                <div v-if="mobileMenuOpen" class="md:hidden bg-slate-950/95 backdrop-blur-xl border-t border-white/5 px-4 py-6">
+                    <nav class="flex flex-col gap-1">
+                        <Link 
+                            v-for="link in navLinks" :key="link.route"
+                            :href="route(link.route)"
+                            @click="closeMenu"
+                            class="px-4 py-3 rounded-xl text-sm font-black text-slate-300 hover:text-cyan-400 hover:bg-slate-800 transition uppercase tracking-widest"
+                        >
+                            {{ link.label }}
+                        </Link>
+                    </nav>
+                </div>
+            </Transition>
         </header>
 
-        <main class="flex-1 pt-20">
+        <main class="flex-1 pt-16">
             <slot />
         </main>
 
-        <!-- Dynamic Footer 2.0 (Shared) -->
-        <footer class="py-24 bg-slate-950 border-t border-white/5 relative z-30">
-            <div class="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-4 gap-16">
-                <div class="md:col-span-2">
-                    <div class="flex items-center gap-6 mb-0">
-                        <img src="/images/logo-cre.png" alt="CRE Logo" class="h-20 w-auto object-contain">
-                        <div class="flex flex-col">
-                            <span class="text-xl font-black text-white tracking-tighter leading-none font-display">{{ $page.props.settings?.site_name || 'E-CRE' }}</span>
-                            <span class="text-[9px] font-black text-cyan-500 uppercase tracking-[0.4em] mt-1">Sénégal 2.0</span>
+        <!-- Footer -->
+        <footer class="py-16 bg-slate-950 border-t border-white/5 relative z-30">
+            <div class="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-3 gap-10 mb-10">
+                <!-- Brand -->
+                <div class="md:col-span-1">
+                    <div class="flex items-center gap-4 mb-4">
+                        <img src="/images/logo-cre.png" alt="CRE Logo" class="h-14 w-auto object-contain">
+                        <div>
+                            <p class="text-base font-black text-white tracking-tighter">{{ $page.props.settings?.site_name || 'E-CRE' }}</p>
+                            <p class="text-[8px] font-black text-cyan-500 uppercase tracking-[0.3em]">Sénégal 2.0</p>
                         </div>
                     </div>
-                    <p class="text-slate-500 font-medium max-w-sm leading-relaxed mb-10">
-                        Le pivot numérique de la région de Kolda. Nous formons, nous innovons, nous impactons par le code et l'IA.
+                    <p class="text-slate-500 text-sm leading-relaxed mb-4">
+                        Interface entre la recherche et la population du Fouladou.
                     </p>
-                    <div class="flex items-center gap-3">
-                        <div class="glass-dark p-4 rounded-xl border border-white/5 w-full">
-                            <p class="text-[9px] uppercase text-cyan-500 font-black tracking-widest mb-2">Localisation Signal</p>
-                            <a 
-                                href="https://www.google.com/maps?q=12.895385642821164,-14.941531705909265" 
-                                target="_blank" 
-                                rel="noopener noreferrer"
-                                class="text-xs text-slate-300 font-bold leading-relaxed hover:text-cyan-400 transition-colors block"
-                            >
-                                Doumassou en face des arènes, <br>
-                                non loin de l'arbre Moussa Molo Baldé <br>
-                                <span class="text-cyan-400">Coord: V3W5+49 Kolda</span>
-                            </a>
-                        </div>
-                    </div>
+                    <a 
+                        href="https://www.google.com/maps?q=12.895385642821164,-14.941531705909265" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        class="inline-block text-xs text-cyan-400 hover:text-cyan-300 transition font-bold"
+                    >
+                        📍 Doumassou, Kolda (V3W5+49)
+                    </a>
                 </div>
 
-                <div class="space-y-8">
-                    <h4 class="text-[10px] font-black text-white uppercase tracking-[0.3em]">Navigation Core</h4>
+                <!-- Navigation Links -->
+                <div>
+                    <h4 class="text-[10px] font-black text-white uppercase tracking-[0.3em] mb-4">Navigation</h4>
                     <ul class="space-y-3">
-                        <li><Link :href="route('vision')" class="text-sm font-bold text-slate-500 hover:text-cyan-400 transition-colors">Vision</Link></li>
-                        <li><Link :href="route('curriculum')" class="text-sm font-bold text-slate-500 hover:text-cyan-400 transition-colors">Curriculum</Link></li>
-                        <li><Link :href="route('plateforme')" class="text-sm font-bold text-slate-500 hover:text-cyan-400 transition-colors">Plateforme</Link></li>
-                        <li><Link :href="route('contact.index')" class="text-sm font-bold text-slate-500 hover:text-cyan-400 transition-colors">Contact</Link></li>
+                        <li v-for="link in navLinks" :key="link.route">
+                            <Link :href="route(link.route)" class="text-sm font-bold text-slate-500 hover:text-cyan-400 transition-colors">
+                                {{ link.label }}
+                            </Link>
+                        </li>
                     </ul>
                 </div>
 
-                <div class="space-y-8">
-                    <h4 class="text-[10px] font-black text-white uppercase tracking-[0.3em]">IA Nexus</h4>
-                    <div class="space-y-4">
+                <!-- Status -->
+                <div>
+                    <h4 class="text-[10px] font-black text-white uppercase tracking-[0.3em] mb-4">IA Nexus</h4>
+                    <div class="space-y-3">
                         <div class="flex items-center gap-3 text-xs text-slate-500 font-bold">
                             <div class="h-1.5 w-1.5 rounded-full bg-cyan-500 animate-pulse"></div>
                             Serveurs Actifs
@@ -121,17 +136,17 @@ import AIAssistant from '@/Components/AIAssistant.vue'
                             <div class="h-1.5 w-1.5 rounded-full bg-green-500"></div>
                             99.9% Uptime
                         </div>
-                        <div class="p-5 glass-dark rounded-2xl border border-white/5">
-                             <p class="text-[9px] uppercase text-slate-600 mb-1">Dernière Mise à jour</p>
-                             <p class="text-[10px] text-slate-400 font-bold">v3.4.0 — IA Core v2</p>
+                        <div class="p-4 glass-dark rounded-2xl border border-white/5">
+                            <p class="text-[9px] uppercase text-slate-600 mb-1">Email</p>
+                            <a href="mailto:crekolda2014@gmail.com" class="text-[10px] text-cyan-400 font-bold hover:underline">crekolda2014@gmail.com</a>
                         </div>
                     </div>
                 </div>
             </div>
             
-            <div class="max-w-7xl mx-auto px-4 mt-12 pt-8 border-t border-white/5 text-center">
+            <div class="max-w-7xl mx-auto px-4 pt-6 border-t border-white/5 text-center">
                 <p class="text-[9px] font-black text-slate-600 uppercase tracking-[0.5em]">
-                    © 2026 E-CRE Kolda — Neural Learning Network
+                    © 2026 E-CRE Kolda — Neural Learning Network — MESRI
                 </p>
             </div>
         </footer>
