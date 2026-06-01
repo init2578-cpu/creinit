@@ -47,10 +47,10 @@ const pillars = [
 ]
 
 const modules = [
-    { name: 'Maintenance & Réseaux', level: 'Tout public', duration: '3 mois', students: 25, image: '/images/modules/maintenance.png' },
-    { name: 'Transformation Agroalimentaire', level: 'Producteurs', duration: '2 mois', students: 40, image: '/images/modules/agro.png' },
-    { name: 'Énergie Solaire', level: 'Technique', duration: '4 mois', students: 20, image: '/images/modules/solar.png' },
-    { name: 'Arts & Savonnerie', level: 'Tout public', duration: '1 mois', students: 30, image: '/images/modules/arts.png' },
+    { name: 'Maintenance & Réseaux', level: 'Tout public', duration: '3 mois', students: 25, image: '/images/modules/maintenance.png', desc: 'Diagnostic, réparation et configuration de matériel informatique et de réseaux locaux.' },
+    { name: 'Transformation Agroalimentaire', level: 'Producteurs', duration: '2 mois', students: 40, image: '/images/modules/agro.png', desc: 'Techniques de conservation et de transformation des fruits, légumes et produits locaux.' },
+    { name: 'Énergie Solaire', level: 'Technique', duration: '4 mois', students: 20, image: '/images/modules/solar.png', desc: 'Installation, câblage et maintenance de kits solaires photovoltaïques.' },
+    { name: 'Arts & Savonnerie', level: 'Tout public', duration: '1 mois', students: 30, image: '/images/modules/arts.png', desc: 'Fabrication artisanale de savons, eau de javel et cosmétiques naturels.' },
 ]
 
 // Scroll Reveal & Typing Logic
@@ -288,8 +288,8 @@ onMounted(() => {
                     >
                         <!-- Module Image -->
                         <div class="absolute inset-0 z-0">
-                            <img :src="mod.image" alt="Module Image" class="w-full h-full object-cover opacity-20 group-hover:opacity-40 transition-opacity duration-700">
-                            <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent"></div>
+                            <img :src="mod.image" alt="Module Image" class="w-full h-full object-cover opacity-40 group-hover:opacity-60 transition-opacity duration-700">
+                            <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/80 to-slate-950/50"></div>
                         </div>
 
                         <!-- Digital Pulse Circle -->
@@ -304,8 +304,8 @@ onMounted(() => {
                             </div>
                             
                             <h3 class="text-2xl font-black text-white mb-4 tracking-tight leading-tight group-hover:translate-x-1 transition-transform">{{ mod.name }}</h3>
-                            <p class="text-slate-500 text-xs font-medium leading-relaxed opacity-60 group-hover:opacity-100 transition-opacity">
-                                Architecture orientée vers le futur, combinant ingénierie logicielle et intelligence machine.
+                            <p class="text-slate-300 text-sm font-medium leading-relaxed">
+                                {{ mod.desc }}
                             </p>
                         </div>
                         
