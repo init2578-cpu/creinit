@@ -16,7 +16,25 @@ import AIAssistant from '@/Components/AIAssistant.vue'
                     </div>
                 </Link>
                 
-                <div class="flex items-center gap-8">
+                <div class="flex items-center gap-6">
+                    <Link 
+                        :href="route('vision')" 
+                        class="hidden md:block text-xs font-black text-slate-400 hover:text-cyan-400 transition uppercase tracking-widest"
+                    >
+                        Vision
+                    </Link>
+                    <Link 
+                        :href="route('curriculum')" 
+                        class="hidden md:block text-xs font-black text-slate-400 hover:text-cyan-400 transition uppercase tracking-widest"
+                    >
+                        Curriculum
+                    </Link>
+                    <Link 
+                        :href="route('plateforme')" 
+                        class="hidden md:block text-xs font-black text-slate-400 hover:text-cyan-400 transition uppercase tracking-widest"
+                    >
+                        Plateforme
+                    </Link>
                     <Link 
                         :href="route('contact.index')" 
                         class="hidden md:block text-xs font-black text-slate-400 hover:text-cyan-400 transition uppercase tracking-widest"
