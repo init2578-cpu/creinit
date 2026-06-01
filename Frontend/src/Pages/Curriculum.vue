@@ -105,10 +105,10 @@ const courses = [
                             </div>
                         </div>
                     </div>
-                    <div class="relative rounded-3xl overflow-hidden aspect-video">
-                        <img src="/images/learning-at-cre.png" alt="Learning at CRE" class="w-full h-full object-cover">
-                        <div class="absolute inset-0 bg-emerald-500/10 mix-blend-overlay"></div>
-                    </div>
+                        <div class="relative rounded-3xl overflow-hidden aspect-video">
+                            <img src="/images/hero-premium.png" alt="Learning at CRE" class="w-full h-full object-cover">
+                            <div class="absolute inset-0 bg-emerald-500/10 mix-blend-overlay"></div>
+                        </div>
                 </div>
             </div>
         </div>

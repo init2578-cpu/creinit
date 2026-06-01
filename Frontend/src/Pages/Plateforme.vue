@@ -86,7 +86,7 @@ const features = [
                         </div>
                         <div class="lg:w-1/2 relative">
                             <div class="absolute -inset-10 bg-indigo-500/20 blur-3xl rounded-full"></div>
-                            <img src="/images/assane-preview.png" alt="IA Assane" class="relative z-10 w-full max-w-md mx-auto drop-shadow-2xl">
+                            <img src="/images/cre-ai-hero.png" alt="IA Assane" class="relative z-10 w-full max-w-md mx-auto drop-shadow-2xl rounded-3xl border border-white/10">
                         </div>
                     </div>
                 </div>
