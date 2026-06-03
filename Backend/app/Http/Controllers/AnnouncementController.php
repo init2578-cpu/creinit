@@ -76,7 +76,7 @@ class AnnouncementController extends Controller
         return Inertia::render('Community/Index', [
             'announcements' => $announcements,
             'availableRoles' => Role::all(['id', 'name']),
-            'canPost' => $user->hasAnyRole(['Directeur', 'Secrétaire', 'Formateur']),
+            'canPost' => $user->hasAnyRole(['Directeur', 'Secrétaire', 'Formateur', 'Stagiaire', 'Apprenant']),
         ]);
     }
 
@@ -175,7 +175,7 @@ class AnnouncementController extends Controller
      */
     private function authorizePost(): void
     {
-        if (!auth()->user()->hasAnyRole(['Directeur', 'Secrétaire', 'Formateur'])) {
+        if (!auth()->user()->hasAnyRole(['Directeur', 'Secrétaire', 'Formateur', 'Stagiaire', 'Apprenant'])) {
             abort(403, 'Vous n\'êtes pas autorisé à publier des messages.');
         }
     }
