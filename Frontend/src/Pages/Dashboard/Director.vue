@@ -21,7 +21,8 @@ import {
     ClipboardDocumentCheckIcon,
     BuildingLibraryIcon,
     CalendarIcon,
-    RocketLaunchIcon
+    RocketLaunchIcon,
+    ClockIcon
 } from '@heroicons/vue/24/outline'
 
 const props = defineProps({
