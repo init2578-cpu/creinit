@@ -76,7 +76,6 @@ const navigation = computed(() => {
             { name: 'Emplois du temps', href: route('schedules.index'), icon: CalendarIcon },
             { name: 'Émargement', href: route('attendance.index'), icon: ClipboardDocumentCheckIcon },
             { name: 'Rapports', href: route('reports.index'), icon: DocumentChartBarIcon },
-            { name: 'Paramètres', href: route('settings.index'), icon: Cog6ToothIcon },
         )
     }
 

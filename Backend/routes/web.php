@@ -207,13 +207,15 @@ Route::middleware(['auth'])->group(function (): void {
         Route::resource('students', \App\Http\Controllers\StudentsController::class)->except(['index']);
         Route::resource('trainees', \App\Http\Controllers\TraineesController::class)->except(['index']);
 
-        // Settings
-        Route::get('/settings', [\App\Http\Controllers\SettingController::class, 'index'])
-            ->name('settings.index');
-        Route::post('/settings', [\App\Http\Controllers\SettingController::class, 'update'])
-            ->name('settings.update');
-        Route::post('/settings/initialize', [\App\Http\Controllers\SettingController::class, 'initialize'])
-            ->name('settings.initialize');
+        // Settings (Directeur only — system configuration)
+        Route::middleware(['role:Directeur'])->group(function () {
+            Route::get('/settings', [\App\Http\Controllers\SettingController::class, 'index'])
+                ->name('settings.index');
+            Route::post('/settings', [\App\Http\Controllers\SettingController::class, 'update'])
+                ->name('settings.update');
+            Route::post('/settings/initialize', [\App\Http\Controllers\SettingController::class, 'initialize'])
+                ->name('settings.initialize');
+        });
 
         // Nominations Approval
         Route::patch('/nominations/{nomination}/approve', [NominationController::class, 'approve'])
