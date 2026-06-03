@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Announcement;
 use App\Models\AnnouncementReply;
+use App\Notifications\AnnouncementReplyNotification;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 
@@ -18,10 +19,17 @@ class AnnouncementReplyController extends Controller
             'content' => 'required|string|max:1000',
         ]);
 
-        $announcement->replies()->create([
+        $reply = $announcement->replies()->create([
             'user_id' => $request->user()->id,
             'content' => $validated['content'],
         ]);
+
+        // Notify the announcement author (if they are not the one replying)
+        $reply->load(['user', 'announcement']);
+        $author = $announcement->user;
+        if ($author && $author->id !== $request->user()->id) {
+            $author->notify(new AnnouncementReplyNotification($reply));
+        }
 
         return back();
     }
