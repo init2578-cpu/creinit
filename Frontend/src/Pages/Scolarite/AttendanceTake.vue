@@ -23,6 +23,8 @@ const props = defineProps({
 const form = useForm({
     schedule_id: props.schedule.id,
     date: props.date,
+    latitude: null,
+    longitude: null,
     students: props.students.map(s => ({
         id: s.id,
         name: s.name,
@@ -30,22 +32,11 @@ const form = useForm({
     }))
 })
 
-// Removed hardcoded constraints, now using props.settings
+// GPS check is done server-side via EnsureWithinPremises middleware
 
 const locationError = ref('')
 const isCheckingLocation = ref(false)
 
-const calculateDistance = (lat1, lon1, lat2, lon2) => {
-    const R = 6371e3
-    const p1 = lat1 * Math.PI/180
-    const p2 = lat2 * Math.PI/180
-    const dPhi = (lat2-lat1) * Math.PI/180
-    const dLon = (lon2-lon1) * Math.PI/180
-    const a = Math.sin(dPhi/2) * Math.sin(dPhi/2) +
-              Math.cos(p1) * Math.cos(p2) *
-              Math.sin(dLon/2) * Math.sin(dLon/2)
-    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))
-}
 
 const checkLocation = () => {
     return new Promise((resolve) => {
@@ -56,28 +47,20 @@ const checkLocation = () => {
         isCheckingLocation.value = true
         navigator.geolocation.getCurrentPosition(
             (pos) => {
-                const dist = calculateDistance(
-                    pos.coords.latitude, 
-                    pos.coords.longitude, 
-                    parseFloat(props.settings.latitude), 
-                    parseFloat(props.settings.longitude)
-                )
+                // Store GPS coordinates in form for backend validation and storage
+                form.latitude = pos.coords.latitude
+                form.longitude = pos.coords.longitude
+
                 isCheckingLocation.value = false
-                const radius = parseInt(props.settings.radius)
-                if (dist > radius) {
-                    locationError.value = `Position invalide : Vous êtes à ${Math.round(dist)}m du CRE (max ${radius}m).`
-                    resolve(false)
-                } else {
-                    locationError.value = ''
-                    resolve(true)
-                }
+                locationError.value = ''
+                resolve(true)
             },
             () => {
                 isCheckingLocation.value = false
                 locationError.value = "Accès à la position refusé. La géolocalisation est obligatoire pour émarger."
                 resolve(false)
             },
-            { timeout: 10000 }
+            { timeout: 10000, enableHighAccuracy: true }
         )
     })
 }

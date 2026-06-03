@@ -107,6 +107,8 @@ class AttendanceController extends Controller
         $validated = $request->validate([
             'schedule_id' => 'required|exists:schedules,id',
             'date' => 'required|date',
+            'latitude' => 'required|numeric',
+            'longitude' => 'required|numeric',
             'students' => 'required|array',
             'students.*.id' => 'required|exists:users,id',
             'students.*.status' => 'required|string|in:present,absent,late,justifie',
@@ -142,7 +144,9 @@ class AttendanceController extends Controller
                     'date' => $validated['date'],
                 ],
                 [
-                    'status' => $studentData['status'],
+                    'status'    => $studentData['status'],
+                    'latitude'  => $validated['latitude'],
+                    'longitude' => $validated['longitude'],
                 ]
             );
         }

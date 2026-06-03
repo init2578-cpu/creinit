@@ -237,7 +237,8 @@ Route::middleware(['auth'])->group(function (): void {
             ->middleware(EnsureWithinPremises::class)->name('attendances.store');
         Route::get('/attendance', [\App\Http\Controllers\Scolarite\AttendanceController::class, 'index'])->name('attendance.index');
         Route::get('/attendance/{schedule}/{date}', [\App\Http\Controllers\Scolarite\AttendanceController::class, 'take'])->name('attendance.take');
-        Route::post('/attendance', [\App\Http\Controllers\Scolarite\AttendanceController::class, 'store'])->name('attendance.store');
+        Route::post('/attendance', [\App\Http\Controllers\Scolarite\AttendanceController::class, 'store'])
+            ->middleware(EnsureWithinPremises::class)->name('attendance.store');
 
         // Chapter Progress
         Route::get('/chapter-progress/groups', [ChapterProgressController::class, 'groupsIndex'])->name('chapter-progress.groups');
