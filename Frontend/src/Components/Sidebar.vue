@@ -80,7 +80,7 @@ const navigation = computed(() => {
         )
     }
 
-    if (roles.value.includes('Formateur')) {
+    if (roles.value.includes('Formateur') || page.props.auth.user?.is_trainer) {
         menu.push(
             { name: 'Mes Groupes', href: route('trainer.groups'), icon: AcademicCapIcon },
             { name: 'Communauté', href: route('community.index'), icon: ChatBubbleLeftRightIcon, badge: page.props.auth.user?.unread_announcements_count },
@@ -96,7 +96,7 @@ const navigation = computed(() => {
         )
     }
 
-    if (roles.value.includes('Apprenant')) {
+    if (roles.value.includes('Apprenant') || (roles.value.includes('Stagiaire') && !page.props.auth.user?.is_trainer)) {
         menu.push(
             { name: 'Mon Parcours', href: route('student.dashboard'), icon: AcademicCapIcon },
             { name: 'Communauté', href: route('community.index'), icon: ChatBubbleLeftRightIcon, badge: page.props.auth.user?.unread_announcements_count },

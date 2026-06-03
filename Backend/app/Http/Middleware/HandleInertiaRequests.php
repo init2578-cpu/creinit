@@ -43,6 +43,7 @@ class HandleInertiaRequests extends Middleware
                     'email' => $request->user()->email,
                     'profile_photo_url' => $request->user()->profile_photo_url,
                     'roles' => $request->user()->getRoleNames(),
+                    'is_trainer' => $request->user()->isTrainer(),
                     'unread_notifications' => $request->user()->unreadNotifications()->latest()->limit(10)->get(),
                     'unread_notifications_count' => $request->user()->unreadNotifications()->count(),
                     'unread_messages_count' => \App\Models\ContactMessage::where('is_read', false)->count(),
