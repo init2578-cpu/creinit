@@ -86,12 +86,23 @@ class DirectorDashboardController extends Controller
      */
     private function getAttendanceStats(): array
     {
-        // Learners
+        // Learners (Apprenant / Élèves)
         $learnerTotal = Attendance::whereHas('user', function($q) { $q->role('Apprenant'); })->count();
         $learnerAbsent = Attendance::whereHas('user', function($q) { $q->role('Apprenant'); })
             ->where('status', '!=', 'present')->count();
         
         $learnerHours = Attendance::whereHas('user', function($q) { $q->role('Apprenant'); })
+            ->where('attendances.status', '!=', 'present')
+            ->join('schedules', 'attendances.schedule_id', '=', 'schedules.id')
+            ->select(DB::raw('SUM(EXTRACT(EPOCH FROM (schedules.end_time - schedules.start_time)) / 3600) as total_hours'))
+            ->value('total_hours') ?? 0;
+
+        // Trainees (Stagiaire)
+        $traineeTotal = Attendance::whereHas('user', function($q) { $q->role('Stagiaire'); })->count();
+        $traineeAbsent = Attendance::whereHas('user', function($q) { $q->role('Stagiaire'); })
+            ->where('status', '!=', 'present')->count();
+        
+        $traineeHours = Attendance::whereHas('user', function($q) { $q->role('Stagiaire'); })
             ->where('attendances.status', '!=', 'present')
             ->join('schedules', 'attendances.schedule_id', '=', 'schedules.id')
             ->select(DB::raw('SUM(EXTRACT(EPOCH FROM (schedules.end_time - schedules.start_time)) / 3600) as total_hours'))
@@ -111,6 +122,8 @@ class DirectorDashboardController extends Controller
         return [
             'learners_absence_rate'  => $learnerTotal > 0 ? round(($learnerAbsent / $learnerTotal) * 100, 1) : 0.0,
             'learners_absence_hours' => round((float)$learnerHours, 1),
+            'trainees_absence_rate'  => $traineeTotal > 0 ? round(($traineeAbsent / $traineeTotal) * 100, 1) : 0.0,
+            'trainees_absence_hours' => round((float)$traineeHours, 1),
             'trainers_absence_rate'  => $trainerTotal > 0 ? round(($trainerAbsent / $trainerTotal) * 100, 1) : 0.0,
             'trainers_absence_hours' => round((float)$trainerHours, 1),
         ];

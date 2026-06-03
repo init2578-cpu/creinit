@@ -137,20 +137,38 @@ onMounted(() => {
                             </div>
                         </div>
 
-                        <!-- Absence Apprenants -->
+                        <!-- Absence Apprenants (Élèves) -->
                         <div class="group relative bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm transition-all hover:shadow-2xl hover:border-red-100 overflow-hidden">
                              <div class="absolute top-0 right-0 w-24 h-24 -mr-8 -mt-8 bg-red-50 rounded-full blur-2xl group-hover:bg-red-100 transition-colors"></div>
                             <div class="relative z-10">
                                 <div class="h-12 w-12 bg-red-50 rounded-2xl flex items-center justify-center text-red-600 mb-6 group-hover:bg-red-600 group-hover:text-white transition-all transform group-hover:-rotate-6 shadow-sm">
                                     <BoltIcon class="h-6 w-6" />
                                 </div>
-                                <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Absence Stagiaires</p>
+                                <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Absence Élèves</p>
                                 <div class="flex items-baseline gap-2">
                                     <h3 class="text-4xl font-black text-gray-900 tracking-tighter">{{ dashboardKpis.attendance_stats?.learners_absence_rate || 0 }}%</h3>
                                     <p class="text-[10px] font-black text-red-500 uppercase tracking-widest">{{ dashboardKpis.attendance_stats?.learners_absence_hours || 0 }}h cumulées</p>
                                 </div>
                                 <div class="mt-6 w-full bg-gray-100 h-2 rounded-full overflow-hidden p-0.5 shadow-inner">
                                     <div class="bg-gradient-to-r from-red-400 to-red-600 h-full rounded-full transition-all duration-1000 shadow-sm" :style="{ width: (dashboardKpis.attendance_stats?.learners_absence_rate || 0) + '%' }"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Absence Stagiaires -->
+                        <div class="group relative bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm transition-all hover:shadow-2xl hover:border-pink-100 overflow-hidden">
+                             <div class="absolute top-0 right-0 w-24 h-24 -mr-8 -mt-8 bg-pink-50 rounded-full blur-2xl group-hover:bg-pink-100 transition-colors"></div>
+                            <div class="relative z-10">
+                                <div class="h-12 w-12 bg-pink-50 rounded-2xl flex items-center justify-center text-pink-600 mb-6 group-hover:bg-pink-600 group-hover:text-white transition-all transform group-hover:rotate-6 shadow-sm">
+                                    <BoltIcon class="h-6 w-6" />
+                                </div>
+                                <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Absence Stagiaires</p>
+                                <div class="flex items-baseline gap-2">
+                                    <h3 class="text-4xl font-black text-gray-900 tracking-tighter">{{ dashboardKpis.attendance_stats?.trainees_absence_rate || 0 }}%</h3>
+                                    <p class="text-[10px] font-black text-pink-500 uppercase tracking-widest">{{ dashboardKpis.attendance_stats?.trainees_absence_hours || 0 }}h cumulées</p>
+                                </div>
+                                <div class="mt-6 w-full bg-gray-100 h-2 rounded-full overflow-hidden p-0.5 shadow-inner">
+                                    <div class="bg-gradient-to-r from-pink-400 to-pink-600 h-full rounded-full transition-all duration-1000 shadow-sm" :style="{ width: (dashboardKpis.attendance_stats?.trainees_absence_rate || 0) + '%' }"></div>
                                 </div>
                             </div>
                         </div>
