@@ -107,9 +107,6 @@ Route::middleware(['auth'])->group(function (): void {
         Route::post('/exams/{exam}/submit', [ExamController::class, 'submit'])->name('exams.submit');
     });
 
-    Route::get('/trainer/groups', [App\Http\Controllers\TrainerGroupsController::class, 'index'])->name('trainer.groups');
-    Route::post('/trainer/exercises/{submission}/grade', [ExerciseController::class, 'grade'])->name('trainer.exercises.grade');
-
     // Profile Management
     Route::get('/profile', [\App\Http\Controllers\ProfileController::class, 'edit'])
         ->name('profile.edit');
@@ -229,7 +226,7 @@ Route::middleware(['auth'])->group(function (): void {
     // -----------------------------------------------------------------------
     // Staff & Trainers (Directeur, Secrétaire & Formateur)
     // -----------------------------------------------------------------------
-    Route::middleware(['role:Directeur|Secrétaire|Formateur'])->group(function () {
+    Route::middleware(['trainer_or_staff'])->group(function () {
         // Attendance Management
         Route::get('/attendances/groups', [AttendanceController::class, 'trainerGroups'])->name('attendances.trainer-groups');
         Route::get('/attendances/take/{group}', [AttendanceController::class, 'takeAttendance'])->name('attendances.take');
