@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Setting;
+use App\Models\ContactMessage;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -24,9 +25,27 @@ class ContactController extends Controller
             'message' => 'required|string',
         ]);
 
-        // In a real app, we might send an email or store in DB
-        // For now, we'll just simulate success
+        ContactMessage::create($request->only(['name', 'email', 'subject', 'message']));
         
         return back()->with('success', 'Message reçu ! Notre réseau de neurones traite votre demande.');
+    }
+
+    public function adminIndex()
+    {
+        return Inertia::render('Admin/ContactMessages', [
+            'messages' => ContactMessage::latest()->get()
+        ]);
+    }
+
+    public function adminDestroy(ContactMessage $contactMessage)
+    {
+        $contactMessage->delete();
+        return back()->with('success', 'Message supprimé avec succès.');
+    }
+
+    public function markAsRead(ContactMessage $contactMessage)
+    {
+        $contactMessage->update(['is_read' => true]);
+        return back();
     }
 }

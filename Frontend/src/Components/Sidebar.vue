@@ -20,7 +20,8 @@ import {
     HomeModernIcon,
     Cog6ToothIcon,
     UserIcon,
-    ChatBubbleLeftRightIcon
+    ChatBubbleLeftRightIcon,
+    EnvelopeIcon
 } from '@heroicons/vue/24/outline'
 
 const props = defineProps({
@@ -41,6 +42,7 @@ const navigation = computed(() => {
         menu.push(
             { name: 'Tableau de Bord', href: route('dashboard.director'), icon: HomeIcon },
             { name: 'Communauté', href: route('community.index'), icon: ChatBubbleLeftRightIcon },
+            { name: 'Messages Contact', href: route('contact-messages.index'), icon: EnvelopeIcon, badge: computed(() => page.props.auth.user.unread_messages_count) },
             { name: 'Inscriptions', href: route('applications.index'), icon: UserGroupIcon },
             { name: 'Groupes de Formation', href: route('groups.index'), icon: UserGroupIcon },
             { name: 'Apprenants', href: route('students.index'), icon: AcademicCapIcon },
@@ -66,6 +68,7 @@ const navigation = computed(() => {
     if (roles.value.includes('Secrétaire')) {
         menu.push(
             { name: 'Communauté', href: route('community.index'), icon: ChatBubbleLeftRightIcon },
+            { name: 'Messages Contact', href: route('contact-messages.index'), icon: EnvelopeIcon, badge: computed(() => page.props.auth.user.unread_messages_count) },
             { name: 'Inscriptions', href: route('applications.index'), icon: UserGroupIcon },
             { name: 'Groupes de Formation', href: route('groups.index'), icon: UserGroupIcon },
             { name: 'Validations', href: route('nominations.index'), icon: CheckBadgeIcon },
@@ -125,13 +128,21 @@ const isUrl = (url) => page.url.startsWith(url)
                 v-for="item in navigation" 
                 :key="item.name" 
                 :href="item.href"
-                class="flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors"
+                class="flex items-center justify-between px-4 py-2.5 text-sm font-medium rounded-lg transition-colors"
                 :class="isUrl(item.href) 
                     ? 'bg-blue-50 text-blue-700' 
                     : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'"
             >
-                <component :is="item.icon" class="mr-3 h-5 w-5" />
-                {{ item.name }}
+                <div class="flex items-center">
+                    <component :is="item.icon" class="mr-3 h-5 w-5" />
+                    {{ item.name }}
+                </div>
+                <span 
+                    v-if="item.badge && item.badge > 0" 
+                    class="ml-auto inline-flex items-center justify-center px-2 py-0.5 text-[10px] font-black leading-none text-white bg-red-600 rounded-full"
+                >
+                    {{ item.badge }}
+                </span>
             </Link>
         </nav>
 

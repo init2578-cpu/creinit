@@ -134,6 +134,14 @@ Route::middleware(['auth'])->group(function (): void {
         Route::get('/dashboard/director/export-pdf', [DirectorDashboardController::class, 'exportPdf'])
             ->name('dashboard.director.export-pdf');
 
+        // Contact Messages Management
+        Route::get('/contact-messages', [ContactController::class, 'adminIndex'])
+            ->name('contact-messages.index');
+        Route::delete('/contact-messages/{contactMessage}', [ContactController::class, 'adminDestroy'])
+            ->name('contact-messages.destroy');
+        Route::patch('/contact-messages/{contactMessage}/read', [ContactController::class, 'markAsRead'])
+            ->name('contact-messages.read');
+
         // Ecosystem & CRM
         Route::get('/users', [\App\Http\Controllers\UserController::class, 'index'])
             ->name('users.index');

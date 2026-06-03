@@ -45,6 +45,7 @@ class HandleInertiaRequests extends Middleware
                     'roles' => $request->user()->getRoleNames(),
                     'unread_notifications' => $request->user()->unreadNotifications()->latest()->limit(10)->get(),
                     'unread_notifications_count' => $request->user()->unreadNotifications()->count(),
+                    'unread_messages_count' => \App\Models\ContactMessage::where('is_read', false)->count(),
                 ] : null,
             ],
             'flash' => [
