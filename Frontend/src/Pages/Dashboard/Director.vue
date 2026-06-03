@@ -137,6 +137,25 @@ onMounted(() => {
                             </div>
                         </div>
 
+                        <!-- Utilisateurs en Ligne -->
+                        <div class="group relative bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm transition-all hover:shadow-2xl hover:border-green-100 overflow-hidden">
+                             <div class="absolute top-0 right-0 w-24 h-24 -mr-8 -mt-8 bg-green-50 rounded-full blur-2xl group-hover:bg-green-100 transition-colors"></div>
+                            <div class="relative z-10">
+                                <div class="h-12 w-12 bg-green-50 rounded-2xl flex items-center justify-center text-green-600 mb-6 group-hover:bg-green-600 group-hover:text-white transition-all transform group-hover:scale-110 shadow-sm">
+                                    <span class="relative flex h-3 w-3">
+                                      <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                                      <span class="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+                                    </span>
+                                </div>
+                                <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">En Ligne</p>
+                                <h3 class="text-4xl font-black text-gray-900 tracking-tighter">{{ dashboardKpis.online_users_count || 0 }}</h3>
+                                <div class="mt-4 flex items-center gap-2">
+                                    <span class="text-xs font-bold text-gray-500">Membres connectés</span>
+                                    <span class="px-2 py-0.5 bg-green-50 text-green-600 text-[8px] font-black rounded-lg">LIVE</span>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- Absence Apprenants (Élèves) -->
                         <div class="group relative bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm transition-all hover:shadow-2xl hover:border-red-100 overflow-hidden">
                              <div class="absolute top-0 right-0 w-24 h-24 -mr-8 -mt-8 bg-red-50 rounded-full blur-2xl group-hover:bg-red-100 transition-colors"></div>

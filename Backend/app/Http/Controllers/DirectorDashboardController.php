@@ -56,7 +56,7 @@ class DirectorDashboardController extends Controller
      */
     public function getKpis(): array
     {
-        return \Illuminate\Support\Facades\Cache::remember('director_dashboard_kpis', 600, function () {
+        $kpis = \Illuminate\Support\Facades\Cache::remember('director_dashboard_kpis', 600, function () {
             return [
                 'attendance_rate'          => $this->getAttendanceRate(),
                 'gender_parity'            => $this->getGenderParity(),
@@ -77,6 +77,22 @@ class DirectorDashboardController extends Controller
                 'alerts'                   => $this->getAlerts(),
             ];
         });
+
+        $kpis['online_users_count'] = $this->getOnlineUsersCount();
+
+        return $kpis;
+    }
+
+    /**
+     * Get count of users currently online (active within the last 5 minutes).
+     */
+    private function getOnlineUsersCount(): int
+    {
+        return DB::table('sessions')
+            ->whereNotNull('user_id')
+            ->where('last_activity', '>=', now()->subMinutes(5)->getTimestamp())
+            ->distinct('user_id')
+            ->count('user_id');
     }
 
     /**
