@@ -81,6 +81,17 @@ class NominationController extends Controller
         $secretary = $request->user();
         $decision  = $request->validated('decision');
 
+        // If a group leader is already assigned and we are approving a new one, only the Director can validate it
+        if ($decision === 'approved' && $nomination->role === 'responsable') {
+            if ($nomination->group->responsable_groupe_id !== null && $nomination->group->responsable_groupe_id !== $nomination->user_id) {
+                if (!$secretary->hasRole('Directeur')) {
+                    return redirect()
+                        ->back()
+                        ->with('error', 'Seul le Directeur est autorisé à valider le remplacement d\'un responsable de groupe existant.');
+                }
+            }
+        }
+
         DB::transaction(function () use ($nomination, $secretary, $decision): void {
             $nomination->update([
                 'status'       => $decision,

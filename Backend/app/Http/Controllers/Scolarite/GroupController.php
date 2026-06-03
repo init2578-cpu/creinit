@@ -58,10 +58,19 @@ class GroupController extends Controller
 
     public function update(StoreGroupRequest $request, Group $group): RedirectResponse
     {
+        $validated = $request->validated();
+
+        // If a group leader is already assigned, only the Director can modify or remove them
+        if ($group->responsable_groupe_id !== null && array_key_exists('responsable_groupe_id', $validated) && $validated['responsable_groupe_id'] !== $group->responsable_groupe_id) {
+            if (!$request->user()->hasRole('Directeur')) {
+                return back()->withErrors(['responsable_groupe_id' => 'Seul le Directeur est autorisé à modifier ou retirer un responsable de groupe existant.']);
+            }
+        }
+
         $oldResponsableId = $group->responsable_groupe_id;
         $oldAdjointId = $group->adjoint_groupe_id;
 
-        $group->update($request->validated());
+        $group->update($validated);
 
         // Handle Responsable change
         if ($oldResponsableId !== $group->responsable_groupe_id) {
