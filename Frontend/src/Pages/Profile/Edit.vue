@@ -17,6 +17,8 @@ const form = useForm({
     _method: 'patch',
     name: user.name,
     email: user.email,
+    telephone: user.telephone || '',
+    adresse: user.adresse || '',
     password: '',
     password_confirmation: '',
     profile_photo: null,
@@ -96,6 +98,19 @@ function updatePhotoPreview() {
                                 <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2">Adresse Email</label>
                                 <input v-model="form.email" type="email" class="w-full bg-gray-50 border-0 rounded-2xl font-bold py-4 px-6 focus:ring-2 focus:ring-indigo-600 transition-all">
                                 <p v-if="form.errors.email" class="mt-2 text-xs text-red-600 font-bold uppercase tracking-widest">{{ form.errors.email }}</p>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2">Numéro de Téléphone</label>
+                                <input v-model="form.telephone" type="text" class="w-full bg-gray-50 border-0 rounded-2xl font-bold py-4 px-6 focus:ring-2 focus:ring-indigo-600 transition-all" placeholder="+212 600 000 000">
+                                <p v-if="form.errors.telephone" class="mt-2 text-xs text-red-600 font-bold uppercase tracking-widest">{{ form.errors.telephone }}</p>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-2">Adresse Résidentielle</label>
+                                <input v-model="form.adresse" type="text" class="w-full bg-gray-50 border-0 rounded-2xl font-bold py-4 px-6 focus:ring-2 focus:ring-indigo-600 transition-all" placeholder="Votre adresse physique">
+                                <p v-if="form.errors.adresse" class="mt-2 text-xs text-red-600 font-bold uppercase tracking-widest">{{ form.errors.adresse }}</p>
                             </div>
                         </div>
                     </section>
