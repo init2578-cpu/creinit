@@ -32,6 +32,19 @@ class UserController extends Controller
                     ? \Illuminate\Support\Carbon::createFromTimestamp($lastActivity)->timezone('Africa/Dakar')->format('d/m/Y H:i')
                     : 'Jamais';
 
+                $timeSpentSeconds = $user->time_spent ?? 0;
+                if ($timeSpentSeconds < 60) {
+                    $formattedTimeSpent = $timeSpentSeconds . 's';
+                } elseif ($timeSpentSeconds < 3600) {
+                    $minutes = floor($timeSpentSeconds / 60);
+                    $seconds = $timeSpentSeconds % 60;
+                    $formattedTimeSpent = "{$minutes}m {$seconds}s";
+                } else {
+                    $hours = floor($timeSpentSeconds / 3600);
+                    $minutes = floor(($timeSpentSeconds % 3600) / 60);
+                    $formattedTimeSpent = "{$hours}h {$minutes}m";
+                }
+
                 return [
                     'id' => $user->id,
                     'name' => $user->name,
@@ -43,6 +56,7 @@ class UserController extends Controller
                     'is_active' => $user->is_active ?? true,
                     'created_at' => $user->created_at->format('d/m/Y'),
                     'last_seen' => $lastSeen,
+                    'time_spent' => $formattedTimeSpent,
                 ];
             }),
             'available_roles' => Role::pluck('name')->toArray(),
