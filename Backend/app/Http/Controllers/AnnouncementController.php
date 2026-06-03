@@ -54,6 +54,25 @@ class AnnouncementController extends Controller
             return $announcement;
         });
 
+        // Record these announcements as read for this user
+        $announcementIds = $announcements->pluck('id')->toArray();
+        if (!empty($announcementIds)) {
+            $records = array_map(function ($id) use ($user) {
+                return [
+                    'user_id' => $user->id,
+                    'announcement_id' => $id,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
+            }, $announcementIds);
+
+            \App\Models\AnnouncementRead::upsert(
+                $records, 
+                ['user_id', 'announcement_id'], 
+                ['updated_at']
+            );
+        }
+
         return Inertia::render('Community/Index', [
             'announcements' => $announcements,
             'availableRoles' => Role::all(['id', 'name']),

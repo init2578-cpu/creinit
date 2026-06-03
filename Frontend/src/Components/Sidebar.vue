@@ -41,7 +41,7 @@ const navigation = computed(() => {
     if (roles.value.includes('Directeur')) {
         menu.push(
             { name: 'Tableau de Bord', href: route('dashboard.director'), icon: HomeIcon },
-            { name: 'Communauté', href: route('community.index'), icon: ChatBubbleLeftRightIcon },
+            { name: 'Communauté', href: route('community.index'), icon: ChatBubbleLeftRightIcon, badge: page.props.auth.user?.unread_announcements_count },
             { name: 'Messages Contact', href: route('contact-messages.index'), icon: EnvelopeIcon, badge: page.props.auth.user?.unread_messages_count },
             { name: 'Inscriptions', href: route('applications.index'), icon: UserGroupIcon },
             { name: 'Groupes de Formation', href: route('groups.index'), icon: UserGroupIcon },
@@ -67,7 +67,7 @@ const navigation = computed(() => {
 
     if (roles.value.includes('Secrétaire')) {
         menu.push(
-            { name: 'Communauté', href: route('community.index'), icon: ChatBubbleLeftRightIcon },
+            { name: 'Communauté', href: route('community.index'), icon: ChatBubbleLeftRightIcon, badge: page.props.auth.user?.unread_announcements_count },
             { name: 'Messages Contact', href: route('contact-messages.index'), icon: EnvelopeIcon, badge: page.props.auth.user?.unread_messages_count },
             { name: 'Inscriptions', href: route('applications.index'), icon: UserGroupIcon },
             { name: 'Groupes de Formation', href: route('groups.index'), icon: UserGroupIcon },
@@ -83,7 +83,7 @@ const navigation = computed(() => {
     if (roles.value.includes('Formateur')) {
         menu.push(
             { name: 'Mes Groupes', href: route('trainer.groups'), icon: AcademicCapIcon },
-            { name: 'Communauté', href: route('community.index'), icon: ChatBubbleLeftRightIcon },
+            { name: 'Communauté', href: route('community.index'), icon: ChatBubbleLeftRightIcon, badge: page.props.auth.user?.unread_announcements_count },
             { name: 'Émargement', href: route('attendances.trainer-groups'), icon: ClipboardDocumentCheckIcon },
             { name: 'Gestion des Cours', href: route('modules.index'), icon: BookOpenIcon },
             { name: 'Examens', href: route('exams.index'), icon: PencilSquareIcon },
@@ -99,7 +99,7 @@ const navigation = computed(() => {
     if (roles.value.includes('Apprenant')) {
         menu.push(
             { name: 'Mon Parcours', href: route('student.dashboard'), icon: AcademicCapIcon },
-            { name: 'Communauté', href: route('community.index'), icon: ChatBubbleLeftRightIcon },
+            { name: 'Communauté', href: route('community.index'), icon: ChatBubbleLeftRightIcon, badge: page.props.auth.user?.unread_announcements_count },
             { name: 'Mes Cours', href: route('student.courses'), icon: BookOpenIcon },
             { name: 'Exercices', href: route('student.exercises.index'), icon: BeakerIcon },
             { name: 'Examens', href: route('student.exams.index'), icon: PencilSquareIcon },

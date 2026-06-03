@@ -46,6 +46,25 @@ class HandleInertiaRequests extends Middleware
                     'unread_notifications' => $request->user()->unreadNotifications()->latest()->limit(10)->get(),
                     'unread_notifications_count' => $request->user()->unreadNotifications()->count(),
                     'unread_messages_count' => \App\Models\ContactMessage::where('is_read', false)->count(),
+                    'unread_announcements_count' => call_user_func(function () use ($request) {
+                        $user = $request->user();
+                        $userRoles = $user->getRoleNames()->toArray();
+                        $readIds = \App\Models\AnnouncementRead::where('user_id', $user->id)->pluck('announcement_id');
+                        
+                        $query = \App\Models\Announcement::where(function ($q) {
+                            $q->whereNull('expires_at')
+                              ->orWhere('expires_at', '>', now());
+                        });
+
+                        if (!$user->hasRole('Directeur')) {
+                            $query->where(function ($q) use ($userRoles) {
+                                $q->whereNull('visibility_roles')
+                                  ->orWhereJsonContains('visibility_roles', $userRoles);
+                            });
+                        }
+
+                        return $query->whereNotIn('id', $readIds)->count();
+                    }),
                 ] : null,
             ],
             'flash' => [
