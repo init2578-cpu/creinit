@@ -25,7 +25,7 @@ class AdminExamController extends Controller
         $examQuery = Exam::with(['module', 'questions', 'examResults.user'])->orderBy('created_at', 'desc');
         $moduleQuery = Module::query();
 
-        if (!$user->hasRole('Directeur') && $user->hasRole('Formateur')) {
+        if (!$user->hasRole('Directeur') && $user->isTrainer()) {
             $moduleIds = $user->groupsAsFormateur()->pluck('module_id');
             $examQuery->whereIn('module_id', $moduleIds);
             $moduleQuery->whereIn('id', $moduleIds);
@@ -150,7 +150,7 @@ class AdminExamController extends Controller
             $query->where('module_id', $exam->module_id);
         });
 
-        if (!$user->hasRole('Directeur') && $user->hasRole('Formateur')) {
+        if (!$user->hasRole('Directeur') && $user->isTrainer()) {
             $groupIds = $user->groupsAsFormateur()->pluck('id');
             $studentsQuery->whereHas('studentGroups', function ($query) use ($groupIds) {
                 $query->whereIn('groups.id', $groupIds);

@@ -30,7 +30,7 @@ class AdminExerciseController extends Controller
         $moduleQuery = Module::with('chapters.questions.options');
 
         // If Formateur (not Directeur), restrict to their groups' modules and students
-        if (!$user->hasRole('Directeur') && $user->hasRole('Formateur')) {
+        if (!$user->hasRole('Directeur') && $user->isTrainer()) {
             $myGroups = $user->groupsAsFormateur;
             $moduleIds = $myGroups->pluck('module_id');
             $studentIds = \Illuminate\Support\Facades\DB::table('group_user')

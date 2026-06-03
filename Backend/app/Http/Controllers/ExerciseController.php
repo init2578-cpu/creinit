@@ -188,7 +188,7 @@ class ExerciseController extends Controller
     public function download(ExerciseSubmission $submission)
     {
         // Simple security: Trainer or owner?
-        if (!Auth::user()->hasRole('Formateur') && !Auth::user()->hasRole('Directeur') && Auth::id() !== $submission->user_id) {
+        if (!Auth::user()->isTrainer() && !Auth::user()->hasRole('Directeur') && Auth::id() !== $submission->user_id) {
             abort(403);
         }
 

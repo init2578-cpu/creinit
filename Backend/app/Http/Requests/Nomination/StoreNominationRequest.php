@@ -19,7 +19,7 @@ class StoreNominationRequest extends FormRequest
         /** @var \App\Models\User $user */
         $user = $this->user();
 
-        if (!$user->hasRole('Formateur')) {
+        if (!$user->isTrainer()) {
             return false;
         }
 

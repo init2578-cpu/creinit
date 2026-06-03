@@ -32,10 +32,23 @@ class ReportController extends Controller
      */
     public function index(): InertiaResponse
     {
+        $trainers = User::role('Formateur')->select('id', 'name')->get();
+        $assistants = User::role('Stagiaire')
+            ->whereHas('internshipRecord', function($q) {
+                $q->where('internship_type', 'course_assistant');
+            })
+            ->select('id', 'name')
+            ->get()
+            ->map(function($user) {
+                $user->name = $user->name . " (Assistant)";
+                return $user;
+            });
+        $allTrainers = $trainers->concat($assistants);
+
         return Inertia::render('Scolarite/Reports', [
             'groups' => Group::select('id', 'nom_groupe')->get(),
             'modules' => \App\Models\Module::select('id', 'titre')->get(),
-            'trainers' => User::role('Formateur')->select('id', 'name')->get(),
+            'trainers' => $allTrainers,
             'report_types' => [
                 ['id' => 'attendance', 'name' => 'Rapport d\'Assiduité'],
                 ['id' => 'academic', 'name' => 'Rapport de Performance Académique'],

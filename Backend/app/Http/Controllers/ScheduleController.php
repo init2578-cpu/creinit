@@ -20,15 +20,27 @@ class ScheduleController extends Controller
         $query = Schedule::query()->with(['group', 'room', 'formateur']);
 
         // Trainers only see their own schedule. Directors/Secretaries see everything.
-        if (!$user->hasRole('Directeur') && !$user->hasRole('Secrétaire') && $user->hasRole('Formateur')) {
+        if (!$user->hasRole('Directeur') && !$user->hasRole('Secrétaire') && $user->isTrainer()) {
             $query->where('formateur_id', '=', $user->id);
         }
+
+        $trainers = \App\Models\User::role('Formateur')->get(['id', 'name']);
+        $assistants = \App\Models\User::role('Stagiaire')
+            ->whereHas('internshipRecord', function($q) {
+                $q->where('internship_type', 'course_assistant');
+            })
+            ->get(['id', 'name'])
+            ->map(function($user) {
+                $user->name = $user->name . " (Assistant)";
+                return $user;
+            });
+        $formateurs = $trainers->concat($assistants);
 
         return Inertia::render('Scolarite/Schedules', [
             'schedules'  => $query->get(),
             'rooms'      => Room::all(),
             'groups'     => \App\Models\Group::with('formateur:id,name')->get(['id', 'nom_groupe', 'formateur_id']),
-            'formateurs' => \App\Models\User::role('Formateur')->get(['id', 'name']),
+            'formateurs' => $formateurs,
         ]);
     }
 

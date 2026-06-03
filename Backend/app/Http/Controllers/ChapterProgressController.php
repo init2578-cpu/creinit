@@ -50,7 +50,7 @@ class ChapterProgressController extends Controller
         $user = auth()->user();
         $component = 'ChapterProgress/Index';
 
-        if ($user->hasRole('Formateur')) {
+        if ($user->isTrainer()) {
             $component = 'ChapterProgress/TeacherProgression';
         } elseif ($user->hasRole('Responsable Groupe') || $user->hasRole('Directeur')) {
             $component = 'ChapterProgress/GroupLeaderValidation';

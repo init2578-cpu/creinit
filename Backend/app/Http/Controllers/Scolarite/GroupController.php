@@ -15,13 +15,25 @@ class GroupController extends Controller
 {
     public function index(): Response
     {
+        $trainers = User::role('Formateur')->get(['id', 'name']);
+        $assistants = User::role('Stagiaire')
+            ->whereHas('internshipRecord', function($q) {
+                $q->where('internship_type', 'course_assistant');
+            })
+            ->get(['id', 'name'])
+            ->map(function($user) {
+                $user->name = $user->name . " (Assistant)";
+                return $user;
+            });
+        $formateurs = $trainers->concat($assistants);
+
         return Inertia::render('Scolarite/GroupsIndex', [
             'groups' => Group::with(['module', 'formateur', 'students'])
                 ->withCount('students')
                 ->orderByDesc('created_at')
                 ->get(),
             'modules' => Module::all(['id', 'titre']),
-            'formateurs' => User::role('Formateur')->get(['id', 'name']),
+            'formateurs' => $formateurs,
         ]);
     }
 

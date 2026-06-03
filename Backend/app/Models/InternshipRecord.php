@@ -15,6 +15,7 @@ class InternshipRecord extends Model
     protected $fillable = [
         'user_id',
         'internship_type',
+        'tuteur_id',
         'criteria',
         'start_date',
         'end_date',
@@ -36,5 +37,13 @@ class InternshipRecord extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Get the trainer that acts as tutor/mentor.
+     */
+    public function tutor(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'tuteur_id');
     }
 }

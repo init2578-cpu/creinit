@@ -21,7 +21,7 @@ class CourseController extends Controller
         /** @var \App\Models\User $user */
         $user = Auth::user();
         
-        if ($user->hasRole('Directeur') || $user->hasRole('Formateur')) {
+        if ($user->hasRole('Directeur') || $user->isTrainer()) {
             $modules = Module::with(['chapters' => function($query) {
                 $query->where('is_published', true)->orderBy('ordre');
             }])->get();
@@ -55,7 +55,7 @@ class CourseController extends Controller
         $isEnrolled = $user->studentGroups()->where(function($query) use ($module) {
             $query->where('module_id', $module->id);
         })->exists();
-        if (!$isEnrolled && !$user->hasRole('Directeur') && !$user->hasRole('Formateur')) {
+        if (!$isEnrolled && !$user->hasRole('Directeur') && !$user->isTrainer()) {
             abort(403);
         }
 

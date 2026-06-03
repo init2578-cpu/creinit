@@ -23,7 +23,7 @@ class TraineesController extends Controller
     public function index(): Response
     {
         $trainees = User::role('Stagiaire')
-            ->with(['internshipRecord'])
+            ->with(['internshipRecord.tutor'])
             ->orderBy('name')
             ->get()
             ->map(fn($user) => [
@@ -42,6 +42,11 @@ class TraineesController extends Controller
                     'end_date' => $user->internshipRecord->end_date?->format('Y-m-d'),
                     'profile_photo_url' => $user->profile_photo_url ?? null,
                     'status' => $user->internshipRecord->status,
+                    'tuteur_id' => $user->internshipRecord->tuteur_id,
+                    'tuteur' => $user->internshipRecord->tutor ? [
+                        'id' => $user->internshipRecord->tutor->id,
+                        'name' => $user->internshipRecord->tutor->name,
+                    ] : null,
                     'motivation_letter' => $user->internshipRecord->motivation_letter_path ? Storage::url($user->internshipRecord->motivation_letter_path) : null,
                     'cni' => $user->internshipRecord->cni_path ? Storage::url($user->internshipRecord->cni_path) : null,
                     'cv' => $user->internshipRecord->cv_path ? Storage::url($user->internshipRecord->cv_path) : null,
@@ -49,8 +54,11 @@ class TraineesController extends Controller
                 ] : null,
             ]);
 
+        $formateurs = User::role('Formateur')->get(['id', 'name']);
+
         return Inertia::render('Scolarite/TraineesIndex', [
             'trainees' => $trainees,
+            'formateurs' => $formateurs,
         ]);
     }
 
@@ -67,6 +75,7 @@ class TraineesController extends Controller
             'adresse' => 'nullable|string|max:255',
             // Internship fields
             'internship_type' => 'required|string|in:course_assistant,course_substitute,management_assistant,secretary_assistant,director_assistant,field_internship',
+            'tuteur_id' => 'nullable|exists:users,id',
             'criteria' => 'nullable|string',
             'start_date' => 'nullable|date',
             'end_date' => 'nullable|date',
@@ -101,6 +110,7 @@ class TraineesController extends Controller
             InternshipRecord::create(array_merge([
                 'user_id' => $user->id,
                 'internship_type' => $validated['internship_type'],
+                'tuteur_id' => $validated['tuteur_id'] ?? null,
                 'criteria' => $validated['criteria'],
                 'start_date' => $validated['start_date'],
                 'end_date' => $validated['end_date'],
@@ -128,6 +138,7 @@ class TraineesController extends Controller
             'is_active' => 'required|boolean',
             // Internship fields
             'internship_type' => 'required|string|in:course_assistant,course_substitute,management_assistant,secretary_assistant,director_assistant,field_internship',
+            'tuteur_id' => 'nullable|exists:users,id',
             'criteria' => 'nullable|string',
             'start_date' => 'nullable|date',
             'end_date' => 'nullable|date',
@@ -169,6 +180,7 @@ class TraineesController extends Controller
                 ['user_id' => $trainee->id],
                 array_merge([
                     'internship_type' => $validated['internship_type'],
+                    'tuteur_id' => $validated['tuteur_id'] ?? null,
                     'criteria' => $validated['criteria'],
                     'start_date' => $validated['start_date'],
                     'end_date' => $validated['end_date'],

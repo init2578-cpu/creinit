@@ -29,7 +29,8 @@ import {
 } from '@heroicons/vue/24/outline'
 
 const props = defineProps({
-    trainees: Array
+    trainees: Array,
+    formateurs: Array
 })
 
 // Modals state
@@ -49,6 +50,7 @@ const traineeForm = useForm({
     is_active: true,
     // Internship fields
     internship_type: 'management_assistant',
+    tuteur_id: '',
     criteria: '',
     start_date: '',
     end_date: '',
@@ -116,12 +118,14 @@ function openEditModal(trainee) {
     
     if (trainee.internship) {
         traineeForm.internship_type = trainee.internship.type || 'management_assistant'
+        traineeForm.tuteur_id = trainee.internship.tuteur_id || ''
         traineeForm.criteria = trainee.internship.criteria || ''
         traineeForm.start_date = trainee.internship.start_date || ''
         traineeForm.end_date = trainee.internship.end_date || ''
         traineeForm.status = trainee.internship.status || 'pending'
     } else {
         traineeForm.internship_type = 'management_assistant'
+        traineeForm.tuteur_id = ''
         traineeForm.criteria = ''
         traineeForm.start_date = ''
         traineeForm.end_date = ''
@@ -253,6 +257,7 @@ function getStatusClass(status) {
                             <td class="px-8 py-5">
                                 <div v-if="trainee.internship" class="flex flex-col">
                                     <span class="text-sm font-black text-gray-700">{{ getInternshipTypeLabel(trainee.internship.type) }}</span>
+                                    <span v-if="trainee.internship.tuteur" class="text-[10px] text-indigo-600 font-extrabold">Tuteur : {{ trainee.internship.tuteur.name }}</span>
                                     <span class="text-[10px] text-gray-400 font-bold italic line-clamp-1 max-w-[200px]">{{ trainee.internship.criteria }}</span>
                                 </div>
                                 <span v-else class="text-xs text-gray-300 italic font-bold">Non configuré</span>
@@ -409,14 +414,21 @@ function getStatusClass(status) {
                                 </select>
                             </div>
                             <div class="space-y-2">
-                                <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Statut du Dossier</label>
-                                <select v-model="traineeForm.status" class="w-full bg-gray-50 border-0 rounded-2xl p-4 font-bold text-gray-700 focus:ring-2 focus:ring-indigo-600 appearance-none transition-all outline-none">
-                                    <option value="pending">En attente (Documents)</option>
-                                    <option value="active">Actif (En poste)</option>
-                                    <option value="completed">Stage Terminé</option>
-                                    <option value="terminated">Contrat Interrompu</option>
+                                <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Tuteur / Référent Formateur</label>
+                                <select v-model="traineeForm.tuteur_id" class="w-full bg-gray-50 border-0 rounded-2xl p-4 font-bold text-gray-700 focus:ring-2 focus:ring-indigo-600 appearance-none transition-all outline-none">
+                                    <option value="">Aucun tuteur</option>
+                                    <option v-for="f in formateurs" :key="f.id" :value="f.id">{{ f.name }}</option>
                                 </select>
                             </div>
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Statut du Dossier</label>
+                            <select v-model="traineeForm.status" class="w-full bg-gray-50 border-0 rounded-2xl p-4 font-bold text-gray-700 focus:ring-2 focus:ring-indigo-600 appearance-none transition-all outline-none">
+                                <option value="pending">En attente (Documents)</option>
+                                <option value="active">Actif (En poste)</option>
+                                <option value="completed">Stage Terminé</option>
+                                <option value="terminated">Contrat Interrompu</option>
+                            </select>
                         </div>
                         <div class="space-y-2">
                             <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Missions & Objectifs (Fiche de stage)</label>
@@ -529,9 +541,14 @@ function getStatusClass(status) {
                         <template v-else>{{ selectedTrainee.name.charAt(0) }}</template>
                     </div>
                     <h2 class="text-3xl font-black text-gray-900 tracking-tight leading-none mb-2">{{ selectedTrainee.name }}</h2>
-                    <div class="inline-flex items-center gap-2 px-4 py-1.5 bg-indigo-50 text-indigo-700 rounded-full text-[10px] font-black uppercase tracking-widest">
-                        <BriefcaseIcon class="h-3.5 w-3.5" />
-                        {{ getInternshipTypeLabel(selectedTrainee.internship?.type) }}
+                    <div class="flex flex-col items-center gap-1.5">
+                        <div class="inline-flex items-center gap-2 px-4 py-1.5 bg-indigo-50 text-indigo-700 rounded-full text-[10px] font-black uppercase tracking-widest">
+                            <BriefcaseIcon class="h-3.5 w-3.5" />
+                            {{ getInternshipTypeLabel(selectedTrainee.internship?.type) }}
+                        </div>
+                        <span v-if="selectedTrainee.internship?.tuteur" class="text-xs font-black text-indigo-600">
+                            Sous la tutelle de : {{ selectedTrainee.internship.tuteur.name }}
+                        </span>
                     </div>
                 </div>
 

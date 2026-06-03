@@ -173,6 +173,14 @@ class User extends Authenticatable
     }
 
     /**
+     * Determine if the user is a trainer (Formateur role or Stagiaire with course_assistant type).
+     */
+    public function isTrainer(): bool
+    {
+        return $this->hasRole('Formateur') || ($this->hasRole('Stagiaire') && $this->internshipRecord?->internship_type === 'course_assistant');
+    }
+
+    /**
      * Get the URL of the user's profile photo.
      */
     public function getProfilePhotoUrlAttribute(): ?string
