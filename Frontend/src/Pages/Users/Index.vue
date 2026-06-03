@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
 import { Head, useForm, router } from '@inertiajs/vue3'
 import { 
@@ -23,11 +23,24 @@ const props = defineProps({
     available_roles: Array
 })
 
+const searchQuery = ref('')
 const isModalOpen = ref(false)
 const isViewModalOpen = ref(false)
 const isEditing = ref(false)
 const editingUser = ref(null)
 const selectedUser = ref(null)
+
+const filteredUsers = computed(() => {
+    if (!searchQuery.value) return props.users
+    const query = searchQuery.value.toLowerCase()
+    return props.users.filter(user => {
+        return user.name.toLowerCase().includes(query) ||
+               user.email.toLowerCase().includes(query) ||
+               (user.telephone && user.telephone.toLowerCase().includes(query)) ||
+               (user.adresse && user.adresse.toLowerCase().includes(query)) ||
+               user.roles.some(role => role.toLowerCase().includes(query))
+    })
+})
 
 const form = useForm({
     name: '',
@@ -108,7 +121,12 @@ function deleteUser(id) {
                 <div class="flex items-center gap-4">
                     <div class="relative">
                         <MagnifyingGlassIcon class="h-5 w-5 absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
-                        <input type="text" placeholder="Rechercher..." class="pl-12 pr-6 py-3 bg-white border-gray-100 rounded-2xl shadow-sm focus:ring-2 focus:ring-indigo-600 border-0 w-64 font-bold text-sm">
+                        <input 
+                            v-model="searchQuery"
+                            type="text" 
+                            placeholder="Rechercher..." 
+                            class="pl-12 pr-6 py-3 bg-white border-gray-100 rounded-2xl shadow-sm focus:ring-2 focus:ring-indigo-600 border-0 w-64 font-bold text-sm"
+                        >
                     </div>
                     <button 
                         @click="openCreateModal"
@@ -134,7 +152,7 @@ function deleteUser(id) {
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-50">
-                        <tr v-for="user in users" :key="user.id" class="hover:bg-gray-50/50 transition-colors group">
+                        <tr v-for="user in filteredUsers" :key="user.id" class="hover:bg-gray-50/50 transition-colors group">
                             <td class="px-8 py-5">
                                 <div class="flex items-center gap-4">
                                     <div class="h-10 w-10 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center font-black overflow-hidden border border-gray-100">
