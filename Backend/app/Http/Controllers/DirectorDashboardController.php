@@ -179,7 +179,7 @@ class DirectorDashboardController extends Controller
      */
     private function getGenderParity(): array
     {
-        $counts = User::role('Apprenant')
+        $counts = User::role(['Apprenant', 'Stagiaire'])
             ->join('applications', 'users.id', '=', 'applications.user_id')
             ->select(
                 DB::raw("COUNT(CASE WHEN applications.sexe = 'F' THEN 1 END) as female"),
@@ -260,12 +260,9 @@ class DirectorDashboardController extends Controller
         ];
     }
 
-    /**
-     * Total number of learners (users with Apprenant role).
-     */
     private function getTotalLearners(): int
     {
-        return User::role('Apprenant')->count();
+        return User::role(['Apprenant', 'Stagiaire'])->count();
     }
 
     /**
@@ -328,19 +325,6 @@ class DirectorDashboardController extends Controller
      */
     public function apiStats()
     {
-        $parity = $this->getGenderParity();
-
-        return response()->json([
-            'total_trained' => $this->getTotalLearners(),
-            'attendance_rate' => $this->getAttendanceRate(),
-            'operational_assets' => $this->getOperationalHardwareRate(),
-            'parity_rate' => $parity['ratio'],
-            'gender_distribution' => [$parity['male'], $parity['female']],
-            'validation_by_module' => $this->getModuleValidationRates(),
-            'admissions' => $this->getAdmissionsStats(),
-            'logistics' => $this->getLogisticsStats(),
-            'ecosystem' => $this->getEcosystemStats(),
-            'pedagogical' => $this->getPedagogicalStats(),
-        ]);
+        return response()->json($this->getKpis());
     }
 }

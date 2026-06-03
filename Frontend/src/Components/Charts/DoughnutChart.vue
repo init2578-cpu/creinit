@@ -9,6 +9,8 @@ import {
     CategoryScale 
 } from 'chart.js'
 
+import { computed } from 'vue'
+
 ChartJS.register(Title, Tooltip, Legend, ArcElement, CategoryScale)
 
 const props = defineProps({
@@ -16,11 +18,7 @@ const props = defineProps({
     female: Number
 })
 
-const total = props.male + props.female
-const malePercentage = total > 0 ? Math.round((props.male / total) * 100) : 0
-const femalePercentage = total > 0 ? Math.round((props.female / total) * 100) : 0
-
-const chartData = {
+const chartData = computed(() => ({
     labels: ['Hommes', 'Femmes'],
     datasets: [{
         data: [props.male, props.female],
@@ -29,7 +27,7 @@ const chartData = {
         borderWidth: 0,
         borderRadius: 10,
     }]
-}
+}))
 
 const chartOptions = {
     responsive: true,
