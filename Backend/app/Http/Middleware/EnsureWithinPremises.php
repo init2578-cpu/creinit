@@ -27,14 +27,15 @@ class EnsureWithinPremises
             return $this->denyAccess($request, 'Coordonnées GPS requises.');
         }
 
-        $maxRadius = (float) config('geofencing.max_radius', 20);
+        // Read radius from DB settings (set by admin), fall back to env config
+        $maxRadius = (float) (\App\Models\Setting::getValue('cre_radius') ?: config('geofencing.max_radius', 50));
 
         if (!$this->geofencing->isWithinPremises($latitude, $longitude, $maxRadius)) {
             $distance = round($this->geofencing->distanceFromCre($latitude, $longitude), 1);
 
             return $this->denyAccess(
                 $request,
-                "Action refusée : Vous devez être présent au CRE. (Distance détectée : {$distance}m)",
+                "Action refusée : Vous devez être présent au CRE. (Distance détectée : {$distance}m, max autorisé : {$maxRadius}m)",
             );
         }
 

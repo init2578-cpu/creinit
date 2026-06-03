@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Models\Setting;
+
 class GeofencingService
 {
     /**
@@ -16,9 +18,12 @@ class GeofencingService
 
     public function __construct()
     {
-        $this->creLatitude  = (float) config('geofencing.cre_latitude');
-        $this->creLongitude = (float) config('geofencing.cre_longitude');
+        // Use database settings (configured by admin via Settings page) as the single source of truth.
+        // Fall back to .env values if the settings table has not been initialized yet.
+        $this->creLatitude  = (float) (Setting::getValue('cre_latitude')  ?: config('geofencing.cre_latitude'));
+        $this->creLongitude = (float) (Setting::getValue('cre_longitude') ?: config('geofencing.cre_longitude'));
     }
+
 
     /**
      * Calculate the distance in meters between two GPS coordinates

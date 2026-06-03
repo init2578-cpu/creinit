@@ -50,7 +50,7 @@ function verifyPosition() {
             locationError.value = "Impossible de récupérer votre position. Veuillez autoriser l'accès au GPS."
             isLocating.value = false
         },
-        { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 30000 }
     )
 }
 
