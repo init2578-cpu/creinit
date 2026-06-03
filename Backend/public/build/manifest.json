@@ -334,7 +334,7 @@
     ]
   },
   "src/Pages/Community/Index.vue": {
-    "file": "assets/Index-hpmIUz3m.js",
+    "file": "assets/Index-B-S2fx_q.js",
     "name": "Index",
     "src": "src/Pages/Community/Index.vue",
     "isDynamicEntry": true,
@@ -368,7 +368,7 @@
     ]
   },
   "src/Pages/Community/Partials/CreateAnnouncement.vue": {
-    "file": "assets/CreateAnnouncement-CoWjf4M_.js",
+    "file": "assets/CreateAnnouncement-CmIPfxBc.js",
     "name": "CreateAnnouncement",
     "src": "src/Pages/Community/Partials/CreateAnnouncement.vue",
     "isDynamicEntry": true,
@@ -435,7 +435,7 @@
     ]
   },
   "src/Pages/Dashboard/Director.vue": {
-    "file": "assets/Director-CSwikZqg.js",
+    "file": "assets/Director-Bk3ehn30.js",
     "name": "Director",
     "src": "src/Pages/Dashboard/Director.vue",
     "isDynamicEntry": true,
@@ -1217,7 +1217,7 @@
     "isEntry": true
   },
   "src/app.js": {
-    "file": "assets/app-BOOekv8-.js",
+    "file": "assets/app-CNNvuH3R.js",
     "name": "app",
     "src": "src/app.js",
     "isEntry": true,

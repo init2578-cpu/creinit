@@ -133,7 +133,7 @@ class AnnouncementController extends Controller
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'content' => 'required|string',
-            'type' => 'required|string|in:info,warning,danger,success',
+            'category' => 'required|string|in:info,warning,event,success',
             'expires_at' => 'nullable|date|after:now',
             'is_pinned' => 'boolean',
             'is_anonymous' => 'boolean',

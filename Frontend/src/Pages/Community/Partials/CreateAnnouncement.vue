@@ -24,7 +24,7 @@ const emit = defineEmits(['close'])
 const form = useForm({
     title: '',
     content: '',
-    type: 'info',
+    category: 'info',
     visibility_roles: [],
     is_pinned: false,
     is_anonymous: false,
@@ -36,7 +36,7 @@ watch(() => props.show, (newShow) => {
     if (newShow && props.announcement) {
         form.title = props.announcement.title
         form.content = props.announcement.content
-        form.type = props.announcement.type || 'info'
+        form.category = props.announcement.category || 'info'
         form.visibility_roles = props.announcement.visibility_roles || []
         form.is_pinned = !!props.announcement.is_pinned
         form.is_anonymous = !!props.announcement.is_anonymous
@@ -140,16 +140,16 @@ const toggleRole = (roleName) => {
                                     v-for="cat in categories" 
                                     :key="cat.id" 
                                     type="button"
-                                    @click="form.type = cat.id"
+                                    @click="form.category = cat.id"
                                     :class="[
                                         'p-3 rounded-2xl border-2 transition-all duration-200 flex flex-col items-center gap-2 group',
-                                        form.type === cat.id 
+                                        form.category === cat.id 
                                             ? 'border-blue-600 bg-blue-50/50 ring-4 ring-blue-50' 
                                             : 'border-gray-100 hover:border-gray-200 bg-white'
                                     ]"
                                 >
-                                    <component :is="cat.icon" :class="['h-6 w-6', form.type === cat.id ? 'text-blue-600' : 'text-gray-400']" />
-                                    <span :class="['text-[10px] font-bold uppercase tracking-tight', form.type === cat.id ? 'text-blue-700' : 'text-gray-500']">
+                                    <component :is="cat.icon" :class="['h-6 w-6', form.category === cat.id ? 'text-blue-600' : 'text-gray-400']" />
+                                    <span :class="['text-[10px] font-bold uppercase tracking-tight', form.category === cat.id ? 'text-blue-700' : 'text-gray-500']">
                                         {{ cat.name }}
                                     </span>
                                 </button>
