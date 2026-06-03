@@ -66,6 +66,11 @@ class AttendanceController extends Controller
         // Clear dashboard cache to reflect new attendance data
         \Illuminate\Support\Facades\Cache::forget('director_dashboard_kpis');
 
+        $group = Group::find($request->validated('group_id'));
+        if ($group) {
+            Group::checkQuotaAndNotify($group);
+        }
+
         return redirect()
             ->route('attendances.trainer-groups')
             ->with('success', 'Émargement enregistré avec succès.');

@@ -154,6 +154,11 @@ class AttendanceController extends Controller
         // Clear dashboard cache to reflect new attendance data
         \Illuminate\Support\Facades\Cache::forget('director_dashboard_kpis');
 
+        $group = Group::find($schedule->group_id);
+        if ($group) {
+            Group::checkQuotaAndNotify($group);
+        }
+
         return redirect()->route('attendance.index', ['date' => $validated['date']])
             ->with('success', 'La liste de présence a été enregistrée avec succès.');
     }

@@ -106,4 +106,92 @@ class Group extends Model
     {
         return $this->students();
     }
+
+    /**
+     * Check if the group has exceeded its module's hourly quota and notify formateurs & directors.
+     */
+    public static function checkQuotaAndNotify(Group $group): void
+    {
+        $group->load('module');
+        if (!$group->module) {
+            return;
+        }
+        $quotaHours = $group->module->quota_heures;
+
+        // Calculate completed hours
+        // 1. Sessions with schedule_id
+        $scheduledSessions = \Illuminate\Support\Facades\DB::table('attendances')
+            ->where('group_id', $group->id)
+            ->whereNotNull('schedule_id')
+            ->select('date', 'schedule_id')
+            ->distinct()
+            ->get();
+
+        $totalSeconds = 0;
+        $scheduledDates = [];
+        foreach ($scheduledSessions as $session) {
+            $schedule = \App\Models\Schedule::find($session->schedule_id);
+            if ($schedule) {
+                $startTime = \Carbon\Carbon::parse($schedule->start_time);
+                $endTime = \Carbon\Carbon::parse($schedule->end_time);
+                $totalSeconds += $endTime->diffInSeconds($startTime);
+                $scheduledDates[] = $session->date;
+            }
+        }
+
+        // 2. Sessions without schedule_id (legacy or fallback)
+        $unscheduledDates = \Illuminate\Support\Facades\DB::table('attendances')
+            ->where('group_id', $group->id)
+            ->whereNull('schedule_id')
+            ->whereNotIn('date', $scheduledDates)
+            ->select('date')
+            ->distinct()
+            ->pluck('date');
+
+        foreach ($unscheduledDates as $date) {
+            $dayOfWeek = \Carbon\Carbon::parse($date)->dayOfWeekIso;
+            $schedule = \App\Models\Schedule::where('group_id', $group->id)
+                ->where('day_of_week', $dayOfWeek)
+                ->first();
+
+            if ($schedule) {
+                $startTime = \Carbon\Carbon::parse($schedule->start_time);
+                $endTime = \Carbon\Carbon::parse($schedule->end_time);
+                $totalSeconds += $endTime->diffInSeconds($startTime);
+            } else {
+                $totalSeconds += 7200; // Default: 2 hours
+            }
+        }
+
+        $completedHours = $totalSeconds / 3600;
+
+        if ($completedHours > $quotaHours) {
+            $notification = new \App\Notifications\GroupHoursExceededNotification(
+                $group->nom_groupe,
+                $group->module->titre,
+                $quotaHours,
+                $completedHours
+            );
+
+            // Notify formateur
+            $formateur = \App\Models\User::find($group->formateur_id);
+            if ($formateur) {
+                $alreadyNotified = \Illuminate\Support\Facades\DB::table('notifications')
+                    ->where('notifiable_id', $formateur->id)
+                    ->where('data', 'like', '%"type":"group_hours_exceeded"%')
+                    ->where('data', 'like', '%"group_name":"' . addslashes($group->nom_groupe) . '"%')
+                    ->exists();
+
+                if (!$alreadyNotified) {
+                    $formateur->notify($notification);
+
+                    // Notify all users with 'Directeur' role
+                    $directeurs = \App\Models\User::role('Directeur')->get();
+                    foreach ($directeurs as $directeur) {
+                        $directeur->notify($notification);
+                    }
+                }
+            }
+        }
+    }
 }
