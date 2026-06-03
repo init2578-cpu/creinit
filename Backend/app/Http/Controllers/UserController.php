@@ -19,18 +19,32 @@ class UserController extends Controller
      */
     public function index(): Response
     {
+        $lastActivities = \Illuminate\Support\Facades\DB::table('sessions')
+            ->whereNotNull('user_id')
+            ->select('user_id', \Illuminate\Support\Facades\DB::raw('MAX(last_activity) as last_activity'))
+            ->groupBy('user_id')
+            ->pluck('last_activity', 'user_id');
+
         return Inertia::render('Users/Index', [
-            'users' => User::with('roles')->orderBy('name')->get()->map(fn($user) => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-                'telephone' => $user->telephone,
-                'adresse' => $user->adresse,
-                'roles' => $user->getRoleNames(),
-                'profile_photo_url' => $user->profile_photo_url,
-                'is_active' => $user->is_active ?? true,
-                'created_at' => $user->created_at->format('d/m/Y'),
-            ]),
+            'users' => User::with('roles')->orderBy('name')->get()->map(function($user) use ($lastActivities) {
+                $lastActivity = $lastActivities->get($user->id);
+                $lastSeen = $lastActivity 
+                    ? \Illuminate\Support\Carbon::createFromTimestamp($lastActivity)->timezone('Africa/Dakar')->format('d/m/Y H:i')
+                    : 'Jamais';
+
+                return [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'telephone' => $user->telephone,
+                    'adresse' => $user->adresse,
+                    'roles' => $user->getRoleNames(),
+                    'profile_photo_url' => $user->profile_photo_url,
+                    'is_active' => $user->is_active ?? true,
+                    'created_at' => $user->created_at->format('d/m/Y'),
+                    'last_seen' => $lastSeen,
+                ];
+            }),
             'available_roles' => Role::pluck('name')->toArray(),
         ]);
     }

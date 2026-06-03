@@ -128,6 +128,7 @@ function deleteUser(id) {
                             <th class="px-8 py-4">Rôles</th>
                             <th class="px-8 py-4">Statut</th>
                             <th class="px-8 py-4">Inscrit le</th>
+                            <th class="px-8 py-4">Dernière Connexion</th>
                             <th class="px-8 py-4"></th>
                         </tr>
                     </thead>
@@ -165,6 +166,10 @@ function deleteUser(id) {
                             </td>
                             <td class="px-8 py-5 text-sm text-gray-400 font-bold">
                                 {{ user.created_at }}
+                            </td>
+                            <td class="px-8 py-5 text-sm text-gray-400 font-bold">
+                                <span v-if="user.last_seen === 'Jamais'" class="text-gray-300 italic font-medium">Jamais</span>
+                                <span v-else>{{ user.last_seen }}</span>
                             </td>
                             <td class="px-8 py-5 text-right">
                                 <div class="flex justify-end gap-2 translate-x-4 opacity-0 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300">
@@ -382,6 +387,13 @@ function deleteUser(id) {
                             <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Membre depuis</p>
                             <p class="font-bold text-gray-700">{{ selectedUser.created_at }}</p>
                         </div>
+                    </div>
+                    <div>
+                        <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Dernière Connexion</p>
+                        <p class="font-bold text-gray-700">
+                            <span v-if="selectedUser.last_seen === 'Jamais'" class="text-gray-300 italic font-medium">Jamais connecté</span>
+                            <span v-else>{{ selectedUser.last_seen }}</span>
+                        </p>
                     </div>
                 </div>
 
