@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
 import { Head } from '@inertiajs/vue3'
 import DoughnutChart from '@/Components/Charts/DoughnutChart.vue'
@@ -55,9 +55,28 @@ const moduleData = computed(() => {
     return Object.values(dashboardKpis.value.module_validation_rates)
 })
 
+let statsInterval = null
+
 onMounted(() => {
     // Initial fetch to sync possible discrepancies
     fetchStats()
+
+    // Poll stats every 15 seconds to update online users and other metrics in real-time
+    statsInterval = setInterval(() => {
+        api.get('/stats/director')
+            .then(response => {
+                dashboardKpis.value = response.data
+            })
+            .catch(error => {
+                console.error('Erreur API lors de la mise à jour automatique:', error)
+            })
+    }, 15000)
+})
+
+onUnmounted(() => {
+    if (statsInterval) {
+        clearInterval(statsInterval)
+    }
 })
 </script>
 
