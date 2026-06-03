@@ -24,6 +24,7 @@ const props = defineProps({
 })
 
 const searchQuery = ref('')
+const selectedRole = ref('')
 const isModalOpen = ref(false)
 const isViewModalOpen = ref(false)
 const isEditing = ref(false)
@@ -31,15 +32,26 @@ const editingUser = ref(null)
 const selectedUser = ref(null)
 
 const filteredUsers = computed(() => {
-    if (!searchQuery.value) return props.users
-    const query = searchQuery.value.toLowerCase()
-    return props.users.filter(user => {
-        return user.name.toLowerCase().includes(query) ||
-               user.email.toLowerCase().includes(query) ||
-               (user.telephone && user.telephone.toLowerCase().includes(query)) ||
-               (user.adresse && user.adresse.toLowerCase().includes(query)) ||
-               user.roles.some(role => role.toLowerCase().includes(query))
-    })
+    let list = props.users
+
+    // Filter by role dropdown selection
+    if (selectedRole.value) {
+        list = list.filter(user => user.roles.includes(selectedRole.value))
+    }
+
+    // Filter by text search query
+    if (searchQuery.value) {
+        const query = searchQuery.value.toLowerCase()
+        list = list.filter(user => {
+            return user.name.toLowerCase().includes(query) ||
+                   user.email.toLowerCase().includes(query) ||
+                   (user.telephone && user.telephone.toLowerCase().includes(query)) ||
+                   (user.adresse && user.adresse.toLowerCase().includes(query)) ||
+                   user.roles.some(role => role.toLowerCase().includes(query))
+        })
+    }
+
+    return list
 })
 
 const form = useForm({
@@ -127,6 +139,18 @@ function deleteUser(id) {
                             placeholder="Rechercher..." 
                             class="pl-12 pr-6 py-3 bg-white border-gray-100 rounded-2xl shadow-sm focus:ring-2 focus:ring-indigo-600 border-0 w-64 font-bold text-sm"
                         >
+                    </div>
+                    <div class="relative">
+                        <select 
+                            v-model="selectedRole"
+                            class="pl-6 pr-10 py-3 bg-white border-gray-100 rounded-2xl shadow-sm focus:ring-2 focus:ring-indigo-600 border-0 font-bold text-sm appearance-none cursor-pointer min-w-[150px]"
+                        >
+                            <option value="">Tous les rôles</option>
+                            <option v-for="role in available_roles" :key="role" :value="role">
+                                {{ role }}
+                            </option>
+                        </select>
+                        <ChevronRightIcon class="h-4 w-4 absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 rotate-90 pointer-events-none" />
                     </div>
                     <button 
                         @click="openCreateModal"
