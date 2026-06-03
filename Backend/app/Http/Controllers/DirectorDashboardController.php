@@ -275,7 +275,7 @@ class DirectorDashboardController extends Controller
 
     private function getTotalLearners(): int
     {
-        return User::role(['Apprenant', 'Stagiaire'])->count();
+        return User::role(['Apprenant', 'Stagiaire'])->where('users.is_active', true)->count();
     }
 
     /**
