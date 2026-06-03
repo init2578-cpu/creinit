@@ -111,6 +111,15 @@ class GroupController extends Controller
         if ($newId) {
             $newStudent = User::find($newId);
             $newStudent->notify(new \App\Notifications\GroupRoleChangedNotification($groupName, $roleLabel, 'attribué', 'vous'));
+
+            // Notify all other students of this group
+            $otherStudents = $group->students()
+                ->where('users.id', '!=', $newId)
+                ->where('users.id', '!=', $oldId)
+                ->get();
+            foreach ($otherStudents as $student) {
+                $student->notify(new \App\Notifications\GroupRoleChangedNotification($groupName, $roleLabel, 'attribué', $newStudent->name));
+            }
         }
 
         // Notify Old Student

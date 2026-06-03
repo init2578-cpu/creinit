@@ -120,6 +120,55 @@ class NominationController extends Controller
             ? 'Nomination approuvée. Le rôle a été attribué.'
             : 'Nomination rejetée.';
 
+        // Dispatch notifications outside of the transaction block
+        $group     = $nomination->group;
+        $nominee   = $nomination->user;
+        $nominator = $nomination->nominator;
+        $roleLabel = $nomination->role === 'responsable' ? 'Responsable' : 'Adjoint';
+
+        if ($decision === 'approved') {
+            // 1. Notify the Trainer (nominator)
+            if ($nominator) {
+                $nominator->notify(new \App\Notifications\GroupRoleChangedNotification(
+                    $group->nom_groupe,
+                    $roleLabel,
+                    'approuvé pour',
+                    $nominee->name
+                ));
+            }
+
+            // 2. Notify the Nominee (student receiving role)
+            $nominee->notify(new \App\Notifications\GroupRoleChangedNotification(
+                $group->nom_groupe,
+                $roleLabel,
+                'attribué',
+                'vous'
+            ));
+
+            // 3. Notify all other students of this group
+            $otherStudents = $group->students()
+                ->where('users.id', '!=', $nominee->id)
+                ->get();
+            foreach ($otherStudents as $student) {
+                $student->notify(new \App\Notifications\GroupRoleChangedNotification(
+                    $group->nom_groupe,
+                    $roleLabel,
+                    'attribué',
+                    $nominee->name
+                ));
+            }
+        } else {
+            // If rejected, notify the Trainer (nominator)
+            if ($nominator) {
+                $nominator->notify(new \App\Notifications\GroupRoleChangedNotification(
+                    $group->nom_groupe,
+                    $roleLabel,
+                    'rejeté pour',
+                    $nominee->name
+                ));
+            }
+        }
+
         return redirect()
             ->back()
             ->with('success', $message);
