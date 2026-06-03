@@ -44,6 +44,10 @@ class AuthenticatedSessionController extends Controller
         $request->session()->regenerate();
 
         $user = Auth::user();
+
+        // Record last login timestamp
+        $user->forceFill(['last_login_at' => now()])->save();
+
         $route = 'dashboard.director'; // Default
 
         if ($user->isTrainer()) {
@@ -97,6 +101,9 @@ class AuthenticatedSessionController extends Controller
             'password' => Hash::make($request->password),
             'must_change_password' => false,
         ]);
+
+        // Record last login timestamp
+        $user->forceFill(['last_login_at' => now()])->save();
 
         $route = 'dashboard.director'; // Default
         if ($user->isTrainer()) {

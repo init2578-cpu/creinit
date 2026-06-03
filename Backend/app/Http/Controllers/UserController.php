@@ -19,17 +19,12 @@ class UserController extends Controller
      */
     public function index(): Response
     {
-        $lastActivities = \Illuminate\Support\Facades\DB::table('sessions')
-            ->whereNotNull('user_id')
-            ->select('user_id', \Illuminate\Support\Facades\DB::raw('MAX(last_activity) as last_activity'))
-            ->groupBy('user_id')
-            ->pluck('last_activity', 'user_id');
-
         return Inertia::render('Users/Index', [
-            'users' => User::with('roles')->orderBy('name')->get()->map(function($user) use ($lastActivities) {
-                $lastActivity = $lastActivities->get($user->id);
-                $lastSeen = $lastActivity 
-                    ? \Illuminate\Support\Carbon::createFromTimestamp($lastActivity)->timezone('Africa/Dakar')->format('d/m/Y H:i')
+            'users' => User::with('roles')->orderBy('name')->get()->map(function($user) {
+                $lastSeen = $user->last_login_at
+                    ? \Illuminate\Support\Carbon::parse($user->last_login_at)
+                        ->timezone('Africa/Dakar')
+                        ->format('d/m/Y H:i')
                     : 'Jamais';
 
                 $timeSpentSeconds = $user->time_spent ?? 0;
