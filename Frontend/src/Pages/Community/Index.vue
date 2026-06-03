@@ -309,7 +309,12 @@ const toggleLike = (announcementId, type = 'heart') => {
                                 <h5 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4">Réponses ({{ announcement.replies?.length || 0 }})</h5>
                                 
                                 <div v-if="announcement.replies?.length > 0" class="space-y-4 mb-4">
-                                    <div v-for="reply in announcement.replies" :key="reply.id" class="flex gap-3 bg-gray-50/50 p-4 rounded-2xl border border-gray-100">
+                                <div v-for="reply in announcement.replies" :key="reply.id"
+                                     class="flex gap-3 p-4 rounded-2xl border transition-colors"
+                                     :class="reply.user_id === $page.props.auth.user.id
+                                         ? 'bg-indigo-50/60 border-indigo-200 border-l-4 border-l-indigo-400'
+                                         : 'bg-gray-50/50 border-gray-100'"
+                                >
                                         <div class="h-8 w-8 rounded-full overflow-hidden flex-shrink-0 border border-gray-200">
                                             <template v-if="reply.user">
                                                 <img v-if="reply.user.profile_photo_url" :src="reply.user.profile_photo_url" class="h-full w-full object-cover">
@@ -509,7 +514,12 @@ const toggleLike = (announcementId, type = 'heart') => {
                                 <h5 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4">Réponses ({{ announcement.replies?.length || 0 }})</h5>
                                 
                                 <div v-if="announcement.replies?.length > 0" class="space-y-4 mb-4">
-                                    <div v-for="reply in announcement.replies" :key="reply.id" class="flex gap-3 bg-gray-50/50 p-4 rounded-2xl border border-gray-100">
+                                <div v-for="reply in announcement.replies" :key="reply.id"
+                                     class="flex gap-3 p-4 rounded-2xl border transition-colors"
+                                     :class="reply.user_id === $page.props.auth.user.id
+                                         ? 'bg-indigo-50/60 border-indigo-200 border-l-4 border-l-indigo-400'
+                                         : 'bg-gray-50/50 border-gray-100'"
+                                >
                                         <div class="h-8 w-8 rounded-full overflow-hidden flex-shrink-0 border border-gray-200">
                                             <template v-if="reply.user">
                                                 <img v-if="reply.user.profile_photo_url" :src="reply.user.profile_photo_url" class="h-full w-full object-cover">
