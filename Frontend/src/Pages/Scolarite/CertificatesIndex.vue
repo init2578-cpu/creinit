@@ -23,9 +23,12 @@ const searchQuery = ref('')
 const selectedModule = ref(null)
 
 const filteredStudents = computed(() => {
+    if (!props.students) return []
     return props.students.filter(student => {
-        const matchesSearch = student.name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-                             student.email.toLowerCase().includes(searchQuery.value.toLowerCase())
+        const name = String(student.name || '').toLowerCase()
+        const email = String(student.email || '').toLowerCase()
+        const query = searchQuery.value.toLowerCase()
+        const matchesSearch = name.includes(query) || email.includes(query)
         
         if (!selectedModule.value) return matchesSearch
         
