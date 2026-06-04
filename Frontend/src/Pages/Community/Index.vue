@@ -241,7 +241,12 @@ const toggleLike = (announcementId, type = 'heart') => {
                                 <div class="flex items-center gap-3">
                                     <div class="flex items-center gap-1.5">
                                         <div class="h-5 w-5 rounded-full overflow-hidden border border-gray-200">
-                                            <template v-if="announcement.user">
+                                            <template v-if="announcement.is_anonymous && !$page.props.auth.user.roles.includes('Directeur')">
+                                                <div class="h-full w-full bg-indigo-100 flex items-center justify-center">
+                                                    <UserIcon class="h-3 w-3 text-indigo-400" />
+                                                </div>
+                                            </template>
+                                            <template v-else-if="announcement.user">
                                                 <img v-if="announcement.user.profile_photo_url" :src="announcement.user.profile_photo_url" class="h-full w-full object-cover">
                                                 <UserIcon v-else class="h-full w-full p-1 text-gray-300" />
                                             </template>
@@ -251,8 +256,13 @@ const toggleLike = (announcementId, type = 'heart') => {
                                                 </div>
                                             </template>
                                         </div>
-                                        <span :class="announcement.is_anonymous ? 'text-indigo-600 italic' : 'text-gray-600'">
-                                            {{ announcement.user ? announcement.user.name + (announcement.is_anonymous ? ' (Anonyme)' : '') : 'Utilisateur Anonyme' }}
+                                        <span :class="announcement.is_anonymous ? 'text-indigo-600 italic font-semibold' : 'text-gray-600'">
+                                            <template v-if="announcement.is_anonymous && !$page.props.auth.user.roles.includes('Directeur')">
+                                                Utilisateur Anonyme
+                                            </template>
+                                            <template v-else>
+                                                {{ announcement.user ? announcement.user.name + (announcement.is_anonymous ? ' (Anonyme)' : '') : 'Utilisateur Anonyme' }}
+                                            </template>
                                         </span>
                                     </div>
                                     <span>•</span>
@@ -288,14 +298,14 @@ const toggleLike = (announcementId, type = 'heart') => {
                                         </button>
                                     </div>
                                     <button 
-                                        v-if="$page.props.auth.user.id === announcement.user_id || $page.props.auth.user.roles.includes('Directeur')"
+                                        v-if="($page.props.auth.user.id === announcement.user_id && !announcement.is_anonymous) || $page.props.auth.user.roles.includes('Directeur')"
                                         @click="openEditModal(announcement)"
                                         class="text-blue-500 hover:text-blue-700 transition-colors mr-3"
                                     >
                                         Modifier
                                     </button>
                                     <button 
-                                        v-if="$page.props.auth.user.id === announcement.user_id || $page.props.auth.user.roles.includes('Directeur')"
+                                        v-if="($page.props.auth.user.id === announcement.user_id && !announcement.is_anonymous) || $page.props.auth.user.roles.includes('Directeur')"
                                         @click="deleteAnnouncement(announcement.id)"
                                         class="text-red-400 hover:text-red-600 transition-colors"
                                     >
@@ -446,7 +456,12 @@ const toggleLike = (announcementId, type = 'heart') => {
                                 <div class="flex items-center gap-3">
                                     <div class="flex items-center gap-1.5">
                                         <div class="h-5 w-5 rounded-full overflow-hidden border border-gray-200">
-                                            <template v-if="announcement.user">
+                                            <template v-if="announcement.is_anonymous && !$page.props.auth.user.roles.includes('Directeur')">
+                                                <div class="h-full w-full bg-indigo-100 flex items-center justify-center">
+                                                    <UserIcon class="h-3 w-3 text-indigo-400" />
+                                                </div>
+                                            </template>
+                                            <template v-else-if="announcement.user">
                                                 <img v-if="announcement.user.profile_photo_url" :src="announcement.user.profile_photo_url" class="h-full w-full object-cover">
                                                 <UserIcon v-else class="h-full w-full p-1 text-gray-300" />
                                             </template>
@@ -456,8 +471,13 @@ const toggleLike = (announcementId, type = 'heart') => {
                                                 </div>
                                             </template>
                                         </div>
-                                        <span :class="announcement.is_anonymous ? 'text-indigo-600 italic font-bold' : 'text-gray-600'">
-                                            {{ announcement.user ? announcement.user.name + (announcement.is_anonymous ? ' (Anonyme)' : '') : 'Utilisateur Anonyme' }}
+                                        <span :class="announcement.is_anonymous ? 'text-indigo-600 italic font-semibold' : 'text-gray-600'">
+                                            <template v-if="announcement.is_anonymous && !$page.props.auth.user.roles.includes('Directeur')">
+                                                Utilisateur Anonyme
+                                            </template>
+                                            <template v-else>
+                                                {{ announcement.user ? announcement.user.name + (announcement.is_anonymous ? ' (Anonyme)' : '') : 'Utilisateur Anonyme' }}
+                                            </template>
                                         </span>
                                     </div>
                                     <span>•</span>
@@ -493,14 +513,14 @@ const toggleLike = (announcementId, type = 'heart') => {
                                         </button>
                                     </div>
                                     <button 
-                                        v-if="$page.props.auth.user.id === announcement.user_id || $page.props.auth.user.roles.includes('Directeur')"
+                                        v-if="($page.props.auth.user.id === announcement.user_id && !announcement.is_anonymous) || $page.props.auth.user.roles.includes('Directeur')"
                                         @click="openEditModal(announcement)"
                                         class="text-blue-500 hover:text-blue-700 transition-colors mr-3"
                                     >
                                         Modifier
                                     </button>
                                     <button 
-                                        v-if="$page.props.auth.user.id === announcement.user_id || $page.props.auth.user.roles.includes('Directeur')"
+                                        v-if="($page.props.auth.user.id === announcement.user_id && !announcement.is_anonymous) || $page.props.auth.user.roles.includes('Directeur')"
                                         @click="deleteAnnouncement(announcement.id)"
                                         class="text-red-400 hover:text-red-600 transition-colors"
                                     >
