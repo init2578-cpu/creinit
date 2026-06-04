@@ -43,11 +43,11 @@ const filteredUsers = computed(() => {
     if (searchQuery.value) {
         const query = searchQuery.value.toLowerCase()
         list = list.filter(user => {
-            return user.name.toLowerCase().includes(query) ||
-                   user.email.toLowerCase().includes(query) ||
-                   (user.telephone && user.telephone.toLowerCase().includes(query)) ||
-                   (user.adresse && user.adresse.toLowerCase().includes(query)) ||
-                   user.roles.some(role => role.toLowerCase().includes(query))
+            return user.name?.toLowerCase().includes(query) ||
+                   user.email?.toLowerCase().includes(query) ||
+                   user.telephone?.toLowerCase().includes(query) ||
+                   user.adresse?.toLowerCase().includes(query) ||
+                   user.roles?.some(role => role?.toLowerCase().includes(query))
         })
     }
 
