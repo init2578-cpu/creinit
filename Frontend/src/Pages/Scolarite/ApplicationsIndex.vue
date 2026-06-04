@@ -1,7 +1,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
 import { Head, router } from '@inertiajs/vue3'
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { 
     EyeIcon, 
     CheckCircleIcon, 
@@ -16,13 +16,34 @@ import {
     AcademicCapIcon,
     BriefcaseIcon,
     CalendarIcon,
-    PencilIcon
+    PencilIcon,
+    MagnifyingGlassIcon
 } from '@heroicons/vue/24/outline'
 import { useForm } from '@inertiajs/vue3'
 
 const props = defineProps({
     applications: Array,
     modules: Array
+})
+
+const searchQuery = ref('')
+const statusFilter = ref('all')
+const moduleFilter = ref('all')
+
+const filteredApplications = computed(() => {
+    if (!props.applications) return []
+    return props.applications.filter(app => {
+        const name = String(app.nom_complet || (app.user ? app.user.name : '')).toLowerCase()
+        const email = String(app.user ? app.user.email : '').toLowerCase()
+        const phone = String(app.telephone || (app.user ? app.user.telephone : '')).toLowerCase()
+        const query = searchQuery.value.toLowerCase()
+        const matchesSearch = name.includes(query) || email.includes(query) || phone.includes(query)
+
+        const matchesStatus = statusFilter.value === 'all' || app.status === statusFilter.value
+        const matchesModule = moduleFilter.value === 'all' || Number(app.module_id) === Number(moduleFilter.value)
+
+        return matchesSearch && matchesStatus && matchesModule
+    })
 })
 
 const selectedApplication = ref(null)
@@ -182,6 +203,56 @@ const getStatusClass = (status) => {
                 </div>
             </header>
 
+            <!-- Filter Bar -->
+            <div class="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm mb-6 flex flex-col md:flex-row items-center justify-between gap-4">
+                <div class="relative w-full md:w-96">
+                    <span class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400">
+                        <MagnifyingGlassIcon class="h-5 w-5" />
+                    </span>
+                    <input 
+                        v-model="searchQuery" 
+                        type="text" 
+                        placeholder="Rechercher un candidat..." 
+                        class="w-full bg-gray-50 border-0 rounded-2xl pl-11 pr-5 py-3 font-bold text-sm focus:ring-2 focus:ring-blue-500 placeholder-gray-400 transition"
+                    />
+                </div>
+                
+                <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
+                    <!-- Status Filter -->
+                    <div class="flex-1 md:flex-initial min-w-[140px]">
+                        <select 
+                            v-model="statusFilter" 
+                            class="w-full bg-gray-50 border-0 rounded-2xl px-5 py-3 font-bold text-sm focus:ring-2 focus:ring-blue-500 appearance-none cursor-pointer"
+                        >
+                            <option value="all">Tous les statuts</option>
+                            <option value="pending">En attente</option>
+                            <option value="admitted">Admis</option>
+                            <option value="rejected">Rejeté</option>
+                        </select>
+                    </div>
+
+                    <!-- Module Filter -->
+                    <div class="flex-1 md:flex-initial min-w-[200px]">
+                        <select 
+                            v-model="moduleFilter" 
+                            class="w-full bg-gray-50 border-0 rounded-2xl px-5 py-3 font-bold text-sm focus:ring-2 focus:ring-blue-500 appearance-none cursor-pointer"
+                        >
+                            <option value="all">Tous les modules</option>
+                            <option v-for="m in modules" :key="m.id" :value="m.id">{{ m.titre || m.nom_module }}</option>
+                        </select>
+                    </div>
+
+                    <!-- Reset Filters Button -->
+                    <button 
+                        v-if="searchQuery || statusFilter !== 'all' || moduleFilter !== 'all'"
+                        @click="searchQuery = ''; statusFilter = 'all'; moduleFilter = 'all'"
+                        class="px-4 py-3 bg-red-50 text-red-600 rounded-2xl font-bold text-sm hover:bg-red-100 transition flex items-center gap-1.5"
+                    >
+                        Réinitialiser
+                    </button>
+                </div>
+            </div>
+
             <div class="bg-white rounded-[2.5rem] shadow-sm border border-gray-100 overflow-hidden">
                 <div class="overflow-x-auto">
                     <table class="w-full text-left border-collapse">
@@ -195,7 +266,13 @@ const getStatusClass = (status) => {
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-50">
-                            <tr v-for="app in applications" :key="app.id" class="hover:bg-gray-50/50 transition">
+                            <!-- Empty State -->
+                            <tr v-if="filteredApplications.length === 0">
+                                <td colspan="5" class="text-center py-12 text-gray-400 font-bold text-sm">
+                                    Aucun candidat ne correspond aux critères de recherche.
+                                </td>
+                            </tr>
+                            <tr v-for="app in filteredApplications" :key="app.id" class="hover:bg-gray-50/50 transition">
                                 <td class="px-6 py-4">
                                     <div class="flex items-center gap-3">
                                         <div class="h-10 w-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center overflow-hidden font-black">
