@@ -124,6 +124,14 @@ class ApplicationController extends Controller
             'status' => 'required|in:admitted,rejected,pending'
         ]);
 
+        if ($validated['status'] === 'pending') {
+            /** @var \App\Models\User $user */
+            $user = $request->user();
+            if (!$user->hasRole('Directeur')) {
+                return redirect()->back()->with('error', "Seul le Directeur est autorisé à remettre une candidature en attente.");
+            }
+        }
+
         $application->update(['status' => $validated['status']]);
 
         // If admitted, ensure user has the Apprenant role

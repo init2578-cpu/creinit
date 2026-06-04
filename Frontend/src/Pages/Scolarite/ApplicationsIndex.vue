@@ -17,7 +17,8 @@ import {
     BriefcaseIcon,
     CalendarIcon,
     PencilIcon,
-    MagnifyingGlassIcon
+    MagnifyingGlassIcon,
+    ArrowPathIcon
 } from '@heroicons/vue/24/outline'
 import { useForm } from '@inertiajs/vue3'
 
@@ -115,7 +116,16 @@ function closeDetails() {
 }
 
 function updateStatus(id, status) {
-    if (confirm(`Confirmer la décision : ${status === 'admitted' ? 'ADMIS' : 'REJETÉ'} ?`)) {
+    let confirmMsg = '';
+    if (status === 'admitted') {
+        confirmMsg = 'Confirmer la décision : ADMIS ?';
+    } else if (status === 'rejected') {
+        confirmMsg = 'Confirmer la décision : REJETÉ ?';
+    } else if (status === 'pending') {
+        confirmMsg = 'Confirmer la décision : REMETTRE EN ATTENTE ?';
+    }
+
+    if (confirm(confirmMsg)) {
         router.patch(route('applications.status.update', id), {
             status: status
         }, {
@@ -309,11 +319,16 @@ const getStatusClass = (status) => {
                                             Détails
                                         </button>
                                         <template v-if="app.status === 'pending'">
-                                            <button @click="updateStatus(app.id, 'admitted')" class="p-2 text-green-600 hover:bg-green-50 rounded-xl transition">
+                                            <button @click="updateStatus(app.id, 'admitted')" class="p-2 text-green-600 hover:bg-green-50 rounded-xl transition" title="Admettre">
                                                 <CheckCircleIcon class="h-6 w-6" />
                                             </button>
-                                            <button @click="updateStatus(app.id, 'rejected')" class="p-2 text-red-600 hover:bg-red-50 rounded-xl transition">
+                                            <button @click="updateStatus(app.id, 'rejected')" class="p-2 text-red-600 hover:bg-red-50 rounded-xl transition" title="Rejeter">
                                                 <XCircleIcon class="h-6 w-6" />
+                                            </button>
+                                        </template>
+                                        <template v-else-if="$page.props.auth.user.roles.includes('Directeur')">
+                                            <button @click="updateStatus(app.id, 'pending')" class="p-2 text-amber-600 hover:bg-amber-50 rounded-xl transition" title="Remettre en attente">
+                                                <ArrowPathIcon class="h-6 w-6" />
                                             </button>
                                         </template>
                                     </div>
@@ -452,7 +467,12 @@ const getStatusClass = (status) => {
                             Admettre le candidat
                         </button>
                     </template>
-                    <button v-else @click="closeDetails" class="px-8 py-3 bg-gray-900 text-white rounded-2xl font-black text-sm">Fermer</button>
+                    <template v-else-if="$page.props.auth.user.roles.includes('Directeur')">
+                        <button @click="updateStatus(applicationForDetails.id, 'pending'); closeDetails()" class="px-6 py-3 bg-amber-600 text-white rounded-2xl font-black text-sm hover:bg-amber-700 transition shadow-lg shadow-amber-100">
+                            Remettre en attente
+                        </button>
+                    </template>
+                    <button @click="closeDetails" class="px-8 py-3 bg-gray-900 text-white rounded-2xl font-black text-sm">Fermer</button>
                 </div>
             </div>
         </div>
