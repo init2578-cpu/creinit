@@ -148,6 +148,7 @@ function submitForm() {
         traineeForm.transform((data) => ({
             ...data,
             _method: 'PUT',
+            is_active: data.is_active ? '1' : '0',  // Force string for FormData compatibility
         })).post(route('trainees.update', editingTrainee.value.id), {
             onSuccess: () => closeFormModal(),
             forceFormData: true,

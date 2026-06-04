@@ -145,7 +145,7 @@ class TraineesController extends Controller
             'password' => 'nullable|string|min:8',
             'telephone' => 'nullable|string|max:20',
             'adresse' => 'nullable|string|max:255',
-            'is_active' => 'required|boolean',
+            'is_active' => 'nullable',
             // Internship fields
             'internship_type' => 'required|string|in:course_assistant,course_substitute,management_assistant,secretary_assistant,director_assistant,field_internship',
             'tuteur_id' => 'nullable|exists:users,id',
@@ -160,13 +160,16 @@ class TraineesController extends Controller
             'diploma' => 'nullable|file|mimes:pdf,jpg,png,jpeg|max:5120',
         ]);
 
-        DB::transaction(function() use ($validated, $trainee, $request) {
+        // is_active can come as string '1'/'0'/'true'/'false' or be absent (checkbox unchecked in FormData)
+        $isActive = filter_var($request->input('is_active', false), FILTER_VALIDATE_BOOLEAN);
+
+        DB::transaction(function() use ($validated, $trainee, $request, $isActive) {
             $trainee->update([
                 'name' => $validated['name'],
                 'email' => $validated['email'],
                 'telephone' => $validated['telephone'],
                 'adresse' => $validated['adresse'],
-                'is_active' => (bool)$validated['is_active'],
+                'is_active' => $isActive,
             ]);
 
             if (!empty($validated['password'])) {
