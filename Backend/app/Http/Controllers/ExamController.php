@@ -31,7 +31,7 @@ class ExamController extends Controller
             ->map(function ($exam) use ($user) {
                 // Ensure questions are sequential for list previews if used
                 $exam->setRelation('questions', $exam->questions->values());
-                
+
                 $result = ExamResult::where('exam_id', $exam->id)
                     ->where('user_id', $user->id)
                     ->first();
@@ -47,7 +47,7 @@ class ExamController extends Controller
     public function show(Exam $exam): Response
     {
         $exam->load(['questions.options']);
-        
+
         // Ensure questions stay as a sequential array even if custom ordered
         $exam->setRelation('questions', $exam->questions->values());
 
@@ -85,7 +85,7 @@ class ExamController extends Controller
         foreach ($exam->questions as $question) {
             $totalPoints += $question->points;
             $userAnswerId = $validated['answers'][$question->id] ?? null;
-            
+
             $correctOption = $question->options()->where('is_correct', true)->first();
             $isCorrect = ($userAnswerId == $correctOption?->id);
 
@@ -97,7 +97,7 @@ class ExamController extends Controller
             if ($exam->is_practice) {
                 $feedback[] = [
                     'question_id' => $question->id,
-                    'is_correct'  => $isCorrect,
+                    'is_correct' => $isCorrect,
                     'correct_option_id' => $correctOption?->id,
                     'explanation' => $isCorrect ? 'Correct !' : 'Incorrect.',
                 ];
@@ -106,11 +106,11 @@ class ExamController extends Controller
 
         if (!$exam->is_practice) {
             ExamResult::create([
-                'exam_id'     => $exam->id,
-                'user_id'      => $request->user()->id,
-                'score'       => ($score / $totalPoints) * 20, // Ramenant sur 20
+                'exam_id' => $exam->id,
+                'user_id' => $request->user()->id,
+                'score' => $totalPoints > 0 ? ($score / $totalPoints) * 20 : 0, // Ramenant sur 20
                 'finished_at' => now(),
-                'answers'     => $validated['answers'],
+                'answers' => $validated['answers'],
             ]);
 
             return redirect()->route('student.dashboard')->with('success', 'Examen terminé.');
@@ -118,10 +118,10 @@ class ExamController extends Controller
 
         // Mode Practice : Retourner le feedback immédiat
         return Inertia::render('LMS/PracticeResult', [
-            'score'    => $score,
-            'total'    => $totalPoints,
+            'score' => $score,
+            'total' => $totalPoints,
             'feedback' => $feedback,
-            'exam'     => $exam,
+            'exam' => $exam,
         ]);
     }
 }

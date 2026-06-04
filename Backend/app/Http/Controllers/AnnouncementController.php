@@ -49,7 +49,17 @@ class AnnouncementController extends Controller
             unset($announcement->likes); // don't leak full likes list to frontend
 
             if (!$user->hasRole('Directeur') && $announcement->is_anonymous) {
-                $announcement->user = null;
+                $announcement->unsetRelation('user');
+                $announcement->makeHidden('user_id');
+                if ($announcement->relationLoaded('replies')) {
+                    $announcement->replies->transform(function ($reply) use ($announcement) {
+                        if ($reply->user_id === $announcement->getRawOriginal('user_id')) {
+                            $reply->unsetRelation('user');
+                            $reply->makeHidden('user_id');
+                        }
+                        return $reply;
+                    });
+                }
             }
             return $announcement;
         });

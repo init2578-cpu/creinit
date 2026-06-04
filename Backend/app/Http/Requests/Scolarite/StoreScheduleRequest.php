@@ -39,45 +39,31 @@ class StoreScheduleRequest extends FormRequest
             $roomId = $this->input('room_id');
             $formateurId = $this->input('formateur_id');
 
-            // Vérification conflit salle
-            $roomConflict = Schedule::where('room_id', $roomId)
-                ->where('day_of_week', $dayOfWeek)
-                ->where(function ($query) use ($startTime, $endTime) {
-                    $query->whereBetween('start_time', [$startTime, $endTime])
-                        ->orWhereBetween('end_time', [$startTime, $endTime])
-                        ->orWhere(function ($q) use ($startTime, $endTime) {
-                            $q->where('start_time', '<=', $startTime)
-                                ->where('end_time', '>=', $endTime);
-                        });
-                })
-                ->when($this->route('schedule'), function ($query) {
-                    $query->where('id', '!=', $this->route('schedule')->id);
-                })
-                ->exists();
-
-            if ($roomConflict) {
+            if ($this->hasConflict('room_id', $roomId, $dayOfWeek, $startTime, $endTime)) {
                 $validator->errors()->add('room_id', 'Cette salle est déjà occupée sur ce créneau.');
             }
 
-            // Vérification conflit formateur
-            $formateurConflict = Schedule::where('formateur_id', $formateurId)
-                ->where('day_of_week', $dayOfWeek)
-                ->where(function ($query) use ($startTime, $endTime) {
-                    $query->whereBetween('start_time', [$startTime, $endTime])
-                        ->orWhereBetween('end_time', [$startTime, $endTime])
-                        ->orWhere(function ($q) use ($startTime, $endTime) {
-                            $q->where('start_time', '<=', $startTime)
-                                ->where('end_time', '>=', $endTime);
-                        });
-                })
-                ->when($this->route('schedule'), function ($query) {
-                    $query->where('id', '!=', $this->route('schedule')->id);
-                })
-                ->exists();
-
-            if ($formateurConflict) {
+            if ($this->hasConflict('formateur_id', $formateurId, $dayOfWeek, $startTime, $endTime)) {
                 $validator->errors()->add('formateur_id', 'Ce formateur est déjà réservé sur ce créneau.');
             }
         });
+    }
+
+    private function hasConflict(string $column, $value, int $day, string $start, string $end): bool
+    {
+        return Schedule::where($column, $value)
+            ->where('day_of_week', $day)
+            ->where(function ($query) use ($start, $end) {
+                $query->whereBetween('start_time', [$start, $end])
+                    ->orWhereBetween('end_time', [$start, $end])
+                    ->orWhere(function ($q) use ($start, $end) {
+                        $q->where('start_time', '<=', $start)
+                            ->where('end_time', '>=', $end);
+                    });
+            })
+            ->when($this->route('schedule'), function ($query) {
+                $query->where('id', '!=', $this->route('schedule')->id);
+            })
+            ->exists();
     }
 }
