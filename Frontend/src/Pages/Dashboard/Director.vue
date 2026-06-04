@@ -264,17 +264,56 @@ onUnmounted(() => {
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                     <!-- Academic Success Distribution -->
                     <div class="bg-white p-10 rounded-[3rem] border border-gray-100 shadow-sm flex flex-col">
-                        <div class="flex items-center justify-between mb-10">
+                        <!-- Header -->
+                        <div class="flex items-start justify-between mb-8">
                             <div>
                                 <h2 class="text-2xl font-black text-gray-900 tracking-tight">Performance Académique</h2>
-                                <p class="text-sm text-gray-500 font-medium">Réussite et certifications par filière</p>
+                                <p class="text-sm text-gray-500 font-medium mt-1">Taux de validation par filière</p>
                             </div>
-                            <div class="h-12 w-12 bg-gray-50 text-indigo-500 rounded-2xl flex items-center justify-center border border-gray-100">
+                            <div class="h-12 w-12 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center border border-indigo-100 shrink-0">
                                 <ChartBarIcon class="h-6 w-6" />
                             </div>
                         </div>
-                        <div class="flex-1 min-h-[300px]">
+
+                        <!-- Quick stats strip -->
+                        <div class="grid grid-cols-3 gap-3 mb-8" v-if="moduleData && moduleData.length > 0">
+                            <div class="p-4 bg-emerald-50/60 rounded-2xl border border-emerald-100/60 text-center">
+                                <p class="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-1">Meilleur</p>
+                                <p class="text-2xl font-black text-emerald-700">
+                                    {{ Math.max(...moduleData.map(v => v <= 1 ? Math.round(v * 100) : Math.round(v))) }}%
+                                </p>
+                            </div>
+                            <div class="p-4 bg-indigo-50/60 rounded-2xl border border-indigo-100/60 text-center">
+                                <p class="text-[10px] font-black text-indigo-600 uppercase tracking-widest mb-1">Moyenne</p>
+                                <p class="text-2xl font-black text-indigo-700">
+                                    {{ Math.round(moduleData.reduce((a, v) => a + (v <= 1 ? v * 100 : v), 0) / moduleData.length) }}%
+                                </p>
+                            </div>
+                            <div class="p-4 bg-gray-50/80 rounded-2xl border border-gray-100 text-center">
+                                <p class="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">Filières</p>
+                                <p class="text-2xl font-black text-gray-700">{{ moduleData.length }}</p>
+                            </div>
+                        </div>
+
+                        <!-- Bar Chart -->
+                        <div class="flex-1 min-h-[260px]">
                             <BarChart :labels="moduleLabels" :data="moduleData" />
+                        </div>
+
+                        <!-- Status legend -->
+                        <div class="flex items-center gap-4 mt-6 pt-4 border-t border-gray-50">
+                            <div class="flex items-center gap-1.5">
+                                <span class="h-2.5 w-2.5 rounded-full bg-emerald-500 shrink-0"></span>
+                                <span class="text-[10px] font-bold text-gray-400">≥ 75% Excellent</span>
+                            </div>
+                            <div class="flex items-center gap-1.5">
+                                <span class="h-2.5 w-2.5 rounded-full bg-amber-400 shrink-0"></span>
+                                <span class="text-[10px] font-bold text-gray-400">≥ 50% Satisfaisant</span>
+                            </div>
+                            <div class="flex items-center gap-1.5">
+                                <span class="h-2.5 w-2.5 rounded-full bg-red-400 shrink-0"></span>
+                                <span class="text-[10px] font-bold text-gray-400">&lt; 50% À surveiller</span>
+                            </div>
                         </div>
                     </div>
 
