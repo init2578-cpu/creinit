@@ -102,7 +102,6 @@ const navigation = computed(() => {
             { name: 'Mes Cours', href: route('student.courses'), icon: BookOpenIcon },
             { name: 'Exercices', href: route('student.exercises.index'), icon: BeakerIcon },
             { name: 'Examens', href: route('student.exams.index'), icon: PencilSquareIcon },
-            { name: 'Mes Attestations', href: route('student.certificates'), icon: CheckBadgeIcon },
             { name: 'Validation Progression', href: route('chapter-progress.groups'), icon: ChartBarIcon }
         )
     }

@@ -173,11 +173,17 @@ class User extends Authenticatable
     }
 
     /**
-     * Determine if the user is a trainer (Formateur role or Stagiaire with course_assistant type).
+     * Determine if the user is a trainer (Formateur role or Stagiaire with teaching-related type).
+     * course_assistant = Assistant de Cours
+     * course_substitute = Suppléant Formateur
      */
     public function isTrainer(): bool
     {
-        return $this->hasRole('Formateur') || ($this->hasRole('Stagiaire') && $this->internshipRecord?->internship_type === 'course_assistant');
+        $teachingTypes = ['course_assistant', 'course_substitute'];
+        return $this->hasRole('Formateur') || (
+            $this->hasRole('Stagiaire') &&
+            in_array($this->internshipRecord?->internship_type, $teachingTypes, true)
+        );
     }
 
     /**
