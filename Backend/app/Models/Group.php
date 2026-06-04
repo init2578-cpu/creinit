@@ -92,6 +92,14 @@ class Group extends Model
     }
 
     /**
+     * Schedules for this group.
+     */
+    public function schedules(): HasMany
+    {
+        return $this->hasMany(Schedule::class);
+    }
+
+    /**
      * Students (apprenants) assigned to this group.
      */
     public function students(): \Illuminate\Database\Eloquent\Relations\BelongsToMany

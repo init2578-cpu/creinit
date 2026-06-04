@@ -26,8 +26,12 @@ class AttendanceController extends Controller
             $trainerIds[] = $user->internshipRecord->tuteur_id;
         }
 
+        // Only show groups assigned to the trainer which HAVE a schedule for this trainer
         $groups = Group::with('module')
             ->whereIn('formateur_id', $trainerIds)
+            ->whereHas('schedules', function ($query) use ($trainerIds) {
+                $query->whereIn('formateur_id', $trainerIds);
+            })
             ->get();
 
         return Inertia::render('Attendances/Index', [
@@ -40,6 +44,21 @@ class AttendanceController extends Controller
      */
     public function takeAttendance(Group $group): Response
     {
+        $user = auth()->user();
+        $trainerIds = [$user->id];
+        if ($user->hasRole('Stagiaire') && $user->internshipRecord?->tuteur_id) {
+            $trainerIds[] = $user->internshipRecord->tuteur_id;
+        }
+
+        // Check if the trainer/substitute has a schedule for this group
+        $hasSchedule = \App\Models\Schedule::where('group_id', $group->id)
+            ->whereIn('formateur_id', $trainerIds)
+            ->exists();
+
+        if (!$hasSchedule) {
+            abort(403, "Vous n'avez pas de créneau d'emploi du temps pour ce groupe.");
+        }
+
         $group->load('students');
 
         return Inertia::render('Attendances/TakeAttendance', [
@@ -54,11 +73,28 @@ class AttendanceController extends Controller
      */
     public function storeBatch(StoreBatchAttendanceRequest $request): RedirectResponse
     {
+        $user = $request->user();
+        $trainerIds = [$user->id];
+        if ($user->hasRole('Stagiaire') && $user->internshipRecord?->tuteur_id) {
+            $trainerIds[] = $user->internshipRecord->tuteur_id;
+        }
+
+        $groupId = $request->validated('group_id');
+
+        // Check if the trainer/substitute has a schedule for this group
+        $hasSchedule = \App\Models\Schedule::where('group_id', $groupId)
+            ->whereIn('formateur_id', $trainerIds)
+            ->exists();
+
+        if (!$hasSchedule) {
+            abort(403, "Vous n'avez pas de créneau d'emploi du temps pour ce groupe.");
+        }
+
         foreach ($request->validated('attendances') as $data) {
             Attendance::updateOrCreate(
                 [
                     'user_id'  => $data['user_id'],
-                    'group_id' => $request->validated('group_id'),
+                    'group_id' => $groupId,
                     'date'     => $request->validated('date'),
                 ],
                 [
@@ -72,7 +108,7 @@ class AttendanceController extends Controller
         // Clear dashboard cache to reflect new attendance data
         \Illuminate\Support\Facades\Cache::forget('director_dashboard_kpis');
 
-        $group = Group::find($request->validated('group_id'));
+        $group = Group::find($groupId);
         if ($group) {
             Group::checkQuotaAndNotify($group);
         }
@@ -87,6 +123,23 @@ class AttendanceController extends Controller
      */
     public function index(int $groupId): Response
     {
+        $user = auth()->user();
+        $trainerIds = [$user->id];
+        if ($user->hasRole('Stagiaire') && $user->internshipRecord?->tuteur_id) {
+            $trainerIds[] = $user->internshipRecord->tuteur_id;
+        }
+
+        // Allow Directeur/Secrétaire to see history anyway, but restrict trainers/substitutes
+        if (!$user->hasRole('Directeur') && !$user->hasRole('Secrétaire')) {
+            $hasSchedule = \App\Models\Schedule::where('group_id', $groupId)
+                ->whereIn('formateur_id', $trainerIds)
+                ->exists();
+
+            if (!$hasSchedule) {
+                abort(403, "Vous n'avez pas de créneau d'emploi du temps pour ce groupe.");
+            }
+        }
+
         $attendances = Attendance::with(['user', 'group'])
             ->where('group_id', $groupId)
             ->orderByDesc('date')
