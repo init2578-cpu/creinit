@@ -17,7 +17,7 @@ class ApproveNominationRequest extends FormRequest
         /** @var \App\Models\User $user */
         $user = $this->user();
 
-        return $user->hasRole('Secrétaire');
+        return $user->hasRole('Secrétaire') || $user->hasRole('Directeur');
     }
 
     /**
