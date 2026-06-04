@@ -20,8 +20,14 @@ class AttendanceController extends Controller
      */
     public function trainerGroups(Request $request): Response
     {
+        $user = $request->user();
+        $trainerIds = [$user->id];
+        if ($user->hasRole('Stagiaire') && $user->internshipRecord?->tuteur_id) {
+            $trainerIds[] = $user->internshipRecord->tuteur_id;
+        }
+
         $groups = Group::with('module')
-            ->where('formateur_id', $request->user()->id)
+            ->whereIn('formateur_id', $trainerIds)
             ->get();
 
         return Inertia::render('Attendances/Index', [

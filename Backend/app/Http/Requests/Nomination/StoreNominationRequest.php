@@ -23,19 +23,19 @@ class StoreNominationRequest extends FormRequest
             return false;
         }
 
-        // The trainer must own this group
+        // The trainer must own this group (or their tutor if they are a substitute/assistant)
         $group = Group::find($this->input('group_id'));
 
-        if (!$group || $group->formateur_id !== $user->id) {
+        if (!$group) {
             return false;
         }
 
-        // Restriction: can only nominate if the slot is empty
-        $role = $this->input('role');
-        if ($role === 'responsable' && $group->responsable_groupe_id !== null) {
-            return false;
+        $allowedFormateurIds = [$user->id];
+        if ($user->hasRole('Stagiaire') && $user->internshipRecord?->tuteur_id) {
+            $allowedFormateurIds[] = $user->internshipRecord->tuteur_id;
         }
-        if ($role === 'adjoint' && $group->adjoint_groupe_id !== null) {
+
+        if (!in_array($group->formateur_id, $allowedFormateurIds, true)) {
             return false;
         }
 

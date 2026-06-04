@@ -45,6 +45,12 @@ class NominationController extends Controller
             ->where('status', 'pending')
             ->delete();
 
+        // To avoid unique constraint violations, also delete any existing nomination (pending, rejected, etc.) for this exact user/group/role combination.
+        Nomination::where('group_id', $request->validated('group_id'))
+            ->where('user_id', $request->validated('user_id'))
+            ->where('role', $request->validated('role', 'responsable'))
+            ->delete();
+
         $nomination = Nomination::create([
             'group_id'     => $request->validated('group_id'),
             'user_id'      => $request->validated('user_id'),
@@ -56,9 +62,13 @@ class NominationController extends Controller
         $nomination->load(['group', 'user', 'nominator']);
 
         // Notify all users with role Secrétaire
-        $secretaires = User::role('Secrétaire')->get();
-        foreach ($secretaires as $secretaire) {
-            $secretaire->notify(new NominationProposedNotification($nomination));
+        try {
+            $secretaires = User::role('Secrétaire')->get();
+            foreach ($secretaires as $secretaire) {
+                $secretaire->notify(new NominationProposedNotification($nomination));
+            }
+        } catch (\Throwable $e) {
+            logger()->error('Erreur lors de l\'envoi de la notification de nomination : ' . $e->getMessage());
         }
 
         return redirect()

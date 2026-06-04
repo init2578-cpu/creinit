@@ -17,6 +17,12 @@ class TrainerGroupsController extends Controller
      */
     public function index(Request $request): Response
     {
+        $user = $request->user();
+        $trainerIds = [$user->id];
+        if ($user->hasRole('Stagiaire') && $user->internshipRecord?->tuteur_id) {
+            $trainerIds[] = $user->internshipRecord->tuteur_id;
+        }
+
         $groups = Group::with(['module', 'students' => function ($query) {
             $query->select('users.id', 'users.name', 'users.email', 'users.adresse', 'users.profile_photo_path')
                   ->with(['application' => function ($appQuery) {
@@ -26,9 +32,7 @@ class TrainerGroupsController extends Controller
                   ->with('nominations')
                   ->orderBy('users.name');
         }])
-        ->where(function ($query) use ($request) {
-            $query->where('formateur_id', $request->user()->id);
-        })
+        ->whereIn('formateur_id', $trainerIds)
         ->get();
 
         // Compute absences and progression for each student specific to the group

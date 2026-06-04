@@ -25,8 +25,13 @@ class ChapterProgressController extends Controller
         if ($user->hasRole('Apprenant')) {
             $groups = $user->studentGroups()->with('module')->get();
         } else {
+            $trainerIds = [$user->id];
+            if ($user->hasRole('Stagiaire') && $user->internshipRecord?->tuteur_id) {
+                $trainerIds[] = $user->internshipRecord->tuteur_id;
+            }
+
             $groups = Group::with('module')
-                ->where(fn($query) => $query->where('formateur_id', $user->id))
+                ->whereIn('formateur_id', $trainerIds)
                 ->get();
         }
 

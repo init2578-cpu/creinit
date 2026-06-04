@@ -23,10 +23,19 @@ class SubmitChapterProgressRequest extends FormRequest
             return false;
         }
 
-        // The trainer must own this group
+        // The trainer must own this group (or their tutor if they are a substitute/assistant)
         $group = Group::find($this->input('group_id'));
 
-        return $group && $group->formateur_id === $user->id;
+        if (!$group) {
+            return false;
+        }
+
+        $allowedFormateurIds = [$user->id];
+        if ($user->hasRole('Stagiaire') && $user->internshipRecord?->tuteur_id) {
+            $allowedFormateurIds[] = $user->internshipRecord->tuteur_id;
+        }
+
+        return in_array($group->formateur_id, $allowedFormateurIds, true);
     }
 
     public function rules(): array

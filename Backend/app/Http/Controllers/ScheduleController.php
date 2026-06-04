@@ -21,7 +21,11 @@ class ScheduleController extends Controller
 
         // Trainers only see their own schedule. Directors/Secretaries see everything.
         if (!$user->hasRole('Directeur') && !$user->hasRole('Secrétaire') && $user->isTrainer()) {
-            $query->where('formateur_id', '=', $user->id);
+            $trainerIds = [$user->id];
+            if ($user->hasRole('Stagiaire') && $user->internshipRecord?->tuteur_id) {
+                $trainerIds[] = $user->internshipRecord->tuteur_id;
+            }
+            $query->whereIn('formateur_id', $trainerIds);
         }
 
         $trainers = \App\Models\User::role('Formateur')->get(['id', 'name']);
