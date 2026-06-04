@@ -16,10 +16,15 @@ use Inertia\Response;
 
 class StudentDashboardController extends Controller
 {
-    public function index(Request $request): Response
+    public function index(Request $request): Response|\Illuminate\Http\RedirectResponse
     {
         /** @var \App\Models\User $user */
         $user = $request->user();
+
+        // Redirect trainers (Formateurs, course_assistant, course_substitute) to their own dashboard
+        if ($user->isTrainer()) {
+            return redirect()->route('trainer.groups');
+        }
 
         // 1. Prochains cours (schedules via group)
         $nextSchedules = Schedule::with(['room', 'formateur', 'group'])
