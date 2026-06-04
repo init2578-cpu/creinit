@@ -51,13 +51,15 @@ const studentForm = useForm({
 // Search state
 const searchQuery = ref('')
 const filteredStudents = computed(() => {
+    if (!props.students) return []
     if (!searchQuery.value) return props.students
     const query = searchQuery.value.toLowerCase()
-    return props.students.filter(s => 
-        s.name.toLowerCase().includes(query) || 
-        s.email.toLowerCase().includes(query) ||
-        (s.telephone && s.telephone.includes(query))
-    )
+    return props.students.filter(s => {
+        const name = String(s.name || '').toLowerCase()
+        const email = String(s.email || '').toLowerCase()
+        const telephone = String(s.telephone || '').toLowerCase()
+        return name.includes(query) || email.includes(query) || telephone.includes(query)
+    })
 })
 
 // Actions

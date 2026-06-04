@@ -435,7 +435,7 @@
     ]
   },
   "src/Pages/Dashboard/Director.vue": {
-    "file": "assets/Director-B_g1x5eM.js",
+    "file": "assets/Director-90-0Ulr1.js",
     "name": "Director",
     "src": "src/Pages/Dashboard/Director.vue",
     "isDynamicEntry": true,
@@ -900,7 +900,7 @@
     ]
   },
   "src/Pages/Scolarite/StudentsIndex.vue": {
-    "file": "assets/StudentsIndex-sdeZP-Hg.js",
+    "file": "assets/StudentsIndex-D0Chza2p.js",
     "name": "StudentsIndex",
     "src": "src/Pages/Scolarite/StudentsIndex.vue",
     "isDynamicEntry": true,
@@ -914,7 +914,7 @@
       "_chartjs--CTKDWgD.js"
     ],
     "css": [
-      "assets/StudentsIndex-nstM79w7.css",
+      "assets/StudentsIndex-1yHm-xYj.css",
       "assets/ConfirmModal-DjxpwvKq.css"
     ]
   },
@@ -1217,7 +1217,7 @@
     "isEntry": true
   },
   "src/app.js": {
-    "file": "assets/app-BOLBPsLJ.js",
+    "file": "assets/app-DbuhK0uC.js",
     "name": "app",
     "src": "src/app.js",
     "isEntry": true,
