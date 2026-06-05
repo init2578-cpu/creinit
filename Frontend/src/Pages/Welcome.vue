@@ -62,7 +62,7 @@ const modules = [
 const testimonials = [
     {
         name: 'Mariama Diallo',
-        role: 'Diplômée en Énergie Solaire (Promo 2025)',
+        role: 'Diplômée en Énergie Solaire (Promo 2026)',
         avatar: 'MD',
         text: 'Grâce à la formation pratique intensive reçue au CRE, j\'ai pu installer mon propre atelier d\'installation et maintenance solaire à Kolda. C\'est une chance inouïe pour les jeunes de la région.',
         rating: 5,
@@ -77,9 +77,9 @@ const testimonials = [
         color: 'indigo'
     },
     {
-        name: 'Dr. Fatoumata Bâ',
-        role: 'Enseignante-Chercheure & Formatrice au CRE',
-        avatar: 'FB',
+        name: 'Aliou Konté',
+        role: 'Formatrice au CRE',
+        avatar: 'AK',
         text: 'Le CRE de Kolda offre un plateau technique de premier choix. Transmettre les résultats de nos recherches pour créer des solutions locales concrètes est extrêmement valorisant.',
         rating: 5,
         color: 'blue'
@@ -88,7 +88,7 @@ const testimonials = [
         name: 'Moussa Baldé',
         role: 'Développeur Fullstack Indépendant',
         avatar: 'MB',
-        text: 'Le module de développement et initiation à l\'IA m\'a donné les bases. Aujourd\'hui, je travaille en télétravail pour des clients internationaux tout en restant basé ici à Kolda.',
+        text: 'Le module de développement et initiation à l\'IA m\'a donné les bases. Aujourd\'hui, je travaille en télétravail pour des clients tout en restant basé ici à Kolda.',
         rating: 5,
         color: 'emerald'
     }
