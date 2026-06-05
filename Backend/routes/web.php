@@ -299,8 +299,23 @@ Route::middleware(['auth'])->group(function (): void {
 
     // Ecosystem View
     Route::get('/ecosystem', [\App\Http\Controllers\EcosystemController::class, 'index'])->name('ecosystem.index');
+    
+    // Partnerships
     Route::get('/ecosystem/partnerships', [\App\Http\Controllers\EcosystemController::class, 'partnerships'])->name('ecosystem.partnerships');
+    Route::post('/ecosystem/partnerships', [\App\Http\Controllers\EcosystemController::class, 'storePartnership'])->name('ecosystem.partnerships.store');
+    Route::put('/ecosystem/partnerships/{partnership}', [\App\Http\Controllers\EcosystemController::class, 'updatePartnership'])->name('ecosystem.partnerships.update');
+    Route::delete('/ecosystem/partnerships/{partnership}', [\App\Http\Controllers\EcosystemController::class, 'destroyPartnership'])->name('ecosystem.partnerships.destroy');
+    Route::patch('/ecosystem/partnerships/{partnership}/toggle', [\App\Http\Controllers\EcosystemController::class, 'togglePartnershipStatus'])->name('ecosystem.partnerships.toggle');
+    
+    // Events
     Route::get('/ecosystem/events', [\App\Http\Controllers\EcosystemController::class, 'events'])->name('ecosystem.events');
+    Route::post('/ecosystem/events', [\App\Http\Controllers\EcosystemController::class, 'storeEvent'])->name('ecosystem.events.store');
+    Route::put('/ecosystem/events/{event}', [\App\Http\Controllers\EcosystemController::class, 'updateEvent'])->name('ecosystem.events.update');
+    Route::delete('/ecosystem/events/{event}', [\App\Http\Controllers\EcosystemController::class, 'destroyEvent'])->name('ecosystem.events.destroy');
+    Route::patch('/ecosystem/events/{event}/toggle', [\App\Http\Controllers\EcosystemController::class, 'toggleEventStatus'])->name('ecosystem.events.toggle');
+
+    // Media Mentions
+    Route::post('/ecosystem/media', [\App\Http\Controllers\EcosystemController::class, 'storeMediaMention'])->name('ecosystem.media.store');
 
     // Lists (Read Only for most)
     Route::get('/groups', [\App\Http\Controllers\Scolarite\GroupController::class, 'index'])->name('groups.index');
