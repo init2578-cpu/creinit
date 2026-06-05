@@ -105,12 +105,12 @@ const navLinks = [
                         Interface entre la recherche et la population du Fouladou.
                     </p>
                     <a 
-                        href="https://www.google.com/maps?q=V3W5%2B49+Kolda" 
+                        href="https://www.google.com/maps?q=12.895385642821164,-14.941531705909265" 
                         target="_blank" 
                         rel="noopener noreferrer"
                         class="inline-block text-xs text-cyan-400 hover:text-cyan-300 transition font-bold"
                     >
-                        📍 V3W5+49 Kolda
+                        📍 Doumassou, Kolda (V3W5+49)
                     </a>
                 </div>
 
