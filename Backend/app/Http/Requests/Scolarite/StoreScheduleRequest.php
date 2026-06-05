@@ -35,9 +35,19 @@ class StoreScheduleRequest extends FormRequest
         $validator->after(function ($validator) {
             $startTime = $this->input('start_time');
             $endTime = $this->input('end_time');
-            $dayOfWeek = $this->input('day_of_week');
+            $dayOfWeek = (int)$this->input('day_of_week');
             $roomId = $this->input('room_id');
             $formateurId = $this->input('formateur_id');
+
+            \Illuminate\Support\Facades\Log::info('Schedule validation debug:', [
+                'startTime' => $startTime,
+                'endTime' => $endTime,
+                'dayOfWeek' => $dayOfWeek,
+                'roomId' => $roomId,
+                'formateurId' => $formateurId,
+                'hasRoomConflict' => $this->hasConflict('room_id', $roomId, $dayOfWeek, $startTime, $endTime),
+                'hasFormateurConflict' => $this->hasConflict('formateur_id', $formateurId, $dayOfWeek, $startTime, $endTime)
+            ]);
 
             if ($this->hasConflict('room_id', $roomId, $dayOfWeek, $startTime, $endTime)) {
                 $validator->errors()->add('room_id', 'Cette salle est déjà occupée sur ce créneau.');
@@ -53,10 +63,12 @@ class StoreScheduleRequest extends FormRequest
     {
         return Schedule::where($column, $value)
             ->where('day_of_week', $day)
-            ->where('start_time', '<', $end)
-            ->where('end_time', '>', $start)
+            ->whereRaw("start_time::time < ?::time", [$end])
+            ->whereRaw("end_time::time > ?::time", [$start])
             ->when($this->route('schedule'), function ($query) {
-                $query->where('id', '!=', $this->route('schedule')->id);
+                $schedule = $this->route('schedule');
+                $id = is_object($schedule) ? $schedule->id : $schedule;
+                $query->where('id', '!=', $id);
             })
             ->exists();
     }
