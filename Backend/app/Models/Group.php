@@ -24,6 +24,7 @@ class Group extends Model
         'responsable_groupe_id',
         'adjoint_groupe_id',
         'annee_academique',
+        'gps_check_required',
     ];
 
     /**
@@ -36,6 +37,7 @@ class Group extends Model
             'formateur_id'          => 'integer',
             'responsable_groupe_id' => 'integer',
             'adjoint_groupe_id'     => 'integer',
+            'gps_check_required'    => 'boolean',
         ];
     }
 

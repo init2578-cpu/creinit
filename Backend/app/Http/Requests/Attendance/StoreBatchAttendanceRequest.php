@@ -15,11 +15,20 @@ class StoreBatchAttendanceRequest extends FormRequest
 
     public function rules(): array
     {
+        $groupId = $this->input('group_id');
+        $gpsRequired = true;
+        if ($groupId) {
+            $group = \App\Models\Group::find($groupId);
+            if ($group && !$group->gps_check_required) {
+                $gpsRequired = false;
+            }
+        }
+
         return [
             'group_id' => ['required', 'exists:groups,id'],
             'date' => ['required', 'date'],
-            'latitude' => ['required', 'numeric'],
-            'longitude' => ['required', 'numeric'],
+            'latitude' => [$gpsRequired ? 'required' : 'nullable', 'numeric'],
+            'longitude' => [$gpsRequired ? 'required' : 'nullable', 'numeric'],
             'attendances' => ['required', 'array'],
             'attendances.*.user_id' => ['required', 'exists:users,id'],
             'attendances.*.status' => ['required', 'in:present,absent_non_justifie,justifie'],

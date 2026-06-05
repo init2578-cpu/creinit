@@ -27,7 +27,8 @@ const editingGroup = ref(null)
 const form = useForm({
     module_id: '',
     formateur_id: '',
-    annee_academique: new Date().getFullYear() + '-' + (new Date().getFullYear() + 1)
+    annee_academique: new Date().getFullYear() + '-' + (new Date().getFullYear() + 1),
+    gps_check_required: true
 })
 
 const editForm = useForm({
@@ -35,7 +36,8 @@ const editForm = useForm({
     formateur_id: '',
     annee_academique: '',
     responsable_groupe_id: null,
-    adjoint_groupe_id: null
+    adjoint_groupe_id: null,
+    gps_check_required: true
 })
 
 const submit = () => {
@@ -54,6 +56,7 @@ const openEditModal = (group) => {
     editForm.annee_academique = group.annee_academique
     editForm.responsable_groupe_id = group.responsable_groupe_id
     editForm.adjoint_groupe_id = group.adjoint_groupe_id
+    editForm.gps_check_required = group.gps_check_required === 1 || group.gps_check_required === true
     isEditModalOpen.value = true
 }
 
@@ -120,6 +123,9 @@ const handleDeputyChange = () => {
                                 <button @click="deleteGroup(group.id)" class="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all">
                                     <TrashIcon class="h-5 w-5" />
                                 </button>
+                                <span v-if="!group.gps_check_required" class="px-3 py-1.5 bg-amber-50 text-amber-600 text-[10px] font-black uppercase tracking-widest rounded-full border border-amber-100">
+                                    Sans GPS
+                                </span>
                                 <span class="px-4 py-1.5 bg-gray-50 text-gray-500 text-[10px] font-black uppercase tracking-widest rounded-full">
                                     {{ group.annee_academique }}
                                 </span>
@@ -224,6 +230,17 @@ const handleDeputyChange = () => {
                         <p v-if="form.errors.annee_academique" class="text-red-500 text-xs mt-1 font-bold">{{ form.errors.annee_academique }}</p>
                     </div>
 
+                    <div class="flex items-center justify-between p-4 bg-gray-50 rounded-2xl">
+                        <div class="flex flex-col">
+                            <span class="text-sm font-bold text-gray-900">Soumettre au contrôle GPS</span>
+                            <span class="text-xs text-gray-400 font-medium">Exiger la présence au CRE lors de l'émargement</span>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" v-model="form.gps_check_required" class="sr-only peer">
+                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                        </label>
+                    </div>
+
                     <div class="pt-4">
                         <button 
                             type="submit" 
@@ -305,6 +322,17 @@ const handleDeputyChange = () => {
                                 <option v-for="s in editingGroup.students" :key="s.id" :value="s.id">{{ s.name }}</option>
                             </select>
                         </div>
+                    </div>
+
+                    <div class="flex items-center justify-between p-4 bg-gray-50 rounded-2xl">
+                        <div class="flex flex-col">
+                            <span class="text-sm font-bold text-gray-900">Soumettre au contrôle GPS</span>
+                            <span class="text-xs text-gray-400 font-medium">Exiger la présence au CRE lors de l'émargement</span>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" v-model="editForm.gps_check_required" class="sr-only peer">
+                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                        </label>
                     </div>
 
                     <div class="pt-4">

@@ -104,11 +104,20 @@ class AttendanceController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
+        $scheduleId = $request->input('schedule_id');
+        $gpsRequired = true;
+        if ($scheduleId) {
+            $schedule = Schedule::find($scheduleId);
+            if ($schedule && $schedule->group && !$schedule->group->gps_check_required) {
+                $gpsRequired = false;
+            }
+        }
+
         $validated = $request->validate([
             'schedule_id' => 'required|exists:schedules,id',
             'date' => 'required|date',
-            'latitude' => 'required|numeric',
-            'longitude' => 'required|numeric',
+            'latitude' => [$gpsRequired ? 'required' : 'nullable', 'numeric'],
+            'longitude' => [$gpsRequired ? 'required' : 'nullable', 'numeric'],
             'students' => 'required|array',
             'students.*.id' => 'required|exists:users,id',
             'students.*.status' => 'required|string|in:present,absent_non_justifie,late,justifie',
@@ -145,8 +154,8 @@ class AttendanceController extends Controller
                 ],
                 [
                     'status'    => $studentData['status'],
-                    'latitude'  => $validated['latitude'],
-                    'longitude' => $validated['longitude'],
+                    'latitude'  => $validated['latitude'] ?? null,
+                    'longitude' => $validated['longitude'] ?? null,
                 ]
             );
         }

@@ -22,6 +22,15 @@ class StoreAttendanceRequest extends FormRequest
      */
     public function rules(): array
     {
+        $groupId = $this->input('group_id');
+        $gpsRequired = true;
+        if ($groupId) {
+            $group = \App\Models\Group::find($groupId);
+            if ($group && !$group->gps_check_required) {
+                $gpsRequired = false;
+            }
+        }
+
         return [
             'group_id' => [
                 'required',
@@ -29,12 +38,12 @@ class StoreAttendanceRequest extends FormRequest
                 Rule::exists('groups', 'id'),
             ],
             'latitude' => [
-                'required',
+                $gpsRequired ? 'required' : 'nullable',
                 'numeric',
                 'between:-90,90',
             ],
             'longitude' => [
-                'required',
+                $gpsRequired ? 'required' : 'nullable',
                 'numeric',
                 'between:-180,180',
             ],

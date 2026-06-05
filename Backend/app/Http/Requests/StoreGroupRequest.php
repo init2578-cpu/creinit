@@ -23,6 +23,7 @@ class StoreGroupRequest extends FormRequest
             'annee_academique' => ['required', 'string', 'regex:/^\d{4}-\d{4}$/'],
             'responsable_groupe_id' => ['nullable', 'exists:users,id'],
             'adjoint_groupe_id' => ['nullable', 'exists:users,id', 'different:responsable_groupe_id'],
+            'gps_check_required' => ['sometimes', 'boolean'],
         ];
     }
 }

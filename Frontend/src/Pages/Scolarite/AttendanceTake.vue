@@ -66,8 +66,13 @@ const checkLocation = () => {
 }
 
 async function handleSave() {
-    const locOk = await checkLocation()
-    if (!locOk) return
+    if (props.schedule.group.gps_check_required !== 0 && props.schedule.group.gps_check_required !== false && props.schedule.group.gps_check_required) {
+        const locOk = await checkLocation()
+        if (!locOk) return
+    } else {
+        form.latitude = 0
+        form.longitude = 0
+    }
 
     form.post(route('attendance.store'), {
         preserveScroll: true

@@ -16,13 +16,13 @@ const props = defineProps({
 
 const isLocating = ref(false)
 const locationError = ref(null)
-const locationValidated = ref(false)
+const locationValidated = ref(props.group.gps_check_required === 0 || props.group.gps_check_required === false || !props.group.gps_check_required)
 
 const form = useForm({
     group_id: props.group.id,
     date: new Date().toISOString().split('T')[0],
-    latitude: null,
-    longitude: null,
+    latitude: (props.group.gps_check_required === 0 || props.group.gps_check_required === false || !props.group.gps_check_required) ? 0 : null,
+    longitude: (props.group.gps_check_required === 0 || props.group.gps_check_required === false || !props.group.gps_check_required) ? 0 : null,
     attendances: props.students.map(s => ({
         user_id: s.id,
         status: 'present'
@@ -75,7 +75,7 @@ function submitAttendance() {
             </header>
 
             <!-- GPS Verification Card (PROMPT FRONTEND 2) -->
-            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-8 text-center">
+            <div v-if="group.gps_check_required" class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-8 text-center">
                 <div v-if="!locationValidated" class="space-y-4">
                     <MapPinIcon class="h-12 w-12 text-blue-500 mx-auto" />
                     <h2 class="text-lg font-semibold">Validation de présence requise</h2>

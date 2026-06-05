@@ -20,6 +20,24 @@ class EnsureWithinPremises
      */
     public function handle(Request $request, Closure $next): Response
     {
+        // Resolve group_id
+        $groupId = null;
+        if ($request->has('group_id')) {
+            $groupId = $request->input('group_id');
+        } elseif ($request->has('schedule_id')) {
+            $schedule = \App\Models\Schedule::find($request->input('schedule_id'));
+            if ($schedule) {
+                $groupId = $schedule->group_id;
+            }
+        }
+
+        if ($groupId) {
+            $group = \App\Models\Group::find($groupId);
+            if ($group && !$group->gps_check_required) {
+                return $next($request);
+            }
+        }
+
         $latitude  = (float) $request->input('latitude');
         $longitude = (float) $request->input('longitude');
 
