@@ -151,12 +151,13 @@ const isScheduleCurrent = (schedule) => {
     let currentDay = now.value.getDay() // 0 = Sunday, 1 = Monday, ...
     if (currentDay === 0) currentDay = 7 // Map to ISO day where 7 = Sunday
     
-    if (schedule.day_of_week !== currentDay) return false
+    if (parseInt(schedule.day_of_week) !== currentDay) return false
     
     const nowMinutes = now.value.getHours() * 60 + now.value.getMinutes()
     const startMinutes = timeToMinutes(schedule.start_time)
     const endMinutes = timeToMinutes(schedule.end_time)
     
+    return nowMinutes >= startMinutes && nowMinutes <= endMinutes
 }
 </script>
 
