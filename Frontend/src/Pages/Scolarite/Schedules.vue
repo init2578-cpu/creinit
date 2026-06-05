@@ -1,7 +1,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
 import { router, Head, useForm } from '@inertiajs/vue3'
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { 
     CalendarIcon, 
     PlusIcon, 
@@ -124,6 +124,40 @@ const getScheduleBySlot = (day, hour) => {
         return scheduleDayName === day && h === hour
     })
 }
+
+// Clock and Active Schedule checking logic
+const now = ref(new Date())
+let clockTimer = null
+
+onMounted(() => {
+    clockTimer = setInterval(() => {
+        now.value = new Date()
+    }, 30000) // update every 30 seconds
+})
+
+onUnmounted(() => {
+    if (clockTimer) clearInterval(clockTimer)
+})
+
+const timeToMinutes = (timeStr) => {
+    if (!timeStr) return 0
+    const [h, m] = timeStr.split(':')
+    return parseInt(h) * 60 + parseInt(m)
+}
+
+const isScheduleCurrent = (schedule) => {
+    if (!schedule) return false
+    
+    let currentDay = now.value.getDay() // 0 = Sunday, 1 = Monday, ...
+    if (currentDay === 0) currentDay = 7 // Map to ISO day where 7 = Sunday
+    
+    if (schedule.day_of_week !== currentDay) return false
+    
+    const nowMinutes = now.value.getHours() * 60 + now.value.getMinutes()
+    const startMinutes = timeToMinutes(schedule.start_time)
+    const endMinutes = timeToMinutes(schedule.end_time)
+    
+}
 </script>
 
 <template>
@@ -170,8 +204,22 @@ const getScheduleBySlot = (day, hour) => {
                             <div 
                                 v-if="getScheduleBySlot(day, hour)"
                                 class="absolute inset-x-1 m-1 p-3 rounded-2xl border shadow-sm transition overflow-hidden"
-                                :class="'bg-indigo-50 border-indigo-100 text-indigo-700'"
+                                :class="isScheduleCurrent(getScheduleBySlot(day, hour)) 
+                                    ? 'bg-indigo-50 border-indigo-300 ring-2 ring-indigo-100 text-indigo-800 font-medium' 
+                                    : 'bg-indigo-50 border-indigo-100 text-indigo-700'"
                             >
+                                <!-- Indicator dot / clignotant -->
+                                <div v-if="isScheduleCurrent(getScheduleBySlot(day, hour))" class="absolute top-3 right-3 flex h-2.5 w-2.5" :title="getScheduleBySlot(day, hour).attendance_taken_today ? 'Émargement validé' : 'Émargement en attente'">
+                                    <span 
+                                        class="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75"
+                                        :class="getScheduleBySlot(day, hour).attendance_taken_today ? 'bg-emerald-400' : 'bg-rose-400'"
+                                    ></span>
+                                    <span 
+                                        class="relative inline-flex rounded-full h-2.5 w-2.5"
+                                        :class="getScheduleBySlot(day, hour).attendance_taken_today ? 'bg-emerald-500' : 'bg-rose-500'"
+                                    ></span>
+                                </div>
+
                                 <div class="flex flex-col h-full">
                                     <p class="text-[9px] font-black uppercase leading-none mb-1 opacity-60 font-mono">
                                         {{ formatTime(getScheduleBySlot(day, hour).start_time) }} - {{ formatTime(getScheduleBySlot(day, hour).end_time) }}
