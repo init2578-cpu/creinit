@@ -35,10 +35,21 @@ class ApplicationController extends Controller
             // Silently fail if roles aren't seeded yet to avoid crashing the landing page
         }
 
+        $recent_posts = \App\Models\Post::where('is_published', true)
+            ->orderBy('published_at', 'desc')
+            ->take(3)
+            ->get();
+
+        $active_partners = \App\Models\Partnership::where('status', 'actif')
+            ->orderByDesc('date_signature')
+            ->get();
+
         return Inertia::render('Welcome', [
             'canLogin' => Route::has('login'),
             'settings' => Setting::getGroup('general'),
-            'stats' => $stats
+            'stats' => $stats,
+            'recentPosts' => $recent_posts,
+            'partners' => $active_partners,
         ]);
     }
 

@@ -21,6 +21,8 @@ class StorePartnershipRequest extends FormRequest
             'description' => ['nullable', 'string'],
             'date_signature' => ['required', 'date'],
             'document' => ['nullable', 'file', 'mimes:pdf', 'max:10240'],
+            'logo' => ['nullable', 'image', 'max:2048'],
+            'website' => ['nullable', 'url', 'max:255'],
             'localisation_gps' => ['nullable', 'string', 'max:255'],
             'heure_signature' => ['nullable', 'string'],
         ];

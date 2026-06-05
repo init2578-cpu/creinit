@@ -2,7 +2,7 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
 import { Head, useForm, router } from '@inertiajs/vue3'
 import { ref, onMounted } from 'vue'
-import { formatTime, formatDate } from '@/utils/format'
+import { formatTime, formatDate, storageUrl } from '@/utils/format'
 import { 
     CalendarDaysIcon, 
     PlusIcon, 
@@ -136,7 +136,7 @@ function openDetailModal(event) {
                 >
                     <!-- Event Image -->
                     <div class="aspect-video relative overflow-hidden bg-gray-100">
-                        <img v-if="event.image_path" :src="'/storage/' + event.image_path" class="w-full h-full object-cover group-hover:scale-110 transition duration-700">
+                        <img v-if="event.image_path" :src="storageUrl(event.image_path)" class="w-full h-full object-cover group-hover:scale-110 transition duration-700">
                         <div v-else class="w-full h-full flex items-center justify-center text-gray-300">
                             <PhotoIcon class="h-12 w-12" />
                         </div>
@@ -266,7 +266,7 @@ function openDetailModal(event) {
             <div v-if="showDetailModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm">
                 <div class="bg-white w-full max-w-2xl rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
                     <div class="aspect-video relative bg-gray-100">
-                        <img v-if="selectedEvent.image_path" :src="'/storage/' + selectedEvent.image_path" class="w-full h-full object-cover">
+                        <img v-if="selectedEvent.image_path" :src="storageUrl(selectedEvent.image_path)" class="w-full h-full object-cover">
                         <div v-else class="w-full h-full flex items-center justify-center text-gray-300">
                             <PhotoIcon class="h-20 w-20" />
                         </div>

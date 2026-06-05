@@ -12,6 +12,8 @@ const navLinks = [
     { label: 'Vision', route: 'vision' },
     { label: 'Curriculum', route: 'curriculum' },
     { label: 'Plateforme', route: 'plateforme' },
+    { label: 'Actualités', route: 'public.posts.index' },
+    { label: 'Partenaires', route: 'public.partenaires' },
     { label: 'Contact', route: 'contact.index' },
     { label: 'Candidater', route: 'applications.create' },
 ]

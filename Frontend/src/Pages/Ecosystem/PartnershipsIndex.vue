@@ -33,6 +33,8 @@ const form = useForm({
     date_signature: '',
     localisation_gps: '',
     heure_signature: '',
+    website: '',
+    logo: null,
     document: null
 })
 
@@ -47,10 +49,11 @@ function openEditModal(partner) {
     form.nom = partner.nom
     form.type = partner.type
     form.description = partner.description
-    // Ensure date is in YYYY-MM-DD format for <input type="date">
     form.date_signature = partner.date_signature ? partner.date_signature.substring(0, 10) : ''
     form.localisation_gps = partner.localisation_gps || ''
     form.heure_signature = partner.heure_signature || ''
+    form.website = partner.website || ''
+    form.logo = null
     form.document = null
     showAddModal.value = true
 }
@@ -226,6 +229,16 @@ function openDetailModal(partner) {
                             <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-1">Description</label>
                             <textarea v-model="form.description" rows="3" class="w-full bg-gray-50 border-0 rounded-xl font-bold py-3 px-4"></textarea>
                             <p v-if="form.errors.description" class="mt-1 text-[10px] text-red-600 font-bold uppercase tracking-widest">{{ form.errors.description }}</p>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-1">Site Web (URL)</label>
+                            <input v-model="form.website" type="url" placeholder="https://exemple.com" class="w-full bg-gray-50 border-0 rounded-xl font-bold py-3 px-4 focus:ring-2 focus:ring-indigo-600">
+                            <p v-if="form.errors.website" class="mt-1 text-[10px] text-red-600 font-bold uppercase tracking-widest">{{ form.errors.website }}</p>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-1">Logo (Image)</label>
+                            <input @change="e => form.logo = e.target.files[0]" type="file" accept="image/*" class="w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-black file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
+                            <p v-if="form.errors.logo" class="mt-1 text-[10px] text-red-600 font-bold uppercase tracking-widest">{{ form.errors.logo }}</p>
                         </div>
                         <div>
                             <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-1">Convention (PDF)</label>

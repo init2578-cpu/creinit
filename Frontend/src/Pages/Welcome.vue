@@ -2,6 +2,7 @@
 import { onMounted, ref } from 'vue'
 import { Head, Link } from '@inertiajs/vue3'
 import GuestLayout from '@/Layouts/GuestLayout.vue'
+import { storageUrl } from '@/utils/format'
 import { 
     AcademicCapIcon, 
     ArrowRightIcon, 
@@ -16,13 +17,18 @@ import {
     SparklesIcon,
     CpuChipIcon,
     CommandLineIcon,
-    BeakerIcon
+    BeakerIcon,
+    DocumentTextIcon,
+    BuildingOffice2Icon,
+    GlobeAltIcon as GlobeIcon
 } from '@heroicons/vue/24/outline'
 
 const props = defineProps({
     canLogin: Boolean,
     settings: Object,
     stats: Object,
+    recentPosts: Array,
+    partners: Array,
 })
 
 const pillars = [
@@ -317,6 +323,112 @@ onMounted(() => {
                             <span class="text-white bg-slate-800 px-3 py-1 rounded-lg">
                                 {{ mod.students }} SLOTS
                             </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Actualités (Zone de publication) -->
+        <section v-if="recentPosts && recentPosts.length > 0" class="py-24 bg-slate-950 relative overflow-hidden">
+            <div class="max-w-7xl mx-auto px-4">
+                <div class="flex flex-col md:flex-row justify-between items-end gap-10 mb-16 relative">
+                    <div class="absolute -left-12 top-0 h-full w-[2px] bg-gradient-to-b from-indigo-500 to-transparent"></div>
+                    <div class="max-w-xl" data-reveal id="news-header">
+                        <h2 class="text-4xl md:text-6xl font-black text-white tracking-tighter mb-4 font-display">DERNIÈRES <span class="bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent">ACTUALITÉS</span></h2>
+                        <p class="text-slate-500 font-medium tracking-wide">Restez informés des dernières nouveautés du CRE Kolda.</p>
+                    </div>
+                    <Link :href="route('public.posts.index')" class="group text-[10px] font-black text-indigo-400 uppercase tracking-[0.3em] hover:text-white transition-colors flex items-center gap-4">
+                        VOIR TOUTES LES ACTUALITÉS
+                        <div class="h-10 w-10 rounded-full border border-indigo-500/30 flex items-center justify-center group-hover:border-indigo-500 group-hover:bg-indigo-500 group-hover:text-slate-950 transition-all">
+                            <ArrowRightIcon class="h-4 w-4" />
+                        </div>
+                    </Link>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 relative z-20">
+                    <Link 
+                        v-for="(post, index) in recentPosts" 
+                        :key="post.id"
+                        :href="route('public.posts.show', post.slug)"
+                        class="glass-dark border border-white/5 rounded-[2.5rem] overflow-hidden group hover:border-indigo-500/30 transition-all duration-500 hover:-translate-y-2 flex flex-col"
+                        data-reveal :id="'news-' + post.id"
+                        :style="`transition-delay: ${index * 100}ms`"
+                    >
+                        <div class="h-48 w-full overflow-hidden relative">
+                            <img v-if="post.image_path" :src="storageUrl(post.image_path)" :alt="post.title" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
+                            <div v-else class="w-full h-full bg-slate-900 flex items-center justify-center">
+                                <DocumentTextIcon class="h-12 w-12 text-slate-700" />
+                            </div>
+                            <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent"></div>
+                            
+                            <div class="absolute bottom-4 left-4">
+                                <span class="px-3 py-1 bg-indigo-500/20 backdrop-blur-md text-indigo-300 text-[8px] font-black rounded-lg border border-indigo-500/30 uppercase tracking-widest">
+                                    {{ new Date(post.published_at).toLocaleDateString() }}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="p-8 flex-1 flex flex-col">
+                            <h3 class="text-xl font-black text-white mb-3 tracking-tight group-hover:text-indigo-400 transition-colors line-clamp-2">{{ post.title }}</h3>
+                            <p class="text-slate-400 text-sm leading-relaxed line-clamp-3 mb-6 flex-1">
+                                {{ post.excerpt || post.content.substring(0, 150) + '...' }}
+                            </p>
+                            <div class="flex items-center gap-2 text-[10px] font-black text-indigo-400 uppercase tracking-widest group-hover:text-white transition-colors mt-auto">
+                                Lire la suite
+                                <ArrowRightIcon class="h-3 w-3 group-hover:translate-x-1 transition-transform" />
+                            </div>
+                        </div>
+                    </Link>
+                </div>
+            </div>
+        </section>
+
+        <!-- Partenaires (Zone Vitrine) -->
+        <section v-if="partners && partners.length > 0" class="py-24 bg-slate-950 relative overflow-hidden border-t border-white/5">
+            <div class="absolute inset-0 pointer-events-none" style="background-image: radial-gradient(circle at 2px 2px, rgba(6,182,212,0.04) 1px, transparent 0); background-size: 40px 40px;"></div>
+            
+            <div class="max-w-7xl mx-auto px-4 relative z-10">
+                <div class="flex flex-col md:flex-row justify-between items-end gap-10 mb-16">
+                    <div class="max-w-xl" data-reveal id="partners-header">
+                        <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-500/20 mb-4">
+                            <span class="text-[9px] font-black text-cyan-400 uppercase tracking-[0.3em]">Réseau Partenaires</span>
+                        </div>
+                        <h2 class="text-4xl md:text-6xl font-black text-white tracking-tighter mb-4 font-display">
+                            NOS <span class="text-cyan-500 text-glow-cyan">PARTENAIRES</span>
+                        </h2>
+                        <p class="text-slate-500 font-medium">Institutions, entreprises et organisations qui soutiennent la mission du CRE Kolda.</p>
+                    </div>
+                    <Link :href="route('public.partenaires')" class="group text-[10px] font-black text-cyan-400 uppercase tracking-[0.3em] hover:text-white transition-colors flex items-center gap-4">
+                        VOIR TOUS LES PARTENAIRES
+                        <div class="h-10 w-10 rounded-full border border-cyan-500/30 flex items-center justify-center group-hover:border-cyan-500 group-hover:bg-cyan-500 group-hover:text-slate-950 transition-all">
+                            <ArrowRightIcon class="h-4 w-4" />
+                        </div>
+                    </Link>
+                </div>
+
+                <!-- Partners scrolling strip -->
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+                    <div
+                        v-for="(partner, i) in partners"
+                        :key="partner.id"
+                        class="glass-dark border border-white/5 rounded-[1.5rem] p-6 flex flex-col items-center justify-center gap-4 group hover:border-cyan-500/30 transition-all duration-500 hover:-translate-y-1 min-h-[140px]"
+                        data-reveal :id="'partner-' + partner.id"
+                        :style="`transition-delay: ${i * 60}ms`"
+                    >
+                        <div class="h-16 w-full flex items-center justify-center">
+                            <img 
+                                v-if="partner.logo_path" 
+                                :src="storageUrl(partner.logo_path)" 
+                                :alt="partner.nom"
+                                class="max-h-14 max-w-full object-contain filter grayscale group-hover:grayscale-0 opacity-60 group-hover:opacity-100 transition-all duration-500"
+                            >
+                            <div v-else class="h-14 w-14 rounded-2xl bg-slate-800 flex items-center justify-center border border-white/5">
+                                <BuildingOffice2Icon class="h-7 w-7 text-slate-600" />
+                            </div>
+                        </div>
+                        <div class="text-center">
+                            <p class="text-xs font-black text-white group-hover:text-cyan-400 transition-colors line-clamp-2 text-center leading-tight">{{ partner.nom }}</p>
+                            <span class="inline-block mt-1 px-2 py-0.5 bg-slate-800/50 text-slate-500 text-[8px] font-black rounded uppercase tracking-wider">{{ partner.type }}</span>
                         </div>
                     </div>
                 </div>

@@ -44,6 +44,15 @@ class EcosystemController extends Controller
         ]);
     }
 
+    public function publicPartenaires(): Response
+    {
+        return Inertia::render('Public/Partenaires', [
+            'partnerships' => Partnership::where('status', 'actif')
+                ->orderByDesc('date_signature')
+                ->get(),
+        ]);
+    }
+
     /**
      * Store a new partnership.
      */
@@ -59,6 +68,14 @@ class EcosystemController extends Controller
             $validated['document_path'] = $path;
         } else {
             Log::info('No document file in storePartnership request');
+        }
+
+        if ($request->hasFile('logo')) {
+            $validated['logo_path'] = $request->file('logo')->store('partnerships/logos', 'public');
+        }
+
+        if ($request->has('website')) {
+            $validated['website'] = $request->website;
         }
 
         Partnership::create($validated);
@@ -87,6 +104,17 @@ class EcosystemController extends Controller
             $validated['document_path'] = $path;
         } else {
             Log::info('No document file in updatePartnership request');
+        }
+
+        if ($request->hasFile('logo')) {
+            if ($partnership->logo_path) {
+                Storage::disk('public')->delete($partnership->logo_path);
+            }
+            $validated['logo_path'] = $request->file('logo')->store('partnerships/logos', 'public');
+        }
+
+        if ($request->has('website')) {
+            $validated['website'] = $request->website;
         }
 
         $partnership->update($validated);

@@ -54,3 +54,17 @@ export function formatDate(dateStr) {
     
     return `${d}-${m}-${y}`
 }
+
+/**
+ * Returns a proper URL for a storage-managed or public asset.
+ * Handles paths that already start with '/' (public folder)
+ * and relative paths that need the /storage/ prefix.
+ * @param {string|null} path - The stored file path
+ * @returns {string|null}
+ */
+export function storageUrl(path) {
+    if (!path) return null
+    if (path.startsWith('http://') || path.startsWith('https://')) return path
+    if (path.startsWith('/')) return path  // Already an absolute public path
+    return '/storage/' + path              // Relative storage path
+}

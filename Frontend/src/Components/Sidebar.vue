@@ -21,7 +21,8 @@ import {
     Cog6ToothIcon,
     UserIcon,
     ChatBubbleLeftRightIcon,
-    EnvelopeIcon
+    EnvelopeIcon,
+    NewspaperIcon
 } from '@heroicons/vue/24/outline'
 
 const props = defineProps({
@@ -42,6 +43,7 @@ const navigation = computed(() => {
         menu.push(
             { name: 'Tableau de Bord', href: route('dashboard.director'), icon: HomeIcon },
             { name: 'Communauté', href: route('community.index'), icon: ChatBubbleLeftRightIcon, badge: page.props.auth.user?.unread_announcements_count },
+            { name: 'Actualités (Vitrine)', href: route('admin.posts.index'), icon: NewspaperIcon },
             { name: 'Messages Contact', href: route('contact-messages.index'), icon: EnvelopeIcon, badge: page.props.auth.user?.unread_messages_count },
             { name: 'Inscriptions', href: route('applications.index'), icon: UserGroupIcon },
             { name: 'Groupes de Formation', href: route('groups.index'), icon: UserGroupIcon },
@@ -68,6 +70,7 @@ const navigation = computed(() => {
     if (roles.value.includes('Secrétaire')) {
         menu.push(
             { name: 'Communauté', href: route('community.index'), icon: ChatBubbleLeftRightIcon, badge: page.props.auth.user?.unread_announcements_count },
+            { name: 'Actualités (Vitrine)', href: route('admin.posts.index'), icon: NewspaperIcon },
             { name: 'Messages Contact', href: route('contact-messages.index'), icon: EnvelopeIcon, badge: page.props.auth.user?.unread_messages_count },
             { name: 'Inscriptions', href: route('applications.index'), icon: UserGroupIcon },
             { name: 'Groupes de Formation', href: route('groups.index'), icon: UserGroupIcon },

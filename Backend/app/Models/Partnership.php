@@ -17,6 +17,8 @@ class Partnership extends Model
         'description',
         'date_signature',
         'document_path',
+        'logo_path',
+        'website',
         'status',
         'localisation_gps',
         'heure_signature',

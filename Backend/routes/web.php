@@ -64,6 +64,11 @@ Route::get('/vision', function () {
     return Inertia::render('Vision');
 })->name('vision');
 
+Route::get('/actualites', [\App\Http\Controllers\PublicPostController::class, 'index'])->name('public.posts.index');
+Route::get('/actualites/{slug}', [\App\Http\Controllers\PublicPostController::class, 'show'])->name('public.posts.show');
+
+Route::get('/partenaires', [\App\Http\Controllers\EcosystemController::class, 'publicPartenaires'])->name('public.partenaires');
+
 Route::get('/curriculum', function () {
     return Inertia::render('Curriculum');
 })->name('curriculum');
@@ -130,6 +135,16 @@ Route::middleware(['auth'])->group(function (): void {
             ->name('dashboard.director');
         Route::get('/dashboard/director/export-pdf', [DirectorDashboardController::class, 'exportPdf'])
             ->name('dashboard.director.export-pdf');
+
+        // Actualités (Posts)
+        Route::resource('admin/posts', \App\Http\Controllers\Admin\PostController::class)->names([
+            'index' => 'admin.posts.index',
+            'create' => 'admin.posts.create',
+            'store' => 'admin.posts.store',
+            'edit' => 'admin.posts.edit',
+            'update' => 'admin.posts.update',
+            'destroy' => 'admin.posts.destroy',
+        ]);
 
         // Contact Messages Management
         Route::get('/contact-messages', [ContactController::class, 'adminIndex'])
