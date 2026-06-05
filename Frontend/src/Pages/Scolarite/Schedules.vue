@@ -223,13 +223,13 @@ const isScheduleCurrent = (schedule) => {
                                     : 'bg-indigo-50 border-indigo-100 text-indigo-700'"
                             >
                                 <!-- Indicator dot / clignotant -->
-                                <div v-if="isScheduleCurrent(getScheduleBySlot(day, hour))" class="absolute top-3 right-3 flex h-2.5 w-2.5" :title="getScheduleBySlot(day, hour).attendance_taken_today ? 'Émargement validé' : 'Émargement en attente'">
+                                <div v-if="isScheduleCurrent(getScheduleBySlot(day, hour))" class="absolute top-3 right-3 flex h-4.5 w-4.5" :title="getScheduleBySlot(day, hour).attendance_taken_today ? 'Émargement validé' : 'Émargement en attente'">
                                     <span 
                                         class="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75"
                                         :class="getScheduleBySlot(day, hour).attendance_taken_today ? 'bg-emerald-400' : 'bg-rose-400'"
                                     ></span>
                                     <span 
-                                        class="relative inline-flex rounded-full h-2.5 w-2.5"
+                                        class="relative inline-flex rounded-full h-4.5 w-4.5"
                                         :class="getScheduleBySlot(day, hour).attendance_taken_today ? 'bg-emerald-500' : 'bg-rose-500'"
                                     ></span>
                                 </div>
