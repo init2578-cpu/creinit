@@ -111,7 +111,7 @@ class AttendanceController extends Controller
             'longitude' => 'required|numeric',
             'students' => 'required|array',
             'students.*.id' => 'required|exists:users,id',
-            'students.*.status' => 'required|string|in:present,absent,late,justifie',
+            'students.*.status' => 'required|string|in:present,absent_non_justifie,late,justifie',
         ]);
 
         $schedule = Schedule::findOrFail($validated['schedule_id']);

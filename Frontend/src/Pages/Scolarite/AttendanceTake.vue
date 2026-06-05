@@ -85,7 +85,7 @@ function formatDate(dateString) {
 
 const statusConfig = {
     present: { label: 'Présent', color: 'text-green-600', bg: 'bg-green-50', border: 'border-green-100', icon: CheckCircleIcon },
-    absent: { label: 'Absent', color: 'text-red-600', bg: 'bg-red-50', border: 'border-red-100', icon: XCircleIcon },
+    absent_non_justifie: { label: 'Absent', color: 'text-red-600', bg: 'bg-red-50', border: 'border-red-100', icon: XCircleIcon },
     late: { label: 'Retard', color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-100', icon: ClockIcon },
     justifie: { label: 'Justifié', color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-100', icon: InformationCircleIcon },
 }
@@ -128,7 +128,7 @@ const statusConfig = {
                         <button @click="setStatusAll('present')" class="px-4 py-2 bg-green-50 text-green-700 rounded-xl text-xs font-black uppercase tracking-widest border border-green-100 hover:bg-green-100 transition">
                             Tous Présents
                         </button>
-                        <button @click="setStatusAll('absent')" class="px-4 py-2 bg-red-50 text-red-700 rounded-xl text-xs font-black uppercase tracking-widest border border-red-100 hover:bg-red-100 transition">
+                        <button @click="setStatusAll('absent_non_justifie')" class="px-4 py-2 bg-red-50 text-red-700 rounded-xl text-xs font-black uppercase tracking-widest border border-red-100 hover:bg-red-100 transition">
                             Tous Absents
                         </button>
                     </div>
