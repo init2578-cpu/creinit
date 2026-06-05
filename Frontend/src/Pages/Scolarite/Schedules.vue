@@ -129,6 +129,19 @@ const getScheduleBySlot = (day, hour) => {
 const now = ref(new Date())
 let clockTimer = null
 
+// Mobile schedule display state
+const currentDayIndex = new Date().getDay() // 0 = Sunday, 1 = Monday, ...
+const defaultDay = currentDayIndex === 0 || currentDayIndex === 7 ? 'Lundi' : days[currentDayIndex - 1]
+const selectedDayMobile = ref(defaultDay)
+
+// Get all schedules for the selected mobile day, sorted by start_time
+const mobileSchedules = computed(() => {
+    const dayNum = days.indexOf(selectedDayMobile.value) + 1
+    return props.schedules
+        .filter(s => parseInt(s.day_of_week) === dayNum)
+        .sort((a, b) => a.start_time.localeCompare(b.start_time))
+})
+
 onMounted(() => {
     clockTimer = setInterval(() => {
         now.value = new Date()
@@ -182,7 +195,7 @@ const isScheduleCurrent = (schedule) => {
             </header>
 
             <!-- Calendar Grid -->
-            <div class="bg-white rounded-[2.5rem] shadow-sm border border-gray-100 overflow-hidden">
+            <div class="hidden md:block bg-white rounded-[2.5rem] shadow-sm border border-gray-100 overflow-hidden">
                 <div class="grid grid-cols-7 border-b border-gray-50">
                     <div class="p-4 bg-gray-50/50"></div>
                     <div v-for="day in days" :key="day" class="p-4 bg-gray-50/50 text-center text-xs font-black text-gray-400 uppercase tracking-widest">
@@ -249,6 +262,106 @@ const isScheduleCurrent = (schedule) => {
                             </div>
                         </div>
                     </div>
+                </div>
+            </div>
+
+            <!-- Mobile and Tablet view (< md) -->
+            <div class="block md:hidden">
+                <!-- Day selector tabs -->
+                <div class="flex space-x-2 overflow-x-auto pb-4 mb-6 scrollbar-none snap-x">
+                    <button 
+                        v-for="day in days" 
+                        :key="day"
+                        @click="selectedDayMobile = day"
+                        class="snap-center px-4 py-3 rounded-2xl font-black text-xs uppercase tracking-wider transition-all flex-shrink-0"
+                        :class="selectedDayMobile === day 
+                            ? 'bg-blue-600 text-white shadow-lg shadow-blue-100 scale-105' 
+                            : 'bg-gray-50 text-gray-500 hover:bg-gray-100 border border-gray-100'"
+                    >
+                        {{ day }}
+                    </button>
+                </div>
+
+                <!-- Schedules List for selected day -->
+                <div v-if="mobileSchedules.length > 0" class="space-y-4">
+                    <div 
+                        v-for="schedule in mobileSchedules" 
+                        :key="schedule.id"
+                        class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 transition relative overflow-hidden"
+                        :class="isScheduleCurrent(schedule) ? 'ring-2 ring-indigo-500/10 border-indigo-200' : ''"
+                    >
+                        <!-- Active Schedule Glow indicator bar on the left -->
+                        <div v-if="isScheduleCurrent(schedule)" class="absolute left-0 top-0 bottom-0 w-1.5 bg-indigo-500"></div>
+
+                        <div class="flex flex-col gap-4">
+                            <!-- Time and Badges row -->
+                            <div class="flex items-center justify-between flex-wrap gap-2">
+                                <span class="text-xs font-black text-indigo-600 bg-indigo-50 px-3.5 py-1.5 rounded-full font-mono uppercase">
+                                    {{ formatTime(schedule.start_time) }} - {{ formatTime(schedule.end_time) }}
+                                </span>
+                                
+                                <!-- Indicator Badge -->
+                                <div class="flex items-center gap-2">
+                                    <div v-if="isScheduleCurrent(schedule)" class="flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider"
+                                        :class="schedule.attendance_taken_today ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'"
+                                    >
+                                        <span class="relative flex h-2 w-2">
+                                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" :class="schedule.attendance_taken_today ? 'bg-emerald-400' : 'bg-rose-400'"></span>
+                                            <span class="relative inline-flex rounded-full h-2 w-2" :class="schedule.attendance_taken_today ? 'bg-emerald-500' : 'bg-rose-500'"></span>
+                                        </span>
+                                        {{ schedule.attendance_taken_today ? 'En cours - Émargé' : 'En cours - En attente' }}
+                                    </div>
+                                    <div v-else class="text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full"
+                                        :class="schedule.attendance_taken_today ? 'bg-emerald-50 text-emerald-600' : 'bg-gray-50 text-gray-400'"
+                                    >
+                                        {{ schedule.attendance_taken_today ? 'Émargé' : 'Non émargé' }}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Title & Room -->
+                            <div>
+                                <h3 class="text-lg font-black text-gray-900 leading-tight mb-1">{{ schedule.group.nom_groupe }}</h3>
+                                <div class="flex items-center gap-1.5 text-gray-500 text-xs font-semibold">
+                                    <MapPinIcon class="h-4 w-4 text-gray-400" />
+                                    <span>{{ schedule.room.nom }}</span>
+                                </div>
+                            </div>
+
+                            <!-- Footer row with Formateur name and action buttons -->
+                            <div class="flex items-center justify-between border-t border-gray-50 pt-4 mt-1">
+                                <div class="flex items-center gap-2">
+                                    <div class="h-8 w-8 rounded-full bg-gray-50 flex items-center justify-center border border-gray-100">
+                                        <UserIcon class="h-4 w-4 text-gray-400" />
+                                    </div>
+                                    <span class="text-xs font-bold text-gray-700">{{ schedule.formateur.name }}</span>
+                                </div>
+
+                                <!-- Actions for Directeur/Secretaire -->
+                                <div v-if="$page.props.auth.user.roles.some(r => ['Directeur', 'Secrétaire'].includes(r))" class="flex items-center gap-2">
+                                    <button 
+                                        @click="openEditModal(schedule)" 
+                                        class="p-2.5 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 rounded-xl transition"
+                                    >
+                                        <PencilSquareIcon class="h-4 w-4" />
+                                    </button>
+                                    <button 
+                                        @click="deleteSchedule(schedule.id)" 
+                                        class="p-2.5 bg-red-50 text-red-600 hover:bg-red-100 rounded-xl transition"
+                                    >
+                                        <TrashIcon class="h-4 w-4" />
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Empty State -->
+                <div v-else class="bg-gray-50/50 rounded-3xl p-12 text-center border border-dashed border-gray-200">
+                    <CalendarIcon class="h-10 w-10 text-gray-300 mx-auto mb-3" />
+                    <p class="text-xs font-black text-gray-400 uppercase tracking-widest">Aucun cours programmé</p>
+                    <p class="text-gray-400 text-xs mt-1">Il n'y a pas de créneau horaire prévu pour ce jour.</p>
                 </div>
             </div>
 
