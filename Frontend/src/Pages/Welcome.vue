@@ -78,7 +78,7 @@ const testimonials = [
     },
     {
         name: 'Aliou Konté',
-        role: 'Formatrice au CRE',
+        role: 'Formateur au CRE',
         avatar: 'AK',
         text: 'Le CRE de Kolda offre un plateau technique de premier choix. Transmettre les résultats de nos recherches pour créer des solutions locales concrètes est extrêmement valorisant.',
         rating: 5,
