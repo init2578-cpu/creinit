@@ -80,6 +80,24 @@ class AttendanceController extends Controller
         }
 
         $groupId = $request->validated('group_id');
+        $date = $request->validated('date');
+        
+        // Resolve schedule_id based on the day of the week
+        $carbonDate = \Carbon\Carbon::parse($date);
+        $dayOfWeek = $carbonDate->dayOfWeekIso; // 1 (Mon) to 7 (Sun)
+        
+        $schedule = \App\Models\Schedule::where('group_id', $groupId)
+            ->where('day_of_week', $dayOfWeek)
+            ->whereIn('formateur_id', $trainerIds)
+            ->first();
+
+        if (!$schedule) {
+            $schedule = \App\Models\Schedule::where('group_id', $groupId)
+                ->where('day_of_week', $dayOfWeek)
+                ->first();
+        }
+
+        $scheduleId = $schedule ? $schedule->id : null;
 
         // Check if the trainer/substitute has a schedule for this group
         $hasSchedule = \App\Models\Schedule::where('group_id', $groupId)
@@ -93,9 +111,10 @@ class AttendanceController extends Controller
         foreach ($request->validated('attendances') as $data) {
             Attendance::updateOrCreate(
                 [
-                    'user_id'  => $data['user_id'],
-                    'group_id' => $groupId,
-                    'date'     => $request->validated('date'),
+                    'user_id'     => $data['user_id'],
+                    'group_id'    => $groupId,
+                    'schedule_id' => $scheduleId,
+                    'date'        => $date,
                 ],
                 [
                     'status'    => $data['status'],
