@@ -59,6 +59,41 @@ const modules = [
     { name: 'Arts & Savonnerie', level: 'Tout public', duration: '1 mois', students: 30, image: '/images/modules/arts.png', desc: 'Fabrication artisanale de savons, eau de javel et cosmétiques naturels.' },
 ]
 
+const testimonials = [
+    {
+        name: 'Mariama Diallo',
+        role: 'Diplômée en Énergie Solaire (Promo 2025)',
+        avatar: 'MD',
+        text: 'Grâce à la formation pratique intensive reçue au CRE, j\'ai pu installer mon propre atelier d\'installation et maintenance solaire à Kolda. C\'est une chance inouïe pour les jeunes de la région.',
+        rating: 5,
+        color: 'cyan'
+    },
+    {
+        name: 'Abdoulaye Sow',
+        role: 'Producteur Local & Bénéficiaire Agroalimentaire',
+        avatar: 'AS',
+        text: 'Les techniques modernes de transformation et de conservation apprises au CRE ont changé notre coopérative. Nos pertes post-récolte ont chuté de près de 80% cette année.',
+        rating: 5,
+        color: 'indigo'
+    },
+    {
+        name: 'Dr. Fatoumata Bâ',
+        role: 'Enseignante-Chercheure & Formatrice au CRE',
+        avatar: 'FB',
+        text: 'Le CRE de Kolda offre un plateau technique de premier choix. Transmettre les résultats de nos recherches pour créer des solutions locales concrètes est extrêmement valorisant.',
+        rating: 5,
+        color: 'blue'
+    },
+    {
+        name: 'Moussa Baldé',
+        role: 'Développeur Fullstack Indépendant',
+        avatar: 'MB',
+        text: 'Le module de développement et initiation à l\'IA m\'a donné les bases. Aujourd\'hui, je travaille en télétravail pour des clients internationaux tout en restant basé ici à Kolda.',
+        rating: 5,
+        color: 'emerald'
+    }
+]
+
 // Scroll Reveal & Typing Logic
 const revealed = ref(new Set())
 const typeText = ref('')
@@ -379,6 +414,64 @@ onMounted(() => {
                             </div>
                         </div>
                     </Link>
+                </div>
+            </div>
+        </section>
+
+        <!-- Témoignages (Zone Vitrine) -->
+        <section class="py-24 bg-slate-950 relative overflow-hidden border-t border-white/5">
+            <!-- Background effects -->
+            <div class="absolute inset-0 pointer-events-none opacity-20">
+                <div class="absolute top-[20%] right-[10%] w-[350px] h-[350px] bg-emerald-500/10 rounded-full blur-[100px] animate-pulse-slow"></div>
+                <div class="absolute bottom-[20%] left-[10%] w-[300px] h-[300px] bg-cyan-500/10 rounded-full blur-[100px] animate-pulse-slow" style="animation-delay: 1.5s"></div>
+            </div>
+
+            <div class="max-w-7xl mx-auto px-4 relative z-10">
+                <div class="flex flex-col md:flex-row justify-between items-end gap-10 mb-16 relative">
+                    <div class="absolute -left-12 top-0 h-full w-[2px] bg-gradient-to-b from-emerald-500 to-transparent"></div>
+                    <div class="max-w-xl" data-reveal id="testimonials-header">
+                        <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 mb-4">
+                            <SparklesIcon class="h-4 w-4 text-emerald-400" />
+                            <span class="text-[9px] font-black text-emerald-400 uppercase tracking-[0.3em]">Impact & Success Stories</span>
+                        </div>
+                        <h2 class="text-4xl md:text-6xl font-black text-white tracking-tighter mb-4 font-display">
+                            TEMOIGNAGES <span class="bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">LOCAUX</span>
+                        </h2>
+                        <p class="text-slate-500 font-medium">Découvrez comment le CRE Kolda contribue activement au développement et à l'autonomie technologique de notre communauté.</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 relative z-20">
+                    <div 
+                        v-for="(t, index) in testimonials" 
+                        :key="t.name"
+                        class="glass-dark border border-white/5 rounded-[2.5rem] p-8 lg:p-10 hover:border-emerald-500/30 transition-all duration-500 hover:-translate-y-1.5 flex flex-col justify-between group"
+                        data-reveal :id="'testimonial-' + index"
+                        :style="`transition-delay: ${index * 100}ms`"
+                    >
+                        <div>
+                            <!-- Star ratings -->
+                            <div class="flex gap-1 mb-6">
+                                <span v-for="star in t.rating" :key="star" class="text-emerald-400 text-lg">★</span>
+                            </div>
+
+                            <p class="text-slate-300 text-base font-medium leading-relaxed italic mb-8 relative">
+                                <span class="absolute -top-6 -left-3 text-6xl text-slate-800 pointer-events-none select-none font-serif">“</span>
+                                {{ t.text }}
+                            </p>
+                        </div>
+
+                        <div class="flex items-center gap-4 pt-6 border-t border-white/5 mt-auto">
+                            <!-- Avatar placeholder with initials and cyber-theme gradient -->
+                            <div class="h-12 w-12 rounded-2xl bg-gradient-to-br from-slate-900 to-slate-800 border border-white/10 flex items-center justify-center text-sm font-black text-white group-hover:shadow-[0_0_15px_rgba(16,185,129,0.3)] transition-all">
+                                {{ t.avatar }}
+                            </div>
+                            <div>
+                                <h4 class="text-sm font-black text-white uppercase tracking-wider group-hover:text-emerald-400 transition-colors">{{ t.name }}</h4>
+                                <span class="text-[11px] text-slate-500 font-bold block mt-0.5">{{ t.role }}</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </section>
