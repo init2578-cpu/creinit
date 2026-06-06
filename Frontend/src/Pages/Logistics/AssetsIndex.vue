@@ -361,7 +361,7 @@ const getEtatClass = (etat) => {
                             <th class="px-8 py-4">Numéro de Série</th>
                             <th class="px-8 py-4 text-center">État Physique</th>
                             <th class="px-8 py-4 text-center">Disponibilité</th>
-                            <th class="px-8 py-4">Ajouté le</th>
+                            <th class="px-8 py-4">Enregistrement</th>
                             <th class="px-8 py-4"></th>
                         </tr>
                     </thead>
@@ -416,8 +416,11 @@ const getEtatClass = (etat) => {
                                     </p>
                                 </div>
                             </td>
-                            <td class="px-8 py-5 text-xs text-gray-400 font-bold">
-                                {{ asset.created_at }}
+                            <td class="px-8 py-5">
+                                <div class="flex flex-col gap-1">
+                                    <span class="text-xs text-gray-900 font-black">{{ asset.registered_by?.name || 'Système' }}</span>
+                                    <span class="text-[10px] text-gray-400 font-bold">{{ asset.created_at }}</span>
+                                </div>
                             </td>
                             <td class="px-8 py-5 text-right">
                                 <div class="flex justify-end gap-2 translate-x-4 opacity-0 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300">

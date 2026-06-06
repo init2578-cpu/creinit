@@ -21,7 +21,7 @@ class AssetController extends Controller
     public function index(): Response
     {
         return Inertia::render('Logistics/AssetsIndex', [
-            'assets' => Asset::with(['activeLoan.user', 'activeLoan.giver'])->orderBy('nom')->get()->map(function($asset) {
+            'assets' => Asset::with(['activeLoan.user', 'activeLoan.giver', 'registeredBy'])->orderBy('nom')->get()->map(function($asset) {
                 $activeLoan = $asset->activeLoan->first();
                 return [
                     'id' => $asset->id,
@@ -37,6 +37,9 @@ class AssetController extends Controller
                     ] : null,
                     'giver' => $activeLoan && $activeLoan->giver ? [
                         'name' => $activeLoan->giver->name,
+                    ] : null,
+                    'registered_by' => $asset->registeredBy ? [
+                        'name' => $asset->registeredBy->name,
                     ] : null,
                     'created_at' => $asset->created_at->format('d/m/Y'),
                 ];
@@ -55,6 +58,8 @@ class AssetController extends Controller
             'etat'  => 'required|string|in:bon,endommagé,hors_service',
             'status'=> 'required|string|in:disponible,preté,maintenance',
         ]);
+
+        $validated['registered_by'] = $request->user()->id;
 
         $asset = Asset::create($validated);
 
@@ -94,9 +99,12 @@ class AssetController extends Controller
     public function destroy(Asset $asset)
     {
         // Don't allow deletion if currently on loan
-        if ($asset->status === 'preté') {
+        if ($asset->status === 'preté' || $asset->activeLoan()->exists()) {
             return back()->with('error', 'Impossible de supprimer un matériel actuellement prêté.');
         }
+
+        // Remove associated loans to satisfy the foreign key constraint
+        $asset->loans()->delete();
 
         $asset->delete();
 

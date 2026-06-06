@@ -6,6 +6,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 
@@ -22,6 +23,7 @@ class Asset extends Model
         'serie',
         'etat',
         'status',
+        'registered_by',
     ];
 
     // -----------------------------------------------------------------------
@@ -64,5 +66,13 @@ class Asset extends Model
     public function activeLoan(): HasMany
     {
         return $this->hasMany(Loan::class)->whereNull('returned_at');
+    }
+
+    /**
+     * The user who registered the asset.
+     */
+    public function registeredBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'registered_by');
     }
 }
