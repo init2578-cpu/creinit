@@ -26,6 +26,25 @@ onMounted(() => {
     }, (error) => {
         // Silent error for scan misses
     })
+
+    // Astuce pour forcer l'ouverture de l'appareil photo sur mobile
+    // lorsque le navigateur bloque l'accès direct à la caméra (ex: pas de HTTPS)
+    const container = document.getElementById(scannerId)
+    if (container) {
+        const forceCamera = () => {
+            const fileInput = container.querySelector('input[type="file"]')
+            if (fileInput && !fileInput.hasAttribute('capture')) {
+                fileInput.setAttribute('capture', 'environment')
+            }
+        }
+        
+        forceCamera() // Immediate check
+        
+        const observer = new MutationObserver(() => {
+            forceCamera()
+        })
+        observer.observe(container, { childList: true, subtree: true })
+    }
 })
 
 onUnmounted(() => {

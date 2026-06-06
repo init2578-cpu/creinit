@@ -14,6 +14,7 @@ import {
     ClipboardDocumentCheckIcon,
     XMarkIcon,
     CheckIcon,
+    MagnifyingGlassIcon
 } from '@heroicons/vue/24/outline'
 
 const props = defineProps({
@@ -31,6 +32,29 @@ const form = useForm({
     asset_id: '',
     signature: ''
 })
+
+const userSearch = ref('')
+const isUserDropdownOpen = ref(false)
+
+const filteredUsers = computed(() => {
+    if (!userSearch.value) return props.users
+    const search = userSearch.value.toLowerCase()
+    return props.users.filter(u => 
+        u.name.toLowerCase().includes(search) || 
+        (u.email && u.email.toLowerCase().includes(search)) ||
+        (u.telephone && u.telephone.includes(search))
+    )
+})
+
+const selectedUser = computed(() => {
+    return props.users.find(u => u.id === form.user_id)
+})
+
+function selectUser(user) {
+    form.user_id = user.id
+    userSearch.value = ''
+    isUserDropdownOpen.value = false
+}
 
 onMounted(() => {
     signaturePad = new SignaturePad(signatureCanvas.value, {
@@ -139,16 +163,51 @@ function rejectLoan(id) {
                         <CheckBadgeIcon class="h-5 w-5 text-blue-500" />
                         Étape 1 : Sélectionner l'emprunteur
                     </label>
-                    <select 
-                        v-model="form.user_id" 
-                        class="w-full rounded-xl border-gray-200 focus:border-blue-500 focus:ring-blue-500"
-                        required
-                    >
-                        <option value="" disabled>Choisir un utilisateur...</option>
-                        <option v-for="user in users" :key="user.id" :value="user.id">
-                            {{ user.name }} ({{ user.email || user.telephone }})
-                        </option>
-                    </select>
+                    <div class="relative">
+                        <!-- Selected state -->
+                        <div 
+                            v-if="form.user_id" 
+                            class="w-full flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-200 cursor-pointer hover:bg-gray-100 transition-colors"
+                            @click="form.user_id = null; isUserDropdownOpen = true"
+                        >
+                            <span class="font-bold text-gray-900">{{ selectedUser?.name }} <span class="text-gray-500 font-normal">({{ selectedUser?.email || selectedUser?.telephone }})</span></span>
+                            <XMarkIcon class="h-5 w-5 text-gray-400 hover:text-red-500" />
+                        </div>
+                        
+                        <!-- Search state -->
+                        <div v-else>
+                            <div class="relative">
+                                <MagnifyingGlassIcon class="h-5 w-5 absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+                                <input 
+                                    v-model="userSearch"
+                                    @focus="isUserDropdownOpen = true"
+                                    type="text" 
+                                    placeholder="Rechercher un utilisateur (nom, email, téléphone)..." 
+                                    class="w-full pl-12 pr-4 py-4 bg-gray-50 rounded-xl border-gray-200 focus:border-blue-500 focus:ring-blue-500 transition-all font-bold text-sm"
+                                >
+                            </div>
+                            
+                            <!-- Dropdown Results -->
+                            <div 
+                                v-if="isUserDropdownOpen" 
+                                class="absolute z-10 w-full mt-2 bg-white rounded-xl shadow-lg border border-gray-100 max-h-60 overflow-y-auto"
+                            >
+                                <div 
+                                    v-for="user in filteredUsers" 
+                                    :key="user.id"
+                                    @click="selectUser(user)"
+                                    class="px-4 py-3 hover:bg-blue-50 cursor-pointer transition-colors border-b border-gray-50 last:border-0"
+                                >
+                                    <div class="font-bold text-gray-900">{{ user.name }}</div>
+                                    <div class="text-xs text-gray-500">{{ user.email || user.telephone }}</div>
+                                </div>
+                                <div v-if="filteredUsers.length === 0" class="px-4 py-4 text-center text-sm text-gray-500 font-bold">
+                                    Aucun utilisateur trouvé.
+                                </div>
+                            </div>
+                        </div>
+                        <p v-if="form.errors.user_id" class="text-red-500 text-xs font-bold mt-2">{{ form.errors.user_id }}</p>
+                    </div>
                 </section>
 
                 <!-- 2. Sélection du Matériel (QR ou Manuel) -->
