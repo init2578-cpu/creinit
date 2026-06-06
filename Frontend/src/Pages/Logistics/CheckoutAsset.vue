@@ -22,7 +22,7 @@ const props = defineProps({
 
 const signatureCanvas = ref(null)
 let signaturePad = null
-const showScanner = ref(false)
+const showScanner = ref(true)
 
 const form = useForm({
     user_id: '',
