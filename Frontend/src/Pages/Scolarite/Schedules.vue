@@ -158,13 +158,17 @@ const timeToMinutes = (timeStr) => {
     return parseInt(h) * 60 + parseInt(m)
 }
 
-const isScheduleCurrent = (schedule) => {
+const isScheduleToday = (schedule) => {
     if (!schedule) return false
     
     let currentDay = now.value.getDay() // 0 = Sunday, 1 = Monday, ...
     if (currentDay === 0) currentDay = 7 // Map to ISO day where 7 = Sunday
     
-    if (parseInt(schedule.day_of_week) !== currentDay) return false
+    return parseInt(schedule.day_of_week) === currentDay
+}
+
+const isScheduleCurrent = (schedule) => {
+    if (!isScheduleToday(schedule)) return false
     
     const nowMinutes = now.value.getHours() * 60 + now.value.getMinutes()
     const startMinutes = timeToMinutes(schedule.start_time)
@@ -223,8 +227,9 @@ const isScheduleCurrent = (schedule) => {
                                     : 'bg-indigo-50 border-indigo-100 text-indigo-700'"
                             >
                                 <!-- Indicator dot / clignotant -->
-                                <div v-if="isScheduleCurrent(getScheduleBySlot(day, hour))" class="absolute top-3 right-3 flex h-4 w-4" :title="getScheduleBySlot(day, hour).attendance_taken_today ? 'Émargement validé' : 'Émargement en attente'">
+                                <div v-if="isScheduleToday(getScheduleBySlot(day, hour))" class="absolute top-3 right-3 flex h-4 w-4" :title="getScheduleBySlot(day, hour).attendance_taken_today ? 'Émargement validé' : 'Émargement en attente'">
                                     <span 
+                                        v-if="isScheduleCurrent(getScheduleBySlot(day, hour))"
                                         class="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75"
                                         :class="getScheduleBySlot(day, hour).attendance_taken_today ? 'bg-emerald-400' : 'bg-rose-400'"
                                     ></span>
@@ -302,14 +307,14 @@ const isScheduleCurrent = (schedule) => {
                                 
                                 <!-- Indicator Badge -->
                                 <div class="flex items-center gap-2">
-                                    <div v-if="isScheduleCurrent(schedule)" class="flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider"
+                                    <div v-if="isScheduleToday(schedule)" class="flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider"
                                         :class="schedule.attendance_taken_today ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'"
                                     >
                                         <span class="relative flex h-2 w-2">
-                                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" :class="schedule.attendance_taken_today ? 'bg-emerald-400' : 'bg-rose-400'"></span>
+                                            <span v-if="isScheduleCurrent(schedule)" class="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" :class="schedule.attendance_taken_today ? 'bg-emerald-400' : 'bg-rose-400'"></span>
                                             <span class="relative inline-flex rounded-full h-2 w-2" :class="schedule.attendance_taken_today ? 'bg-emerald-500' : 'bg-rose-500'"></span>
                                         </span>
-                                        {{ schedule.attendance_taken_today ? 'En cours - Émargé' : 'En cours - En attente' }}
+                                        {{ schedule.attendance_taken_today ? (isScheduleCurrent(schedule) ? 'En cours - Émargé' : 'Émargé') : (isScheduleCurrent(schedule) ? 'En cours - En attente' : 'En attente d\'émargement') }}
                                     </div>
                                     <div v-else class="text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full"
                                         :class="schedule.attendance_taken_today ? 'bg-emerald-50 text-emerald-600' : 'bg-gray-50 text-gray-400'"
