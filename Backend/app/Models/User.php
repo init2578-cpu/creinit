@@ -16,10 +16,13 @@ use Spatie\Permission\Traits\HasRoles;
 
 use App\Notifications\ResetPasswordNotification;
 
-class User extends Authenticatable
+use Laravel\Passkeys\Contracts\PasskeyUser;
+use Laravel\Passkeys\PasskeyAuthenticatable;
+
+class User extends Authenticatable implements PasskeyUser
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasApiTokens, HasFactory, Notifiable, HasRoles;
+    use HasApiTokens, HasFactory, Notifiable, HasRoles, PasskeyAuthenticatable;
 
     /**
      * Send the password reset notification.

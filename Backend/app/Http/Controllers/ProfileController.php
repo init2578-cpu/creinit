@@ -20,6 +20,7 @@ class ProfileController extends Controller
     {
         return Inertia::render('Profile/Edit', [
             'status' => session('status'),
+            'passkeys' => $request->user()->passkeys()->select(['id', 'name', 'last_used_at', 'created_at'])->get(),
         ]);
     }
 

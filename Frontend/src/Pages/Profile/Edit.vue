@@ -1,15 +1,26 @@
 <script setup>
 import { ref } from 'vue'
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
-import { Head, useForm, usePage } from '@inertiajs/vue3'
+import { Head, useForm, usePage, router } from '@inertiajs/vue3'
+import { usePasskeyRegister } from '@laravel/passkeys/vue'
 import { 
     UserIcon, 
     KeyIcon, 
     CheckBadgeIcon,
     ExclamationTriangleIcon,
     PhotoIcon,
-    ArrowUpTrayIcon
+    ArrowUpTrayIcon,
+    FingerPrintIcon,
+    TrashIcon,
+    ShieldCheckIcon
 } from '@heroicons/vue/24/outline'
+
+const props = defineProps({
+    passkeys: {
+        type: Array,
+        default: () => []
+    }
+})
 
 const user = usePage().props.auth.user
 
@@ -50,6 +61,45 @@ function updatePhotoPreview() {
         photoPreview.value = e.target.result
     }
     reader.readAsDataURL(photo)
+}
+
+const deviceName = ref('')
+
+const { register, isLoading: registerLoading, isSupported: isPasskeySupported, error: registerError } = usePasskeyRegister({
+    onSuccess: () => {
+        deviceName.value = ''
+        router.reload({ only: ['passkeys'] })
+        if (window.platformAlert) {
+            window.platformAlert("Empreinte digitale / Clé d'accès ajoutée avec succès !", "success")
+        } else {
+            alert("Empreinte digitale / Clé d'accès ajoutée avec succès !")
+        }
+    },
+    onError: (err) => {
+        if (window.platformAlert) {
+            window.platformAlert("Erreur lors de l'enregistrement : " + err.message, "error")
+        } else {
+            alert("Erreur lors de l'enregistrement : " + err.message)
+        }
+    }
+})
+
+function handleRegister() {
+    const name = deviceName.value.trim() || "Mon appareil"
+    register(name)
+}
+
+function deletePasskey(id) {
+    if (!confirm("Voulez-vous vraiment supprimer cette clé d'accès ?")) return
+    
+    router.delete(route('passkey.destroy', id), {
+        preserveScroll: true,
+        onSuccess: () => {
+            if (window.platformAlert) {
+                window.platformAlert("Clé d'accès supprimée avec succès !", "success")
+            }
+        }
+    })
 }
 </script>
 
@@ -158,6 +208,94 @@ function updatePhotoPreview() {
                         </button>
                     </div>
                 </form>
+            </div>
+
+            <!-- Passkeys Section -->
+            <div class="mt-6 bg-white rounded-[2.5rem] shadow-sm border border-gray-100 p-8 md:p-12">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-lg font-black text-gray-900 flex items-center gap-2">
+                        <FingerPrintIcon class="h-6 w-6 text-indigo-600 animate-pulse" />
+                        Connexion Biométrique (Empreinte digitale / FaceID)
+                    </h2>
+                    <span v-if="!isPasskeySupported" class="px-3 py-1 bg-red-50 text-red-600 text-xs font-bold rounded-full border border-red-100">
+                        Non supporté par ce navigateur
+                    </span>
+                    <span v-else class="px-3 py-1 bg-green-50 text-green-600 text-xs font-bold rounded-full border border-green-100">
+                        Prêt
+                    </span>
+                </div>
+
+                <p class="text-sm text-gray-500 font-medium mb-6">
+                    Enregistrez des clés d'accès (passkeys) sur vos appareils pour vous connecter rapidement et en toute sécurité sans mot de passe.
+                </p>
+
+                <!-- Registered Passkeys List -->
+                <div class="space-y-4 mb-8">
+                    <h3 class="text-xs font-black text-gray-400 uppercase tracking-widest">Vos appareils enregistrés</h3>
+                    
+                    <div v-if="passkeys.length === 0" class="p-6 bg-gray-50 rounded-2xl border border-dashed border-gray-200 text-center">
+                        <ShieldCheckIcon class="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                        <p class="text-xs text-gray-500 font-bold">Aucun appareil enregistré pour le moment.</p>
+                    </div>
+
+                    <div v-else class="divide-y divide-gray-100">
+                        <div v-for="passkey in passkeys" :key="passkey.id" class="py-4 flex items-center justify-between gap-4">
+                            <div class="flex items-center gap-3">
+                                <div class="h-10 w-10 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center">
+                                    <FingerPrintIcon class="h-5 w-5" />
+                                </div>
+                                <div>
+                                    <h4 class="font-bold text-sm text-gray-800">{{ passkey.name }}</h4>
+                                    <p class="text-xs text-gray-400">
+                                        Ajouté le {{ new Date(passkey.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) }}
+                                        <span v-if="passkey.last_used_at">
+                                            • Utilisé le {{ new Date(passkey.last_used_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }) }}
+                                        </span>
+                                    </p>
+                                </div>
+                            </div>
+
+                            <button 
+                                type="button" 
+                                @click="deletePasskey(passkey.id)"
+                                class="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition"
+                                title="Supprimer cet appareil"
+                            >
+                                <TrashIcon class="h-5 w-5" />
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Register New Passkey form -->
+                <div v-if="isPasskeySupported" class="bg-gray-50 p-6 rounded-2xl border border-gray-100">
+                    <h3 class="text-xs font-black text-gray-400 uppercase tracking-widest mb-4">Enregistrer un nouvel appareil</h3>
+                    
+                    <div class="flex flex-col md:flex-row gap-4 items-end">
+                        <div class="flex-grow w-full">
+                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Nom de l'appareil (ex: Mon Téléphone, MacBook, etc.)</label>
+                            <input 
+                                v-model="deviceName" 
+                                type="text" 
+                                placeholder="ex: Mon Téléphone Personnel" 
+                                class="w-full bg-white border-gray-200 rounded-xl font-bold py-3 px-4 focus:ring-2 focus:ring-indigo-600 text-sm transition"
+                                :disabled="registerLoading"
+                            />
+                        </div>
+                        <button 
+                            type="button" 
+                            @click="handleRegister"
+                            :disabled="registerLoading"
+                            class="w-full md:w-auto px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-black text-sm shadow-sm transition disabled:opacity-50 flex items-center justify-center gap-2"
+                        >
+                            <span v-if="registerLoading">Configuration...</span>
+                            <span v-else>Enregistrer cet appareil</span>
+                        </button>
+                    </div>
+                    <p v-if="registerError" class="mt-2 text-xs text-red-600 font-bold uppercase tracking-widest">
+                        {{ registerError }}
+                    </p>
+                </div>
             </div>
 
             <!-- Danger Zone -->

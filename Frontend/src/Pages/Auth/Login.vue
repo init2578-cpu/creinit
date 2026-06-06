@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import { Head, useForm, Link } from '@inertiajs/vue3'
 import GuestLayout from '@/Layouts/GuestLayout.vue'
+import { usePasskeyVerify } from '@laravel/passkeys/vue'
 import { 
     EnvelopeIcon, 
     LockClosedIcon, 
@@ -9,7 +10,8 @@ import {
     ExclamationCircleIcon,
     EyeIcon,
     EyeSlashIcon,
-    UserIcon
+    UserIcon,
+    FingerPrintIcon
 } from '@heroicons/vue/24/outline'
 
 const showPassword = ref(false)
@@ -25,6 +27,14 @@ const submit = () => {
         onFinish: () => form.reset('password'),
     })
 }
+
+const { verify, isLoading: passkeyLoading, isSupported: isPasskeySupported, error: passkeyError } = usePasskeyVerify({
+    onSuccess: (response) => {
+        if (response && response.redirect) {
+            window.location.href = response.redirect
+        }
+    }
+})
 </script>
 
 <template>
@@ -120,6 +130,28 @@ const submit = () => {
                             <span v-else>Se connecter</span>
                             <ArrowRightIcon v-if="!form.processing" class="h-5 w-5 group-hover:translate-x-1 transition-transform font-sans" />
                         </button>
+
+                        <!-- Biometric Login (Passkey) -->
+                        <div v-if="isPasskeySupported" class="flex flex-col gap-2 pt-2">
+                            <div class="relative flex py-2 items-center">
+                                <div class="flex-grow border-t border-gray-200"></div>
+                                <span class="flex-shrink mx-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Ou</span>
+                                <div class="flex-grow border-t border-gray-200"></div>
+                            </div>
+                            
+                            <button 
+                                type="button"
+                                @click="verify"
+                                :disabled="passkeyLoading"
+                                class="w-full py-4 bg-white hover:bg-gray-50 text-gray-800 border-2 border-gray-200 rounded-2xl font-black text-sm transition flex items-center justify-center gap-2"
+                            >
+                                <FingerPrintIcon class="h-5 w-5 text-blue-600 animate-pulse" />
+                                <span>{{ passkeyLoading ? "Vérification..." : "Empreinte digitale / FaceID" }}</span>
+                            </button>
+                            <span v-if="passkeyError" class="text-red-500 text-xs mt-1 text-center font-bold">
+                                {{ passkeyError }}
+                            </span>
+                        </div>
                     </form>
                 </div>
 
