@@ -113,7 +113,7 @@ function returnLoan(id) {
     <Head title="Prêt de Matériel" />
 
     <AuthenticatedLayout>
-        <div class="max-w-3xl mx-auto py-8 px-4">
+        <div class="max-w-5xl mx-auto py-8 px-4">
             <header class="mb-8">
                 <h1 class="text-2xl font-bold text-gray-900">Emprunt d'équipement</h1>
                 <p class="text-gray-500">Scanner le matériel et recueillir la signature de l'emprunteur.</p>
