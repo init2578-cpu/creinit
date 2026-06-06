@@ -20,7 +20,7 @@ cd "$BACKEND_DIR"
 
 # Installation des dépendances Composer
 echo "📦 Installation des dépendances Composer..."
-composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev
+composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev --ignore-platform-reqs
 
 # Nettoyage des caches existants
 php artisan optimize:clear
