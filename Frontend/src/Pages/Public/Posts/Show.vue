@@ -50,8 +50,8 @@ const props = defineProps({
                 </header>
 
                 <!-- Hero Image -->
-                <div v-if="post.image_path" class="w-full h-auto md:h-[500px] rounded-[3rem] overflow-hidden mb-16 shadow-[0_0_50px_rgba(0,0,0,0.5)] border border-white/5">
-                    <img :src="storageUrl(post.image_path)" :alt="post.title" class="w-full h-full object-cover">
+                <div v-if="post.image_path" class="w-full rounded-[3rem] overflow-hidden mb-16 shadow-[0_0_50px_rgba(0,0,0,0.5)] border border-white/5">
+                    <img :src="storageUrl(post.image_path)" :alt="post.title" class="w-full h-auto block">
                 </div>
 
                 <!-- Excerpt (Lead) -->
