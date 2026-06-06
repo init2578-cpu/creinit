@@ -90,8 +90,8 @@ function printQrCode() {
                         justify-content: center;
                     }
                     .logo-overlay img {
-                        width: 36px;
-                        height: 36px;
+                        width: 44px;
+                        height: 44px;
                         object-fit: contain;
                         border-radius: 4px;
                     }
@@ -410,7 +410,7 @@ const getEtatClass = (etat) => {
                         >
                         <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
                             <div class="bg-white p-1 rounded-xl shadow-md border border-slate-100 flex items-center justify-center">
-                                <img src="/images/logo-cre.png" alt="CRE Logo" class="w-10 h-10 object-contain rounded-lg">
+                                <img src="/images/logo-cre.png" alt="CRE Logo" class="w-12 h-12 object-contain rounded-lg">
                             </div>
                         </div>
                     </div>
