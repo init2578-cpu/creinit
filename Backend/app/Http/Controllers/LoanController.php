@@ -52,6 +52,9 @@ class LoanController extends Controller
                 $request->validated('signature'),
             );
 
+            $isStaff = $user->hasRole(['Directeur', 'Secrétaire']);
+            $loanStatus = $isStaff ? 'approved' : 'pending';
+
             // Create the loan for the SELECTED student
             Loan::create([
                 'asset_id'       => $request->validated('asset_id'),
@@ -59,17 +62,22 @@ class LoanController extends Controller
                 'giver_id'       => $user->id,
                 'borrowed_at'    => now(),
                 'signature_path' => $signaturePath,
+                'status'         => $loanStatus,
             ]);
 
-
             // Update asset status
+            $newAssetStatus = $isStaff ? 'preté' : 'en_attente_validation';
             Asset::where('id', $request->validated('asset_id'))
-                ->update(['status' => 'prete']);
+                ->update(['status' => $newAssetStatus]);
         });
+
+        $message = $user->hasRole(['Directeur', 'Secrétaire']) 
+            ? 'Équipement emprunté avec succès.'
+            : 'Demande d\'emprunt enregistrée. En attente de validation par la Direction.';
 
         return redirect()
             ->back()
-            ->with('success', 'Équipement emprunté avec succès.');
+            ->with('success', $message);
     }
 
     /**
@@ -80,7 +88,7 @@ class LoanController extends Controller
         if (!$loan->isActive()) {
             return redirect()
                 ->back()
-                ->with('error', 'Cet emprunt a déjà été clôturé.');
+                ->with('error', 'Cet emprunt n\'est pas actif ou a déjà été clôturé.');
         }
 
         DB::transaction(function () use ($loan): void {
@@ -91,6 +99,48 @@ class LoanController extends Controller
         return redirect()
             ->back()
             ->with('success', 'Équipement retourné avec succès.');
+    }
+
+    /**
+     * Approve a pending loan.
+     */
+    public function approve(Loan $loan): RedirectResponse
+    {
+        if (!auth()->user()->hasRole(['Directeur', 'Secrétaire'])) {
+            abort(403);
+        }
+
+        if (!$loan->isPending()) {
+            return back()->with('error', 'Ce prêt n\'est pas en attente de validation.');
+        }
+
+        DB::transaction(function () use ($loan): void {
+            $loan->update(['status' => 'approved']);
+            $loan->asset->update(['status' => 'preté']);
+        });
+
+        return back()->with('success', 'Prêt approuvé avec succès.');
+    }
+
+    /**
+     * Reject a pending loan.
+     */
+    public function reject(Loan $loan): RedirectResponse
+    {
+        if (!auth()->user()->hasRole(['Directeur', 'Secrétaire'])) {
+            abort(403);
+        }
+
+        if (!$loan->isPending()) {
+            return back()->with('error', 'Ce prêt n\'est pas en attente de validation.');
+        }
+
+        DB::transaction(function () use ($loan): void {
+            $loan->update(['status' => 'rejected', 'returned_at' => now()]);
+            $loan->asset->update(['status' => 'disponible']);
+        });
+
+        return back()->with('success', 'Prêt refusé.');
     }
 
     /**

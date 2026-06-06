@@ -56,7 +56,7 @@ class AssetController extends Controller
             'nom'   => 'required|string|max:255',
             'serie' => 'nullable|string|max:255',
             'etat'  => 'required|string|in:bon,endommagé,hors_service',
-            'status'=> 'required|string|in:disponible,preté,maintenance',
+            'status'=> 'required|string|in:disponible,preté,maintenance,en_attente_validation',
         ]);
 
         $validated['registered_by'] = $request->user()->id;
@@ -76,11 +76,15 @@ class AssetController extends Controller
      */
     public function update(Request $request, Asset $asset)
     {
+        if (!auth()->user()->hasRole('Directeur')) {
+            abort(403);
+        }
+
         $validated = $request->validate([
             'nom'   => 'required|string|max:255',
             'serie' => 'nullable|string|max:255',
             'etat'  => 'required|string|in:bon,endommagé,hors_service',
-            'status'=> 'required|string|in:disponible,preté,maintenance',
+            'status'=> 'required|string|in:disponible,preté,maintenance,en_attente_validation',
         ]);
 
         $asset->update($validated);
@@ -98,6 +102,10 @@ class AssetController extends Controller
      */
     public function destroy(Asset $asset)
     {
+        if (!auth()->user()->hasRole('Directeur')) {
+            abort(403);
+        }
+
         // Don't allow deletion if currently on loan
         if ($asset->status === 'preté' || $asset->activeLoan()->exists()) {
             return back()->with('error', 'Impossible de supprimer un matériel actuellement prêté.');

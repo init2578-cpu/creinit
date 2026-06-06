@@ -12,7 +12,8 @@ import {
     DevicePhoneMobileIcon,
     ArrowPathRoundedSquareIcon,
     ClipboardDocumentCheckIcon,
-    XMarkIcon
+    XMarkIcon,
+    CheckIcon,
 } from '@heroicons/vue/24/outline'
 
 const props = defineProps({
@@ -105,6 +106,18 @@ function viewSignature(loan) {
 function returnLoan(id) {
     if (confirm("Confirmer le retour de cet équipement ?")) {
         router.patch(route('loans.return', id))
+    }
+}
+
+function approveLoan(id) {
+    if (confirm("Approuver ce prêt ? Le matériel sera marqué comme prêté.")) {
+        router.patch(route('loans.approve', id))
+    }
+}
+
+function rejectLoan(id) {
+    if (confirm("Refuser ce prêt ?")) {
+        router.patch(route('loans.reject', id))
     }
 }
 </script>
@@ -249,7 +262,13 @@ function returnLoan(id) {
                                         <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">{{ new Date(loan.borrowed_at).toLocaleDateString('fr-FR') }}</p>
                                     </td>
                                     <td class="px-6 py-4 text-center">
-                                        <span v-if="loan.returned_at" class="px-3 py-1 bg-gray-100 text-gray-400 text-[10px] font-black uppercase tracking-widest rounded-lg">
+                                        <span v-if="loan.status === 'pending'" class="px-3 py-1 bg-amber-50 text-amber-600 text-[10px] font-black uppercase tracking-widest rounded-lg border border-amber-100">
+                                            En attente
+                                        </span>
+                                        <span v-else-if="loan.status === 'rejected'" class="px-3 py-1 bg-red-50 text-red-600 text-[10px] font-black uppercase tracking-widest rounded-lg border border-red-100">
+                                            Refusé
+                                        </span>
+                                        <span v-else-if="loan.returned_at" class="px-3 py-1 bg-gray-100 text-gray-400 text-[10px] font-black uppercase tracking-widest rounded-lg">
                                             Rendu
                                         </span>
                                         <span v-else class="px-3 py-1 bg-blue-50 text-blue-600 text-[10px] font-black uppercase tracking-widest rounded-lg border border-blue-100">
@@ -267,19 +286,51 @@ function returnLoan(id) {
                                             <PencilIcon class="h-4 w-4" />
                                             <span class="text-[10px] font-black uppercase tracking-widest">Signature</span>
                                         </button>
-                                        <button 
-                                            v-if="!loan.returned_at"
-                                            type="button"
-                                            @click="returnLoan(loan.id)"
-                                            class="p-2 text-blue-600 hover:bg-blue-50 rounded-xl transition flex items-center gap-1"
-                                            title="Marquer comme rendu"
-                                        >
-                                            <ArrowPathRoundedSquareIcon class="h-5 w-5" />
-                                            <span class="text-[10px] font-black uppercase tracking-widest">Rendre</span>
-                                        </button>
-                                        <span v-else class="text-[10px] text-gray-300 font-black uppercase tracking-widest italic px-2">
-                                            Terminé
-                                        </span>
+                                        <template v-if="loan.status === 'pending'">
+                                            <template v-if="$page.props.auth.user.roles.some(r => ['Directeur', 'Secrétaire'].includes(r))">
+                                                <button 
+                                                    type="button"
+                                                    @click="approveLoan(loan.id)"
+                                                    class="p-2 text-emerald-600 hover:bg-emerald-50 rounded-xl transition flex items-center gap-1"
+                                                    title="Approuver le prêt"
+                                                >
+                                                    <CheckIcon class="h-5 w-5" />
+                                                    <span class="text-[10px] font-black uppercase tracking-widest">Approuver</span>
+                                                </button>
+                                                <button 
+                                                    type="button"
+                                                    @click="rejectLoan(loan.id)"
+                                                    class="p-2 text-rose-600 hover:bg-rose-50 rounded-xl transition flex items-center gap-1"
+                                                    title="Refuser le prêt"
+                                                >
+                                                    <XMarkIcon class="h-5 w-5" />
+                                                    <span class="text-[10px] font-black uppercase tracking-widest">Refuser</span>
+                                                </button>
+                                            </template>
+                                            <span v-else class="text-[10px] text-gray-300 font-black uppercase tracking-widest italic px-2">
+                                                En attente...
+                                            </span>
+                                        </template>
+                                        <template v-else-if="loan.status === 'approved'">
+                                            <button 
+                                                v-if="!loan.returned_at"
+                                                type="button"
+                                                @click="returnLoan(loan.id)"
+                                                class="p-2 text-blue-600 hover:bg-blue-50 rounded-xl transition flex items-center gap-1"
+                                                title="Marquer comme rendu"
+                                            >
+                                                <ArrowPathRoundedSquareIcon class="h-5 w-5" />
+                                                <span class="text-[10px] font-black uppercase tracking-widest">Rendre</span>
+                                            </button>
+                                            <span v-else class="text-[10px] text-gray-300 font-black uppercase tracking-widest italic px-2">
+                                                Terminé
+                                            </span>
+                                        </template>
+                                        <template v-else-if="loan.status === 'rejected'">
+                                            <span class="text-[10px] text-gray-300 font-black uppercase tracking-widest italic px-2">
+                                                Terminé (Refusé)
+                                            </span>
+                                        </template>
                                     </td>
                                 </tr>
                                 <tr v-if="loans.data.length === 0">

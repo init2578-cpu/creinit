@@ -22,6 +22,7 @@ class Loan extends Model
         'borrowed_at',
         'returned_at',
         'signature_path',
+        'status',
     ];
 
     /**
@@ -44,7 +45,22 @@ class Loan extends Model
 
     public function isActive(): bool
     {
-        return $this->returned_at === null;
+        return $this->returned_at === null && $this->status === 'approved';
+    }
+
+    public function isPending(): bool
+    {
+        return $this->status === 'pending';
+    }
+
+    public function isApproved(): bool
+    {
+        return $this->status === 'approved';
+    }
+
+    public function isRejected(): bool
+    {
+        return $this->status === 'rejected';
     }
 
     // -----------------------------------------------------------------------

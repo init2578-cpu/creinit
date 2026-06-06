@@ -431,20 +431,22 @@ const getEtatClass = (etat) => {
                                     >
                                         <QrCodeIcon class="h-5 w-5" />
                                     </button>
-                                    <button 
-                                        @click="openEditModal(asset)"
-                                        class="p-2 bg-indigo-50 text-indigo-600 rounded-xl hover:bg-indigo-600 hover:text-white transition-all shadow-sm shadow-indigo-50"
-                                        title="Modifier"
-                                    >
-                                        <PencilSquareIcon class="h-5 w-5" />
-                                    </button>
-                                    <button 
-                                        @click="deleteAsset(asset.id)"
-                                        class="p-2 bg-red-50 text-red-600 rounded-xl hover:bg-red-600 hover:text-white transition-all shadow-sm shadow-red-50"
-                                        title="Supprimer"
-                                    >
-                                        <TrashIcon class="h-5 w-5" />
-                                    </button>
+                                    <template v-if="$page.props.auth.user.roles.includes('Directeur')">
+                                        <button 
+                                            @click="openEditModal(asset)"
+                                            class="p-2 bg-indigo-50 text-indigo-600 rounded-xl hover:bg-indigo-600 hover:text-white transition-all shadow-sm shadow-indigo-50"
+                                            title="Modifier"
+                                        >
+                                            <PencilSquareIcon class="h-5 w-5" />
+                                        </button>
+                                        <button 
+                                            @click="deleteAsset(asset.id)"
+                                            class="p-2 bg-red-50 text-red-600 rounded-xl hover:bg-red-600 hover:text-white transition-all shadow-sm shadow-red-50"
+                                            title="Supprimer"
+                                        >
+                                            <TrashIcon class="h-5 w-5" />
+                                        </button>
+                                    </template>
                                 </div>
                             </td>
                         </tr>

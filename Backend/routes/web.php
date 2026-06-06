@@ -332,6 +332,8 @@ Route::middleware(['auth'])->group(function (): void {
     Route::get('/loans', [LoanController::class, 'index'])->name('loans.index');
     Route::post('/loans/checkout', [LoanController::class, 'checkout'])->name('loans.checkout');
     Route::patch('/loans/{loan}/return', [LoanController::class, 'returnAsset'])->name('loans.return');
+    Route::patch('/loans/{loan}/approve', [LoanController::class, 'approve'])->name('loans.approve');
+    Route::patch('/loans/{loan}/reject', [LoanController::class, 'reject'])->name('loans.reject');
     Route::get('/loans/{loan}/signature', [LoanController::class, 'signature'])->name('loans.signature');
 
     // Nominations Creation
