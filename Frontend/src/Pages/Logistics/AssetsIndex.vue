@@ -401,12 +401,17 @@ const getEtatClass = (etat) => {
                                 </span>
                             </td>
                             <td class="px-8 py-5 text-center">
-                                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider"
-                                    :class="getStatusClass(asset.status)"
-                                >
-                                    <span class="h-1.5 w-1.5 rounded-full" :class="asset.status === 'disponible' ? 'bg-green-600' : (asset.status === 'preté' ? 'bg-blue-600' : 'bg-amber-600')"></span>
-                                    {{ asset.status }}
-                                </span>
+                                <div class="flex flex-col items-center gap-1">
+                                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider"
+                                        :class="getStatusClass(asset.status)"
+                                    >
+                                        <span class="h-1.5 w-1.5 rounded-full" :class="asset.status === 'disponible' ? 'bg-green-600' : (asset.status === 'preté' ? 'bg-blue-600' : 'bg-amber-600')"></span>
+                                        {{ asset.status }}
+                                    </span>
+                                    <p v-if="asset.status === 'preté' && asset.borrower" class="text-[10px] text-slate-500 font-bold max-w-[150px] truncate" :title="asset.borrower.name">
+                                        Par : {{ asset.borrower.name }}
+                                    </p>
+                                </div>
                             </td>
                             <td class="px-8 py-5 text-xs text-gray-400 font-bold">
                                 {{ asset.created_at }}

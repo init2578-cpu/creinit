@@ -21,15 +21,23 @@ class AssetController extends Controller
     public function index(): Response
     {
         return Inertia::render('Logistics/AssetsIndex', [
-            'assets' => Asset::orderBy('nom')->get()->map(fn($asset) => [
-                'id' => $asset->id,
-                'uuid' => $asset->uuid,
-                'nom' => $asset->nom,
-                'serie' => $asset->serie,
-                'etat' => $asset->etat,
-                'status' => $asset->status,
-                'created_at' => $asset->created_at->format('d/m/Y'),
-            ])
+            'assets' => Asset::with('activeLoan.user')->orderBy('nom')->get()->map(function($asset) {
+                $activeLoan = $asset->activeLoan->first();
+                return [
+                    'id' => $asset->id,
+                    'uuid' => $asset->uuid,
+                    'nom' => $asset->nom,
+                    'serie' => $asset->serie,
+                    'etat' => $asset->etat,
+                    'status' => $asset->status,
+                    'borrower' => $activeLoan && $activeLoan->user ? [
+                        'name' => $activeLoan->user->name,
+                        'email' => $activeLoan->user->email,
+                        'telephone' => $activeLoan->user->telephone,
+                    ] : null,
+                    'created_at' => $asset->created_at->format('d/m/Y'),
+                ];
+            })
         ]);
     }
 
