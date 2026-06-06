@@ -135,6 +135,127 @@ function printQrCode() {
     `)
     printWindow.document.close()
 }
+function printAllQrCodes() {
+    if (!props.assets || props.assets.length === 0) return
+    const printWindow = window.open('', '_blank')
+    
+    let cardsHtml = ''
+    props.assets.forEach(asset => {
+        cardsHtml += `
+            <div class="card">
+                <div class="qr-container">
+                    <img class="qr" src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${asset.uuid}" />
+                    <div class="logo-overlay">
+                        <img src="/images/logo-cre.png" alt="CRE Logo" />
+                    </div>
+                </div>
+                <h1>${asset.nom}</h1>
+                <p>UUID: ${asset.uuid.substring(0, 8).toUpperCase()}</p>
+                ${asset.serie ? `<div class="serial">S/N: ${asset.serie}</div>` : ''}
+            </div>
+        `
+    })
+
+    printWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+            <head>
+                <title>QR Codes - Planche d'impression</title>
+                <style>
+                    body {
+                        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                        margin: 20px;
+                        color: #1e293b;
+                        background-color: #fff;
+                    }
+                    .grid {
+                        display: grid;
+                        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+                        gap: 20px;
+                    }
+                    .card {
+                        border: 2px solid #e2e8f0;
+                        border-radius: 1rem;
+                        padding: 1.5rem;
+                        text-align: center;
+                        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+                        page-break-inside: avoid;
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        justify-content: center;
+                    }
+                    .qr-container {
+                        position: relative;
+                        display: inline-block;
+                    }
+                    img.qr {
+                        width: 130px;
+                        height: 130px;
+                        border: 3px solid #f1f5f9;
+                        border-radius: 0.75rem;
+                    }
+                    .logo-overlay {
+                        position: absolute;
+                        top: 50%;
+                        left: 50%;
+                        transform: translate(-50%, -50%);
+                        background-color: white;
+                        padding: 3px;
+                        border-radius: 6px;
+                        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                        border: 1px solid #e2e8f0;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                    }
+                    .logo-overlay img {
+                        width: 26px;
+                        height: 26px;
+                        object-fit: contain;
+                        border-radius: 2px;
+                    }
+                    h1 {
+                        margin-top: 1rem;
+                        margin-bottom: 0.25rem;
+                        font-size: 0.95rem;
+                        font-weight: 800;
+                        word-break: break-word;
+                    }
+                    p {
+                        font-size: 0.75rem;
+                        color: #64748b;
+                        margin: 0.15rem 0;
+                        font-weight: 500;
+                    }
+                    .serial {
+                        display: inline-block;
+                        background-color: #f1f5f9;
+                        padding: 0.15rem 0.5rem;
+                        border-radius: 0.35rem;
+                        font-size: 0.65rem;
+                        font-weight: 700;
+                        margin-top: 0.35rem;
+                    }
+                    @media print {
+                        body {
+                            margin: 0;
+                        }
+                        .grid {
+                            gap: 15px;
+                        }
+                    }
+                </style>
+            </head>
+            <body onload="window.print(); window.close();">
+                <div class="grid">
+                    ${cardsHtml}
+                </div>
+            </body>
+        </html>
+    `)
+    printWindow.document.close()
+}
 
 const form = useForm({
     nom: '',
@@ -214,13 +335,23 @@ const getEtatClass = (etat) => {
                     <h1 class="text-3xl font-black text-gray-900 tracking-tight">Gestion du Matériel</h1>
                     <p class="text-gray-500 mt-1">Inventaire physique et suivi de l'état des équipements.</p>
                 </div>
-                <button 
-                    @click="openCreateModal"
-                    class="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-2xl font-bold shadow-lg shadow-indigo-200 hover:bg-indigo-700 hover:shadow-indigo-300 transition-all group active:scale-95"
-                >
-                    <PlusIcon class="h-5 w-5 group-hover:rotate-90 transition-transform duration-300" />
-                    Nouveau Matériel
-                </button>
+                <div class="flex items-center gap-3">
+                    <button 
+                        v-if="assets && assets.length > 0"
+                        @click="printAllQrCodes"
+                        class="flex items-center gap-2 px-6 py-3 bg-white text-slate-700 border border-slate-200 rounded-2xl font-bold hover:bg-slate-50 transition-all active:scale-95 shadow-sm"
+                    >
+                        <QrCodeIcon class="h-5 w-5 text-slate-500" />
+                        Imprimer tous les QR Codes
+                    </button>
+                    <button 
+                        @click="openCreateModal"
+                        class="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-2xl font-bold shadow-lg shadow-indigo-200 hover:bg-indigo-700 hover:shadow-indigo-300 transition-all group active:scale-95"
+                    >
+                        <PlusIcon class="h-5 w-5 group-hover:rotate-90 transition-transform duration-300" />
+                        Nouveau Matériel
+                    </button>
+                </div>
             </header>
 
             <!-- Table of assets -->
