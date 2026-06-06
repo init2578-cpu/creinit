@@ -92,4 +92,24 @@ class LoanController extends Controller
             ->back()
             ->with('success', 'Équipement retourné avec succès.');
     }
+
+    /**
+     * View the signature of a loan.
+     */
+    public function signature(Loan $loan)
+    {
+        // Only allow staff members (Directeur, Secrétaire) to view signatures
+        if (!auth()->user()->hasRole(['Directeur', 'Secrétaire'])) {
+            abort(403);
+        }
+
+        if (!$loan->signature_path || !\Illuminate\Support\Facades\Storage::disk('local')->exists($loan->signature_path)) {
+            abort(404);
+        }
+
+        return response()->file(
+            \Illuminate\Support\Facades\Storage::disk('local')->path($loan->signature_path),
+            ['Content-Type' => 'image/png']
+        );
+    }
 }

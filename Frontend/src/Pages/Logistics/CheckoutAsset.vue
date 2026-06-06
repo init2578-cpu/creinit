@@ -11,7 +11,8 @@ import {
     CheckBadgeIcon,
     DevicePhoneMobileIcon,
     ArrowPathRoundedSquareIcon,
-    ClipboardDocumentCheckIcon
+    ClipboardDocumentCheckIcon,
+    XMarkIcon
 } from '@heroicons/vue/24/outline'
 
 const props = defineProps({
@@ -91,6 +92,14 @@ function submitCheckout() {
             signaturePad.clear()
         }
     })
+}
+
+const selectedSignatureUrl = ref(null)
+
+function viewSignature(loan) {
+    if (loan.signature_path) {
+        selectedSignatureUrl.value = route('loans.signature', loan.id)
+    }
 }
 
 function returnLoan(id) {
@@ -247,17 +256,28 @@ function returnLoan(id) {
                                             En cours
                                         </span>
                                     </td>
-                                    <td class="px-6 py-4 text-right">
+                                    <td class="px-6 py-4 text-right flex items-center justify-end gap-2">
+                                        <button 
+                                            v-if="loan.signature_path"
+                                            type="button"
+                                            @click="viewSignature(loan)"
+                                            class="p-2 text-slate-500 hover:bg-slate-100 rounded-xl transition flex items-center gap-1"
+                                            title="Voir la signature"
+                                        >
+                                            <PencilIcon class="h-4 w-4" />
+                                            <span class="text-[10px] font-black uppercase tracking-widest">Signature</span>
+                                        </button>
                                         <button 
                                             v-if="!loan.returned_at"
+                                            type="button"
                                             @click="returnLoan(loan.id)"
-                                            class="p-2 text-blue-600 hover:bg-blue-50 rounded-xl transition flex items-center gap-1 ml-auto"
+                                            class="p-2 text-blue-600 hover:bg-blue-50 rounded-xl transition flex items-center gap-1"
                                             title="Marquer comme rendu"
                                         >
                                             <ArrowPathRoundedSquareIcon class="h-5 w-5" />
                                             <span class="text-[10px] font-black uppercase tracking-widest">Rendre</span>
                                         </button>
-                                        <span v-else class="text-[10px] text-gray-300 font-black uppercase tracking-widest italic">
+                                        <span v-else class="text-[10px] text-gray-300 font-black uppercase tracking-widest italic px-2">
                                             Terminé
                                         </span>
                                     </td>
@@ -269,6 +289,42 @@ function returnLoan(id) {
                                 </tr>
                             </tbody>
                         </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal de Visualisation de Signature -->
+            <div v-if="selectedSignatureUrl" class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+                <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                    <div class="fixed inset-0 bg-gray-500/75 backdrop-blur-sm transition-opacity" @click="selectedSignatureUrl = null"></div>
+
+                    <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+                    <div class="relative inline-block align-middle bg-white rounded-3xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:max-w-lg sm:w-full border border-gray-100">
+                        <div class="bg-white px-6 pt-6 pb-4 sm:p-8">
+                            <div class="flex items-center justify-between border-b border-gray-50 pb-4 mb-6">
+                                <h3 class="text-lg font-black text-gray-900 flex items-center gap-2">
+                                    <PencilIcon class="h-5 w-5 text-indigo-600" />
+                                    Signature de l'emprunteur
+                                </h3>
+                                <button @click="selectedSignatureUrl = null" class="p-1.5 hover:bg-gray-100 rounded-lg transition text-gray-400 hover:text-gray-600">
+                                    <XMarkIcon class="h-5 w-5" />
+                                </button>
+                            </div>
+                            
+                            <div class="bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 p-8 flex items-center justify-center">
+                                <img :src="selectedSignatureUrl" alt="Signature" class="max-h-48 object-contain" />
+                            </div>
+                        </div>
+                        <div class="bg-gray-50 px-6 py-4 sm:px-8 sm:flex sm:flex-row-reverse border-t border-gray-100">
+                            <button 
+                                type="button" 
+                                @click="selectedSignatureUrl = null" 
+                                class="w-full inline-flex justify-center rounded-xl border border-gray-200 shadow-sm px-4 py-2 bg-white text-sm font-bold text-gray-700 hover:bg-gray-50 focus:outline-none sm:mt-0 sm:w-auto"
+                            >
+                                Fermer
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
