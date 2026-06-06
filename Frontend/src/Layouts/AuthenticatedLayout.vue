@@ -1,6 +1,7 @@
 <script setup>
 import { ref, watch, onMounted } from 'vue'
 import { usePage, router } from '@inertiajs/vue3'
+import { usePasskeyRegister } from '@laravel/passkeys/vue'
 import Sidebar from '@/Components/Sidebar.vue'
 import Topbar from '@/Components/Topbar.vue'
 import AlertModal from '@/Components/AlertModal.vue'
@@ -38,6 +39,52 @@ function closeCelebration() {
     celebrationState.value.show = false
 }
 
+const showPasskeyPrompt = ref(false)
+
+const { register, isLoading: registerLoading, isSupported: isPasskeySupported } = usePasskeyRegister({
+    onSuccess: () => {
+        showPasskeyPrompt.value = false
+        localStorage.setItem('dismiss_passkey_prompt', 'true')
+        if (page.props.auth?.user) {
+            page.props.auth.user.has_passkeys = true
+        }
+        window.platformAlert?.("Connexion par empreinte digitale configurée avec succès !", "success")
+    },
+    onError: (err) => {
+        showPasskeyPrompt.value = false
+        window.platformAlert?.("Impossible de configurer l'appareil : " + err.message, "error")
+    }
+})
+
+function getDeviceName() {
+    const ua = navigator.userAgent
+    let browserName = "Navigateur"
+    let osName = "Appareil"
+    
+    if (ua.includes("Firefox")) browserName = "Firefox"
+    else if (ua.includes("Chrome")) browserName = "Chrome"
+    else if (ua.includes("Safari") && !ua.includes("Chrome")) browserName = "Safari"
+    else if (ua.includes("Edge")) browserName = "Edge"
+    
+    if (ua.includes("Windows")) osName = "PC Windows"
+    else if (ua.includes("Macintosh")) osName = "Mac"
+    else if (ua.includes("Linux")) osName = "PC Linux"
+    else if (ua.includes("Android")) osName = "Android"
+    else if (ua.includes("iPhone") || ua.includes("iPad")) osName = "iPhone/iPad"
+    
+    return `${osName} (${browserName})`
+}
+
+function handleRegisterPasskey() {
+    const name = getDeviceName()
+    register(name)
+}
+
+function dismissPasskeyPrompt() {
+    showPasskeyPrompt.value = false
+    localStorage.setItem('dismiss_passkey_prompt', 'true')
+}
+
 function markAsCelebrated(uuid) {
     if (!uuid) return
     celebratedIds.value.add(uuid)
@@ -55,6 +102,18 @@ onMounted(() => {
             message: message
         }
     }
+
+    // Proactively prompt user to configure passkeys if supported and not yet done
+    setTimeout(() => {
+        if (
+            page.props.auth?.user && 
+            !page.props.auth.user.has_passkeys && 
+            isPasskeySupported.value && 
+            localStorage.getItem('dismiss_passkey_prompt') !== 'true'
+        ) {
+            showPasskeyPrompt.value = true
+        }
+    }, 3000)
 })
 
 // Watch for celebratory notifications
@@ -133,6 +192,18 @@ watch(() => page.props.flash, (flash) => {
                 :message="celebrationState.message"
                 :certificate-uuid="celebrationState.uuid"
                 @close="closeCelebration"
+            />
+
+            <!-- Proactive Passkey Registration Prompt -->
+            <ConfirmModal
+                :is-open="showPasskeyPrompt"
+                type="info"
+                title="Activer l'empreinte ?"
+                message="Activer la connexion par empreinte digitale / FaceID sur cet appareil pour vous connecter en un clic la prochaine fois."
+                confirm-text="Activer"
+                cancel-text="Plus tard"
+                @confirm="handleRegisterPasskey"
+                @cancel="dismissPasskeyPrompt"
             />
 
             <!-- Page Management -->

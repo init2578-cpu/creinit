@@ -63,11 +63,8 @@ function updatePhotoPreview() {
     reader.readAsDataURL(photo)
 }
 
-const deviceName = ref('')
-
 const { register, isLoading: registerLoading, isSupported: isPasskeySupported, error: registerError } = usePasskeyRegister({
     onSuccess: () => {
-        deviceName.value = ''
         router.reload({ only: ['passkeys'] })
         if (window.platformAlert) {
             window.platformAlert("Empreinte digitale / Clé d'accès ajoutée avec succès !", "success")
@@ -84,8 +81,27 @@ const { register, isLoading: registerLoading, isSupported: isPasskeySupported, e
     }
 })
 
+function getDeviceName() {
+    const ua = navigator.userAgent
+    let browserName = "Navigateur"
+    let osName = "Appareil"
+    
+    if (ua.includes("Firefox")) browserName = "Firefox"
+    else if (ua.includes("Chrome")) browserName = "Chrome"
+    else if (ua.includes("Safari") && !ua.includes("Chrome")) browserName = "Safari"
+    else if (ua.includes("Edge")) browserName = "Edge"
+    
+    if (ua.includes("Windows")) osName = "PC Windows"
+    else if (ua.includes("Macintosh")) osName = "Mac"
+    else if (ua.includes("Linux")) osName = "PC Linux"
+    else if (ua.includes("Android")) osName = "Android"
+    else if (ua.includes("iPhone") || ua.includes("iPad")) osName = "iPhone/iPad"
+    
+    return `${osName} (${browserName})`
+}
+
 function handleRegister() {
-    const name = deviceName.value.trim() || "Mon appareil"
+    const name = getDeviceName()
     register(name)
 }
 
@@ -267,35 +283,29 @@ function deletePasskey(id) {
                     </div>
                 </div>
 
-                <!-- Register New Passkey form -->
-                <div v-if="isPasskeySupported" class="bg-gray-50 p-6 rounded-2xl border border-gray-100">
-                    <h3 class="text-xs font-black text-gray-400 uppercase tracking-widest mb-4">Enregistrer un nouvel appareil</h3>
-                    
-                    <div class="flex flex-col md:flex-row gap-4 items-end">
-                        <div class="flex-grow w-full">
-                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Nom de l'appareil (ex: Mon Téléphone, MacBook, etc.)</label>
-                            <input 
-                                v-model="deviceName" 
-                                type="text" 
-                                placeholder="ex: Mon Téléphone Personnel" 
-                                class="w-full bg-white border-gray-200 rounded-xl font-bold py-3 px-4 focus:ring-2 focus:ring-indigo-600 text-sm transition"
-                                :disabled="registerLoading"
-                            />
-                        </div>
-                        <button 
-                            type="button" 
-                            @click="handleRegister"
-                            :disabled="registerLoading"
-                            class="w-full md:w-auto px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-black text-sm shadow-sm transition disabled:opacity-50 flex items-center justify-center gap-2"
-                        >
-                            <span v-if="registerLoading">Configuration...</span>
-                            <span v-else>Enregistrer cet appareil</span>
-                        </button>
+                <!-- Register New Passkey button -->
+                <div v-if="isPasskeySupported" class="bg-indigo-50/50 p-6 rounded-2xl border border-indigo-100 flex flex-col md:flex-row items-center justify-between gap-6">
+                    <div>
+                        <h3 class="font-bold text-indigo-950 text-sm">Configurer cet appareil</h3>
+                        <p class="text-xs text-indigo-600 font-medium">Associez cet appareil à votre compte en un clic pour vos prochaines connexions.</p>
                     </div>
-                    <p v-if="registerError" class="mt-2 text-xs text-red-600 font-bold uppercase tracking-widest">
-                        {{ registerError }}
-                    </p>
+                    
+                    <button 
+                        type="button" 
+                        @click="handleRegister"
+                        :disabled="registerLoading"
+                        class="w-full md:w-auto px-6 py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-black text-sm shadow-xl shadow-indigo-100 transition disabled:opacity-50 flex items-center justify-center gap-2"
+                    >
+                        <span v-if="registerLoading">Configuration en cours...</span>
+                        <span v-else class="flex items-center gap-2">
+                            <FingerPrintIcon class="h-5 w-5" />
+                            Activer l'empreinte digitale ici
+                        </span>
+                    </button>
                 </div>
+                <p v-if="registerError" class="mt-2 text-xs text-red-600 font-bold uppercase tracking-widest text-center">
+                    {{ registerError }}
+                </p>
             </div>
 
             <!-- Danger Zone -->
