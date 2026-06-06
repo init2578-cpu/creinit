@@ -230,6 +230,7 @@ function returnLoan(id) {
                                 <tr v-for="loan in loans.data" :key="loan.id" class="hover:bg-gray-50/50 transition">
                                     <td class="px-6 py-4">
                                         <p class="text-sm font-bold text-gray-900">{{ loan.user.name }}</p>
+                                        <p v-if="loan.giver" class="text-[10px] text-gray-400 font-bold mt-0.5">Par : {{ loan.giver.name }}</p>
                                     </td>
                                     <td class="px-6 py-4">
                                         <p class="text-xs font-bold text-gray-600">{{ loan.asset.nom }}</p>

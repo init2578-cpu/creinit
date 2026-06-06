@@ -24,7 +24,7 @@ class LoanController extends Controller
      */
     public function index(): Response
     {
-        $loans = Loan::with(['asset', 'user'])
+        $loans = Loan::with(['asset', 'user', 'giver'])
             ->orderByDesc('borrowed_at')
             ->paginate(20);
 
@@ -46,7 +46,7 @@ class LoanController extends Controller
         /** @var \App\Models\User $user */
         $user = $request->user();
 
-        DB::transaction(function () use ($request): void {
+        DB::transaction(function () use ($request, $user): void {
             // Store the signature
             $signaturePath = $this->signatureService->store(
                 $request->validated('signature'),
@@ -56,6 +56,7 @@ class LoanController extends Controller
             Loan::create([
                 'asset_id'       => $request->validated('asset_id'),
                 'user_id'        => $request->validated('user_id'),
+                'giver_id'       => $user->id,
                 'borrowed_at'    => now(),
                 'signature_path' => $signaturePath,
             ]);

@@ -408,8 +408,11 @@ const getEtatClass = (etat) => {
                                         <span class="h-1.5 w-1.5 rounded-full" :class="asset.status === 'disponible' ? 'bg-green-600' : (asset.status === 'preté' ? 'bg-blue-600' : 'bg-amber-600')"></span>
                                         {{ asset.status }}
                                     </span>
-                                    <p v-if="asset.status === 'preté' && asset.borrower" class="text-[10px] text-slate-500 font-bold max-w-[150px] truncate" :title="asset.borrower.name">
+                                    <p v-if="asset.status === 'preté' && asset.borrower" class="text-[10px] text-slate-500 font-bold max-w-[150px] truncate" :title="`Emprunteur: ${asset.borrower.name}`">
                                         Par : {{ asset.borrower.name }}
+                                    </p>
+                                    <p v-if="asset.status === 'preté' && asset.giver" class="text-[9px] text-slate-400 font-medium max-w-[150px] truncate" :title="`Donné par: ${asset.giver.name}`">
+                                        Donné par : {{ asset.giver.name }}
                                     </p>
                                 </div>
                             </td>

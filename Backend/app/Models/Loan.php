@@ -18,6 +18,7 @@ class Loan extends Model
     protected $fillable = [
         'asset_id',
         'user_id',
+        'giver_id',
         'borrowed_at',
         'returned_at',
         'signature_path',
@@ -31,6 +32,7 @@ class Loan extends Model
         return [
             'asset_id'    => 'integer',
             'user_id'     => 'integer',
+            'giver_id'    => 'integer',
             'borrowed_at' => 'datetime',
             'returned_at' => 'datetime',
         ];
@@ -57,5 +59,10 @@ class Loan extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function giver(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'giver_id');
     }
 }
