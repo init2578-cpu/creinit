@@ -65,11 +65,35 @@ function printQrCode() {
                         max-width: 320px;
                         box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
                     }
-                    img {
+                    .qr-container {
+                        position: relative;
+                        display: inline-block;
+                    }
+                    img.qr {
                         width: 220px;
                         height: 220px;
                         border: 4px solid #f1f5f9;
                         border-radius: 1rem;
+                    }
+                    .logo-overlay {
+                        position: absolute;
+                        top: 50%;
+                        left: 50%;
+                        transform: translate(-50%, -50%);
+                        background-color: white;
+                        padding: 4px;
+                        border-radius: 8px;
+                        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+                        border: 1px solid #e2e8f0;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                    }
+                    .logo-overlay img {
+                        width: 36px;
+                        height: 36px;
+                        object-fit: contain;
+                        border-radius: 4px;
                     }
                     h1 {
                         margin-top: 1.5rem;
@@ -96,7 +120,12 @@ function printQrCode() {
             </head>
             <body onload="window.print(); window.close();">
                 <div class="card">
-                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${asset.uuid}" />
+                    <div class="qr-container">
+                        <img class="qr" src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${asset.uuid}" />
+                        <div class="logo-overlay">
+                            <img src="/images/logo-cre.png" alt="CRE Logo" />
+                        </div>
+                    </div>
                     <h1>${asset.nom}</h1>
                     <p>UUID: ${asset.uuid.substring(0, 8).toUpperCase()}</p>
                     ${asset.serie ? `<div class="serial">S/N: ${asset.serie}</div>` : ''}
@@ -373,12 +402,17 @@ const getEtatClass = (etat) => {
                 <p class="text-gray-500 text-sm mb-6">Collez ce code sur l'équipement pour l'identifier facilement.</p>
 
                 <div v-if="selectedAssetForQr" class="space-y-6">
-                    <div class="p-4 bg-slate-50 rounded-[2rem] inline-block">
+                    <div class="p-4 bg-slate-50 rounded-[2rem] inline-block relative">
                         <img 
                             :src="`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${selectedAssetForQr.uuid}`" 
                             :alt="selectedAssetForQr.nom" 
                             class="w-56 h-56 mx-auto border-4 border-white rounded-2xl shadow-sm"
                         >
+                        <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+                            <div class="bg-white p-1 rounded-xl shadow-md border border-slate-100 flex items-center justify-center">
+                                <img src="/images/logo-cre.png" alt="CRE Logo" class="w-10 h-10 object-contain rounded-lg">
+                            </div>
+                        </div>
                     </div>
 
                     <div>
