@@ -18,6 +18,10 @@ git clean -fd
 echo "🐘 Mise à jour du Backend (Laravel)..."
 cd "$BACKEND_DIR"
 
+# Installation des dépendances Composer
+echo "📦 Installation des dépendances Composer..."
+composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev
+
 # Nettoyage des caches existants
 php artisan optimize:clear
 
