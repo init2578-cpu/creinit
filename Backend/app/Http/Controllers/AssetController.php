@@ -20,16 +20,29 @@ class AssetController extends Controller
      */
     public function index(): Response
     {
+        $query = Asset::with(['activeLoan.user', 'activeLoan.giver', 'registeredBy'])->orderBy('nom');
+        
+        if (!auth()->user()->hasRole('Directeur')) {
+            $query->where('is_hidden', false)
+                  ->where(function ($q) {
+                      $q->where('is_approved', true)
+                        ->orWhere('registered_by', auth()->id());
+                  });
+        }
+
         return Inertia::render('Logistics/AssetsIndex', [
-            'assets' => Asset::with(['activeLoan.user', 'activeLoan.giver', 'registeredBy'])->orderBy('nom')->get()->map(function($asset) {
+            'assets' => $query->get()->map(function($asset) {
                 $activeLoan = $asset->activeLoan->first();
                 return [
                     'id' => $asset->id,
                     'uuid' => $asset->uuid,
                     'nom' => $asset->nom,
                     'serie' => $asset->serie,
+                    'emplacement' => $asset->emplacement,
                     'etat' => $asset->etat,
                     'status' => $asset->status,
+                    'is_hidden' => $asset->is_hidden,
+                    'is_approved' => $asset->is_approved,
                     'borrower' => $activeLoan && $activeLoan->user ? [
                         'name' => $activeLoan->user->name,
                         'email' => $activeLoan->user->email,
@@ -55,11 +68,14 @@ class AssetController extends Controller
         $validated = $request->validate([
             'nom'   => 'required|string|max:255',
             'serie' => 'nullable|string|max:255',
+            'emplacement' => 'required|string|max:255',
             'etat'  => 'required|string|in:bon,endommagé,hors_service',
             'status'=> 'required|string|in:disponible,preté,maintenance,en_attente_validation',
+            'is_hidden' => 'boolean',
         ]);
 
         $validated['registered_by'] = $request->user()->id;
+        $validated['is_approved'] = $request->user()->hasRole('Directeur');
 
         $asset = Asset::create($validated);
 
@@ -83,8 +99,10 @@ class AssetController extends Controller
         $validated = $request->validate([
             'nom'   => 'required|string|max:255',
             'serie' => 'nullable|string|max:255',
+            'emplacement' => 'required|string|max:255',
             'etat'  => 'required|string|in:bon,endommagé,hors_service',
             'status'=> 'required|string|in:disponible,preté,maintenance,en_attente_validation',
+            'is_hidden' => 'boolean',
         ]);
 
         $asset->update($validated);
@@ -117,5 +135,19 @@ class AssetController extends Controller
         $asset->delete();
 
         return back()->with('success', 'Matériel supprimé.');
+    }
+
+    /**
+     * Approve a newly created asset.
+     */
+    public function approve(Asset $asset)
+    {
+        if (!auth()->user()->hasRole('Directeur')) {
+            abort(403);
+        }
+
+        $asset->update(['is_approved' => true]);
+
+        return back()->with('success', 'Le matériel a été approuvé.');
     }
 }

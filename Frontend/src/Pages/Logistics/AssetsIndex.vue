@@ -13,7 +13,11 @@ import {
     QrCodeIcon,
     CheckCircleIcon,
     ExclamationCircleIcon,
-    NoSymbolIcon
+    NoSymbolIcon,
+    EyeSlashIcon,
+    CheckIcon,
+    MapPinIcon,
+    ClockIcon
 } from '@heroicons/vue/24/outline'
 
 const props = defineProps({
@@ -258,8 +262,10 @@ function printAllQrCodes() {
 const form = useForm({
     nom: '',
     serie: '',
+    emplacement: '',
     etat: 'bon',
-    status: 'disponible'
+    status: 'disponible',
+    is_hidden: false
 })
 
 function openCreateModal() {
@@ -276,8 +282,10 @@ function openEditModal(asset) {
     form.clearErrors()
     form.nom = asset.nom
     form.serie = asset.serie || ''
+    form.emplacement = asset.emplacement || ''
     form.etat = asset.etat
     form.status = asset.status
+    form.is_hidden = asset.is_hidden
     isModalOpen.value = true
 }
 
@@ -300,6 +308,12 @@ function submit() {
 function deleteAsset(id) {
     if (confirm("Êtes-vous sûr de vouloir supprimer ce matériel ? Cette action est irréversible.")) {
         router.delete(route('assets.destroy', id))
+    }
+}
+
+function approveAsset(id) {
+    if (confirm("Voulez-vous valider l'ajout de ce matériel dans l'inventaire ?")) {
+        router.patch(route('assets.approve', id))
     }
 }
 
@@ -369,12 +383,20 @@ const getEtatClass = (etat) => {
                         <tr v-for="asset in assets" :key="asset.id" class="hover:bg-gray-50/50 transition-colors group">
                             <td class="px-8 py-5">
                                 <div class="flex items-center gap-4">
-                                    <div class="h-12 w-12 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center">
+                                    <div class="h-12 w-12 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center relative">
                                         <ArchiveBoxIcon class="h-6 w-6" />
+                                        <div v-if="asset.is_hidden" class="absolute -top-2 -right-2 bg-gray-900 text-white p-1 rounded-full shadow-md" title="Matériel masqué">
+                                            <EyeSlashIcon class="h-3 w-3" />
+                                        </div>
                                     </div>
                                     <div>
-                                        <p class="font-black text-gray-900 leading-tight">{{ asset.nom }}</p>
+                                        <p class="font-black text-gray-900 leading-tight flex items-center gap-2">
+                                            {{ asset.nom }}
+                                            <span v-if="asset.is_hidden" class="px-1.5 py-0.5 bg-gray-100 text-gray-500 rounded text-[9px] uppercase tracking-wider">Masqué</span>
+                                            <span v-if="!asset.is_approved" class="px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded text-[9px] uppercase tracking-wider border border-amber-200">En attente</span>
+                                        </p>
                                         <button 
+                                            v-if="asset.is_approved"
                                             @click="openQrModal(asset)"
                                             class="flex items-center gap-1.5 mt-1 text-slate-400 hover:text-indigo-600 transition group/qr"
                                             title="Afficher le QR Code"
@@ -382,13 +404,23 @@ const getEtatClass = (etat) => {
                                             <QrCodeIcon class="h-3.5 w-3.5" />
                                             <span class="text-[10px] font-mono font-bold uppercase underline decoration-dashed">{{ asset.uuid.substring(0, 8) }}</span>
                                         </button>
+                                        <div v-else class="flex items-center gap-1.5 mt-1 text-amber-500">
+                                            <ClockIcon class="h-3.5 w-3.5" />
+                                            <span class="text-[10px] font-bold uppercase tracking-widest">En attente de validation</span>
+                                        </div>
                                     </div>
                                 </div>
                             </td>
                             <td class="px-8 py-5">
-                                <span class="px-2.5 py-1 bg-gray-100 text-gray-600 rounded-lg text-xs font-black tracking-tight border border-gray-200">
-                                    {{ asset.serie || 'N/A' }}
-                                </span>
+                                <div class="flex flex-col gap-1">
+                                    <span class="px-2.5 py-1 bg-gray-100 text-gray-600 rounded-lg text-xs font-black tracking-tight border border-gray-200 inline-block w-max">
+                                        {{ asset.serie || 'N/A' }}
+                                    </span>
+                                    <div class="flex items-center gap-1 mt-1 text-slate-500" v-if="asset.emplacement">
+                                        <MapPinIcon class="h-3.5 w-3.5" />
+                                        <span class="text-[10px] font-bold">{{ asset.emplacement }}</span>
+                                    </div>
+                                </div>
                             </td>
                             <td class="px-8 py-5 text-center">
                                 <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border"
@@ -424,28 +456,46 @@ const getEtatClass = (etat) => {
                             </td>
                             <td class="px-8 py-5 text-right">
                                 <div class="flex justify-end gap-2 translate-x-4 opacity-0 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300">
-                                    <button 
-                                        @click="openQrModal(asset)"
-                                        class="p-2 bg-indigo-50 text-indigo-600 rounded-xl hover:bg-indigo-600 hover:text-white transition-all shadow-sm shadow-indigo-50"
-                                        title="Voir le QR Code"
-                                    >
-                                        <QrCodeIcon class="h-5 w-5" />
-                                    </button>
-                                    <template v-if="$page.props.auth.user.roles.includes('Directeur')">
+                                    <template v-if="!asset.is_approved && $page.props.auth.user.roles.includes('Directeur')">
                                         <button 
-                                            @click="openEditModal(asset)"
-                                            class="p-2 bg-indigo-50 text-indigo-600 rounded-xl hover:bg-indigo-600 hover:text-white transition-all shadow-sm shadow-indigo-50"
-                                            title="Modifier"
+                                            @click="approveAsset(asset.id)"
+                                            class="p-2 bg-emerald-50 text-emerald-600 rounded-xl hover:bg-emerald-600 hover:text-white transition-all shadow-sm shadow-emerald-50"
+                                            title="Approuver l'ajout"
                                         >
-                                            <PencilSquareIcon class="h-5 w-5" />
+                                            <CheckIcon class="h-5 w-5" />
                                         </button>
                                         <button 
                                             @click="deleteAsset(asset.id)"
                                             class="p-2 bg-red-50 text-red-600 rounded-xl hover:bg-red-600 hover:text-white transition-all shadow-sm shadow-red-50"
-                                            title="Supprimer"
+                                            title="Refuser et supprimer"
                                         >
                                             <TrashIcon class="h-5 w-5" />
                                         </button>
+                                    </template>
+                                    <template v-else-if="asset.is_approved">
+                                        <button 
+                                            @click="openQrModal(asset)"
+                                            class="p-2 bg-indigo-50 text-indigo-600 rounded-xl hover:bg-indigo-600 hover:text-white transition-all shadow-sm shadow-indigo-50"
+                                            title="Voir le QR Code"
+                                        >
+                                            <QrCodeIcon class="h-5 w-5" />
+                                        </button>
+                                        <template v-if="$page.props.auth.user.roles.includes('Directeur')">
+                                            <button 
+                                                @click="openEditModal(asset)"
+                                                class="p-2 bg-indigo-50 text-indigo-600 rounded-xl hover:bg-indigo-600 hover:text-white transition-all shadow-sm shadow-indigo-50"
+                                                title="Modifier"
+                                            >
+                                                <PencilSquareIcon class="h-5 w-5" />
+                                            </button>
+                                            <button 
+                                                @click="deleteAsset(asset.id)"
+                                                class="p-2 bg-red-50 text-red-600 rounded-xl hover:bg-red-600 hover:text-white transition-all shadow-sm shadow-red-50"
+                                                title="Supprimer"
+                                            >
+                                                <TrashIcon class="h-5 w-5" />
+                                            </button>
+                                        </template>
                                     </template>
                                 </div>
                             </td>
@@ -483,12 +533,24 @@ const getEtatClass = (etat) => {
                         <p v-if="form.errors.nom" class="text-xs text-red-500 mt-1.5 font-bold ml-1">{{ form.errors.nom }}</p>
                     </div>
 
-                    <!-- Série -->
-                    <div>
-                        <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Numéro de Série / Tag</label>
-                        <div class="relative">
-                            <IdentificationIcon class="h-5 w-5 absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
-                            <input v-model="form.serie" type="text" placeholder="Ex: SN-2024-001" class="w-full pl-12 pr-6 py-4 bg-gray-50 border-0 rounded-[1.25rem] font-bold focus:ring-2 focus:ring-indigo-600 transition-all text-sm">
+                    <div class="grid grid-cols-2 gap-4">
+                        <!-- Série -->
+                        <div>
+                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Numéro de Série / Tag</label>
+                            <div class="relative">
+                                <IdentificationIcon class="h-5 w-5 absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+                                <input v-model="form.serie" type="text" placeholder="Ex: SN-2024-001" class="w-full pl-12 pr-6 py-4 bg-gray-50 border-0 rounded-[1.25rem] font-bold focus:ring-2 focus:ring-indigo-600 transition-all text-sm">
+                            </div>
+                        </div>
+
+                        <!-- Emplacement -->
+                        <div>
+                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Emplacement</label>
+                            <div class="relative">
+                                <MapPinIcon class="h-5 w-5 absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+                                <input v-model="form.emplacement" type="text" placeholder="Ex: Armoire 2, Salle B" class="w-full pl-12 pr-6 py-4 bg-gray-50 border-0 rounded-[1.25rem] font-bold focus:ring-2 focus:ring-indigo-600 transition-all text-sm" required>
+                            </div>
+                            <p v-if="form.errors.emplacement" class="text-xs text-red-500 mt-1.5 font-bold ml-1">{{ form.errors.emplacement }}</p>
                         </div>
                     </div>
 
@@ -510,6 +572,17 @@ const getEtatClass = (etat) => {
                                 <option value="preté">Prêté</option>
                                 <option value="maintenance">Maintenance</option>
                             </select>
+                        </div>
+                    </div>
+
+                    <div v-if="$page.props.auth.user.roles.includes('Directeur')" class="flex items-center gap-3 p-4 bg-gray-50 rounded-[1.25rem] border border-gray-100">
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" v-model="form.is_hidden" class="sr-only peer">
+                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gray-900"></div>
+                        </label>
+                        <div>
+                            <p class="text-sm font-bold text-gray-900">Masquer ce matériel</p>
+                            <p class="text-xs text-gray-500">Rend le matériel invisible pour les autres utilisateurs.</p>
                         </div>
                     </div>
 

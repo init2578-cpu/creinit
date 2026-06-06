@@ -24,6 +24,9 @@ class Asset extends Model
         'etat',
         'status',
         'registered_by',
+        'is_hidden',
+        'is_approved',
+        'emplacement',
     ];
 
     // -----------------------------------------------------------------------
@@ -58,6 +61,15 @@ class Asset extends Model
     public function loans(): HasMany
     {
         return $this->hasMany(Loan::class);
+    }
+
+    protected function casts(): array
+    {
+        return [
+            'registered_by' => 'integer',
+            'is_hidden'     => 'boolean',
+            'is_approved'   => 'boolean',
+        ];
     }
 
     /**

@@ -28,7 +28,10 @@ class LoanController extends Controller
             ->orderByDesc('borrowed_at')
             ->paginate(20);
 
-        $availableAssets = Asset::where('status', 'disponible')->get();
+        $availableAssets = Asset::where('status', 'disponible')
+            ->where('is_hidden', false)
+            ->where('is_approved', true)
+            ->get();
         $users = \App\Models\User::all();
 
         return Inertia::render('Logistics/CheckoutAsset', [

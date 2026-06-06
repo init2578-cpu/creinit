@@ -329,6 +329,7 @@ Route::middleware(['auth'])->group(function (): void {
 
     // Logistics & Physical Inventory
     Route::resource('assets', \App\Http\Controllers\AssetController::class);
+    Route::patch('assets/{asset}/approve', [\App\Http\Controllers\AssetController::class, 'approve'])->name('assets.approve');
     Route::get('/loans', [LoanController::class, 'index'])->name('loans.index');
     Route::post('/loans/checkout', [LoanController::class, 'checkout'])->name('loans.checkout');
     Route::patch('/loans/{loan}/return', [LoanController::class, 'returnAsset'])->name('loans.return');
