@@ -126,7 +126,6 @@ function printQrCode() {
                             <img src="/images/logo-cre.png" alt="CRE Logo" />
                         </div>
                     </div>
-                    <h1>${asset.nom}</h1>
                     <p>UUID: ${asset.uuid.substring(0, 8).toUpperCase()}</p>
                     ${asset.serie ? `<div class="serial">S/N: ${asset.serie}</div>` : ''}
                 </div>
@@ -149,7 +148,6 @@ function printAllQrCodes() {
                         <img src="/images/logo-cre.png" alt="CRE Logo" />
                     </div>
                 </div>
-                <h1>${asset.nom}</h1>
                 <p>UUID: ${asset.uuid.substring(0, 8).toUpperCase()}</p>
                 ${asset.serie ? `<div class="serial">S/N: ${asset.serie}</div>` : ''}
             </div>
@@ -547,7 +545,6 @@ const getEtatClass = (etat) => {
                     </div>
 
                     <div>
-                        <h3 class="font-black text-gray-900 text-lg leading-tight">{{ selectedAssetForQr.nom }}</h3>
                         <p class="text-xs text-gray-400 font-mono mt-1 uppercase font-bold">UUID: {{ selectedAssetForQr.uuid }}</p>
                         <span v-if="selectedAssetForQr.serie" class="inline-block mt-2 px-3 py-1 bg-gray-100 text-gray-600 rounded-lg text-xs font-black border border-gray-200">
                             S/N: {{ selectedAssetForQr.serie }}
