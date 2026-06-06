@@ -416,9 +416,9 @@ const getEtatClass = (etat) => {
                                     <span class="px-2.5 py-1 bg-gray-100 text-gray-600 rounded-lg text-xs font-black tracking-tight border border-gray-200 inline-block w-max">
                                         {{ asset.serie || 'N/A' }}
                                     </span>
-                                    <div class="flex items-center gap-1 mt-1 text-slate-500" v-if="asset.emplacement">
+                                    <div class="flex items-center gap-1 mt-1" :class="asset.emplacement ? 'text-slate-500' : 'text-amber-500'">
                                         <MapPinIcon class="h-3.5 w-3.5" />
-                                        <span class="text-[10px] font-bold">{{ asset.emplacement }}</span>
+                                        <span class="text-[10px] font-bold">{{ asset.emplacement || 'À définir' }}</span>
                                     </div>
                                 </div>
                             </td>
