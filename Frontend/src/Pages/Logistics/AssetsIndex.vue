@@ -24,6 +24,89 @@ const isModalOpen = ref(false)
 const isEditing = ref(false)
 const editingAsset = ref(null)
 
+const isQrModalOpen = ref(false)
+const selectedAssetForQr = ref(null)
+
+function openQrModal(asset) {
+    selectedAssetForQr.value = asset
+    isQrModalOpen.value = true
+}
+
+function closeQrModal() {
+    isQrModalOpen.value = false
+    selectedAssetForQr.value = null
+}
+
+function printQrCode() {
+    if (!selectedAssetForQr.value) return
+    const asset = selectedAssetForQr.value
+    const printWindow = window.open('', '_blank')
+    printWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+            <head>
+                <title>QR Code - ${asset.nom}</title>
+                <style>
+                    body {
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        justify-content: center;
+                        height: 90vh;
+                        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                        margin: 0;
+                        color: #1e293b;
+                    }
+                    .card {
+                        border: 2px solid #e2e8f0;
+                        border-radius: 1.5rem;
+                        padding: 2.5rem;
+                        text-align: center;
+                        max-width: 320px;
+                        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
+                    }
+                    img {
+                        width: 220px;
+                        height: 220px;
+                        border: 4px solid #f1f5f9;
+                        border-radius: 1rem;
+                    }
+                    h1 {
+                        margin-top: 1.5rem;
+                        margin-bottom: 0.5rem;
+                        font-size: 1.25rem;
+                        font-weight: 800;
+                    }
+                    p {
+                        font-size: 0.875rem;
+                        color: #64748b;
+                        margin: 0.25rem 0;
+                        font-weight: 500;
+                    }
+                    .serial {
+                        display: inline-block;
+                        background-color: #f1f5f9;
+                        padding: 0.25rem 0.75rem;
+                        border-radius: 0.5rem;
+                        font-size: 0.75rem;
+                        font-weight: 700;
+                        margin-top: 0.5rem;
+                    }
+                </style>
+            </head>
+            <body onload="window.print(); window.close();">
+                <div class="card">
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${asset.uuid}" />
+                    <h1>${asset.nom}</h1>
+                    <p>UUID: ${asset.uuid.substring(0, 8).toUpperCase()}</p>
+                    ${asset.serie ? `<div class="serial">S/N: ${asset.serie}</div>` : ''}
+                </div>
+            </body>
+        </html>
+    `)
+    printWindow.document.close()
+}
+
 const form = useForm({
     nom: '',
     serie: '',
@@ -133,10 +216,14 @@ const getEtatClass = (etat) => {
                                     </div>
                                     <div>
                                         <p class="font-black text-gray-900 leading-tight">{{ asset.nom }}</p>
-                                        <div class="flex items-center gap-1.5 mt-1">
-                                            <QrCodeIcon class="h-3 w-3 text-gray-400" />
-                                            <span class="text-[10px] font-mono text-gray-400 font-bold uppercase">{{ asset.uuid.substring(0, 8) }}</span>
-                                        </div>
+                                        <button 
+                                            @click="openQrModal(asset)"
+                                            class="flex items-center gap-1.5 mt-1 text-slate-400 hover:text-indigo-600 transition group/qr"
+                                            title="Afficher le QR Code"
+                                        >
+                                            <QrCodeIcon class="h-3.5 w-3.5" />
+                                            <span class="text-[10px] font-mono font-bold uppercase underline decoration-dashed">{{ asset.uuid.substring(0, 8) }}</span>
+                                        </button>
                                     </div>
                                 </div>
                             </td>
@@ -168,6 +255,13 @@ const getEtatClass = (etat) => {
                             </td>
                             <td class="px-8 py-5 text-right">
                                 <div class="flex justify-end gap-2 translate-x-4 opacity-0 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300">
+                                    <button 
+                                        @click="openQrModal(asset)"
+                                        class="p-2 bg-indigo-50 text-indigo-600 rounded-xl hover:bg-indigo-600 hover:text-white transition-all shadow-sm shadow-indigo-50"
+                                        title="Voir le QR Code"
+                                    >
+                                        <QrCodeIcon class="h-5 w-5" />
+                                    </button>
                                     <button 
                                         @click="openEditModal(asset)"
                                         class="p-2 bg-indigo-50 text-indigo-600 rounded-xl hover:bg-indigo-600 hover:text-white transition-all shadow-sm shadow-indigo-50"
@@ -265,6 +359,54 @@ const getEtatClass = (etat) => {
                         </button>
                     </div>
                 </form>
+            </div>
+        </div>
+
+        <!-- View QR Code Modal -->
+        <div v-if="isQrModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm">
+            <div class="bg-white w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl relative text-center">
+                <button @click="closeQrModal" class="absolute right-8 top-8 p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-xl transition-all">
+                    <XMarkIcon class="h-6 w-6" />
+                </button>
+
+                <h2 class="text-2xl font-black text-gray-900 tracking-tight mb-2">QR Code du Matériel</h2>
+                <p class="text-gray-500 text-sm mb-6">Collez ce code sur l'équipement pour l'identifier facilement.</p>
+
+                <div v-if="selectedAssetForQr" class="space-y-6">
+                    <div class="p-4 bg-slate-50 rounded-[2rem] inline-block">
+                        <img 
+                            :src="`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${selectedAssetForQr.uuid}`" 
+                            :alt="selectedAssetForQr.nom" 
+                            class="w-56 h-56 mx-auto border-4 border-white rounded-2xl shadow-sm"
+                        >
+                    </div>
+
+                    <div>
+                        <h3 class="font-black text-gray-900 text-lg leading-tight">{{ selectedAssetForQr.nom }}</h3>
+                        <p class="text-xs text-gray-400 font-mono mt-1 uppercase font-bold">UUID: {{ selectedAssetForQr.uuid }}</p>
+                        <span v-if="selectedAssetForQr.serie" class="inline-block mt-2 px-3 py-1 bg-gray-100 text-gray-600 rounded-lg text-xs font-black border border-gray-200">
+                            S/N: {{ selectedAssetForQr.serie }}
+                        </span>
+                    </div>
+
+                    <div class="flex gap-4 pt-2">
+                        <button 
+                            type="button" 
+                            @click="closeQrModal"
+                            class="flex-1 py-4 bg-gray-100 text-gray-600 rounded-2xl font-black text-sm hover:bg-gray-200 transition-all"
+                        >
+                            Fermer
+                        </button>
+                        <button 
+                            type="button" 
+                            @click="printQrCode"
+                            class="flex-[2] py-4 bg-indigo-600 text-white rounded-2xl font-black text-sm shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all flex items-center justify-center gap-2"
+                        >
+                            <QrCodeIcon class="h-5 w-5" />
+                            Imprimer le QR
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     </AuthenticatedLayout>
