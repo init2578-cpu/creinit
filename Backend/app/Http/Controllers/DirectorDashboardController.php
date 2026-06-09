@@ -267,18 +267,17 @@ class DirectorDashboardController extends Controller
             ])->toArray();
     }
 
-    /**
-     * Alerts: Students with >= 2 absences and broken hardware.
-     *
-     * @return array{learners_at_risk: array, broken_assets: array}
-     */
     private function getAlerts(): array
     {
         $learnersAtRisk = Attendance::where('status', 'absent_non_justifie')
-            ->select('user_id', DB::raw('COUNT(*) as total_absences'))
-            ->groupBy('user_id')
+            ->select('user_id', 'group_id', DB::raw('COUNT(*) as total_absences'))
+            ->groupBy('user_id', 'group_id')
             ->havingRaw('COUNT(*) >= 2')
-            ->with('user:id,name,email')
+            ->with([
+                'user:id,name,email',
+                'group:id,nom_groupe,formateur_id',
+                'group.formateur:id,name'
+            ])
             ->get();
 
         $brokenAssets = Asset::where('etat', 'hors_service')->get();

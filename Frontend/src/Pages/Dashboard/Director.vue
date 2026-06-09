@@ -463,13 +463,21 @@ onUnmounted(() => {
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        <div v-for="risk in dashboardKpis.alerts.learners_at_risk" :key="risk.user_id" class="relative group bg-white border border-red-50 p-6 rounded-[2rem] hover:shadow-xl hover:border-red-200 transition-all flex items-center gap-6">
-                            <div class="h-16 w-16 bg-gradient-to-br from-red-50 to-orange-50 rounded-2xl flex items-center justify-center text-red-600 border border-red-100">
-                                <span class="text-2xl font-black">{{ risk.user.name.charAt(0) }}</span>
+                        <div v-for="risk in dashboardKpis.alerts.learners_at_risk" :key="risk.user_id + '_' + risk.group_id" class="relative group bg-white border border-red-50 p-6 rounded-[2rem] hover:shadow-xl hover:border-red-200 transition-all flex items-center gap-6">
+                            <div class="h-16 w-16 bg-gradient-to-br from-red-50 to-orange-50 rounded-2xl flex items-center justify-center text-red-600 border border-red-100 shrink-0">
+                                <span class="text-2xl font-black">{{ risk.user?.name?.charAt(0) || '?' }}</span>
                             </div>
                             <div class="flex-1">
-                                <h3 class="font-black text-gray-900">{{ risk.user.name }}</h3>
-                                <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">{{ risk.user.email }}</p>
+                                <h3 class="font-black text-gray-900">{{ risk.user?.name }}</h3>
+                                <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">{{ risk.user?.email }}</p>
+                                <div class="flex flex-col gap-1 mb-3">
+                                    <p class="text-xs font-bold text-gray-600" v-if="risk.group">
+                                        Groupe: <span class="text-gray-900">{{ risk.group.nom_groupe }}</span>
+                                    </p>
+                                    <p class="text-xs font-bold text-gray-600" v-if="risk.group?.formateur">
+                                        Formateur: <span class="text-gray-900">{{ risk.group.formateur.name }}</span>
+                                    </p>
+                                </div>
                                 <div class="inline-flex items-center gap-2 px-3 py-1 bg-red-50 text-red-600 rounded-full">
                                     <span class="text-xs font-black">{{ risk.total_absences }} Absences</span>
                                 </div>
