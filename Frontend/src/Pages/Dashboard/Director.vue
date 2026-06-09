@@ -32,6 +32,14 @@ const props = defineProps({
 const dashboardKpis = ref(props.kpis)
 const isLoading = ref(false)
 
+const showAllAlerts = ref(false)
+const visibleAlerts = computed(() => {
+    if (!dashboardKpis.value?.alerts?.learners_at_risk) return []
+    return showAllAlerts.value 
+        ? dashboardKpis.value.alerts.learners_at_risk 
+        : dashboardKpis.value.alerts.learners_at_risk.slice(0, 6)
+})
+
 const fetchStats = async () => {
     isLoading.value = true
     try {
@@ -454,16 +462,28 @@ onUnmounted(() => {
 
                 <!-- Section 4: Focus Alerts (Student Risks) -->
                 <section v-if="dashboardKpis.alerts?.learners_at_risk?.length > 0">
-                    <div class="flex items-center gap-4 mb-6">
-                        <div class="h-8 w-8 bg-red-100 text-red-600 rounded-full flex items-center justify-center">
-                            <ExclamationCircleIcon class="h-5 w-5" />
+                    <div class="flex items-center justify-between mb-6">
+                        <div class="flex items-center gap-4">
+                            <div class="h-8 w-8 bg-red-100 text-red-600 rounded-full flex items-center justify-center">
+                                <ExclamationCircleIcon class="h-5 w-5" />
+                            </div>
+                            <h2 class="text-xl font-black text-gray-900 tracking-tight">Alertes de Vigilance Apprenants</h2>
+                            <span class="px-2.5 py-0.5 rounded-full bg-red-50 text-red-600 text-xs font-black">{{ dashboardKpis.alerts.learners_at_risk.length }}</span>
                         </div>
-                        <h2 class="text-xl font-black text-gray-900 tracking-tight">Alertes de Vigilance Apprenants</h2>
-                        <div class="h-px flex-1 bg-red-50"></div>
+                        
+                        <div class="flex-1 hidden sm:block h-px bg-red-50 mx-4"></div>
+
+                        <button 
+                            v-if="dashboardKpis.alerts.learners_at_risk.length > 6"
+                            @click="showAllAlerts = !showAllAlerts"
+                            class="text-xs font-bold text-gray-500 hover:text-gray-900 transition-colors bg-white px-4 py-2 rounded-xl border border-gray-200 shadow-sm shrink-0"
+                        >
+                            {{ showAllAlerts ? 'Réduire la liste' : 'Voir tout (' + dashboardKpis.alerts.learners_at_risk.length + ')' }}
+                        </button>
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        <div v-for="risk in dashboardKpis.alerts.learners_at_risk" :key="risk.user_id + '_' + risk.group_id" class="relative group bg-white border border-red-50 p-6 rounded-[2rem] hover:shadow-xl hover:border-red-200 transition-all flex items-center gap-6">
+                        <div v-for="risk in visibleAlerts" :key="risk.user_id + '_' + risk.group_id" class="relative group bg-white border border-red-50 p-6 rounded-[2rem] hover:shadow-xl hover:border-red-200 transition-all flex items-center gap-6">
                             <div class="h-16 w-16 bg-gradient-to-br from-red-50 to-orange-50 rounded-2xl flex items-center justify-center text-red-600 border border-red-100 shrink-0">
                                 <span class="text-2xl font-black">{{ risk.user?.name?.charAt(0) || '?' }}</span>
                             </div>
@@ -471,11 +491,13 @@ onUnmounted(() => {
                                 <h3 class="font-black text-gray-900">{{ risk.user?.name }}</h3>
                                 <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">{{ risk.user?.email }}</p>
                                 <div class="flex flex-col gap-1 mb-3">
-                                    <p class="text-xs font-bold text-gray-600" v-if="risk.group">
-                                        Groupe: <span class="text-gray-900">{{ risk.group.nom_groupe }}</span>
+                                    <p class="text-[11px] font-bold text-gray-500 flex items-center gap-1.5" v-if="risk.group">
+                                        <UsersIcon class="h-3.5 w-3.5 text-gray-400" />
+                                        <span class="text-gray-800">{{ risk.group.nom_groupe }}</span>
                                     </p>
-                                    <p class="text-xs font-bold text-gray-600" v-if="risk.group?.formateur">
-                                        Formateur: <span class="text-gray-900">{{ risk.group.formateur.name }}</span>
+                                    <p class="text-[11px] font-bold text-gray-500 flex items-center gap-1.5" v-if="risk.group?.formateur">
+                                        <AcademicCapIcon class="h-3.5 w-3.5 text-gray-400" />
+                                        <span class="text-gray-800">{{ risk.group.formateur.name }}</span>
                                     </p>
                                 </div>
                                 <div class="inline-flex items-center gap-2 px-3 py-1 bg-red-50 text-red-600 rounded-full">
