@@ -144,12 +144,14 @@ class AttendanceController extends Controller
 
             $unauthorizedChanges = false;
             foreach ($validated['students'] as $studentData) {
-                $existing = $existingAttendances->get($studentData['id']);
-                $oldStatus = $existing ? $existing->status : null;
+                $existing = $existingAttendances->get((int)$studentData['id']);
+                // Le frontend initialise par défaut à 'present' les apprenants/formateurs sans statut.
+                // On considère donc 'present' comme le statut initial si aucun enregistrement n'existe.
+                $oldStatus = $existing ? $existing->status : 'present';
                 $newStatus = $studentData['status'];
 
                 // On autorise la modification uniquement si le nouveau statut est 'justifie'
-                // ou si le statut n'a pas changé.
+                // ou si le statut n'a pas changé par rapport à l'existant (ou au défaut).
                 if ($oldStatus !== $newStatus && $newStatus !== 'justifie') {
                     $unauthorizedChanges = true;
                     break;
