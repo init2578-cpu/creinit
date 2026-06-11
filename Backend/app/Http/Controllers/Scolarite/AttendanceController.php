@@ -127,21 +127,39 @@ class AttendanceController extends Controller
         $now = Carbon::now();
         $courseDate = Carbon::parse($validated['date']);
 
-        // 1. Vérification de la date (Seulement aujourd'hui)
-        if (!$courseDate->isToday()) {
-            return back()->withErrors(['date' => 'L\'émargement ne peut être effectué que le jour même du cours.']);
-        }
-
-        // 2. Vérification de l'heure (Via Paramètres)
+        // 1. Détermination du créneau autorisé
         $bufferBefore = (int) Setting::getValue('attendance_buffer_before', 10);
         $bufferAfter = (int) Setting::getValue('attendance_buffer_after', 15);
 
         $startTime = Carbon::createFromFormat('H:i:s', $schedule->start_time)->setDateFrom($now)->subMinutes($bufferBefore);
         $endTime = Carbon::createFromFormat('H:i:s', $schedule->end_time)->setDateFrom($now)->addMinutes($bufferAfter);
 
-        if (!$now->between($startTime, $endTime)) {
-            $msg = sprintf("L'émargement n'est autorisé que durant le créneau (tolérance: %dmin avant, %dmin après).", $bufferBefore, $bufferAfter);
-            return back()->withErrors(['schedule_id' => $msg]);
+        $isWithinTimeframe = $courseDate->isToday() && $now->between($startTime, $endTime);
+
+        if (!$isWithinTimeframe) {
+            $existingAttendances = Attendance::where('schedule_id', $schedule->id)
+                ->where('date', $validated['date'])
+                ->get()
+                ->keyBy('user_id');
+
+            $unauthorizedChanges = false;
+            foreach ($validated['students'] as $studentData) {
+                $existing = $existingAttendances->get($studentData['id']);
+                $oldStatus = $existing ? $existing->status : null;
+                $newStatus = $studentData['status'];
+
+                // On autorise la modification uniquement si le nouveau statut est 'justifie'
+                // ou si le statut n'a pas changé.
+                if ($oldStatus !== $newStatus && $newStatus !== 'justifie') {
+                    $unauthorizedChanges = true;
+                    break;
+                }
+            }
+
+            if ($unauthorizedChanges) {
+                $msg = sprintf("L'émargement complet n'est autorisé que le jour même et durant le créneau (tolérance: %dmin avant, %dmin après). En dehors de ce délai, vous ne pouvez que modifier le statut d'un apprenant vers 'Justifié'.", $bufferBefore, $bufferAfter);
+                return back()->withErrors(['schedule_id' => $msg]);
+            }
         }
 
         foreach ($validated['students'] as $studentData) {
