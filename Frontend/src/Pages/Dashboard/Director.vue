@@ -32,12 +32,26 @@ const props = defineProps({
 const dashboardKpis = ref(props.kpis)
 const isLoading = ref(false)
 
-const showAllAlerts = ref(false)
-const visibleAlerts = computed(() => {
-    if (!dashboardKpis.value?.alerts?.learners_at_risk) return []
-    return showAllAlerts.value 
-        ? dashboardKpis.value.alerts.learners_at_risk 
-        : dashboardKpis.value.alerts.learners_at_risk.slice(0, 6)
+const alertsGroupedByTrainer = computed(() => {
+    if (!dashboardKpis.value?.alerts?.learners_at_risk) return {}
+    
+    const alerts = dashboardKpis.value.alerts.learners_at_risk;
+    const grouped = {};
+    
+    alerts.forEach(risk => {
+        const trainerName = risk.group?.formateur?.name || 'Non assigné';
+        const groupName = risk.group?.nom_groupe || 'Sans groupe';
+        
+        if (!grouped[trainerName]) {
+            grouped[trainerName] = {};
+        }
+        if (!grouped[trainerName][groupName]) {
+            grouped[trainerName][groupName] = [];
+        }
+        grouped[trainerName][groupName].push(risk);
+    });
+    
+    return grouped;
 })
 
 const fetchStats = async () => {
@@ -472,36 +486,46 @@ onUnmounted(() => {
                         </div>
                         
                         <div class="flex-1 hidden sm:block h-px bg-red-50 mx-4"></div>
-
-                        <button 
-                            v-if="dashboardKpis.alerts.learners_at_risk.length > 6"
-                            @click="showAllAlerts = !showAllAlerts"
-                            class="text-xs font-bold text-gray-500 hover:text-gray-900 transition-colors bg-white px-4 py-2 rounded-xl border border-gray-200 shadow-sm shrink-0"
-                        >
-                            {{ showAllAlerts ? 'Réduire la liste' : 'Voir tout (' + dashboardKpis.alerts.learners_at_risk.length + ')' }}
-                        </button>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        <div v-for="risk in visibleAlerts" :key="risk.user_id + '_' + risk.group_id" class="relative group bg-white border border-red-50 p-6 rounded-[2rem] hover:shadow-xl hover:border-red-200 transition-all flex items-center gap-6">
-                            <div class="h-16 w-16 bg-gradient-to-br from-red-50 to-orange-50 rounded-2xl flex items-center justify-center text-red-600 border border-red-100 shrink-0">
-                                <span class="text-2xl font-black">{{ risk.user?.name?.charAt(0) || '?' }}</span>
-                            </div>
-                            <div class="flex-1">
-                                <h3 class="font-black text-gray-900">{{ risk.user?.name }}</h3>
-                                <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">{{ risk.user?.email }}</p>
-                                <div class="flex flex-col gap-1 mb-3">
-                                    <p class="text-[11px] font-bold text-gray-500 flex items-center gap-1.5" v-if="risk.group">
-                                        <UsersIcon class="h-3.5 w-3.5 text-gray-400" />
-                                        <span class="text-gray-800">{{ risk.group.nom_groupe }}</span>
-                                    </p>
-                                    <p class="text-[11px] font-bold text-gray-500 flex items-center gap-1.5" v-if="risk.group?.formateur">
-                                        <AcademicCapIcon class="h-3.5 w-3.5 text-gray-400" />
-                                        <span class="text-gray-800">{{ risk.group.formateur.name }}</span>
-                                    </p>
+                    <div class="space-y-8">
+                        <div v-for="(groups, trainerName) in alertsGroupedByTrainer" :key="trainerName" class="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm">
+                            <div class="flex items-center gap-3 mb-6">
+                                <div class="h-10 w-10 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center">
+                                    <AcademicCapIcon class="h-5 w-5" />
                                 </div>
-                                <div class="inline-flex items-center gap-2 px-3 py-1 bg-red-50 text-red-600 rounded-full">
-                                    <span class="text-xs font-black">{{ risk.total_absences }} Absences</span>
+                                <div>
+                                    <h3 class="text-lg font-black text-gray-900">{{ trainerName }}</h3>
+                                    <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Formateur / Assistant</p>
+                                </div>
+                            </div>
+
+                            <div class="space-y-6">
+                                <div v-for="(students, groupName) in groups" :key="groupName">
+                                    <div class="flex items-center gap-2 mb-4 pl-2 border-l-2 border-indigo-100">
+                                        <UsersIcon class="h-4 w-4 text-gray-400" />
+                                        <h4 class="text-sm font-bold text-gray-700">{{ groupName }}</h4>
+                                        <span class="px-2 py-0.5 bg-red-50 text-red-600 text-[10px] font-black rounded-full">{{ students.length }} alertes</span>
+                                    </div>
+                                    
+                                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                        <div v-for="risk in students" :key="risk.user_id + '_' + risk.group_id" class="relative group bg-gray-50 border border-gray-100 p-4 rounded-2xl hover:shadow-md hover:border-red-200 hover:bg-white transition-all flex items-center gap-4">
+                                            <div class="h-12 w-12 bg-gradient-to-br from-red-50 to-orange-50 rounded-xl flex items-center justify-center text-red-600 border border-red-100 shrink-0">
+                                                <span class="text-xl font-black">{{ risk.user?.name?.charAt(0) || '?' }}</span>
+                                            </div>
+                                            <div class="flex-1 min-w-0">
+                                                <h3 class="font-black text-gray-900 truncate" :title="risk.user?.name">{{ risk.user?.name }}</h3>
+                                                <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-2 truncate" :title="risk.user?.email">{{ risk.user?.email }}</p>
+                                                <div class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-red-50 text-red-600 rounded-full border border-red-100">
+                                                    <span class="relative flex h-1.5 w-1.5">
+                                                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                                        <span class="relative inline-flex rounded-full h-1.5 w-1.5 bg-red-500"></span>
+                                                    </span>
+                                                    <span class="text-[10px] font-black">{{ risk.total_absences }} Absences</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
