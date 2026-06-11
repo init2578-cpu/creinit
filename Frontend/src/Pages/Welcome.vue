@@ -11,6 +11,7 @@ import {
     MapPinIcon,
     PhoneIcon,
     EnvelopeIcon,
+    CalendarDaysIcon,
     CheckBadgeIcon,
     LightBulbIcon,
     RocketLaunchIcon,
@@ -29,6 +30,7 @@ const props = defineProps({
     stats: Object,
     recentPosts: Array,
     partners: Array,
+    upcomingEvents: Array,
 })
 
 const pillars = [
@@ -358,6 +360,64 @@ onMounted(() => {
                             <span class="text-white bg-slate-800 px-3 py-1 rounded-lg">
                                 {{ mod.students }} SLOTS
                             </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Événements (Zone de publication) -->
+        <section v-if="upcomingEvents && upcomingEvents.length > 0" class="py-24 bg-slate-950 relative overflow-hidden border-t border-white/5">
+            <div class="max-w-7xl mx-auto px-4">
+                <div class="flex flex-col md:flex-row justify-between items-end gap-10 mb-16 relative">
+                    <div class="absolute -left-12 top-0 h-full w-[2px] bg-gradient-to-b from-pink-500 to-transparent"></div>
+                    <div class="max-w-xl" data-reveal id="events-header">
+                        <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-pink-500/10 border border-pink-500/20 mb-4">
+                            <SparklesIcon class="h-4 w-4 text-pink-400" />
+                            <span class="text-[9px] font-black text-pink-400 uppercase tracking-[0.3em]">Agenda E-CRE</span>
+                        </div>
+                        <h2 class="text-4xl md:text-6xl font-black text-white tracking-tighter mb-4 font-display">ÉVÉNEMENTS <span class="bg-gradient-to-r from-pink-400 to-orange-400 bg-clip-text text-transparent">À VENIR</span></h2>
+                        <p class="text-slate-500 font-medium tracking-wide">Ne manquez pas nos prochains séminaires, hackathons et ateliers ouverts.</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 relative z-20">
+                    <div 
+                        v-for="(event, index) in upcomingEvents" 
+                        :key="event.id"
+                        class="glass-dark border border-white/5 rounded-[2.5rem] overflow-hidden group hover:border-pink-500/30 transition-all duration-500 hover:-translate-y-2 flex flex-col"
+                        data-reveal :id="'event-' + event.id"
+                        :style="`transition-delay: ${index * 100}ms`"
+                    >
+                        <div class="h-48 w-full overflow-hidden relative">
+                            <img v-if="event.image_path" :src="storageUrl(event.image_path)" :alt="event.titre" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
+                            <div v-else class="w-full h-full bg-slate-900 flex items-center justify-center">
+                                <CalendarDaysIcon class="h-12 w-12 text-slate-700" />
+                            </div>
+                            <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent"></div>
+                            
+                            <div class="absolute top-4 left-4">
+                                <span class="px-3 py-1 bg-white/10 backdrop-blur-md text-white text-[10px] font-black rounded-lg border border-white/10 uppercase tracking-widest shadow-xl">
+                                    {{ event.type_activite }}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="p-8 flex-1 flex flex-col">
+                            <div class="flex items-center gap-3 text-pink-400 text-[10px] font-black uppercase tracking-[0.2em] mb-4">
+                                <CalendarDaysIcon class="h-4 w-4" />
+                                {{ new Date(event.date).toLocaleDateString('fr-FR') }}
+                            </div>
+
+                            <h3 class="text-xl font-black text-white mb-3 tracking-tight group-hover:text-pink-400 transition-colors line-clamp-2">{{ event.titre }}</h3>
+                            
+                            <div v-if="event.lieu" class="flex items-center gap-2 mb-4 text-xs font-bold text-slate-400">
+                                <MapPinIcon class="h-4 w-4 text-pink-500/70" />
+                                {{ event.lieu }}
+                            </div>
+
+                            <p class="text-slate-500 text-sm leading-relaxed line-clamp-3 mb-6 flex-1">
+                                {{ event.description || 'Détails de l\'événement à venir.' }}
+                            </p>
                         </div>
                     </div>
                 </div>

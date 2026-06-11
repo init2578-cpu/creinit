@@ -44,12 +44,18 @@ class ApplicationController extends Controller
             ->orderByDesc('date_signature')
             ->get();
 
+        $upcoming_events = \App\Models\Event::where('status', 'actif')
+            ->orderByDesc('date')
+            ->take(3)
+            ->get();
+
         return Inertia::render('Welcome', [
             'canLogin' => Route::has('login'),
             'settings' => Setting::getGroup('general'),
             'stats' => $stats,
             'recentPosts' => $recent_posts,
             'partners' => $active_partners,
+            'upcomingEvents' => $upcoming_events,
         ]);
     }
 
