@@ -27,12 +27,21 @@ class StatsController extends Controller
 
     private function getGrowthData(): array
     {
-        return User::select(DB::raw("to_char(created_at, 'Mon') as month"), DB::raw("count(*) as count"))
-            ->groupBy('month')
-            ->orderBy(DB::raw("min(created_at)"))
+        $monthly = User::select(DB::raw("to_char(created_at, 'Mon YYYY') as month"), DB::raw("count(*) as count"))
+            ->groupBy(DB::raw("to_char(created_at, 'Mon YYYY'), date_trunc('month', created_at)"))
+            ->orderBy(DB::raw("date_trunc('month', min(created_at))"))
             ->take(6)
-            ->get()
-            ->toArray();
+            ->get();
+
+        // Month-over-month growth %
+        $thisMonth = User::whereRaw("date_trunc('month', created_at) = date_trunc('month', CURRENT_DATE)")->count();
+        $lastMonth = User::whereRaw("date_trunc('month', created_at) = date_trunc('month', CURRENT_DATE - INTERVAL '1 month')")->count();
+        $growthPct = $lastMonth > 0 ? round((($thisMonth - $lastMonth) / $lastMonth) * 100, 1) : null;
+
+        return [
+            'months'     => $monthly->toArray(),
+            'growth_pct' => $growthPct,
+        ];
     }
 
     private function getModulePerformance(): array

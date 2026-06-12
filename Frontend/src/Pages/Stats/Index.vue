@@ -15,7 +15,9 @@ const props = defineProps({
     attendance_stats: Object
 })
 
-const maxGrowth = computed(() => Math.max(...(props.growth_data || []).map(i => i.count), 1))
+const months    = computed(() => props.growth_data?.months || [])
+const growthPct = computed(() => props.growth_data?.growth_pct ?? null)
+const maxGrowth = computed(() => Math.max(...months.value.map(i => i.count), 1))
 const maxCerts  = computed(() => Math.max(...(props.module_performance || []).map(i => i.certificates), 1))
 
 const stats         = computed(() => props.attendance_stats || {})
@@ -83,12 +85,18 @@ const hoveredWeek = ref(null)
                             </h2>
                             <p class="text-xs text-gray-400 font-medium mt-0.5">Nouveaux inscrits par mois</p>
                         </div>
-                        <span class="flex items-center gap-1 px-3 py-1.5 bg-emerald-50 text-emerald-700 text-xs font-black rounded-xl border border-emerald-100">
-                            <ArrowUpIcon class="h-3 w-3" /> +12%
+                    <!-- Growth badge -->
+                        <span v-if="growthPct !== null" class="flex items-center gap-1 px-3 py-1.5 text-xs font-black rounded-xl border"
+                            :class="growthPct >= 0 ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-red-50 text-red-700 border-red-100'">
+                            <component :is="growthPct >= 0 ? ArrowUpIcon : ArrowDownIcon" class="h-3 w-3" />
+                            {{ growthPct >= 0 ? '+' : '' }}{{ growthPct }}% ce mois
+                        </span>
+                        <span v-else class="flex items-center gap-1 px-3 py-1.5 bg-gray-50 text-gray-400 text-xs font-black rounded-xl border border-gray-100">
+                            <MinusIcon class="h-3 w-3" /> Nouveau mois
                         </span>
                     </div>
                     <div class="h-48 flex items-end gap-3 border-b border-gray-100 pb-2">
-                        <div v-for="item in growth_data" :key="item.month" class="flex-1 flex flex-col items-center justify-end h-full group relative">
+                        <div v-for="item in months" :key="item.month" class="flex-1 flex flex-col items-center justify-end h-full group relative">
                             <div class="absolute -top-8 opacity-0 group-hover:opacity-100 transition-all bg-gray-900 text-white text-[10px] font-black px-2 py-1 rounded-lg pointer-events-none whitespace-nowrap z-10">
                                 {{ item.count }} utilisateurs
                             </div>
@@ -98,7 +106,7 @@ const hoveredWeek = ref(null)
                         </div>
                     </div>
                     <div class="flex gap-3 mt-3">
-                        <span v-for="item in growth_data" :key="item.month" class="flex-1 text-center text-[10px] font-black text-gray-400 uppercase">{{ item.month }}</span>
+                        <span v-for="item in months" :key="item.month" class="flex-1 text-center text-[10px] font-black text-gray-400 uppercase">{{ item.month }}</span>
                     </div>
                 </div>
 
