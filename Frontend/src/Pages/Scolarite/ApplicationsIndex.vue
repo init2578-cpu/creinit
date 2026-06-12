@@ -87,6 +87,8 @@ const enrollForm = useForm({
     fonction: '',
     etablissement: '',
     sexe: '',
+    cni: null,
+    diploma: null,
 })
 
 // Link Generation
@@ -561,6 +563,18 @@ const getStatusClass = (status) => {
                             <option v-for="m in modules" :key="m.id" :value="m.id">{{ m.titre || m.nom_module }}</option>
                         </select>
                         <p v-if="enrollForm.errors.module_id" class="text-red-500 text-[10px] mt-1 font-bold">{{ enrollForm.errors.module_id }}</p>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Document CNI (Optionnel)</label>
+                            <input @input="enrollForm.cni = $event.target.files[0]" type="file" accept=".pdf,.jpg,.jpeg,.png" class="w-full bg-gray-50 border-0 rounded-2xl focus:ring-2 focus:ring-blue-500 font-bold px-5 py-3 text-xs file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-black file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                            <p v-if="enrollForm.errors.cni" class="text-red-500 text-[10px] mt-1 font-bold">{{ enrollForm.errors.cni }}</p>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Scan Diplôme (Optionnel)</label>
+                            <input @input="enrollForm.diploma = $event.target.files[0]" type="file" accept=".pdf,.jpg,.jpeg,.png" class="w-full bg-gray-50 border-0 rounded-2xl focus:ring-2 focus:ring-blue-500 font-bold px-5 py-3 text-xs file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-black file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                            <p v-if="enrollForm.errors.diploma" class="text-red-500 text-[10px] mt-1 font-bold">{{ enrollForm.errors.diploma }}</p>
+                        </div>
                     </div>
                     <div class="pt-4 flex gap-4">
                         <button type="button" @click="isManualEnrollOpen = false" class="flex-1 py-4 bg-gray-100 text-gray-600 rounded-2xl font-black transition">Annuler</button>

@@ -89,6 +89,8 @@ class ApplicationController extends Controller
             'fonction' => 'required|string|max:255',
             'etablissement' => 'nullable|string|max:255',
             'sexe' => 'required|string|in:M,F',
+            'cni' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'diploma' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
         ]);
 
         // Create or find user
@@ -112,13 +114,16 @@ class ApplicationController extends Controller
             $user->assignRole('Apprenant');
         }
 
+        $cniPath = $request->hasFile('cni') ? $request->file('cni')->store('applications/cni', 'private') : 'manual_enrollment';
+        $diplomaPath = $request->hasFile('diploma') ? $request->file('diploma')->store('applications/diplomas', 'private') : 'manual_enrollment';
+
         // Create application (pending validation even for manual enrollment)
         Application::updateOrCreate(
             ['user_id' => $user->id, 'module_id' => $validated['module_id']],
             [
                 'status' => 'pending',
-                'cni_path' => 'manual_enrollment', // Placeholder
-                'diploma_path' => 'manual_enrollment', // Placeholder
+                'cni_path' => $cniPath,
+                'diploma_path' => $diplomaPath,
                 'telephone' => $validated['telephone'],
                 'adresse_reelle' => $this->formatTitleCase($validated['adresse_reelle']),
                 'date_naissance' => $validated['date_naissance'],
