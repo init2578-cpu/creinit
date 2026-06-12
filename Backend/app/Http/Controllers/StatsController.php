@@ -62,7 +62,7 @@ class StatsController extends Controller
             return [
                 'weekly_trends'   => [],
                 'group_breakdown' => [],
-                'status_summary'  => ['present' => 0, 'absent' => 0, 'late' => 0, 'justified' => 0],
+                'status_summary'  => ['present' => 0, 'absent_non_justifie' => 0, 'late' => 0, 'justifie' => 0],
                 'overall_rate'    => 0,
                 'target_rate'     => 90,
                 'trend_direction' => 'stable',
@@ -78,9 +78,9 @@ class StatsController extends Controller
                 MIN(date) AS week_start,
                 COUNT(*) AS total,
                 SUM(CASE WHEN status IN ('present','late') THEN 1 ELSE 0 END) AS present_count,
-                SUM(CASE WHEN status = 'absent' THEN 1 ELSE 0 END) AS absent_count,
+                SUM(CASE WHEN status = 'absent_non_justifie' THEN 1 ELSE 0 END) AS absent_count,
                 SUM(CASE WHEN status = 'late' THEN 1 ELSE 0 END) AS late_count,
-                SUM(CASE WHEN status = 'justified' THEN 1 ELSE 0 END) AS justified_count
+                SUM(CASE WHEN status = 'justifie' THEN 1 ELSE 0 END) AS justified_count
             FROM attendances
             WHERE date >= CURRENT_DATE - INTERVAL '8 weeks'
             GROUP BY iso_week
@@ -110,9 +110,9 @@ class StatsController extends Controller
                 ->select(
                     DB::raw('COUNT(*) as total'),
                     DB::raw("SUM(CASE WHEN status IN ('present','late') THEN 1 ELSE 0 END) as present_count"),
-                    DB::raw("SUM(CASE WHEN status = 'absent' THEN 1 ELSE 0 END) as absent_count"),
+                    DB::raw("SUM(CASE WHEN status = 'absent_non_justifie' THEN 1 ELSE 0 END) as absent_count"),
                     DB::raw("SUM(CASE WHEN status = 'late' THEN 1 ELSE 0 END) as late_count"),
-                    DB::raw("SUM(CASE WHEN status = 'justified' THEN 1 ELSE 0 END) as justified_count")
+                    DB::raw("SUM(CASE WHEN status = 'justifie' THEN 1 ELSE 0 END) as justified_count")
                 )->first();
 
             $rate = ($stats && $stats->total > 0)
@@ -157,10 +157,10 @@ class StatsController extends Controller
             'weekly_trends'   => $weeklyTrends,
             'group_breakdown' => $groupBreakdown,
             'status_summary'  => [
-                'present'   => (int) ($statusSummary['present'] ?? 0),
-                'absent'    => (int) ($statusSummary['absent'] ?? 0),
-                'late'      => (int) ($statusSummary['late'] ?? 0),
-                'justified' => (int) ($statusSummary['justified'] ?? 0),
+                'present'             => (int) ($statusSummary['present'] ?? 0),
+                'absent_non_justifie' => (int) ($statusSummary['absent_non_justifie'] ?? 0),
+                'late'                => (int) ($statusSummary['late'] ?? 0),
+                'justifie'            => (int) ($statusSummary['justifie'] ?? 0),
             ],
             'overall_rate'    => $overallRate,
             'target_rate'     => 90,

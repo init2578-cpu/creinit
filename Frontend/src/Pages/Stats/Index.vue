@@ -23,7 +23,7 @@ const maxCerts  = computed(() => Math.max(...(props.module_performance || []).ma
 const stats         = computed(() => props.attendance_stats || {})
 const weekly        = computed(() => stats.value.weekly_trends || [])
 const groups        = computed(() => stats.value.group_breakdown || [])
-const summary       = computed(() => stats.value.status_summary || { present: 0, absent: 0, late: 0, justified: 0 })
+const summary       = computed(() => stats.value.status_summary || { present: 0, absent_non_justifie: 0, late: 0, justifie: 0 })
 const overallRate   = computed(() => stats.value.overall_rate || 0)
 const targetRate    = computed(() => stats.value.target_rate || 90)
 const trend         = computed(() => stats.value.trend_direction || 'stable')
@@ -197,7 +197,7 @@ const hoveredWeek = ref(null)
                         <div class="flex items-center gap-2.5 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-2.5">
                             <ExclamationCircleIcon class="h-4 w-4 text-red-400 shrink-0" />
                             <div>
-                                <p class="text-xs font-black text-red-300">{{ summary.absent }}</p>
+                                <p class="text-xs font-black text-red-300">{{ summary.absent_non_justifie }}</p>
                                 <p class="text-[9px] text-red-600 font-bold uppercase">Absents</p>
                             </div>
                         </div>
@@ -211,7 +211,7 @@ const hoveredWeek = ref(null)
                         <div class="flex items-center gap-2.5 bg-blue-500/10 border border-blue-500/20 rounded-xl px-4 py-2.5">
                             <ShieldCheckIcon class="h-4 w-4 text-blue-400 shrink-0" />
                             <div>
-                                <p class="text-xs font-black text-blue-300">{{ summary.justified }}</p>
+                                <p class="text-xs font-black text-blue-300">{{ summary.justifie }}</p>
                                 <p class="text-[9px] text-blue-600 font-bold uppercase">Justifiés</p>
                             </div>
                         </div>
@@ -222,8 +222,8 @@ const hoveredWeek = ref(null)
                             <div class="h-3 flex rounded-full overflow-hidden gap-0.5">
                                 <div class="bg-emerald-500 transition-all" :style="{ width: ((summary.present / totalRecords) * 100) + '%' }"></div>
                                 <div class="bg-amber-500 transition-all" :style="{ width: ((summary.late / totalRecords) * 100) + '%' }"></div>
-                                <div class="bg-blue-500 transition-all" :style="{ width: ((summary.justified / totalRecords) * 100) + '%' }"></div>
-                                <div class="bg-red-500 transition-all" :style="{ width: ((summary.absent / totalRecords) * 100) + '%' }"></div>
+                                <div class="bg-blue-500 transition-all" :style="{ width: ((summary.justifie / totalRecords) * 100) + '%' }"></div>
+                                <div class="bg-red-500 transition-all" :style="{ width: ((summary.absent_non_justifie / totalRecords) * 100) + '%' }"></div>
                             </div>
                         </div>
                     </div>
