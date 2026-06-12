@@ -47,6 +47,7 @@ const navigation = computed(() => {
             { name: 'Messages Contact', href: route('contact-messages.index'), icon: EnvelopeIcon, badge: page.props.auth.user?.unread_messages_count },
             { name: 'Inscriptions', href: route('applications.index'), icon: UserGroupIcon },
             { name: 'Groupes de Formation', href: route('groups.index'), icon: UserGroupIcon },
+            { name: 'Validations', href: route('nominations.index'), icon: CheckBadgeIcon },
             { name: 'Apprenants', href: route('students.index'), icon: AcademicCapIcon },
             { name: 'Stagiaires', href: route('trainees.index'), icon: BriefcaseIcon },
             { name: 'Emplois du temps', href: route('schedules.index'), icon: CalendarIcon },
