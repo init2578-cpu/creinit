@@ -224,7 +224,7 @@ const toggleLike = (announcementId, type = 'heart') => {
                                     </div>
                                 </div>
                                 <div v-if="announcement.attachments.some(a => !isImage(a.mime_type) && !isVideo(a.mime_type))" class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                    <a v-for="doc in announcement.attachments.filter(a => !isImage(a.mime_type) && !isVideo(a.mime_type))" :key="doc.path" :href="'/storage/' + doc.path" target="_blank" download class="flex items-center p-3 rounded-xl border border-gray-100 bg-gray-50/50 hover:bg-white hover:border-blue-200 hover:shadow-sm transition-all group">
+                                    <div v-for="doc in announcement.attachments.filter(a => !isImage(a.mime_type) && !isVideo(a.mime_type))" :key="doc.path" @click="openViewer(doc)" class="flex items-center p-3 rounded-xl border border-gray-100 bg-gray-50/50 hover:bg-white hover:border-blue-200 hover:shadow-sm transition-all group cursor-pointer">
                                         <div class="h-10 w-10 flex-shrink-0 bg-white rounded-lg flex items-center justify-center border border-gray-100 group-hover:border-blue-100 mr-3">
                                             <component :is="getFileIcon(doc.mime_type)" class="h-5 w-5 text-gray-500 group-hover:text-blue-500" />
                                         </div>
@@ -233,7 +233,7 @@ const toggleLike = (announcementId, type = 'heart') => {
                                             <p class="text-[10px] text-gray-400 font-medium tracking-tighter">{{ formatSize(doc.size) }} • {{ doc.mime_type.split('/')[1] }}</p>
                                         </div>
                                         <ArrowDownTrayIcon class="h-4 w-4 text-gray-300 group-hover:text-blue-500" />
-                                    </a>
+                                    </div>
                                 </div>
                             </div>
                             
@@ -439,7 +439,7 @@ const toggleLike = (announcementId, type = 'heart') => {
                                     </div>
                                 </div>
                                 <div v-if="announcement.attachments.some(a => !isImage(a.mime_type) && !isVideo(a.mime_type))" class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                    <a v-for="doc in announcement.attachments.filter(a => !isImage(a.mime_type) && !isVideo(a.mime_type))" :key="doc.path" :href="'/storage/' + doc.path" target="_blank" download class="flex items-center p-3 rounded-xl border border-gray-100 bg-gray-50/50 hover:bg-white hover:border-blue-200 hover:shadow-sm transition-all group">
+                                    <div v-for="doc in announcement.attachments.filter(a => !isImage(a.mime_type) && !isVideo(a.mime_type))" :key="doc.path" @click="openViewer(doc)" class="flex items-center p-3 rounded-xl border border-gray-100 bg-gray-50/50 hover:bg-white hover:border-blue-200 hover:shadow-sm transition-all group cursor-pointer">
                                         <div class="h-10 w-10 flex-shrink-0 bg-white rounded-lg flex items-center justify-center border border-gray-100 group-hover:border-blue-100 mr-3">
                                             <component :is="getFileIcon(doc.mime_type)" class="h-5 w-5 text-gray-500 group-hover:text-blue-500" />
                                         </div>
@@ -448,7 +448,7 @@ const toggleLike = (announcementId, type = 'heart') => {
                                             <p class="text-[10px] text-gray-400 font-medium tracking-tighter">{{ formatSize(doc.size) }} • {{ doc.mime_type.split('/')[1] }}</p>
                                         </div>
                                         <ArrowDownTrayIcon class="h-4 w-4 text-gray-300 group-hover:text-blue-500" />
-                                    </a>
+                                    </div>
                                 </div>
                             </div>
                             
