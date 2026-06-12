@@ -10,6 +10,7 @@ use Inertia\Response;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use App\Models\User;
+use App\Notifications\AssetAddedNotification;
 use App\Notifications\DefectiveAssetReported;
 use Illuminate\Support\Facades\Notification;
 
@@ -78,6 +79,12 @@ class AssetController extends Controller
         $validated['is_approved'] = $request->user()->hasRole('Directeur');
 
         $asset = Asset::create($validated);
+
+        // Notify directors (and secretaries) when a non-director adds an asset
+        if (!$request->user()->hasRole('Directeur')) {
+            $directors = User::role('Directeur')->get();
+            Notification::send($directors, new AssetAddedNotification($asset, $request->user()));
+        }
 
         if (in_array($asset->etat, ['endommagé', 'hors_service'])) {
             $staff = User::role(['Directeur', 'Secrétaire'])->get();

@@ -6,6 +6,7 @@ import {
     MegaphoneIcon, 
     ExclamationTriangleIcon, 
     CheckCircleIcon, 
+    CheckIcon,
     CalendarIcon,
     PaperClipIcon,
     PhotoIcon,
@@ -184,8 +185,10 @@ const toggleRole = (roleName) => {
 
                         <!-- Visibility Filters -->
                         <div>
-                            <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-3">Visibilité (Filtrer par rôle)</label>
-                            <p class="text-[10px] text-gray-400 mb-2 italic">Laissez vide pour rendre le message public à tous les utilisateurs.</p>
+                            <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-1">Visibilité (Filtrer par rôle)</label>
+                            <p class="text-[10px] text-gray-400 mb-3 italic">
+                                Cliquez sur un rôle pour le sélectionner. Laissez vide pour tous les utilisateurs.
+                            </p>
                             <div class="flex flex-wrap gap-2">
                                 <button 
                                     v-for="role in roles" 
@@ -193,15 +196,31 @@ const toggleRole = (roleName) => {
                                     type="button"
                                     @click="toggleRole(role.name)"
                                     :class="[
-                                        'px-4 py-2 rounded-xl text-xs font-bold transition-all',
+                                        'inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-black transition-all duration-200 border-2',
                                         form.visibility_roles.includes(role.name)
-                                            ? 'bg-blue-600 text-white shadow-md shadow-blue-100'
-                                            : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                                            ? 'bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-100 ring-4 ring-blue-50'
+                                            : 'bg-white text-gray-500 border-gray-200 hover:border-blue-300 hover:text-blue-600'
                                     ]"
                                 >
+                                    <span 
+                                        class="h-3.5 w-3.5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all"
+                                        :class="form.visibility_roles.includes(role.name) 
+                                            ? 'border-white bg-white' 
+                                            : 'border-gray-300'"
+                                    >
+                                        <svg v-if="form.visibility_roles.includes(role.name)" xmlns="http://www.w3.org/2000/svg" class="h-2 w-2 text-blue-600" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 00-1.414 0L8 12.586 4.707 9.293a1 1 0 00-1.414 1.414l4 4a1 1 0 001.414 0l8-8a1 1 0 000-1.414z" clip-rule="evenodd" />
+                                        </svg>
+                                    </span>
                                     {{ role.name }}
                                 </button>
                             </div>
+                            <p v-if="form.visibility_roles.length > 0" class="mt-2 text-[10px] text-blue-600 font-black">
+                                ✔ {{ form.visibility_roles.length }} rôle(s) sélectionné(s) &mdash; seuls ces utilisateurs verront ce message.
+                            </p>
+                            <p v-else class="mt-2 text-[10px] text-gray-400 font-bold">
+                                Aucun filtre &mdash; visible par tout le monde.
+                            </p>
                         </div>
 
                         <!-- Attachments Section -->

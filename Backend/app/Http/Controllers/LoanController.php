@@ -43,11 +43,17 @@ class LoanController extends Controller
 
     /**
      * Checkout an asset to a user (with digital signature).
+     * Secrétaire can VIEW loans but cannot create one.
      */
     public function checkout(StoreAssetCheckoutRequest $request): RedirectResponse
     {
         /** @var \App\Models\User $user */
         $user = $request->user();
+
+        // Secrétaire can only view the flux, not create loans
+        if ($user->hasRole('Secrétaire') && !$user->hasRole('Directeur')) {
+            abort(403, 'Le Secrétaire ne peut pas effectuer d\'emprunts.');
+        }
 
         DB::transaction(function () use ($request, $user): void {
             // Store the signature

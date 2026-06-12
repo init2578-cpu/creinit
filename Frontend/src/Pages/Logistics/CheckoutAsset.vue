@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
-import { Head, useForm, router } from '@inertiajs/vue3'
+import { Head, useForm, router, usePage } from '@inertiajs/vue3'
 import SignaturePad from 'signature_pad'
 import QRScanner from '@/Components/QRScanner.vue'
 import { 
@@ -57,6 +57,9 @@ function selectUser(user) {
 }
 
 onMounted(() => {
+    // Canvas is only rendered when canCheckout is true (not for Secrétaire)
+    if (!signatureCanvas.value) return
+
     signaturePad = new SignaturePad(signatureCanvas.value, {
         backgroundColor: 'rgba(255, 255, 255, 0)', // Transparent
         penColor: 'rgb(31, 41, 55)',
@@ -144,6 +147,13 @@ function rejectLoan(id) {
         router.patch(route('loans.reject', id))
     }
 }
+
+const page = usePage()
+const canCheckout = computed(() => {
+    const roles = page.props.auth.user?.roles ?? []
+    // Secrétaire can view loans flux but cannot create a loan
+    return !roles.includes('Secrétaire') || roles.includes('Directeur')
+})
 </script>
 
 <template>
@@ -156,7 +166,8 @@ function rejectLoan(id) {
                 <p class="text-gray-500">Scanner le matériel et recueillir la signature de l'emprunteur.</p>
             </header>
 
-            <form @submit.prevent="submitCheckout" class="space-y-8">
+            <!-- Checkout form: hidden for Secrétaire -->
+            <form v-if="canCheckout" @submit.prevent="submitCheckout" class="space-y-8">
                 <!-- 1. Sélection de l'Apprenant -->
                 <section class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
                     <label class="block text-sm font-bold text-gray-700 mb-4 flex items-center gap-2">
@@ -288,8 +299,8 @@ function rejectLoan(id) {
                 </button>
             </form>
 
-            <!-- 4. Liste des Emprunts Récents -->
-            <div class="mt-16">
+            <!-- 4. Flux des Emprunts — visible uniquement pour Directeur & Secrétaire -->
+            <div v-if="$page.props.auth.user.roles.some(r => ['Directeur', 'Secrétaire'].includes(r))" class="mt-16">
                 <h2 class="text-xl font-black text-gray-900 mb-6 flex items-center gap-2">
                     <ClipboardDocumentCheckIcon class="h-6 w-6 text-blue-600" />
                     Flux des Emprunts

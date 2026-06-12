@@ -258,12 +258,7 @@ Route::middleware(['auth'])->group(function (): void {
         Route::post('/attendance', [\App\Http\Controllers\Scolarite\AttendanceController::class, 'store'])
             ->middleware(EnsureWithinPremises::class)->name('attendance.store');
 
-        // Chapter Progress
-        Route::get('/chapter-progress/groups', [ChapterProgressController::class, 'groupsIndex'])->name('chapter-progress.groups');
-        Route::get('/groups/{group}/chapter-progress', [ChapterProgressController::class, 'index'])->name('chapter-progress.index');
-        Route::post('/chapter-progress', [ChapterProgressController::class, 'submit'])->name('chapter-progress.submit');
-        Route::patch('/chapter-progress/{chapterGroupProgress}/approve', [ChapterProgressController::class, 'approve'])->name('chapter-progress.approve');
-        Route::patch('/chapter-progress/{chapterGroupProgress}/reject', [ChapterProgressController::class, 'reject'])->name('chapter-progress.reject');
+
 
         // Trainer Resources
         Route::get('/trainer/groups', [App\Http\Controllers\TrainerGroupsController::class, 'index'])->name('trainer.groups');
@@ -345,6 +340,13 @@ Route::middleware(['auth'])->group(function (): void {
     Route::get('/nominations', [NominationController::class, 'index'])->name('nominations.index');
     Route::post('/nominations', [NominationController::class, 'store'])->name('nominations.store');
 
+
+    // Chapter Progress (Accessible by trainers, students/group leaders with appropriate internal checks)
+    Route::get('/chapter-progress/groups', [\App\Http\Controllers\ChapterProgressController::class, 'groupsIndex'])->name('chapter-progress.groups');
+    Route::get('/groups/{group}/chapter-progress', [\App\Http\Controllers\ChapterProgressController::class, 'index'])->name('chapter-progress.index');
+    Route::post('/chapter-progress', [\App\Http\Controllers\ChapterProgressController::class, 'submit'])->name('chapter-progress.submit');
+    Route::patch('/chapter-progress/{chapterGroupProgress}/approve', [\App\Http\Controllers\ChapterProgressController::class, 'approve'])->name('chapter-progress.approve');
+    Route::patch('/chapter-progress/{chapterGroupProgress}/reject', [\App\Http\Controllers\ChapterProgressController::class, 'reject'])->name('chapter-progress.reject');
 
     // Community Hub
     Route::get('/community', [\App\Http\Controllers\AnnouncementController::class, 'index'])->name('community.index');
