@@ -481,104 +481,141 @@ const getStatusClass = (status) => {
 
         <!-- Manual Enrollment Modal -->
         <div v-if="isManualEnrollOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/80 backdrop-blur-sm">
-            <div class="bg-white w-full max-w-lg rounded-[2.5rem] overflow-hidden shadow-2xl">
-                <div class="p-8 border-b border-gray-100 flex items-center justify-between">
-                    <h3 class="text-2xl font-black text-gray-900 tracking-tight">Inscription Manuelle</h3>
-                    <button @click="isManualEnrollOpen = false" class="p-2 hover:bg-gray-100 rounded-xl transition">
+            <div class="bg-white w-full max-w-3xl rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+                <!-- Header -->
+                <div class="px-10 py-7 border-b border-gray-100 flex items-center justify-between shrink-0 bg-gray-50/50">
+                    <div>
+                        <h3 class="text-2xl font-black text-gray-900 tracking-tight flex items-center gap-3">
+                            <UserPlusIcon class="h-7 w-7 text-blue-600" />
+                            Inscription Manuelle
+                        </h3>
+                        <p class="text-sm text-gray-400 font-medium mt-0.5">Remplissez les informations du candidat. Les documents sont optionnels.</p>
+                    </div>
+                    <button @click="isManualEnrollOpen = false" class="p-2 hover:bg-gray-200 rounded-xl transition">
                         <XMarkIcon class="h-6 w-6 text-gray-400" />
                     </button>
                 </div>
-                <form @submit.prevent="submitManualEnroll" class="p-8 space-y-5 overflow-y-auto custom-scrollbar max-h-[70vh]">
-                    <div>
-                        <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Nom Complet</label>
-                        <input v-model="enrollForm.nom_complet" type="text" required class="w-full bg-gray-50 border-0 rounded-2xl focus:ring-2 focus:ring-blue-500 font-bold px-5 py-3.5">
-                        <p v-if="enrollForm.errors.nom_complet" class="text-red-500 text-[10px] mt-1 font-bold">{{ enrollForm.errors.nom_complet }}</p>
+
+                <form @submit.prevent="submitManualEnroll" class="overflow-y-auto custom-scrollbar">
+                    <div class="px-10 py-8 space-y-8">
+
+                        <!-- Section: Identité -->
+                        <div>
+                            <h4 class="text-[10px] font-black text-blue-600 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                                <IdentificationIcon class="h-4 w-4" /> État Civil &amp; Contact
+                            </h4>
+                            <div class="grid grid-cols-3 gap-4">
+                                <div class="col-span-3">
+                                    <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Nom Complet <span class="text-red-500">*</span></label>
+                                    <input v-model="enrollForm.nom_complet" type="text" required placeholder="Ex: Moussa Diallo" class="w-full bg-gray-50 border-0 rounded-2xl focus:ring-2 focus:ring-blue-500 font-bold px-5 py-3.5 placeholder-gray-300">
+                                    <p v-if="enrollForm.errors.nom_complet" class="text-red-500 text-[10px] mt-1 font-bold">{{ enrollForm.errors.nom_complet }}</p>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Sexe <span class="text-red-500">*</span></label>
+                                    <select v-model="enrollForm.sexe" required class="w-full bg-gray-50 border-0 rounded-2xl focus:ring-2 focus:ring-blue-500 font-bold px-5 py-3.5 appearance-none cursor-pointer">
+                                        <option value="">— Choisir —</option>
+                                        <option value="M">Masculin</option>
+                                        <option value="F">Féminin</option>
+                                    </select>
+                                    <p v-if="enrollForm.errors.sexe" class="text-red-500 text-[10px] mt-1 font-bold">{{ enrollForm.errors.sexe }}</p>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Date de Naissance <span class="text-red-500">*</span></label>
+                                    <input v-model="enrollForm.date_naissance" type="date" required class="w-full bg-gray-50 border-0 rounded-2xl focus:ring-2 focus:ring-blue-500 font-bold px-5 py-3.5">
+                                    <p v-if="enrollForm.errors.date_naissance" class="text-red-500 text-[10px] mt-1 font-bold">{{ enrollForm.errors.date_naissance }}</p>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Lieu de Naissance <span class="text-red-500">*</span></label>
+                                    <input v-model="enrollForm.lieu_naissance" type="text" required placeholder="Ex: Kolda" class="w-full bg-gray-50 border-0 rounded-2xl focus:ring-2 focus:ring-blue-500 font-bold px-5 py-3.5 placeholder-gray-300">
+                                    <p v-if="enrollForm.errors.lieu_naissance" class="text-red-500 text-[10px] mt-1 font-bold">{{ enrollForm.errors.lieu_naissance }}</p>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Téléphone <span class="text-red-500">*</span></label>
+                                    <input v-model="enrollForm.telephone" type="tel" required placeholder="Ex: 77 000 00 00" class="w-full bg-gray-50 border-0 rounded-2xl focus:ring-2 focus:ring-blue-500 font-bold px-5 py-3.5 placeholder-gray-300">
+                                    <p v-if="enrollForm.errors.telephone" class="text-red-500 text-[10px] mt-1 font-bold">{{ enrollForm.errors.telephone }}</p>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Email <span class="text-gray-300 text-[9px]">(Optionnel)</span></label>
+                                    <input v-model="enrollForm.email" type="email" placeholder="ex@email.com" class="w-full bg-gray-50 border-0 rounded-2xl focus:ring-2 focus:ring-blue-500 font-bold px-5 py-3.5 placeholder-gray-300">
+                                    <p v-if="enrollForm.errors.email" class="text-red-500 text-[10px] mt-1 font-bold">{{ enrollForm.errors.email }}</p>
+                                </div>
+                                <div class="col-span-3">
+                                    <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Adresse Réelle <span class="text-red-500">*</span></label>
+                                    <input v-model="enrollForm.adresse_reelle" type="text" required placeholder="Quartier, Ville" class="w-full bg-gray-50 border-0 rounded-2xl focus:ring-2 focus:ring-blue-500 font-bold px-5 py-3.5 placeholder-gray-300">
+                                    <p v-if="enrollForm.errors.adresse_reelle" class="text-red-500 text-[10px] mt-1 font-bold">{{ enrollForm.errors.adresse_reelle }}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Section: Parcours -->
+                        <div class="border-t border-gray-100 pt-8">
+                            <h4 class="text-[10px] font-black text-blue-600 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                                <AcademicCapIcon class="h-4 w-4" /> Parcours Académique &amp; Professionnel
+                            </h4>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Niveau d'étude <span class="text-red-500">*</span></label>
+                                    <input v-model="enrollForm.niveau_etude" type="text" required placeholder="Ex: Bac+2, Licence..." class="w-full bg-gray-50 border-0 rounded-2xl focus:ring-2 focus:ring-blue-500 font-bold px-5 py-3.5 placeholder-gray-300">
+                                    <p v-if="enrollForm.errors.niveau_etude" class="text-red-500 text-[10px] mt-1 font-bold">{{ enrollForm.errors.niveau_etude }}</p>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Dernier Diplôme <span class="text-red-500">*</span></label>
+                                    <input v-model="enrollForm.dernier_diplome_libelle" type="text" required placeholder="Ex: BTS Commerce" class="w-full bg-gray-50 border-0 rounded-2xl focus:ring-2 focus:ring-blue-500 font-bold px-5 py-3.5 placeholder-gray-300">
+                                    <p v-if="enrollForm.errors.dernier_diplome_libelle" class="text-red-500 text-[10px] mt-1 font-bold">{{ enrollForm.errors.dernier_diplome_libelle }}</p>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Fonction Actuelle <span class="text-red-500">*</span></label>
+                                    <input v-model="enrollForm.fonction" type="text" required placeholder="Ex: Étudiant, Commerçant..." class="w-full bg-gray-50 border-0 rounded-2xl focus:ring-2 focus:ring-blue-500 font-bold px-5 py-3.5 placeholder-gray-300">
+                                    <p v-if="enrollForm.errors.fonction" class="text-red-500 text-[10px] mt-1 font-bold">{{ enrollForm.errors.fonction }}</p>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Établissement <span class="text-gray-300 text-[9px]">(Optionnel)</span></label>
+                                    <input v-model="enrollForm.etablissement" type="text" placeholder="Ex: Université Assane Seck" class="w-full bg-gray-50 border-0 rounded-2xl focus:ring-2 focus:ring-blue-500 font-bold px-5 py-3.5 placeholder-gray-300">
+                                    <p v-if="enrollForm.errors.etablissement" class="text-red-500 text-[10px] mt-1 font-bold">{{ enrollForm.errors.etablissement }}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Section: Formation & Documents -->
+                        <div class="border-t border-gray-100 pt-8">
+                            <h4 class="text-[10px] font-black text-blue-600 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                                <BriefcaseIcon class="h-4 w-4" /> Formation &amp; Documents
+                            </h4>
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Module de Formation <span class="text-red-500">*</span></label>
+                                    <select v-model="enrollForm.module_id" required class="w-full bg-gray-50 border-0 rounded-2xl focus:ring-2 focus:ring-blue-500 font-bold px-5 py-3.5 appearance-none cursor-pointer">
+                                        <option value="">— Sélectionner un module —</option>
+                                        <option v-for="m in modules" :key="m.id" :value="m.id">{{ m.titre || m.nom_module }}</option>
+                                    </select>
+                                    <p v-if="enrollForm.errors.module_id" class="text-red-500 text-[10px] mt-1 font-bold">{{ enrollForm.errors.module_id }}</p>
+                                </div>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div class="p-4 bg-gray-50 rounded-2xl border border-dashed border-gray-200 hover:border-blue-300 transition">
+                                        <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Document CNI <span class="text-gray-300 text-[9px]">(Optionnel)</span></label>
+                                        <input @input="enrollForm.cni = $event.target.files[0]" type="file" accept=".pdf,.jpg,.jpeg,.png" class="w-full text-xs font-bold text-gray-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-black file:bg-blue-600 file:text-white hover:file:bg-blue-700 file:cursor-pointer file:transition cursor-pointer">
+                                        <p class="text-[9px] text-gray-400 mt-1.5">PDF, JPG ou PNG · max 5 Mo</p>
+                                        <p v-if="enrollForm.errors.cni" class="text-red-500 text-[10px] mt-1 font-bold">{{ enrollForm.errors.cni }}</p>
+                                    </div>
+                                    <div class="p-4 bg-gray-50 rounded-2xl border border-dashed border-gray-200 hover:border-blue-300 transition">
+                                        <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Scan Diplôme <span class="text-gray-300 text-[9px]">(Optionnel)</span></label>
+                                        <input @input="enrollForm.diploma = $event.target.files[0]" type="file" accept=".pdf,.jpg,.jpeg,.png" class="w-full text-xs font-bold text-gray-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-black file:bg-blue-600 file:text-white hover:file:bg-blue-700 file:cursor-pointer file:transition cursor-pointer">
+                                        <p class="text-[9px] text-gray-400 mt-1.5">PDF, JPG ou PNG · max 5 Mo</p>
+                                        <p v-if="enrollForm.errors.diploma" class="text-red-500 text-[10px] mt-1 font-bold">{{ enrollForm.errors.diploma }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                     </div>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Email (Optionnel)</label>
-                            <input v-model="enrollForm.email" type="email" class="w-full bg-gray-50 border-0 rounded-2xl focus:ring-2 focus:ring-blue-500 font-bold px-5 py-3.5">
-                            <p v-if="enrollForm.errors.email" class="text-red-500 text-[10px] mt-1 font-bold">{{ enrollForm.errors.email }}</p>
-                        </div>
-                        <div>
-                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Téléphone</label>
-                            <input v-model="enrollForm.telephone" type="tel" required class="w-full bg-gray-50 border-0 rounded-2xl focus:ring-2 focus:ring-blue-500 font-bold px-5 py-3.5">
-                            <p v-if="enrollForm.errors.telephone" class="text-red-500 text-[10px] mt-1 font-bold">{{ enrollForm.errors.telephone }}</p>
-                        </div>
-                    </div>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Sexe <span class="text-red-500">*</span></label>
-                            <select v-model="enrollForm.sexe" required class="w-full bg-gray-50 border-0 rounded-2xl focus:ring-2 focus:ring-blue-500 font-bold px-5 py-3.5 appearance-none">
-                                <option value="">Choisir...</option>
-                                <option value="M">Masculin</option>
-                                <option value="F">Féminin</option>
-                            </select>
-                            <p v-if="enrollForm.errors.sexe" class="text-red-500 text-[10px] mt-1 font-bold">{{ enrollForm.errors.sexe }}</p>
-                        </div>
-                        <div>
-                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Date de Naissance</label>
-                            <input v-model="enrollForm.date_naissance" type="date" required class="w-full bg-gray-50 border-0 rounded-2xl focus:ring-2 focus:ring-blue-500 font-bold px-5 py-3.5">
-                            <p v-if="enrollForm.errors.date_naissance" class="text-red-500 text-[10px] mt-1 font-bold">{{ enrollForm.errors.date_naissance }}</p>
-                        </div>
-                    </div>
-                    <div>
-                        <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Lieu de Naissance</label>
-                        <input v-model="enrollForm.lieu_naissance" type="text" required class="w-full bg-gray-50 border-0 rounded-2xl focus:ring-2 focus:ring-blue-500 font-bold px-5 py-3.5">
-                        <p v-if="enrollForm.errors.lieu_naissance" class="text-red-500 text-[10px] mt-1 font-bold">{{ enrollForm.errors.lieu_naissance }}</p>
-                    </div>
-                    <div>
-                        <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Adresse Réelle</label>
-                        <input v-model="enrollForm.adresse_reelle" type="text" required class="w-full bg-gray-50 border-0 rounded-2xl focus:ring-2 focus:ring-blue-500 font-bold px-5 py-3.5">
-                        <p v-if="enrollForm.errors.adresse_reelle" class="text-red-500 text-[10px] mt-1 font-bold">{{ enrollForm.errors.adresse_reelle }}</p>
-                    </div>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Niveau d'étude</label>
-                            <input v-model="enrollForm.niveau_etude" type="text" required class="w-full bg-gray-50 border-0 rounded-2xl focus:ring-2 focus:ring-blue-500 font-bold px-5 py-3.5">
-                            <p v-if="enrollForm.errors.niveau_etude" class="text-red-500 text-[10px] mt-1 font-bold">{{ enrollForm.errors.niveau_etude }}</p>
-                        </div>
-                        <div>
-                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Dernier Diplôme</label>
-                            <input v-model="enrollForm.dernier_diplome_libelle" type="text" required class="w-full bg-gray-50 border-0 rounded-2xl focus:ring-2 focus:ring-blue-500 font-bold px-5 py-3.5">
-                            <p v-if="enrollForm.errors.dernier_diplome_libelle" class="text-red-500 text-[10px] mt-1 font-bold">{{ enrollForm.errors.dernier_diplome_libelle }}</p>
-                        </div>
-                    </div>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Fonction Actuelle</label>
-                            <input v-model="enrollForm.fonction" type="text" required class="w-full bg-gray-50 border-0 rounded-2xl focus:ring-2 focus:ring-blue-500 font-bold px-5 py-3.5">
-                            <p v-if="enrollForm.errors.fonction" class="text-red-500 text-[10px] mt-1 font-bold">{{ enrollForm.errors.fonction }}</p>
-                        </div>
-                        <div>
-                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Établissement (Optionnel)</label>
-                            <input v-model="enrollForm.etablissement" type="text" class="w-full bg-gray-50 border-0 rounded-2xl focus:ring-2 focus:ring-blue-500 font-bold px-5 py-3.5">
-                            <p v-if="enrollForm.errors.etablissement" class="text-red-500 text-[10px] mt-1 font-bold">{{ enrollForm.errors.etablissement }}</p>
-                        </div>
-                    </div>
-                    <div>
-                        <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Module de Formation</label>
-                        <select v-model="enrollForm.module_id" required class="w-full bg-gray-50 border-0 rounded-2xl focus:ring-2 focus:ring-blue-500 font-bold px-5 py-3.5 appearance-none">
-                            <option value="">Sélectionner un module</option>
-                            <option v-for="m in modules" :key="m.id" :value="m.id">{{ m.titre || m.nom_module }}</option>
-                        </select>
-                        <p v-if="enrollForm.errors.module_id" class="text-red-500 text-[10px] mt-1 font-bold">{{ enrollForm.errors.module_id }}</p>
-                    </div>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Document CNI (Optionnel)</label>
-                            <input @input="enrollForm.cni = $event.target.files[0]" type="file" accept=".pdf,.jpg,.jpeg,.png" class="w-full bg-gray-50 border-0 rounded-2xl focus:ring-2 focus:ring-blue-500 font-bold px-5 py-3 text-xs file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-black file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
-                            <p v-if="enrollForm.errors.cni" class="text-red-500 text-[10px] mt-1 font-bold">{{ enrollForm.errors.cni }}</p>
-                        </div>
-                        <div>
-                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Scan Diplôme (Optionnel)</label>
-                            <input @input="enrollForm.diploma = $event.target.files[0]" type="file" accept=".pdf,.jpg,.jpeg,.png" class="w-full bg-gray-50 border-0 rounded-2xl focus:ring-2 focus:ring-blue-500 font-bold px-5 py-3 text-xs file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-black file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
-                            <p v-if="enrollForm.errors.diploma" class="text-red-500 text-[10px] mt-1 font-bold">{{ enrollForm.errors.diploma }}</p>
-                        </div>
-                    </div>
-                    <div class="pt-4 flex gap-4">
-                        <button type="button" @click="isManualEnrollOpen = false" class="flex-1 py-4 bg-gray-100 text-gray-600 rounded-2xl font-black transition">Annuler</button>
-                        <button type="submit" :disabled="enrollForm.processing" class="flex-1 py-4 bg-blue-600 text-white rounded-2xl font-black shadow-lg shadow-blue-100 hover:bg-blue-700 transition disabled:opacity-50">Inscrire</button>
+
+                    <!-- Footer Actions -->
+                    <div class="px-10 py-6 bg-gray-50/80 border-t border-gray-100 flex gap-4 shrink-0">
+                        <button type="button" @click="isManualEnrollOpen = false" class="flex-1 py-3.5 bg-white text-gray-600 border border-gray-200 rounded-2xl font-black text-sm hover:bg-gray-100 transition">Annuler</button>
+                        <button type="submit" :disabled="enrollForm.processing" class="flex-1 py-3.5 bg-blue-600 text-white rounded-2xl font-black text-sm shadow-lg shadow-blue-100 hover:bg-blue-700 transition disabled:opacity-50 flex items-center justify-center gap-2">
+                            <UserPlusIcon class="h-5 w-5" />
+                            Inscrire le candidat
+                        </button>
                     </div>
                 </form>
             </div>
