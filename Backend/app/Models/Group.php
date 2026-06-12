@@ -25,6 +25,7 @@ class Group extends Model
         'adjoint_groupe_id',
         'annee_academique',
         'gps_check_required',
+        'status', // 'active' | 'closed'
     ];
 
     /**

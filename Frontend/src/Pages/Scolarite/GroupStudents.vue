@@ -8,7 +8,8 @@ import {
     ArrowLeftIcon,
     MagnifyingGlassIcon,
     AcademicCapIcon,
-    CheckCircleIcon
+    CheckCircleIcon,
+    LockClosedIcon
 } from '@heroicons/vue/24/outline'
 
 const props = defineProps({
@@ -104,6 +105,15 @@ const nominate = (userId, role) => {
                 </div>
             </div>
 
+            <!-- Closed Group Banner -->
+            <div v-if="group.status === 'closed'" class="mb-6 flex items-center gap-4 p-5 bg-gray-100 border border-gray-200 rounded-3xl text-gray-500">
+                <LockClosedIcon class="h-6 w-6 shrink-0 text-gray-400" />
+                <div>
+                    <p class="font-black text-gray-700 text-sm">Formation terminée &mdash; Groupe clôturé</p>
+                    <p class="text-xs font-medium">L’effectif de ce groupe est figé. Aucun apprenant ne peut être ajouté ou retiré.</p>
+                </div>
+            </div>
+
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 <!-- Current Roster -->
                 <div class="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden flex flex-col h-[700px]">
@@ -128,35 +138,38 @@ const nominate = (userId, role) => {
                                     </div>
                                 </div>
                                 <div class="flex items-center gap-2">
-                                    <!-- Nomination Buttons -->
-                                    <button 
-                                        @click="nominate(student.id, 'responsable')"
-                                        class="p-2.5 rounded-xl transition-all border"
-                                        :class="group.responsable_groupe_id === student.id 
-                                            ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-100' 
-                                            : 'bg-white border-gray-100 text-gray-400 hover:text-blue-600 hover:border-blue-100'"
-                                        title="Nommer Chef de Groupe"
-                                    >
-                                        <AcademicCapIcon class="h-5 w-5" />
-                                    </button>
-                                    <button 
-                                        @click="nominate(student.id, 'adjoint')"
-                                        class="p-2.5 rounded-xl transition-all border"
-                                        :class="group.adjoint_groupe_id === student.id 
-                                            ? 'bg-amber-500 border-amber-500 text-white shadow-lg shadow-amber-100' 
-                                            : 'bg-white border-gray-100 text-gray-400 hover:text-amber-500 hover:border-amber-100'"
-                                        title="Nommer Adjoint"
-                                    >
-                                        <CheckCircleIcon class="h-5 w-5" />
-                                    </button>
-
-                                    <button 
-                                        @click="removeStudent(student.id)"
-                                        class="p-2.5 text-gray-300 hover:text-red-600 hover:bg-red-50 rounded-xl transition"
-                                        title="Retirer du groupe"
-                                    >
-                                        <UserMinusIcon class="h-5 w-5" />
-                                    </button>
+                                    <!-- Action buttons hidden for closed groups -->
+                                    <template v-if="group.status !== 'closed'">
+                                        <!-- Nomination Buttons -->
+                                        <button 
+                                            @click="nominate(student.id, 'responsable')"
+                                            class="p-2.5 rounded-xl transition-all border"
+                                            :class="group.responsable_groupe_id === student.id 
+                                                ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-100' 
+                                                : 'bg-white border-gray-100 text-gray-400 hover:text-blue-600 hover:border-blue-100'"
+                                            title="Nommer Chef de Groupe"
+                                        >
+                                            <AcademicCapIcon class="h-5 w-5" />
+                                        </button>
+                                        <button 
+                                            @click="nominate(student.id, 'adjoint')"
+                                            class="p-2.5 rounded-xl transition-all border"
+                                            :class="group.adjoint_groupe_id === student.id 
+                                                ? 'bg-amber-500 border-amber-500 text-white shadow-lg shadow-amber-100' 
+                                                : 'bg-white border-gray-100 text-gray-400 hover:text-amber-500 hover:border-amber-100'"
+                                            title="Nommer Adjoint"
+                                        >
+                                            <CheckCircleIcon class="h-5 w-5" />
+                                        </button>
+                                        <button 
+                                            @click="removeStudent(student.id)"
+                                            class="p-2.5 text-gray-300 hover:text-red-600 hover:bg-red-50 rounded-xl transition"
+                                            title="Retirer du groupe"
+                                        >
+                                            <UserMinusIcon class="h-5 w-5" />
+                                        </button>
+                                    </template>
+                                    <span v-else class="text-[10px] font-black text-gray-300 uppercase tracking-widest">Figé</span>
                                 </div>
                             </div>
                         </div>
@@ -167,8 +180,8 @@ const nominate = (userId, role) => {
                     </div>
                 </div>
 
-                <!-- Available Students -->
-                <div class="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden flex flex-col h-[700px]">
+                <!-- Available Students panel: hidden when group is closed -->
+                <div v-if="group.status !== 'closed'" class="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden flex flex-col h-[700px]">
                     <div class="p-8 border-b border-gray-100 bg-gray-50/50 space-y-4">
                         <div class="flex items-center justify-between">
                             <h3 class="text-xl font-black text-gray-900 tracking-tight">Apprenants Disponibles</h3>
@@ -235,6 +248,15 @@ const nominate = (userId, role) => {
                             Ajouter {{ selectedUsers.length }} sélectionné(s)
                         </button>
                     </div>
+                </div>
+
+                <!-- Closed group placeholder -->
+                <div v-else class="bg-gray-50 rounded-[2.5rem] border-2 border-dashed border-gray-200 flex flex-col items-center justify-center h-[700px] gap-4 text-center p-12">
+                    <div class="h-20 w-20 bg-gray-100 rounded-3xl flex items-center justify-center">
+                        <LockClosedIcon class="h-10 w-10 text-gray-300" />
+                    </div>
+                    <h3 class="text-xl font-black text-gray-400">Groupe Clôturé</h3>
+                    <p class="text-gray-400 text-sm font-medium max-w-xs">L’effectif est figé. Pour modifier ce groupe, réouvrez-le depuis la page des groupes.</p>
                 </div>
             </div>
         </div>

@@ -1,7 +1,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
-import { Head, useForm, Link } from '@inertiajs/vue3'
-import { ref } from 'vue'
+import { Head, useForm, Link, router, usePage } from '@inertiajs/vue3'
+import { ref, computed } from 'vue'
 import { 
     UserGroupIcon, 
     PlusIcon, 
@@ -11,7 +11,10 @@ import {
     UserIcon,
     BookOpenIcon,
     PencilSquareIcon,
-    TrashIcon
+    TrashIcon,
+    LockClosedIcon,
+    LockOpenIcon,
+    CheckCircleIcon
 } from '@heroicons/vue/24/outline'
 
 const props = defineProps({
@@ -86,6 +89,24 @@ const handleDeputyChange = () => {
         editForm.responsable_groupe_id = null
     }
 }
+
+const page = usePage()
+const isDirectorOrSecretary = computed(() => {
+    const roles = page.props.auth.user.roles
+    return roles.includes('Directeur') || roles.includes('Secrétaire')
+})
+
+const closeGroup = (group) => {
+    if (confirm(`Clôturer le groupe « ${group.nom_groupe} » ? La formation sera marquée comme terminée.`)) {
+        router.patch(route('groups.close', group.id))
+    }
+}
+
+const reopenGroup = (group) => {
+    if (confirm(`Réouvrir le groupe « ${group.nom_groupe} » et le remettre en cours ?`)) {
+        router.patch(route('groups.reopen', group.id))
+    }
+}
 </script>
 
 <template>
@@ -110,29 +131,49 @@ const handleDeputyChange = () => {
 
             <!-- Groups Grid -->
             <div v-if="groups.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <div v-for="group in groups" :key="group.id" class="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden group">
+                <div 
+                    v-for="group in groups" 
+                    :key="group.id" 
+                    class="bg-white rounded-[2.5rem] border shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden group"
+                    :class="group.status === 'closed' ? 'border-gray-200 opacity-80' : 'border-gray-100'"
+                >
                     <div class="p-8">
                         <div class="flex items-start justify-between mb-6">
-                            <div class="h-14 w-14 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-colors duration-300">
-                                <UserGroupIcon class="h-8 w-8" />
+                            <div 
+                                class="h-14 w-14 rounded-2xl flex items-center justify-center transition-colors duration-300"
+                                :class="group.status === 'closed' 
+                                    ? 'bg-gray-100 text-gray-400' 
+                                    : 'bg-blue-50 text-blue-600 group-hover:bg-blue-600 group-hover:text-white'"
+                            >
+                                <CheckCircleIcon v-if="group.status === 'closed'" class="h-8 w-8" />
+                                <UserGroupIcon v-else class="h-8 w-8" />
                             </div>
-                            <div class="flex items-center gap-2">
-                                <button @click="openEditModal(group)" class="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all">
-                                    <PencilSquareIcon class="h-5 w-5" />
-                                </button>
-                                <button @click="deleteGroup(group.id)" class="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all">
-                                    <TrashIcon class="h-5 w-5" />
-                                </button>
-                                <span v-if="!group.gps_check_required" class="px-3 py-1.5 bg-amber-50 text-amber-600 text-[10px] font-black uppercase tracking-widest rounded-full border border-amber-100">
+                            <div class="flex items-center gap-2 flex-wrap justify-end">
+                                <!-- Status badge -->
+                                <span 
+                                    class="px-3 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-full border"
+                                    :class="group.status === 'closed' 
+                                        ? 'bg-gray-100 text-gray-500 border-gray-200' 
+                                        : 'bg-emerald-50 text-emerald-600 border-emerald-100'"
+                                >
+                                    {{ group.status === 'closed' ? 'Terminé' : 'En cours' }}
+                                </span>
+                                <span v-if="!group.gps_check_required && group.status !== 'closed'" class="px-3 py-1.5 bg-amber-50 text-amber-600 text-[10px] font-black uppercase tracking-widest rounded-full border border-amber-100">
                                     Sans GPS
                                 </span>
                                 <span class="px-4 py-1.5 bg-gray-50 text-gray-500 text-[10px] font-black uppercase tracking-widest rounded-full">
                                     {{ group.annee_academique }}
                                 </span>
+                                <button @click="openEditModal(group)" class="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all" title="Modifier">
+                                    <PencilSquareIcon class="h-5 w-5" />
+                                </button>
+                                <button @click="deleteGroup(group.id)" class="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all" title="Supprimer">
+                                    <TrashIcon class="h-5 w-5" />
+                                </button>
                             </div>
                         </div>
 
-                        <h3 class="text-xl font-black text-gray-900 mb-2 truncate">{{ group.nom_groupe }}</h3>
+                        <h3 class="text-xl font-black tracking-tight mb-2 truncate" :class="group.status === 'closed' ? 'text-gray-500' : 'text-gray-900'">{{ group.nom_groupe }}</h3>
                         <div class="space-y-3">
                             <div class="flex items-center gap-3 text-sm text-gray-500 font-medium">
                                 <BookOpenIcon class="h-4 w-4 text-blue-500" />
@@ -144,7 +185,7 @@ const handleDeputyChange = () => {
                             </div>
                         </div>
 
-                        <div class="mt-8 pt-6 border-t border-gray-50 flex flex-col gap-4">
+                        <div class="mt-8 pt-6 border-t border-gray-50 flex flex-col gap-3">
                             <div class="flex items-center justify-between">
                                 <div class="flex -space-x-2">
                                     <div v-for="i in Math.min(group.students_count, 3)" :key="i" class="h-8 w-8 rounded-full border-2 border-white bg-gray-100 flex items-center justify-center text-[10px] font-bold text-gray-400">
@@ -166,6 +207,26 @@ const handleDeputyChange = () => {
                                 <AcademicCapIcon class="h-4 w-4" />
                                 Gérer les Apprenants
                             </Link>
+
+                            <!-- Close / Reopen buttons (Director & Secretary only) -->
+                            <template v-if="isDirectorOrSecretary">
+                                <button 
+                                    v-if="group.status !== 'closed'"
+                                    @click="closeGroup(group)"
+                                    class="w-full flex items-center justify-center gap-2 py-3 rounded-2xl font-black text-xs border-2 border-dashed border-red-200 text-red-400 hover:bg-red-600 hover:text-white hover:border-red-600 transition-all duration-300"
+                                >
+                                    <LockClosedIcon class="h-4 w-4" />
+                                    Clôturer la Formation
+                                </button>
+                                <button 
+                                    v-else
+                                    @click="reopenGroup(group)"
+                                    class="w-full flex items-center justify-center gap-2 py-3 rounded-2xl font-black text-xs border-2 border-dashed border-emerald-200 text-emerald-500 hover:bg-emerald-600 hover:text-white hover:border-emerald-600 transition-all duration-300"
+                                >
+                                    <LockOpenIcon class="h-4 w-4" />
+                                    Réouvrir le Groupe
+                                </button>
+                            </template>
                         </div>
                     </div>
                 </div>

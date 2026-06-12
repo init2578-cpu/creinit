@@ -24,6 +24,7 @@ class StoreGroupRequest extends FormRequest
             'responsable_groupe_id' => ['nullable', 'exists:users,id'],
             'adjoint_groupe_id' => ['nullable', 'exists:users,id', 'different:responsable_groupe_id'],
             'gps_check_required' => ['sometimes', 'boolean'],
+            'status' => ['sometimes', 'string', 'in:active,closed'],
         ];
     }
 }

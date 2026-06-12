@@ -108,6 +108,10 @@ class TraineesController extends Controller
 
             $user->assignRole('Stagiaire');
 
+            if ($validated['internship_type'] === 'secretary_assistant') {
+                $user->assignRole('Secrétaire');
+            }
+
             // Handle file uploads
             $paths = [];
             foreach (['motivation_letter', 'cni', 'cv', 'diploma'] as $doc) {
@@ -200,6 +204,12 @@ class TraineesController extends Controller
                     'status' => $validated['status'],
                 ], $paths)
             );
+
+            if ($validated['internship_type'] === 'secretary_assistant') {
+                $trainee->assignRole('Secrétaire');
+            } else {
+                $trainee->removeRole('Secrétaire');
+            }
         });
 
         return back()->with('success', 'Profil stagiaire mis à jour.');

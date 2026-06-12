@@ -51,7 +51,9 @@ class ScheduleController extends Controller
         return Inertia::render('Scolarite/Schedules', [
             'schedules'  => $schedules,
             'rooms'      => Room::all(),
-            'groups'     => \App\Models\Group::with('formateur:id,name')->get(['id', 'nom_groupe', 'formateur_id']),
+            'groups'     => \App\Models\Group::with('formateur:id,name')
+                ->where('status', 'active')
+                ->get(['id', 'nom_groupe', 'formateur_id']),
             'formateurs' => $formateurs,
         ]);
     }

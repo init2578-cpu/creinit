@@ -43,6 +43,10 @@ class GroupStudentController extends Controller
 
     public function store(Request $request, Group $group): RedirectResponse
     {
+        if ($group->status === 'closed') {
+            return back()->withErrors(['group' => 'Ce groupe est clôturé. Impossible d\'ajouter des apprenants.']);
+        }
+
         $validated = $request->validate([
             'user_ids' => 'required|array',
             'user_ids.*' => 'exists:users,id',
@@ -55,6 +59,10 @@ class GroupStudentController extends Controller
 
     public function destroy(Group $group, User $student): RedirectResponse
     {
+        if ($group->status === 'closed') {
+            return back()->withErrors(['group' => 'Ce groupe est clôturé. Impossible de retirer un apprenant.']);
+        }
+
         $group->students()->detach($student->id);
 
         return back()->with('success', "L'apprenant a été retiré du groupe.");

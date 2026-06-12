@@ -187,6 +187,10 @@ Route::middleware(['auth'])->group(function (): void {
             ->name('groups.update');
         Route::delete('/groups/{group}', [\App\Http\Controllers\Scolarite\GroupController::class, 'destroy'])
             ->name('groups.destroy');
+        Route::patch('/groups/{group}/close', [\App\Http\Controllers\Scolarite\GroupController::class, 'close'])
+            ->name('groups.close');
+        Route::patch('/groups/{group}/reopen', [\App\Http\Controllers\Scolarite\GroupController::class, 'reopen'])
+            ->name('groups.reopen');
 
         // Group Student Management
         Route::post('/groups/{group}/students', [\App\Http\Controllers\Scolarite\GroupStudentController::class, 'store'])
