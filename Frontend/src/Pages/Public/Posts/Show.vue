@@ -9,6 +9,7 @@ import {
     UserIcon,
     DocumentTextIcon
 } from '@heroicons/vue/24/outline'
+import ContactForm from '@/Components/ContactForm.vue'
 
 const props = defineProps({
     post: Object,
@@ -136,6 +137,19 @@ function copyUrl() {
                             <svg v-else class="h-4 w-4 stroke-current fill-none" viewBox="0 0 24 24" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
                             {{ copied ? 'Lien copié !' : 'Copier le lien' }}
                         </button>
+                    </div>
+                </div>
+
+                <!-- Contact Section -->
+                <div class="mt-24 pt-16 border-t border-white/10">
+                    <div class="text-center mb-12">
+                        <h2 class="text-3xl md:text-5xl font-black text-white tracking-tighter mb-4 font-display">
+                            Intéressé(e) ? <span class="text-cyan-500">Contactez-nous</span>
+                        </h2>
+                        <p class="text-slate-400 text-lg font-medium">Une question ou une proposition de collaboration ? Envoyez-nous un message.</p>
+                    </div>
+                    <div class="max-w-2xl mx-auto">
+                        <ContactForm />
                     </div>
                 </div>
 
