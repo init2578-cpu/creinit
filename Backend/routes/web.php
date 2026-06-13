@@ -254,6 +254,7 @@ Route::middleware(['auth'])->group(function (): void {
         Route::post('/attendances/individual', [AttendanceController::class, 'store'])
             ->middleware(EnsureWithinPremises::class)->name('attendances.store');
         Route::get('/attendance', [\App\Http\Controllers\Scolarite\AttendanceController::class, 'index'])->name('attendance.index');
+        Route::get('/attendance/history/{schedule}', [\App\Http\Controllers\Scolarite\AttendanceController::class, 'history'])->name('attendance.history');
         Route::get('/attendance/{schedule}/{date}', [\App\Http\Controllers\Scolarite\AttendanceController::class, 'take'])->name('attendance.take');
         Route::post('/attendance', [\App\Http\Controllers\Scolarite\AttendanceController::class, 'store'])
             ->middleware(EnsureWithinPremises::class)->name('attendance.store');

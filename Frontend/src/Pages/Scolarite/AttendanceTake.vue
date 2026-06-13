@@ -101,11 +101,11 @@ const statusConfig = {
     <AuthenticatedLayout>
         <div class="max-w-5xl mx-auto py-8 px-4">
             <!-- Back Navigation -->
-            <Link :href="route('attendance.index', { date: date })" class="inline-flex items-center gap-2 text-gray-500 hover:text-blue-600 font-bold text-sm mb-8 transition group">
+            <Link :href="route('attendance.history', { schedule: schedule.id })" class="inline-flex items-center gap-2 text-gray-500 hover:text-blue-600 font-bold text-sm mb-8 transition group">
                 <div class="p-2 bg-white rounded-xl shadow-sm border border-gray-100 group-hover:bg-blue-50 group-hover:border-blue-100 transition">
                     <ChevronLeftIcon class="h-4 w-4" />
                 </div>
-                Retour aux sessions
+                Retour à l'historique
             </Link>
 
             <div class="bg-white rounded-[3rem] shadow-sm border border-gray-100 overflow-hidden mb-8">

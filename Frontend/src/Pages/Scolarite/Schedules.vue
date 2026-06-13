@@ -189,8 +189,7 @@ const getNextDateForDay = (dayOfWeek) => {
 }
 
 const navigateToAttendance = (schedule) => {
-    const date = getNextDateForDay(parseInt(schedule.day_of_week))
-    router.visit(route('attendance.take', { schedule: schedule.id, date }))
+    router.visit(route('attendance.history', { schedule: schedule.id }))
 }
 </script>
 

@@ -205,7 +205,52 @@ class AttendanceController extends Controller
             Group::checkQuotaAndNotify($group);
         }
 
-        return redirect()->route('attendance.index', ['date' => $validated['date']])
+        return redirect()->route('attendance.history', ['schedule' => $schedule->id])
             ->with('success', 'La liste de présence a été enregistrée avec succès.');
+    }
+
+    /**
+     * Display all attendance lists for a specific schedule.
+     */
+    public function history(Schedule $schedule): Response
+    {
+        $schedule->load(['group.module', 'formateur', 'room']);
+        
+        // Fetch all attendance records for this schedule
+        $attendances = Attendance::where('schedule_id', $schedule->id)
+            ->get();
+
+        // Group by date
+        $grouped = $attendances->groupBy('date')->map(function ($items, $date) use ($schedule) {
+            $trainerId = $schedule->formateur_id;
+            
+            $studentItems = $items->filter(function ($item) use ($trainerId) {
+                return $item->user_id !== $trainerId;
+            });
+
+            $total = $studentItems->count();
+            $present = $studentItems->where('status', 'present')->count();
+            $absent = $studentItems->where('status', 'absent_non_justifie')->count();
+            $late = $studentItems->where('status', 'late')->count();
+            $justified = $studentItems->where('status', 'justifie')->count();
+
+            $trainerRecord = $items->firstWhere('user_id', $trainerId);
+            $trainerStatus = $trainerRecord ? $trainerRecord->status : 'Non émargé';
+
+            return [
+                'date' => $date,
+                'total_students' => $total,
+                'present' => $present,
+                'absent' => $absent,
+                'late' => $late,
+                'justified' => $justified,
+                'trainer_status' => $trainerStatus,
+            ];
+        })->values()->sortByDesc('date')->values();
+
+        return Inertia::render('Scolarite/AttendanceHistory', [
+            'schedule' => $schedule,
+            'history' => $grouped,
+        ]);
     }
 }

@@ -104,13 +104,10 @@ function formatDate(dateString) {
                         </div>
 
                         <Link 
-                            :href="route('attendance.take', { schedule: schedule.id, date: date })"
-                            class="mt-auto w-full py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all flex items-center justify-center gap-2 shadow-lg"
-                            :class="schedule.attendance_taken 
-                                ? 'bg-gray-100 text-gray-600 hover:bg-gray-200 shadow-gray-100' 
-                                : 'bg-blue-600 text-white hover:bg-blue-700 shadow-blue-100'"
+                            :href="route('attendance.history', { schedule: schedule.id })"
+                            class="mt-auto w-full py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all flex items-center justify-center gap-2 shadow-lg bg-blue-600 text-white hover:bg-blue-700 shadow-blue-100"
                         >
-                            {{ schedule.attendance_taken ? 'Modifier la liste' : 'Faire l\'appel' }}
+                            Voir l'historique d'émargement
                             <ChevronRightIcon class="h-4 w-4" />
                         </Link>
                     </div>
