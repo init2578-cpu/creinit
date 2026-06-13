@@ -171,11 +171,11 @@ onMounted(() => {
                         </div>
 
                         <h1 
-                            class="text-5xl md:text-8xl font-black text-white tracking-tighter leading-[1.1] mb-8 font-display"
+                            class="text-4xl sm:text-6xl lg:text-8xl font-black text-white tracking-tighter leading-[1.1] mb-8 font-display"
                             id="hero-title"
                         >
                             <span class="text-glow-cyan">L'Innovation à Portée de Tous.</span><br>
-                            <span class="opacity-80 text-shimmer text-3xl md:text-5xl">Démocratiser la Science.</span>
+                            <span class="opacity-80 text-shimmer text-2xl sm:text-4xl lg:text-5xl">Démocratiser la Science.</span>
                             <span class="inline-block w-2 h-10 md:h-14 bg-cyan-500 ml-2 animate-blink"></span>
                         </h1>
 
@@ -210,9 +210,9 @@ onMounted(() => {
                     </div>
 
                     <!-- Circular Stats (Futuristic Style) -->
-                    <div class="lg:col-span-4 flex flex-col gap-8 justify-center items-end">
+                    <div class="lg:col-span-4 grid grid-cols-2 lg:flex lg:flex-col gap-4 md:gap-6 lg:gap-8 justify-center items-center lg:items-end w-full">
                         <div v-for="(val, key) in stats" :key="key" 
-                             class="glass-dark p-6 rounded-2xl border border-white/5 w-full max-w-[280px] group hover:border-cyan-500/30 transition-all hover:translate-x-[-10px]"
+                             class="glass-dark p-4 sm:p-6 rounded-2xl border border-white/5 w-full max-w-full lg:max-w-[280px] group hover:border-cyan-500/30 transition-all hover:-translate-y-1 lg:hover:translate-x-[-10px]"
                              data-reveal :id="'stat-' + key">
                             <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest group-hover:text-cyan-400 transition-colors">
                                 {{ key === 'students' ? 'Hub Apprenants' : key === 'modules' ? 'Nexus Formations' : key === 'trainers' ? 'Core Experts' : 'Taux Success' }}
@@ -238,7 +238,7 @@ onMounted(() => {
                         { title: 'Vision Radicale', desc: 'Transcender les limites de l\'éducation traditionnelle par l\'immersion technologique.', icon: LightBulbIcon },
                         { title: 'Impact Local', desc: 'Propulser la région de Kolda au sommet de la scène numérique sénégalaise.', icon: MapPinIcon },
                         { title: 'Excellence IA', desc: 'Maîtriser les outils de demain pour résoudre les problèmes d\'aujourd\'hui.', icon: CpuChipIcon }
-                    ]" :key="i" class="glass-dark p-10 rounded-[2.5rem] border border-white/5 hover:border-cyan-500/20 transition-all group" data-reveal :id="'mission-' + i">
+                    ]" :key="i" class="glass-dark p-6 sm:p-10 rounded-[2rem] sm:rounded-[2.5rem] border border-white/5 hover:border-cyan-500/20 transition-all group" data-reveal :id="'mission-' + i">
                         <div class="h-14 w-14 rounded-2xl bg-cyan-500/10 flex items-center justify-center mb-8 group-hover:bg-cyan-500 group-hover:text-slate-950 transition-all">
                             <component :is="item.icon" class="h-8 w-8" />
                         </div>
@@ -260,22 +260,22 @@ onMounted(() => {
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-24 items-center mb-32">
                     <div data-reveal id="ai-vision" class="relative">
                         <div class="absolute -left-10 -top-10 h-20 w-20 border-l-2 border-t-2 border-cyan-500/20"></div>
-                        <h2 class="text-4xl md:text-7xl font-black text-white tracking-tighter leading-tight mb-8 font-display">
+                        <h2 class="text-4xl sm:text-6xl lg:text-7xl font-black text-white tracking-tighter leading-tight mb-8 font-display">
                             COGNITION <br> <span class="text-cyan-500 text-glow-cyan italic">AUGMENTÉE</span>
                         </h2>
                         <p class="text-slate-400 text-lg font-medium leading-relaxed mb-10 max-w-xl">
                             Nous ne nous contentons pas d'enseigner la technologie ; nous utilisons l'intelligence artificielle pour décupler les capacités de nos apprenants. De la génération de code au tutorat intelligent, le CRE est le laboratoire du futur à Kolda.
                         </p>
-                        <div class="grid grid-cols-2 gap-6">
-                            <div class="p-8 glass-dark rounded-3xl relative overflow-hidden group border border-white/5">
+                        <div class="grid grid-cols-2 gap-4 sm:gap-6">
+                            <div class="p-4 sm:p-8 glass-dark rounded-3xl relative overflow-hidden group border border-white/5">
                                 <div class="absolute inset-0 bg-cyan-500/5 translate-y-[100%] group-hover:translate-y-0 transition-transform duration-500"></div>
-                                <p class="text-cyan-400 text-4xl font-black mb-1">90%</p>
-                                <p class="text-[10px] text-slate-500 font-black uppercase tracking-widest">PRODUCTIVITÉ CODE</p>
+                                <p class="text-cyan-400 text-3xl sm:text-4xl font-black mb-1">90%</p>
+                                <p class="text-[9px] sm:text-[10px] text-slate-500 font-black uppercase tracking-widest">PRODUCTIVITÉ CODE</p>
                             </div>
-                            <div class="p-8 glass-dark rounded-3xl relative overflow-hidden group border border-white/5">
+                            <div class="p-4 sm:p-8 glass-dark rounded-3xl relative overflow-hidden group border border-white/5">
                                 <div class="absolute inset-0 bg-indigo-500/5 translate-y-[100%] group-hover:translate-y-0 transition-transform duration-500"></div>
-                                <p class="text-indigo-400 text-4xl font-black mb-1">24/7</p>
-                                <p class="text-[10px] text-slate-500 font-black uppercase tracking-widest">ASSISTANCE IA</p>
+                                <p class="text-indigo-400 text-3xl sm:text-4xl font-black mb-1">24/7</p>
+                                <p class="text-[9px] sm:text-[10px] text-slate-500 font-black uppercase tracking-widest">ASSISTANCE IA</p>
                             </div>
                         </div>
                     </div>
@@ -284,11 +284,11 @@ onMounted(() => {
                         <div 
                             v-for="pillar in pillars" 
                             :key="pillar.title"
-                            class="p-8 rounded-3xl glass-dark border border-white/5 hover:border-cyan-500/30 transition-all duration-500 group relative overflow-hidden"
+                            class="p-6 sm:p-8 rounded-3xl glass-dark border border-white/5 hover:border-cyan-500/30 transition-all duration-500 group relative overflow-hidden"
                             data-reveal :id="'pillar-' + pillar.color"
                         >
-                            <div class="flex items-center gap-6">
-                                <div class="h-16 w-16 rounded-2xl flex items-center justify-center transition-all bg-slate-950 border border-white/5 group-hover:shadow-[0_0_20px_rgba(6,182,212,0.2)]" :class="`text-${pillar.color}-400`">
+                            <div class="flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left gap-4 sm:gap-6">
+                                <div class="h-16 w-16 rounded-2xl flex items-center justify-center transition-all bg-slate-950 border border-white/5 group-hover:shadow-[0_0_20px_rgba(6,182,212,0.2)] shrink-0" :class="`text-${pillar.color}-400`">
                                     <component :is="pillar.icon" class="h-8 w-8 animate-float" />
                                 </div>
                                 <div>
@@ -508,7 +508,7 @@ onMounted(() => {
                     <div 
                         v-for="(t, index) in testimonials" 
                         :key="t.name"
-                        class="glass-dark border border-white/5 rounded-[2.5rem] p-8 lg:p-10 hover:border-emerald-500/30 transition-all duration-500 hover:-translate-y-1.5 flex flex-col justify-between group"
+                        class="glass-dark border border-white/5 rounded-[2.5rem] p-6 sm:p-8 lg:p-10 hover:border-emerald-500/30 transition-all duration-500 hover:-translate-y-1.5 flex flex-col justify-between group"
                         data-reveal :id="'testimonial-' + index"
                         :style="`transition-delay: ${index * 100}ms`"
                     >
@@ -593,7 +593,7 @@ onMounted(() => {
 
         <!-- CTA Feature Section (Futuristic Command) -->
         <section class="max-w-7xl mx-auto px-4 py-24 relative z-20">
-            <div class="glass-dark border border-cyan-500/20 rounded-[4rem] p-12 lg:p-24 relative overflow-hidden flex flex-col items-center text-center shadow-2xl">
+            <div class="glass-dark border border-cyan-500/20 rounded-[2rem] sm:rounded-[3rem] lg:rounded-[4rem] p-6 sm:p-12 lg:p-24 relative overflow-hidden flex flex-col items-center text-center shadow-2xl">
                 <!-- Abstract decorations -->
                 <div class="absolute top-0 left-0 w-full h-full opacity-20 pointer-events-none">
                     <div class="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-cyan-500 rounded-full blur-[150px] animate-pulse-slow"></div>
@@ -602,18 +602,18 @@ onMounted(() => {
 
                 <div class="relative z-10 max-w-3xl">
                     <div class="mb-8 inline-block px-4 py-2 bg-cyan-500/10 border border-cyan-500/30 rounded-xl text-[10px] text-cyan-400 font-black tracking-[0.5em]">PRIORITY PROTOCOL: ACTIVE</div>
-                    <h2 class="text-5xl md:text-8xl font-black text-white tracking-tighter leading-none mb-10 font-display">
+                    <h2 class="text-4xl sm:text-6xl lg:text-8xl font-black text-white tracking-tighter leading-none mb-10 font-display">
                         FORCEZ LE <span class="text-cyan-500 skew-x-[-12deg] inline-block">DESTIN</span>.
                     </h2>
-                    <p class="text-slate-400 text-lg md:text-xl font-medium mb-16 max-w-2xl mx-auto border-l-4 border-cyan-500 pl-8 text-left glass-dark py-6 rounded-r-2xl">
+                    <p class="text-slate-400 text-base sm:text-lg md:text-xl font-medium mb-16 max-w-2xl mx-auto border-l-4 border-cyan-500 pl-4 sm:pl-8 text-left glass-dark py-6 rounded-r-2xl">
                         Le futur n'attend pas. Les cohortes se saturent. Assurez votre place dans l'élite numérique du Sénégal.
                     </p>
                     <Link 
                         :href="route('applications.create')"
-                        class="group relative inline-flex items-center gap-4 px-12 py-6 bg-white text-slate-950 rounded-2xl font-black text-xl transition-all hover:bg-cyan-500 hover:shadow-[0_0_60px_rgba(34,211,238,0.5)] active:scale-95 shadow-2xl"
+                        class="group relative inline-flex items-center justify-center gap-4 px-6 sm:px-12 py-4 sm:py-6 bg-white text-slate-950 rounded-2xl font-black text-base sm:text-xl transition-all hover:bg-cyan-500 hover:shadow-[0_0_60px_rgba(34,211,238,0.5)] active:scale-95 shadow-2xl w-full sm:w-auto"
                     >
                         INITIALISER CANDIDATURE
-                        <ArrowRightIcon class="h-6 w-6 group-hover:rotate-[-45deg] transition-transform" />
+                        <ArrowRightIcon class="h-5 w-5 sm:h-6 sm:w-6 group-hover:rotate-[-45deg] transition-transform" />
                     </Link>
                 </div>
             </div>

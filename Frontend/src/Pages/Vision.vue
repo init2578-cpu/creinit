@@ -47,7 +47,7 @@ const visionItems = [
                         <SparklesIcon class="h-4 w-4 text-cyan-400" />
                         <span class="text-[10px] font-black text-cyan-400 uppercase tracking-[0.3em]">Horizon 2030 — Nexus Vision</span>
                     </div>
-                    <h1 class="text-6xl md:text-8xl font-black text-white tracking-tighter leading-none mb-8 font-display">
+                    <h1 class="text-4xl sm:text-6xl md:text-8xl font-black text-white tracking-tighter leading-none mb-8 font-display">
                         PENSER <span class="text-glow-cyan text-cyan-500">DEMAIN</span>.<br>
                         AGIR MAINTENANT.
                     </h1>
@@ -58,7 +58,7 @@ const visionItems = [
 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-32">
                     <div v-for="(item, i) in visionItems" :key="i" 
-                        class="p-10 glass-dark rounded-[2.5rem] border border-white/5 group hover:border-cyan-500/30 transition-all flex flex-col items-center text-center"
+                        class="p-6 sm:p-10 glass-dark rounded-[2.5rem] border border-white/5 group hover:border-cyan-500/30 transition-all flex flex-col items-center text-center"
                     >
                         <div class="h-16 w-16 rounded-2xl bg-slate-900 border border-white/5 flex items-center justify-center text-cyan-400 mb-8 group-hover:scale-110 transition-transform">
                             <component :is="item.icon" class="h-8 w-8" />
@@ -68,7 +68,7 @@ const visionItems = [
                     </div>
                 </div>
 
-                <div class="glass-dark rounded-[3rem] border border-white/10 p-12 md:p-20 relative overflow-hidden">
+                <div class="glass-dark rounded-[2rem] md:rounded-[3rem] border border-white/10 p-6 sm:p-12 md:p-20 relative overflow-hidden">
                     <div class="absolute -right-20 -top-20 w-64 h-64 bg-cyan-500/10 rounded-full blur-[100px]"></div>
                     <div class="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
                         <div>

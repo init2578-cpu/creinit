@@ -51,7 +51,7 @@ const features = [
                         <CpuChipIcon class="h-4 w-4 text-indigo-400" />
                         <span class="text-[10px] font-black text-indigo-400 uppercase tracking-[0.3em]">Neural System — Platform Hub</span>
                     </div>
-                    <h1 class="text-6xl md:text-8xl font-black text-white tracking-tighter leading-none mb-8 font-display">
+                    <h1 class="text-4xl sm:text-6xl md:text-8xl font-black text-white tracking-tighter leading-none mb-8 font-display">
                         L'ÉCOSYSTÈME <br> <span class="text-glow-indigo text-indigo-500">DIGITAL</span>.
                     </h1>
                     <p class="text-slate-400 text-xl font-medium max-w-2xl mx-auto">
@@ -61,7 +61,7 @@ const features = [
 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-32">
                     <div v-for="(feature, i) in features" :key="i" 
-                        class="p-10 glass-dark rounded-[2.5rem] border border-white/5 group hover:border-indigo-500/30 transition-all"
+                        class="p-6 sm:p-10 glass-dark rounded-[2.5rem] border border-white/5 group hover:border-indigo-500/30 transition-all"
                     >
                         <div class="h-16 w-16 rounded-2xl bg-slate-900 border border-white/5 flex items-center justify-center mb-8" :class="`text-${feature.color}-400`">
                             <component :is="feature.icon" class="h-8 w-8 group-hover:rotate-12 transition-transform" />
@@ -72,8 +72,8 @@ const features = [
                 </div>
 
                 <!-- AI Showcase -->
-                <div class="glass-dark rounded-[3.5rem] border border-white/10 p-2 overflow-hidden relative">
-                    <div class="flex flex-col lg:flex-row items-center gap-12 bg-slate-900/50 rounded-[3.2rem] p-12 md:p-20">
+                <div class="glass-dark rounded-[2rem] sm:rounded-[3.5rem] border border-white/10 p-2 overflow-hidden relative">
+                    <div class="flex flex-col lg:flex-row items-center gap-12 bg-slate-900/50 rounded-[1.8rem] sm:rounded-[3.2rem] p-6 sm:p-12 md:p-20">
                         <div class="lg:w-1/2">
                             <h2 class="text-4xl font-black text-white mb-8">Faites connaissance avec Assane Chat Bot</h2>
                             <p class="text-slate-400 text-lg leading-relaxed mb-10">

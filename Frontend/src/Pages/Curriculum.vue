@@ -50,7 +50,7 @@ const courses = [
                         <SparklesIcon class="h-4 w-4 text-emerald-400" />
                         <span class="text-[10px] font-black text-emerald-400 uppercase tracking-[0.3em]">Knowledge Hub — Nexus Learning</span>
                     </div>
-                    <h1 class="text-6xl md:text-8xl font-black text-white tracking-tighter leading-none mb-8 font-display">
+                    <h1 class="text-4xl sm:text-6xl md:text-8xl font-black text-white tracking-tighter leading-none mb-8 font-display">
                         FORGEZ VOTRE <span class="text-glow-emerald text-emerald-400">AVENIR</span>.
                     </h1>
                     <p class="text-slate-400 text-xl font-medium max-w-2xl mx-auto">
@@ -88,20 +88,20 @@ const courses = [
                 </div>
 
                 <!-- Learning Methodology -->
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center bg-emerald-500/5 rounded-[3rem] p-12 border border-emerald-500/10">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center bg-emerald-500/5 rounded-[2rem] sm:rounded-[3rem] p-6 sm:p-12 border border-emerald-500/10">
                     <div>
                         <h2 class="text-4xl font-black text-white mb-6">Pédagogie Active & Hub Numérique</h2>
                         <p class="text-slate-400 text-lg leading-relaxed mb-8 font-medium">
                             Au CRE de Kolda, nous privilégions la pratique. Chaque module est accompagné d'ateliers concrets dans nos laboratoires équipés.
                         </p>
-                        <div class="grid grid-cols-2 gap-6">
-                            <div class="p-6 glass-dark rounded-2xl border border-white/5">
-                                <p class="text-3xl font-black text-emerald-400 mb-1">80%</p>
-                                <p class="text-[10px] text-slate-500 uppercase font-black">Pratique Immédiate</p>
+                        <div class="grid grid-cols-2 gap-4 sm:gap-6">
+                            <div class="p-4 sm:p-6 glass-dark rounded-2xl border border-white/5">
+                               <p class="text-2xl sm:text-3xl font-black text-emerald-400 mb-1">80%</p>
+                                <p class="text-[9px] sm:text-[10px] text-slate-500 uppercase font-black">Pratique Immédiate</p>
                             </div>
-                            <div class="p-6 glass-dark rounded-2xl border border-white/5">
-                                <p class="text-3xl font-black text-cyan-400 mb-1">Nexus</p>
-                                <p class="text-[10px] text-slate-500 uppercase font-black">Certificat Numérique</p>
+                            <div class="p-4 sm:p-6 glass-dark rounded-2xl border border-white/5">
+                                <p class="text-2xl sm:text-3xl font-black text-cyan-400 mb-1">Nexus</p>
+                                <p class="text-[9px] sm:text-[10px] text-slate-500 uppercase font-black">Certificat Numérique</p>
                             </div>
                         </div>
                     </div>

@@ -38,7 +38,7 @@ const props = defineProps({
                             <span class="text-[10px] font-black text-cyan-400 uppercase tracking-[0.3em]">Direct Link — Nexus</span>
                         </div>
 
-                        <h1 class="text-5xl md:text-7xl font-black text-white tracking-tighter leading-none mb-8 font-display">
+                        <h1 class="text-4xl sm:text-5xl md:text-7xl font-black text-white tracking-tighter leading-none mb-8 font-display">
                             ENTREZ DANS LE <br> <span class="text-cyan-500 text-glow-cyan">RÉSEAU</span>.
                         </h1>
 

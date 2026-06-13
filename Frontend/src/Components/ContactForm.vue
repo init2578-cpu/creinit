@@ -18,7 +18,7 @@ const submit = () => {
 </script>
 
 <template>
-    <div class="glass-dark border border-white/10 rounded-[2.5rem] p-8 md:p-12 shadow-2xl relative overflow-hidden">
+    <div class="glass-dark border border-white/10 rounded-[2rem] sm:rounded-[2.5rem] p-6 sm:p-8 md:p-12 shadow-2xl relative overflow-hidden">
         <!-- Form Backdrop Decoration -->
         <div class="absolute -right-20 -top-20 w-40 h-40 bg-cyan-500/10 rounded-full blur-3xl"></div>
 

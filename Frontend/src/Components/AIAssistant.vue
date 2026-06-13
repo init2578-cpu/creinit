@@ -73,7 +73,7 @@ onMounted(() => {
 </script>
 
 <template>
-    <div class="fixed bottom-8 right-8 z-[100] font-sans">
+    <div class="fixed bottom-4 right-4 sm:bottom-8 sm:right-8 z-[100] font-sans">
         <!-- Floating Bubble -->
         <button 
             @click="isOpen = !isOpen"
@@ -94,7 +94,7 @@ onMounted(() => {
             leave-from-class="translate-y-0 opacity-100 scale-100"
             leave-to-class="translate-y-20 opacity-0 scale-90"
         >
-            <div v-if="isOpen" class="absolute bottom-0 right-0 w-[400px] h-[600px] glass-chat border border-white/10 rounded-[2.5rem] shadow-[0_40px_100px_-20px_rgba(0,0,0,0.5)] flex flex-col overflow-hidden backdrop-blur-2xl">
+            <div v-if="isOpen" class="absolute bottom-0 right-0 w-[calc(100vw-2rem)] sm:w-[400px] h-[75vh] sm:h-[600px] glass-chat border border-white/10 rounded-[2rem] sm:rounded-[2.5rem] shadow-[0_40px_100px_-20px_rgba(0,0,0,0.5)] flex flex-col overflow-hidden backdrop-blur-2xl">
                 <!-- Header -->
                 <div class="p-6 border-b border-white/5 bg-slate-900/40 flex items-center justify-between">
                     <div class="flex items-center gap-4">
