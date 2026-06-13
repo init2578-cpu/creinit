@@ -70,6 +70,7 @@ const navigation = computed(() => {
 
     if (roles.value.includes('Secrétaire')) {
         menu.push(
+            { name: 'Tableau de Bord', href: route('dashboard.director'), icon: HomeIcon },
             { name: 'Communauté', href: route('community.index'), icon: ChatBubbleLeftRightIcon, badge: page.props.auth.user?.unread_announcements_count },
             { name: 'Actualités (Vitrine)', href: route('admin.posts.index'), icon: NewspaperIcon },
             { name: 'Messages Contact', href: route('contact-messages.index'), icon: EnvelopeIcon, badge: page.props.auth.user?.unread_messages_count },
