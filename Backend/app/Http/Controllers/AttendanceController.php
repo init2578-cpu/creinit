@@ -60,10 +60,26 @@ class AttendanceController extends Controller
         }
 
         $group->load('students');
+        $students = $group->students;
+
+        $trainerId = $group->formateur_id;
+        if ($trainerId) {
+            $assistants = \App\Models\User::role('Stagiaire')
+                ->whereHas('internshipRecord', function($q) use ($trainerId) {
+                    $q->where('internship_type', 'course_assistant')
+                      ->where('tuteur_id', $trainerId);
+                })
+                ->get();
+            
+            foreach ($assistants as $assistant) {
+                $assistant->name = "[ASSISTANT] " . $assistant->name;
+                $students->prepend($assistant);
+            }
+        }
 
         return Inertia::render('Attendances/TakeAttendance', [
             'group'    => $group,
-            'students' => $group->students,
+            'students' => $students,
         ]);
     }
 

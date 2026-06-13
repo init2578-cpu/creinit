@@ -85,6 +85,23 @@ class AttendanceController extends Controller
                 'status' => $existingAttendance->get($trainer->id)?->status ?? 'present',
                 'is_trainer' => true,
             ]);
+
+            $assistants = User::role('Stagiaire')
+                ->whereHas('internshipRecord', function($q) use ($trainer) {
+                    $q->where('internship_type', 'course_assistant')
+                      ->where('tuteur_id', $trainer->id);
+                })
+                ->get(['id', 'name', 'email']);
+
+            foreach ($assistants as $assistant) {
+                $participants->prepend([
+                    'id' => $assistant->id,
+                    'name' => "[ASSISTANT] " . $assistant->name,
+                    'email' => $assistant->email,
+                    'status' => $existingAttendance->get($assistant->id)?->status ?? 'present',
+                    'is_trainer' => true,
+                ]);
+            }
         }
 
         return Inertia::render('Scolarite/AttendanceTake', [
