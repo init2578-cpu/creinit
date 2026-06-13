@@ -437,11 +437,11 @@ function getStatusClass(status) {
                         </div>
                         <div class="grid grid-cols-2 gap-6">
                             <div class="space-y-2">
-                                <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Date de début</label>
+                                <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Date de début (jj/mm/aaaa)</label>
                                 <input v-model="traineeForm.start_date" type="date" class="w-full bg-gray-50 border-0 rounded-2xl p-4 font-bold text-gray-700 focus:ring-2 focus:ring-indigo-600 transition-all outline-none">
                             </div>
                             <div class="space-y-2">
-                                <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Date de fin prévue</label>
+                                <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Date de fin prévue (jj/mm/aaaa)</label>
                                 <input v-model="traineeForm.end_date" type="date" class="w-full bg-gray-50 border-0 rounded-2xl p-4 font-bold text-gray-700 focus:ring-2 focus:ring-indigo-600 transition-all outline-none">
                             </div>
                         </div>

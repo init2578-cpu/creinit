@@ -550,7 +550,7 @@ watch(() => [startDate.value, startTime.value, endDate.value, endTime.value], ()
                                 <div class="space-y-3">
                                     <label class="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 ml-1">
                                         <CalendarIcon class="h-3.5 w-3.5" />
-                                        Début de l'épreuve
+                                        Début de l'épreuve (jj/mm/aaaa)
                                     </label>
                                     <div class="flex gap-2">
                                         <input v-model="startDate" type="date" required class="flex-1 bg-white border-gray-100 rounded-2xl focus:ring-2 focus:ring-orange-500 font-bold px-4 py-3.5 text-xs shadow-sm focus:border-orange-500">
@@ -568,7 +568,7 @@ watch(() => [startDate.value, startTime.value, endDate.value, endTime.value], ()
                                 <div class="space-y-3">
                                     <label class="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 ml-1">
                                         <CalendarIcon class="h-3.5 w-3.5 text-orange-400" />
-                                        Fin de l'épreuve
+                                        Fin de l'épreuve (jj/mm/aaaa)
                                     </label>
                                     <div class="flex gap-2">
                                         <input v-model="endDate" type="date" required class="flex-1 bg-white border-gray-100 rounded-2xl focus:ring-2 focus:ring-orange-500 font-bold px-4 py-3.5 text-xs shadow-sm focus:border-orange-500">

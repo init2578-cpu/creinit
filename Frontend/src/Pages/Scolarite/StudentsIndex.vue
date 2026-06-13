@@ -351,7 +351,7 @@ function deleteLearner(id) {
                     <div v-if="activeTab === 'profile'" class="space-y-6">
                         <div class="grid grid-cols-2 gap-6">
                             <div class="space-y-2">
-                                <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Date de naissance</label>
+                                <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Date de naissance (jj/mm/aaaa)</label>
                                 <input v-model="studentForm.date_naissance" type="date" class="w-full bg-gray-50 border-0 rounded-2xl p-4 font-bold text-gray-700 focus:ring-2 focus:ring-blue-600">
                             </div>
                             <div class="space-y-2">

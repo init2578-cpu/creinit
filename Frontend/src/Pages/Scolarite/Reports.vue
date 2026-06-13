@@ -159,12 +159,14 @@ const submit = (format = 'pdf') => {
                                             <input 
                                                 type="date" 
                                                 v-model="form.start_date"
+                                                title="jj/mm/aaaa"
                                                 class="flex-1 rounded-xl border-gray-200 shadow-sm text-xs font-semibold focus:ring-blue-500"
                                             >
                                             <span class="text-gray-400">→</span>
                                             <input 
                                                 type="date" 
                                                 v-model="form.end_date"
+                                                title="jj/mm/aaaa"
                                                 class="flex-1 rounded-xl border-gray-200 shadow-sm text-xs font-semibold focus:ring-blue-500"
                                             >
                                         </div>

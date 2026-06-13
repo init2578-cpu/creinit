@@ -520,7 +520,7 @@ const getStatusClass = (status) => {
                                     <p v-if="enrollForm.errors.sexe" class="text-red-500 text-[10px] mt-1 font-bold">{{ enrollForm.errors.sexe }}</p>
                                 </div>
                                 <div>
-                                    <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Date de Naissance <span class="text-red-500">*</span></label>
+                                    <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Date de Naissance (jj/mm/aaaa) <span class="text-red-500">*</span></label>
                                     <input v-model="enrollForm.date_naissance" type="date" required class="w-full bg-gray-50 border-0 rounded-2xl focus:ring-2 focus:ring-blue-500 font-bold px-5 py-3.5">
                                     <p v-if="enrollForm.errors.date_naissance" class="text-red-500 text-[10px] mt-1 font-bold">{{ enrollForm.errors.date_naissance }}</p>
                                 </div>
@@ -714,7 +714,7 @@ const getStatusClass = (status) => {
                                 <p v-if="editForm.errors.sexe" class="text-red-500 text-[10px] mt-1 font-bold">{{ editForm.errors.sexe }}</p>
                             </div>
                             <div>
-                                <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Date de Naissance</label>
+                                <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Date de Naissance (jj/mm/aaaa)</label>
                                 <input v-model="editForm.date_naissance" type="date" required class="w-full bg-gray-50 border-0 rounded-2xl focus:ring-2 focus:ring-blue-500 font-bold px-5 py-3.5">
                                 <p v-if="editForm.errors.date_naissance" class="text-red-500 text-[10px] mt-1 font-bold">{{ editForm.errors.date_naissance }}</p>
                             </div>

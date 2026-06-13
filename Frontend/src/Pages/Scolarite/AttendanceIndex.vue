@@ -47,6 +47,7 @@ function formatDate(dateString) {
                     <input 
                         v-model="date" 
                         type="date" 
+                        title="jj/mm/aaaa"
                         class="border-0 focus:ring-0 font-black text-gray-900 cursor-pointer"
                     >
                 </div>

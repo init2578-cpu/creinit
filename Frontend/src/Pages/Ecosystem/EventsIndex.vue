@@ -222,7 +222,7 @@ function openDetailModal(event) {
                                 <p v-if="form.errors.type_activite" class="mt-1 text-[10px] text-red-600 font-bold uppercase tracking-widest">{{ form.errors.type_activite }}</p>
                             </div>
                             <div>
-                                <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-1">Date</label>
+                                <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-1">Date (jj/mm/aaaa)</label>
                                 <input v-model="form.date" type="date" lang="fr" class="w-full bg-gray-50 border-0 rounded-xl font-bold py-3 px-4">
                                 <p v-if="form.errors.date" class="mt-1 text-[10px] text-red-600 font-bold uppercase tracking-widest">{{ form.errors.date }}</p>
                             </div>

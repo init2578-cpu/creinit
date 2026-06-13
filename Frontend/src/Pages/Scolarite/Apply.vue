@@ -146,7 +146,7 @@ function handleFile(e, field) {
                                 <p v-if="form.errors.sexe" class="text-red-500 text-[10px] mt-1 font-bold">{{ form.errors.sexe }}</p>
                             </div>
                             <div class="space-y-2">
-                                <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Date de Naissance <span class="text-red-500">*</span></label>
+                                <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Date de Naissance (jj/mm/aaaa) <span class="text-red-500">*</span></label>
                                 <input v-model="form.date_naissance" type="date" required class="w-full bg-slate-900/50 border border-white/5 rounded-2xl p-4 text-white focus:border-cyan-500 focus:ring-0 transition-all">
                                 <p v-if="form.errors.date_naissance" class="text-red-500 text-[10px] mt-1 font-bold">{{ form.errors.date_naissance }}</p>
                             </div>
