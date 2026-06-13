@@ -216,7 +216,7 @@ function getStatusClass(status) {
                             v-model="searchQuery"
                             type="text" 
                             placeholder="Rechercher un assistant..." 
-                            class="pl-12 pr-6 py-3 bg-white border-2 border-transparent rounded-2xl shadow-sm focus:ring-0 focus:border-blue-600 w-64 font-bold text-sm transition-all"
+                            class="pl-12 pr-6 py-3 bg-white border-2 border-gray-200 hover:border-gray-300 focus:border-blue-600 focus:ring-0 rounded-2xl shadow-sm w-64 font-bold text-sm transition-all"
                         >
                     </div>
                     <button 

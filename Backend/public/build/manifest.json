@@ -482,7 +482,7 @@
     ]
   },
   "src/Pages/Dashboard/Director.vue": {
-    "file": "assets/Director-BRibww6V.js",
+    "file": "assets/Director-CpA0GND1.js",
     "name": "Director",
     "src": "src/Pages/Dashboard/Director.vue",
     "isDynamicEntry": true,
@@ -499,7 +499,7 @@
     ],
     "css": [
       "assets/Director-BbzSUor9.css",
-      "assets/app-CHUz8dcw.css"
+      "assets/app-10LXeHmn.css"
     ]
   },
   "src/Pages/Ecosystem/EventsIndex.vue": {
@@ -965,7 +965,7 @@
     ]
   },
   "src/Pages/Scolarite/StudentsIndex.vue": {
-    "file": "assets/StudentsIndex-Jc86kP4u.js",
+    "file": "assets/StudentsIndex-BDPZmKtJ.js",
     "name": "StudentsIndex",
     "src": "src/Pages/Scolarite/StudentsIndex.vue",
     "isDynamicEntry": true,
@@ -980,11 +980,11 @@
       "_ConfirmModal-C-_cIDrT.js"
     ],
     "css": [
-      "assets/StudentsIndex-1yHm-xYj.css"
+      "assets/StudentsIndex-DokGnqqH.css"
     ]
   },
   "src/Pages/Scolarite/TraineesIndex.vue": {
-    "file": "assets/TraineesIndex-OI5B-_Q7.js",
+    "file": "assets/TraineesIndex-U9vnXv34.js",
     "name": "TraineesIndex",
     "src": "src/Pages/Scolarite/TraineesIndex.vue",
     "isDynamicEntry": true,
@@ -999,7 +999,7 @@
       "_ConfirmModal-C-_cIDrT.js"
     ],
     "css": [
-      "assets/TraineesIndex-C2x_QAcN.css"
+      "assets/TraineesIndex-BNUEJ6X9.css"
     ]
   },
   "src/Pages/Stats/Index.vue": {
@@ -1202,7 +1202,7 @@
     ]
   },
   "src/Pages/Users/Index.vue": {
-    "file": "assets/Index-DdjNKZLm.js",
+    "file": "assets/Index-pOarJwIv.js",
     "name": "Index",
     "src": "src/Pages/Users/Index.vue",
     "isDynamicEntry": true,
@@ -1255,12 +1255,12 @@
     ]
   },
   "src/app.css": {
-    "file": "assets/app-CHUz8dcw.css",
+    "file": "assets/app-10LXeHmn.css",
     "src": "src/app.css",
     "isEntry": true
   },
   "src/app.js": {
-    "file": "assets/app-DpPL-mZt.js",
+    "file": "assets/app-CfbKedVy.js",
     "name": "app",
     "src": "src/app.js",
     "isEntry": true,
@@ -1341,7 +1341,7 @@
       "src/Pages/Welcome.vue"
     ],
     "css": [
-      "assets/app-CHUz8dcw.css"
+      "assets/app-10LXeHmn.css"
     ]
   }
 }

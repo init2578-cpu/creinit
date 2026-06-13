@@ -137,13 +137,13 @@ function deleteUser(id) {
                             v-model="searchQuery"
                             type="text" 
                             placeholder="Rechercher..." 
-                            class="pl-12 pr-6 py-3 bg-white border-gray-100 rounded-2xl shadow-sm focus:ring-2 focus:ring-indigo-600 border-0 w-64 font-bold text-sm"
+                            class="pl-12 pr-6 py-3 bg-white border-2 border-gray-200 hover:border-gray-300 focus:border-indigo-600 focus:ring-0 rounded-2xl shadow-sm w-64 font-bold text-sm transition-all"
                         >
                     </div>
                     <div class="relative">
                         <select 
                             v-model="selectedRole"
-                            class="pl-6 pr-10 py-3 bg-white border-gray-100 rounded-2xl shadow-sm focus:ring-2 focus:ring-indigo-600 border-0 font-bold text-sm appearance-none cursor-pointer min-w-[150px]"
+                            class="pl-6 pr-10 py-3 bg-white border-2 border-gray-200 hover:border-gray-300 focus:border-indigo-600 focus:ring-0 rounded-2xl shadow-sm font-bold text-sm appearance-none cursor-pointer min-w-[150px] transition-all"
                         >
                             <option value="">Tous les rôles</option>
                             <option v-for="role in available_roles" :key="role" :value="role">
