@@ -231,7 +231,7 @@ onMounted(() => {
         </section>
 
         <!-- Mission & Innovation Section -->
-        <section class="py-24 bg-slate-950 relative overflow-hidden">
+        <section class="py-12 sm:py-16 bg-slate-950 relative overflow-hidden">
             <div class="max-w-7xl mx-auto px-4">
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-12">
                     <div v-for="(item, i) in [
@@ -250,7 +250,7 @@ onMounted(() => {
         </section>
 
         <!-- AI Core Section -->
-        <section id="ai-core" class="py-40 bg-slate-950 relative overflow-hidden">
+        <section id="ai-core" class="py-16 sm:py-20 bg-slate-950 relative overflow-hidden">
             <!-- Digital Rain / Grid Pattern -->
             <div class="absolute inset-0 opacity-5 pointer-events-none">
                 <div class="absolute inset-0" style="background-image: radial-gradient(circle at 2px 2px, rgba(6,182,212,0.15) 1px, transparent 0); background-size: 40px 40px;"></div>
@@ -305,7 +305,7 @@ onMounted(() => {
         </section>
 
         <!-- Smart Curriculum Grid -->
-        <section class="py-24 bg-slate-950 relative overflow-hidden">
+        <section class="py-12 sm:py-16 bg-slate-950 relative overflow-hidden">
             <div class="max-w-7xl mx-auto px-4">
                 <div class="flex flex-col md:flex-row justify-between items-end gap-10 mb-24 relative">
                     <div class="absolute -left-12 top-0 h-full w-[2px] bg-gradient-to-b from-cyan-500 to-transparent"></div>
@@ -370,7 +370,7 @@ onMounted(() => {
         </section>
 
         <!-- Événements (Zone de publication) -->
-        <section v-if="upcomingEvents && upcomingEvents.length > 0" class="py-24 bg-slate-950 relative overflow-hidden border-t border-white/5">
+        <section v-if="upcomingEvents && upcomingEvents.length > 0" class="py-12 sm:py-16 bg-slate-950 relative overflow-hidden border-t border-white/5">
             <div class="max-w-7xl mx-auto px-4">
                 <div class="flex flex-col md:flex-row justify-between items-end gap-10 mb-16 relative">
                     <div class="absolute -left-12 top-0 h-full w-[2px] bg-gradient-to-b from-pink-500 to-transparent"></div>
@@ -428,7 +428,7 @@ onMounted(() => {
         </section>
 
         <!-- Actualités (Zone de publication) -->
-        <section v-if="recentPosts && recentPosts.length > 0" class="py-24 bg-slate-950 relative overflow-hidden">
+        <section v-if="recentPosts && recentPosts.length > 0" class="py-12 sm:py-16 bg-slate-950 relative overflow-hidden">
             <div class="max-w-7xl mx-auto px-4">
                 <div class="flex flex-col md:flex-row justify-between items-end gap-10 mb-16 relative">
                     <div class="absolute -left-12 top-0 h-full w-[2px] bg-gradient-to-b from-indigo-500 to-transparent"></div>
@@ -482,7 +482,7 @@ onMounted(() => {
         </section>
 
         <!-- Témoignages (Zone Vitrine) -->
-        <section class="py-24 bg-slate-950 relative overflow-hidden border-t border-white/5">
+        <section class="py-12 sm:py-16 bg-slate-950 relative overflow-hidden border-t border-white/5">
             <!-- Background effects -->
             <div class="absolute inset-0 pointer-events-none opacity-20">
                 <div class="absolute top-[20%] right-[10%] w-[350px] h-[350px] bg-emerald-500/10 rounded-full blur-[100px] animate-pulse-slow"></div>
@@ -540,7 +540,7 @@ onMounted(() => {
         </section>
 
         <!-- Partenaires (Zone Vitrine) -->
-        <section v-if="partners && partners.length > 0" class="py-24 bg-slate-950 relative overflow-hidden border-t border-white/5">
+        <section v-if="partners && partners.length > 0" class="py-12 sm:py-16 bg-slate-950 relative overflow-hidden border-t border-white/5">
             <div class="absolute inset-0 pointer-events-none" style="background-image: radial-gradient(circle at 2px 2px, rgba(6,182,212,0.04) 1px, transparent 0); background-size: 40px 40px;"></div>
             
             <div class="max-w-7xl mx-auto px-4 relative z-10">
@@ -592,7 +592,7 @@ onMounted(() => {
         </section>
 
         <!-- CTA Feature Section (Futuristic Command) -->
-        <section class="max-w-7xl mx-auto px-4 py-24 relative z-20">
+        <section class="max-w-7xl mx-auto px-4 py-12 sm:py-16 relative z-20">
             <div class="glass-dark border border-cyan-500/20 rounded-[2rem] sm:rounded-[3rem] lg:rounded-[4rem] p-6 sm:p-12 lg:p-24 relative overflow-hidden flex flex-col items-center text-center shadow-2xl">
                 <!-- Abstract decorations -->
                 <div class="absolute top-0 left-0 w-full h-full opacity-20 pointer-events-none">

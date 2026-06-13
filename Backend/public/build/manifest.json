@@ -489,7 +489,7 @@
     ]
   },
   "src/Pages/Dashboard/Director.vue": {
-    "file": "assets/Director-CJefS9o5.js",
+    "file": "assets/Director-BEJtW-sA.js",
     "name": "Director",
     "src": "src/Pages/Dashboard/Director.vue",
     "isDynamicEntry": true,
@@ -506,7 +506,7 @@
     ],
     "css": [
       "assets/Director-BbzSUor9.css",
-      "assets/app-B9w-y2N_.css"
+      "assets/app-CAQUBRGC.css"
     ]
   },
   "src/Pages/Ecosystem/EventsIndex.vue": {
@@ -1251,7 +1251,7 @@
     ]
   },
   "src/Pages/Welcome.vue": {
-    "file": "assets/Welcome-BnzhICW6.js",
+    "file": "assets/Welcome-CI4y4qZh.js",
     "name": "Welcome",
     "src": "src/Pages/Welcome.vue",
     "isDynamicEntry": true,
@@ -1270,12 +1270,12 @@
     ]
   },
   "src/app.css": {
-    "file": "assets/app-B9w-y2N_.css",
+    "file": "assets/app-CAQUBRGC.css",
     "src": "src/app.css",
     "isEntry": true
   },
   "src/app.js": {
-    "file": "assets/app-TtznN7zm.js",
+    "file": "assets/app-BB1h6NS8.js",
     "name": "app",
     "src": "src/app.js",
     "isEntry": true,
@@ -1356,7 +1356,7 @@
       "src/Pages/Welcome.vue"
     ],
     "css": [
-      "assets/app-B9w-y2N_.css"
+      "assets/app-CAQUBRGC.css"
     ]
   }
 }
