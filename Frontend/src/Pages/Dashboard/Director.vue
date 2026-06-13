@@ -119,7 +119,7 @@ onUnmounted(() => {
     <AuthenticatedLayout>
         <div class="min-h-screen bg-[#fcfdfe] pb-24">
             <!-- Hero Header with Premium Gradient -->
-            <div class="relative overflow-hidden bg-white border-b border-gray-100 px-4 sm:px-6 lg:px-8 py-12 mb-10">
+            <div class="relative overflow-hidden bg-white border-b border-gray-100 px-4 sm:px-6 lg:px-8 py-6 mb-6 -mt-4 sm:-mt-6 lg:-mt-8">
                 <div class="absolute top-0 right-0 -mt-20 -mr-20 w-[600px] h-[600px] bg-blue-50/40 rounded-full blur-[100px] opacity-60"></div>
                 <div class="absolute bottom-0 left-0 -mb-20 -ml-20 w-96 h-96 bg-emerald-50/40 rounded-full blur-[80px] opacity-40"></div>
                 
