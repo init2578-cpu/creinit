@@ -46,21 +46,35 @@ const dayLabel = (d) => DAYS[d] ?? String(d).substring(0, 3)
 
     <AuthenticatedLayout>
         <div class="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8 -mt-6 sm:-mt-8 lg:-mt-10 font-sans">
-            <header class="mb-6 flex flex-col md:flex-row items-center gap-8 bg-white p-6 rounded-[2.5rem] border border-gray-100 shadow-sm">
-                <div class="h-32 w-32 rounded-[2.5rem] bg-blue-600 flex items-center justify-center overflow-hidden text-white text-4xl font-black shadow-xl shadow-blue-100 shrink-0">
+            <!-- Hero Header with Premium Gradient & Glassmorphism -->
+            <header class="relative overflow-hidden bg-white p-8 sm:p-10 rounded-[2.5rem] border border-gray-100 shadow-sm flex flex-col md:flex-row items-center gap-8 mb-8">
+                <div class="absolute top-0 right-0 -mt-16 -mr-16 w-80 h-80 bg-blue-50/50 rounded-full blur-3xl opacity-60"></div>
+                <div class="absolute bottom-0 left-0 -mb-16 -ml-16 w-64 h-64 bg-emerald-50/30 rounded-full blur-2xl opacity-40"></div>
+                
+                <div class="relative z-10 h-32 w-32 rounded-[2.5rem] bg-blue-600 flex items-center justify-center overflow-hidden text-white text-4xl font-black shadow-xl shadow-blue-100 shrink-0 border-4 border-white/80 transition-transform hover:scale-105">
                     <img v-if="$page.props.auth.user.profile_photo_url" :src="$page.props.auth.user.profile_photo_url" class="h-full w-full object-cover">
                     <template v-else>{{ $page.props.auth.user.name.charAt(0) }}</template>
                 </div>
-                <div class="text-center md:text-left">
-                    <h1 class="text-4xl font-black text-gray-900 tracking-tight mb-3">
-                        Bienvenue, <span class="text-blue-600">{{ $page.props.auth.user.name }}</span>
-                    </h1>
-                    <div class="flex flex-wrap items-center justify-center md:justify-start gap-2">
-                        <span class="px-3 py-1 bg-gray-900 text-white rounded-lg text-[10px] font-black uppercase tracking-widest">
-                            Cohorte 2026
+                <div class="relative z-10 text-center md:text-left flex-1">
+                    <div class="flex items-center justify-center md:justify-start gap-2 mb-3">
+                        <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-100/50 text-blue-700 text-[10px] font-black uppercase tracking-[0.2em] rounded-full border border-blue-200/50">
+                            <span class="relative flex h-2 w-2">
+                              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                              <span class="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+                            </span>
+                            Espace Apprenant
                         </span>
-                        <span v-if="group" class="px-3 py-1 bg-blue-50 text-blue-700 rounded-lg text-[10px] font-black uppercase tracking-widest">
-                            {{ group.nom_groupe }}
+                        <span class="px-3 py-1 bg-slate-100 text-slate-500 text-[10px] font-black uppercase tracking-[0.2em] rounded-full border border-slate-200/50">Cohorte 2026</span>
+                    </div>
+                    <h1 class="text-4xl sm:text-5xl font-black text-gray-900 tracking-tight leading-none mb-4">
+                        Bienvenue, <span class="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-indigo-600 to-emerald-600">{{ $page.props.auth.user.name }}</span>
+                    </h1>
+                    <div v-if="group" class="flex flex-wrap items-center justify-center md:justify-start gap-2">
+                        <span class="px-3 py-1.5 bg-indigo-50/80 text-indigo-700 border border-indigo-100 rounded-xl text-[10px] font-black uppercase tracking-widest">
+                            Groupe : {{ group.nom_groupe }}
+                        </span>
+                        <span class="px-3 py-1.5 bg-emerald-50/80 text-emerald-700 border border-emerald-100 rounded-xl text-[10px] font-black uppercase tracking-widest">
+                            Module : {{ group.module?.titre }}
                         </span>
                     </div>
                 </div>
@@ -70,18 +84,23 @@ const dayLabel = (d) => DAYS[d] ?? String(d).substring(0, 3)
                 <!-- Main Activity (Progress & Planning) -->
                 <div class="lg:col-span-2 space-y-8">
                     <!-- Progress Section -->
-                    <div class="bg-white p-8 rounded-[2.5rem] shadow-sm border border-gray-100">
+                    <div class="bg-white p-8 rounded-[2.5rem] shadow-sm border border-gray-100 transition-all hover:shadow-xl">
                         <div class="flex items-center justify-between mb-6">
-                            <h2 class="text-xl font-black text-gray-900 flex items-center gap-3">
-                                <BookOpenIcon class="h-6 w-6 text-blue-600" />
-                                Ma Progression
-                            </h2>
+                            <div class="flex items-center gap-3">
+                                <div class="h-10 w-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center border border-blue-100">
+                                    <BookOpenIcon class="h-5 w-5" />
+                                </div>
+                                <div>
+                                    <h2 class="text-xl font-black text-gray-900 tracking-tight">Ma Progression</h2>
+                                    <p class="text-xs text-gray-500 font-medium">Avancement dans le programme actuel</p>
+                                </div>
+                            </div>
                             <span class="text-2xl font-black text-blue-600">{{ progress }}%</span>
                         </div>
                         
-                        <div class="w-full h-4 bg-gray-100 rounded-full overflow-hidden mb-4">
+                        <div class="w-full h-3 bg-slate-100 rounded-full overflow-hidden mb-4">
                             <div 
-                                class="h-full bg-blue-600 rounded-full transition-all duration-1000 ease-out"
+                                class="h-full bg-gradient-to-r from-blue-500 via-indigo-500 to-indigo-600 rounded-full transition-all duration-1000 ease-out"
                                 :style="{ width: progress + '%' }"
                             ></div>
                         </div>
@@ -92,27 +111,34 @@ const dayLabel = (d) => DAYS[d] ?? String(d).substring(0, 3)
                     </div>
 
                     <!-- Upcoming Classes -->
-                    <div class="bg-white p-8 rounded-[2.5rem] shadow-sm border border-gray-100">
-                        <h2 class="text-xl font-black text-gray-900 mb-6 flex items-center gap-3">
-                            <CalendarIcon class="h-6 w-6 text-indigo-600" />
-                            Prochains Cours
-                        </h2>
+                    <div class="bg-white p-8 rounded-[2.5rem] shadow-sm border border-gray-100 transition-all hover:shadow-xl">
+                        <div class="flex items-center justify-between mb-6">
+                            <div>
+                                <h2 class="text-xl font-black text-gray-900 tracking-tight">Prochains Cours</h2>
+                                <p class="text-xs text-gray-500 font-medium">Votre emploi du temps à venir</p>
+                            </div>
+                            <div class="h-10 w-10 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center border border-indigo-100">
+                                <CalendarIcon class="h-5 w-5" />
+                            </div>
+                        </div>
                         
                         <div class="space-y-4">
-                            <div v-for="sch in nextSchedules" :key="sch.id" class="p-4 bg-gray-50/50 rounded-2xl flex items-center justify-between group hover:bg-white hover:shadow-lg hover:shadow-gray-100 transition-all border border-transparent hover:border-gray-100">
+                            <div v-for="sch in nextSchedules" :key="sch.id" class="p-4 bg-slate-50/50 border border-slate-100/50 rounded-2xl flex items-center justify-between group hover:bg-white hover:border-slate-200 hover:shadow-md transition-all">
                                 <div class="flex items-center gap-4">
-                                    <div class="h-12 px-2 bg-white rounded-xl shadow-sm flex flex-col items-center justify-center border border-gray-100 min-w-[64px]">
-                                        <span class="text-[8px] font-black text-blue-600 uppercase">{{ dayLabel(sch.day_of_week) }}</span>
-                                        <span class="text-[10px] font-black text-gray-900 font-mono tracking-tighter">{{ formatTime(sch.start_time) }}</span>
+                                    <div class="h-12 px-3 bg-white rounded-xl border border-slate-100 shadow-sm flex flex-col items-center justify-center min-w-[70px]">
+                                        <span class="text-[8px] font-black text-blue-600 uppercase tracking-wider">{{ dayLabel(sch.day_of_week) }}</span>
+                                        <span class="text-xs font-black text-gray-900 font-mono tracking-tighter">{{ formatTime(sch.start_time) }}</span>
                                     </div>
                                     <div>
-                                        <p class="font-black text-gray-900">{{ sch.group.nom_groupe }}</p>
-                                        <p class="text-xs text-gray-400 font-bold uppercase tracking-wider">{{ sch.room.nom }} • {{ sch.formateur.name }}</p>
+                                        <p class="font-black text-gray-900 text-sm">{{ sch.group.nom_groupe }}</p>
+                                        <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider mt-0.5">{{ sch.room.nom }} • {{ sch.formateur.name }}</p>
                                     </div>
                                 </div>
-                                <ArrowRightIcon class="h-5 w-5 text-gray-300 group-hover:text-blue-600 transition" />
+                                <div class="h-8 w-8 rounded-full bg-slate-50 flex items-center justify-center border border-slate-100/50 group-hover:bg-blue-50 group-hover:text-blue-600 transition-colors">
+                                    <ArrowRightIcon class="h-4 w-4" />
+                                </div>
                             </div>
-                            <div v-if="nextSchedules.length === 0" class="py-8 text-center text-gray-400 font-bold italic">
+                            <div v-if="nextSchedules.length === 0" class="py-8 text-center text-gray-400 font-bold italic text-xs">
                                 Aucun cours prévu pour le moment.
                             </div>
                         </div>
@@ -122,61 +148,73 @@ const dayLabel = (d) => DAYS[d] ?? String(d).substring(0, 3)
                 <!-- Side Info (Discipline & Quick Actions) -->
                 <div class="space-y-8">
                     <!-- Upcoming Exams -->
-                    <div class="bg-white p-8 rounded-[2.5rem] shadow-sm border border-gray-100">
-                        <h2 class="text-xl font-black text-gray-900 mb-6 flex items-center gap-3">
-                            <PencilSquareIcon class="h-6 w-6 text-red-500" />
-                            Examens à venir
-                        </h2>
+                    <div class="bg-white p-8 rounded-[2.5rem] shadow-sm border border-gray-100 transition-all hover:shadow-xl">
+                        <div class="flex items-center justify-between mb-6">
+                            <div>
+                                <h2 class="text-xl font-black text-gray-900 tracking-tight">Examens à venir</h2>
+                                <p class="text-xs text-gray-500 font-medium">Évaluations programmées</p>
+                            </div>
+                            <div class="h-10 w-10 bg-rose-50 text-rose-500 rounded-xl flex items-center justify-center border border-rose-100">
+                                <PencilSquareIcon class="h-5 w-5" />
+                            </div>
+                        </div>
                         <div class="space-y-4">
-                            <div v-for="exam in upcomingExams" :key="exam.id" class="p-5 bg-red-50/50 rounded-2xl flex items-center justify-between group hover:bg-white hover:shadow-lg transition-all border border-transparent hover:border-red-100">
+                            <div v-for="exam in upcomingExams" :key="exam.id" class="p-4 bg-rose-50/30 border border-rose-100/50 rounded-2xl flex items-center justify-between group hover:bg-white hover:border-rose-200 hover:shadow-md transition-all">
                                 <div class="flex items-center gap-4">
-                                    <div class="h-12 w-12 bg-white rounded-xl shadow-sm flex items-center justify-center text-red-500 font-black">
-                                        <ClockIcon class="h-6 w-6" />
+                                    <div class="h-10 w-10 bg-white border border-rose-100 text-rose-500 rounded-xl flex items-center justify-center shadow-sm">
+                                        <ClockIcon class="h-5 w-5" />
                                     </div>
                                     <div>
-                                        <p class="font-black text-gray-900">{{ exam.titre }}</p>
-                                        <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">{{ exam.is_practice ? 'Entraînement' : 'Examen Final' }}</p>
+                                        <p class="text-sm font-black text-gray-900">{{ exam.titre }}</p>
+                                        <p class="text-[8px] text-rose-500 font-black uppercase tracking-widest mt-0.5">{{ exam.is_practice ? 'Entraînement' : 'Examen Final' }}</p>
                                     </div>
                                 </div>
-                                <Link :href="route('student.exams.show', exam.id)" class="px-4 py-2 bg-red-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-red-700 transition">
+                                <Link :href="route('student.exams.show', exam.id)" class="px-4 py-2 bg-rose-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-rose-700 transition active:scale-95 shadow-sm hover:shadow">
                                     Commencer
                                 </Link>
                             </div>
-                            <div v-if="upcomingExams.length === 0" class="py-6 text-center text-gray-400 font-bold italic text-sm">
+                            <div v-if="upcomingExams.length === 0" class="py-8 text-center text-gray-400 font-bold italic text-xs">
                                 Aucun examen prévu.
                             </div>
                         </div>
                     </div>
 
                     <!-- Recent Exercises -->
-                    <div class="bg-gray-900 p-8 rounded-[2.5rem] shadow-lg text-white">
-                        <h3 class="text-xl font-black mb-8 flex items-center gap-3">
-                            <ArrowTrendingUpIcon class="h-6 w-6 text-blue-500" />
-                            Notes d'Exercices
-                        </h3>
-                        <div class="space-y-6">
-                            <div v-for="ex in recentExercises" :key="ex.id" class="flex items-center justify-between border-b border-white/5 pb-4 last:border-0 last:pb-0">
-                                <div>
-                                    <p class="font-bold text-sm text-gray-100 truncate w-40">{{ ex.chapter.titre }}</p>
-                                    <p class="text-[8px] font-black uppercase tracking-widest text-gray-500">{{ ex.status === 'graded' ? 'Évalué' : 'En attente' }}</p>
+                    <div class="bg-slate-900 p-8 rounded-[2.5rem] shadow-xl text-white relative overflow-hidden transition-all hover:shadow-2xl">
+                        <div class="absolute top-0 right-0 -mt-10 -mr-10 w-48 h-48 bg-blue-500/10 rounded-full blur-2xl pointer-events-none"></div>
+                        
+                        <div class="flex items-center justify-between mb-8">
+                            <div>
+                                <h3 class="text-xl font-black tracking-tight">Notes d'Exercices</h3>
+                                <p class="text-xs text-slate-400 font-medium">Dernières évaluations</p>
+                            </div>
+                            <div class="h-10 w-10 bg-white/10 text-blue-400 rounded-xl flex items-center justify-center border border-white/5">
+                                <ArrowTrendingUpIcon class="h-5 w-5" />
+                            </div>
+                        </div>
+                        <div class="space-y-4">
+                            <div v-for="ex in recentExercises" :key="ex.id" class="flex items-center justify-between border-b border-white/5 pb-3.5 last:border-0 last:pb-0">
+                                <div class="min-w-0 flex-1 pr-4">
+                                    <p class="font-bold text-sm text-slate-100 truncate">{{ ex.chapter.titre }}</p>
+                                    <p class="text-[8px] font-black uppercase tracking-widest text-slate-500 mt-0.5">{{ ex.status === 'graded' ? 'Évalué' : 'En attente' }}</p>
                                 </div>
-                                <div class="text-right">
-                                    <div v-if="ex.status === 'graded'" class="text-xl font-black text-blue-400">
-                                        {{ ex.grade }}<span class="text-[10px] text-gray-600">/20</span>
+                                <div class="text-right shrink-0">
+                                    <div v-if="ex.status === 'graded'" class="text-lg font-black text-blue-400">
+                                        {{ ex.grade }}<span class="text-[10px] text-slate-600">/20</span>
                                     </div>
-                                    <div v-else class="text-[10px] font-black uppercase text-gray-600 tracking-widest">
+                                    <div v-else class="text-[10px] font-black uppercase text-slate-600 tracking-widest">
                                         ...
                                     </div>
                                 </div>
                             </div>
-                            <div v-if="recentExercises.length === 0" class="py-4 text-center text-gray-600 font-bold italic text-xs">
+                            <div v-if="recentExercises.length === 0" class="py-8 text-center text-slate-500 font-bold italic text-xs">
                                 Aucune note enregistrée.
                             </div>
                         </div>
 
-                        <Link :href="route('student.courses')" class="mt-10 w-full p-4 bg-white/5 hover:bg-white/10 rounded-2xl flex items-center justify-center gap-3 group transition border border-white/5">
-                            <span class="text-[10px] font-black uppercase tracking-widest">Voir tous mes cours</span>
-                            <ArrowRightIcon class="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                        <Link :href="route('student.courses')" class="mt-8 w-full p-4 bg-white/5 hover:bg-white/10 rounded-2xl flex items-center justify-center gap-3 group transition border border-white/5 active:scale-98">
+                            <span class="text-[10px] font-black uppercase tracking-widest text-slate-200">Voir tous mes cours</span>
+                            <ArrowRightIcon class="h-4 w-4 text-slate-400 group-hover:translate-x-1 transition-transform" />
                         </Link>
                     </div>
                 </div>
