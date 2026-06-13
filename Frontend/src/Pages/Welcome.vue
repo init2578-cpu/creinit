@@ -325,41 +325,44 @@ onMounted(() => {
                     <div 
                         v-for="(mod, index) in modules" 
                         :key="mod.name"
-                        class="p-8 rounded-[2.5rem] glass-dark border border-white/5 hover:border-cyan-500/30 transition-all duration-700 group relative overflow-hidden flex flex-col h-full min-h-[400px]"
+                        class="glass-dark border border-white/5 rounded-[2.5rem] overflow-hidden group hover:border-cyan-500/30 transition-all duration-700 hover:-translate-y-2 flex flex-col h-full"
                         data-reveal :id="'mod-' + mod.name"
                         :style="`transition-delay: ${index * 100}ms`"
                     >
                         <!-- Module Image -->
-                        <div class="absolute inset-0 z-0">
-                            <img :src="mod.image" alt="Module Image" class="w-full h-full object-cover opacity-40 group-hover:opacity-60 transition-opacity duration-700">
-                            <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/80 to-slate-950/50"></div>
+                        <div class="h-48 w-full overflow-hidden relative">
+                            <img :src="mod.image" alt="Module Image" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
+                            <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent"></div>
                         </div>
 
-                        <!-- Digital Pulse Circle -->
-                        <div class="absolute -right-10 -top-10 h-32 w-32 bg-cyan-500/5 rounded-full blur-3xl group-hover:bg-cyan-500/10 transition-all duration-700 z-10"></div>
-                        
-                        <div class="relative z-20">
-                            <div class="flex justify-between items-start mb-10">
-                                <span class="px-3 py-1 bg-slate-800/50 text-slate-400 text-[8px] font-black rounded-lg border border-white/5 group-hover:bg-cyan-500 group-hover:text-slate-950 transition-all uppercase tracking-[0.2em]">
-                                    LEVEL: {{ mod.level }}
-                                </span>
-                                <div class="h-2 w-2 rounded-full bg-cyan-500 shadow-[0_0_10px_cyan] animate-pulse"></div>
-                            </div>
+                        <!-- Card Content -->
+                        <div class="p-8 flex-1 flex flex-col relative z-20">
+                            <!-- Digital Pulse Circle -->
+                            <div class="absolute -right-10 -top-10 h-32 w-32 bg-cyan-500/5 rounded-full blur-3xl group-hover:bg-cyan-500/10 transition-all duration-700 z-10"></div>
                             
-                            <h3 class="text-2xl font-black text-white mb-4 tracking-tight leading-tight group-hover:translate-x-1 transition-transform">{{ mod.name }}</h3>
-                            <p class="text-slate-300 text-sm font-medium leading-relaxed">
-                                {{ mod.desc }}
-                            </p>
-                        </div>
-                        
-                        <div class="mt-auto pt-8 border-t border-white/5 flex items-center justify-between text-[10px] font-black text-slate-500 uppercase tracking-widest relative z-20">
-                            <span class="flex items-center gap-2">
-                                <ChartBarIcon class="h-3 w-3 text-cyan-500" />
-                                {{ mod.duration }}
-                            </span>
-                            <span class="text-white bg-slate-800 px-3 py-1 rounded-lg">
-                                {{ mod.students }} SLOTS
-                            </span>
+                            <div class="relative z-20 flex-1 flex flex-col">
+                                <div class="flex justify-between items-start mb-6">
+                                    <span class="px-3 py-1 bg-slate-800/50 text-slate-400 text-[8px] font-black rounded-lg border border-white/5 group-hover:bg-cyan-500 group-hover:text-slate-950 transition-all uppercase tracking-[0.2em]">
+                                        LEVEL: {{ mod.level }}
+                                    </span>
+                                    <div class="h-2 w-2 rounded-full bg-cyan-500 shadow-[0_0_10px_cyan] animate-pulse"></div>
+                                </div>
+                                
+                                <h3 class="text-2xl font-black text-white mb-4 tracking-tight leading-tight group-hover:translate-x-1 transition-transform">{{ mod.name }}</h3>
+                                <p class="text-slate-400 text-sm font-medium leading-relaxed mb-6 flex-1">
+                                    {{ mod.desc }}
+                                </p>
+                                
+                                <div class="mt-auto pt-6 border-t border-white/5 flex items-center justify-between text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                                    <span class="flex items-center gap-2">
+                                        <ChartBarIcon class="h-3 w-3 text-cyan-500" />
+                                        {{ mod.duration }}
+                                    </span>
+                                    <span class="text-white bg-slate-800 px-3 py-1 rounded-lg">
+                                        {{ mod.students }} SLOTS
+                                    </span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
