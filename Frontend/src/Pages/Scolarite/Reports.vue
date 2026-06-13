@@ -1,5 +1,6 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
+import DateInput from '@/Components/DateInput.vue'
 import { Head, useForm } from '@inertiajs/vue3'
 import { ref } from 'vue'
 import { 
@@ -156,19 +157,15 @@ const submit = (format = 'pdf') => {
                                             Période
                                         </label>
                                         <div class="flex items-center gap-2">
-                                            <input 
-                                                type="date" 
+                                            <DateInput 
                                                 v-model="form.start_date"
-                                                title="jj/mm/aaaa"
-                                                class="flex-1 rounded-xl border-gray-200 shadow-sm text-xs font-semibold focus:ring-blue-500"
-                                            >
+                                                class="flex-1 rounded-xl border border-gray-200 shadow-sm text-xs font-semibold focus:ring-blue-500 p-2"
+                                            />
                                             <span class="text-gray-400">→</span>
-                                            <input 
-                                                type="date" 
+                                            <DateInput 
                                                 v-model="form.end_date"
-                                                title="jj/mm/aaaa"
-                                                class="flex-1 rounded-xl border-gray-200 shadow-sm text-xs font-semibold focus:ring-blue-500"
-                                            >
+                                                class="flex-1 rounded-xl border border-gray-200 shadow-sm text-xs font-semibold focus:ring-blue-500 p-2"
+                                            />
                                         </div>
                                     </div>
                                 </div>

@@ -1,5 +1,6 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import DateInput from '@/Components/DateInput.vue';
 import { Head, useForm, Link } from '@inertiajs/vue3';
 import { 
     AcademicCapIcon, 
@@ -553,7 +554,7 @@ watch(() => [startDate.value, startTime.value, endDate.value, endTime.value], ()
                                         Début de l'épreuve (jj/mm/aaaa)
                                     </label>
                                     <div class="flex gap-2">
-                                        <input v-model="startDate" type="date" required class="flex-1 bg-white border-gray-100 rounded-2xl focus:ring-2 focus:ring-orange-500 font-bold px-4 py-3.5 text-xs shadow-sm focus:border-orange-500">
+                                        <DateInput v-model="startDate" required class="flex-1 bg-white border-gray-100 rounded-2xl focus:ring-2 focus:ring-orange-500 font-bold px-4 py-3.5 text-xs shadow-sm focus:border-orange-500" />
                                         <div class="flex items-center bg-white border border-gray-100 rounded-2xl px-3 shadow-sm focus-within:ring-2 focus-within:ring-orange-500 transition-all">
                                             <select v-model="startHour" class="bg-transparent border-0 font-black text-xs p-2 focus:ring-0 cursor-pointer">
                                                 <option v-for="h in hourOptions" :key="h" :value="h">{{ h }}h</option>
@@ -571,7 +572,7 @@ watch(() => [startDate.value, startTime.value, endDate.value, endTime.value], ()
                                         Fin de l'épreuve (jj/mm/aaaa)
                                     </label>
                                     <div class="flex gap-2">
-                                        <input v-model="endDate" type="date" required class="flex-1 bg-white border-gray-100 rounded-2xl focus:ring-2 focus:ring-orange-500 font-bold px-4 py-3.5 text-xs shadow-sm focus:border-orange-500">
+                                        <DateInput v-model="endDate" required class="flex-1 bg-white border-gray-100 rounded-2xl focus:ring-2 focus:ring-orange-500 font-bold px-4 py-3.5 text-xs shadow-sm focus:border-orange-500" />
                                         <div class="flex items-center bg-white border border-gray-100 rounded-2xl px-3 shadow-sm focus-within:ring-2 focus-within:ring-orange-500 transition-all">
                                             <select v-model="endHour" class="bg-transparent border-0 font-black text-xs p-2 focus:ring-0 cursor-pointer">
                                                 <option v-for="h in hourOptions" :key="h" :value="h">{{ h }}h</option>

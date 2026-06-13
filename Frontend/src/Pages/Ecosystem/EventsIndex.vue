@@ -1,5 +1,6 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
+import DateInput from '@/Components/DateInput.vue'
 import { Head, useForm, router } from '@inertiajs/vue3'
 import { ref, onMounted } from 'vue'
 import { formatTime, formatDate, storageUrl } from '@/utils/format'
@@ -223,7 +224,7 @@ function openDetailModal(event) {
                             </div>
                             <div>
                                 <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-1">Date (jj/mm/aaaa)</label>
-                                <input v-model="form.date" type="date" lang="fr" class="w-full bg-gray-50 border-0 rounded-xl font-bold py-3 px-4">
+                                <DateInput v-model="form.date" class="w-full bg-gray-50 border-0 rounded-xl font-bold py-3 px-4" />
                                 <p v-if="form.errors.date" class="mt-1 text-[10px] text-red-600 font-bold uppercase tracking-widest">{{ form.errors.date }}</p>
                             </div>
                         </div>

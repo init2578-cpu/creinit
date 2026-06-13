@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
+import DateInput from '@/Components/DateInput.vue'
 import { Head, Link, useForm, router } from '@inertiajs/vue3'
 import { 
     AcademicCapIcon, 
@@ -438,11 +439,11 @@ function getStatusClass(status) {
                         <div class="grid grid-cols-2 gap-6">
                             <div class="space-y-2">
                                 <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Date de début (jj/mm/aaaa)</label>
-                                <input v-model="traineeForm.start_date" type="date" class="w-full bg-gray-50 border-0 rounded-2xl p-4 font-bold text-gray-700 focus:ring-2 focus:ring-indigo-600 transition-all outline-none">
+                                <DateInput v-model="traineeForm.start_date" class="w-full bg-gray-50 border-0 rounded-2xl p-4 font-bold text-gray-700 focus:ring-2 focus:ring-indigo-600 transition-all outline-none" />
                             </div>
                             <div class="space-y-2">
                                 <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Date de fin prévue (jj/mm/aaaa)</label>
-                                <input v-model="traineeForm.end_date" type="date" class="w-full bg-gray-50 border-0 rounded-2xl p-4 font-bold text-gray-700 focus:ring-2 focus:ring-indigo-600 transition-all outline-none">
+                                <DateInput v-model="traineeForm.end_date" class="w-full bg-gray-50 border-0 rounded-2xl p-4 font-bold text-gray-700 focus:ring-2 focus:ring-indigo-600 transition-all outline-none" />
                             </div>
                         </div>
                     </div>

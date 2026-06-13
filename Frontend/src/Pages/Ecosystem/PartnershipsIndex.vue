@@ -1,5 +1,6 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
+import DateInput from '@/Components/DateInput.vue'
 import { Head, useForm, router } from '@inertiajs/vue3'
 import { ref } from 'vue'
 import { formatTime, formatDate } from '@/utils/format'
@@ -215,7 +216,7 @@ function openDetailModal(partner) {
                             </div>
                             <div>
                                 <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-1">Date Signature (jj/mm/aaaa)</label>
-                                <input v-model="form.date_signature" type="date" lang="fr" class="w-full bg-gray-50 border-0 rounded-xl font-bold py-3 px-4">
+                                <DateInput v-model="form.date_signature" class="w-full bg-gray-50 border-0 rounded-xl font-bold py-3 px-4" />
                                 <p v-if="form.errors.date_signature" class="mt-1 text-[10px] text-red-600 font-bold uppercase tracking-widest">{{ form.errors.date_signature }}</p>
                             </div>
                         </div>
