@@ -148,7 +148,7 @@ function copyUrl() {
                         </h2>
                         <p class="text-slate-400 text-lg font-medium">Une question ou une proposition de collaboration ? Envoyez-nous un message.</p>
                     </div>
-                    <div class="max-w-2xl mx-auto">
+                    <div>
                         <ContactForm />
                     </div>
                 </div>
