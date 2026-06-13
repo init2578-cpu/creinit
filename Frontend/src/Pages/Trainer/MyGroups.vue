@@ -66,8 +66,8 @@ function toggleGroup(groupId) {
     <Head title="Mes Groupes d'Apprenants" />
 
     <AuthenticatedLayout>
-        <div class="max-w-5xl mx-auto py-8 px-4">
-            <header class="mb-8">
+        <div class="max-w-5xl mx-auto py-4 px-4 -mt-6 sm:-mt-8 lg:-mt-10">
+            <header class="mb-6">
                 <div class="flex items-center gap-3 mb-2">
                     <UserGroupIcon class="h-8 w-8 text-blue-600" />
                     <h1 class="text-3xl font-black text-gray-900 tracking-tight">Mes Groupes</h1>

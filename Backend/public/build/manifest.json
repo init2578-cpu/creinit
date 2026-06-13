@@ -466,7 +466,7 @@
     ]
   },
   "src/Pages/Dashboard.vue": {
-    "file": "assets/Dashboard-CoYyzoXN.js",
+    "file": "assets/Dashboard-DawvJqft.js",
     "name": "Dashboard",
     "src": "src/Pages/Dashboard.vue",
     "isDynamicEntry": true,
@@ -482,7 +482,7 @@
     ]
   },
   "src/Pages/Dashboard/Director.vue": {
-    "file": "assets/Director-C15agGEz.js",
+    "file": "assets/Director-BbqD4jht.js",
     "name": "Director",
     "src": "src/Pages/Dashboard/Director.vue",
     "isDynamicEntry": true,
@@ -1054,7 +1054,7 @@
     ]
   },
   "src/Pages/Student/Dashboard.vue": {
-    "file": "assets/Dashboard-D9dE5BDk.js",
+    "file": "assets/Dashboard-DE3UYBMY.js",
     "name": "Dashboard",
     "src": "src/Pages/Student/Dashboard.vue",
     "isDynamicEntry": true,
@@ -1186,7 +1186,7 @@
     ]
   },
   "src/Pages/Trainer/MyGroups.vue": {
-    "file": "assets/MyGroups-Ck2ebNf2.js",
+    "file": "assets/MyGroups-2_1l-22p.js",
     "name": "MyGroups",
     "src": "src/Pages/Trainer/MyGroups.vue",
     "isDynamicEntry": true,
@@ -1260,7 +1260,7 @@
     "isEntry": true
   },
   "src/app.js": {
-    "file": "assets/app-BZ5XDCKJ.js",
+    "file": "assets/app-CsL7EVHM.js",
     "name": "app",
     "src": "src/app.js",
     "isEntry": true,

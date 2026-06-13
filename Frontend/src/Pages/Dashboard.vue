@@ -11,7 +11,7 @@ defineProps({
     <Head title="Tableau de bord" />
 
     <AuthenticatedLayout>
-        <div class="py-12">
+        <div class="py-6 -mt-6 sm:-mt-8 lg:-mt-10">
             <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
                 <div class="bg-white overflow-hidden shadow-2xl rounded-[3rem] border border-gray-100 flex flex-col md:flex-row items-center p-10 gap-10">
                     <div class="h-40 w-40 rounded-[2.5rem] bg-blue-600 flex items-center justify-center overflow-hidden text-white text-5xl font-black shadow-2xl shadow-blue-200">

@@ -45,8 +45,8 @@ const dayLabel = (d) => DAYS[d] ?? String(d).substring(0, 3)
     <Head title="Espace Apprenant" />
 
     <AuthenticatedLayout>
-        <div class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8 font-sans">
-            <header class="mb-10 flex flex-col md:flex-row items-center gap-8 bg-white p-10 rounded-[3rem] border border-gray-100 shadow-sm">
+        <div class="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8 -mt-6 sm:-mt-8 lg:-mt-10 font-sans">
+            <header class="mb-6 flex flex-col md:flex-row items-center gap-8 bg-white p-6 rounded-[2.5rem] border border-gray-100 shadow-sm">
                 <div class="h-32 w-32 rounded-[2.5rem] bg-blue-600 flex items-center justify-center overflow-hidden text-white text-4xl font-black shadow-xl shadow-blue-100 shrink-0">
                     <img v-if="$page.props.auth.user.profile_photo_url" :src="$page.props.auth.user.profile_photo_url" class="h-full w-full object-cover">
                     <template v-else>{{ $page.props.auth.user.name.charAt(0) }}</template>
