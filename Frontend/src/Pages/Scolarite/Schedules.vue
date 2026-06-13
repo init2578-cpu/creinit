@@ -176,6 +176,22 @@ const isScheduleCurrent = (schedule) => {
     
     return nowMinutes >= startMinutes && nowMinutes <= endMinutes
 }
+
+const getNextDateForDay = (dayOfWeek) => {
+    // dayOfWeek: 1=Monday, ..., 6=Saturday
+    const today = new Date()
+    const todayDay = today.getDay() === 0 ? 7 : today.getDay()
+    let diff = dayOfWeek - todayDay
+    if (diff < 0) diff += 7
+    const target = new Date(today)
+    target.setDate(today.getDate() + diff)
+    return target.toISOString().slice(0, 10)
+}
+
+const navigateToAttendance = (schedule) => {
+    const date = getNextDateForDay(parseInt(schedule.day_of_week))
+    router.visit(route('attendance.take', { schedule: schedule.id, date }))
+}
 </script>
 
 <template>
@@ -221,10 +237,12 @@ const isScheduleCurrent = (schedule) => {
                             <!-- Cell Content -->
                             <div 
                                 v-if="getScheduleBySlot(day, hour)"
-                                class="absolute inset-x-1 m-1 p-3 rounded-2xl border shadow-sm transition overflow-hidden"
+                                @click="navigateToAttendance(getScheduleBySlot(day, hour))"
+                                class="absolute inset-x-1 m-1 p-3 rounded-2xl border shadow-sm transition overflow-hidden cursor-pointer hover:shadow-md hover:scale-[1.02]"
                                 :class="isScheduleCurrent(getScheduleBySlot(day, hour)) 
                                     ? 'bg-indigo-50 border-indigo-300 ring-2 ring-indigo-100 text-indigo-800 font-medium' 
-                                    : 'bg-indigo-50 border-indigo-100 text-indigo-700'"
+                                    : 'bg-indigo-50 border-indigo-100 text-indigo-700 hover:border-indigo-300'"
+                                :title="`Voir la liste de présence — ${getScheduleBySlot(day, hour).group.nom_groupe}`"
                             >
                                 <!-- Indicator dot / clignotant -->
                                 <div v-if="isScheduleToday(getScheduleBySlot(day, hour))" class="absolute top-3 right-3 flex h-4 w-4" :title="getScheduleBySlot(day, hour).attendance_taken_today ? 'Émargement validé' : 'Émargement en attente'">
@@ -255,10 +273,10 @@ const isScheduleCurrent = (schedule) => {
                                             <span class="text-[9px] font-bold truncate">{{ getScheduleBySlot(day, hour).formateur.name }}</span>
                                         </div>
                                         <div v-if="$page.props.auth.user.roles.some(r => ['Directeur', 'Secrétaire'].includes(r))" class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <button @click="openEditModal(getScheduleBySlot(day, hour))" class="text-indigo-400 hover:text-indigo-900 transition">
+                                            <button @click.stop="openEditModal(getScheduleBySlot(day, hour))" class="text-indigo-400 hover:text-indigo-900 transition">
                                                 <PencilSquareIcon class="h-3 w-3" />
                                             </button>
-                                            <button @click="deleteSchedule(getScheduleBySlot(day, hour).id)" class="text-red-400 hover:text-red-600 transition">
+                                            <button @click.stop="deleteSchedule(getScheduleBySlot(day, hour).id)" class="text-red-400 hover:text-red-600 transition">
                                                 <TrashIcon class="h-3 w-3" />
                                             </button>
                                         </div>
@@ -292,8 +310,10 @@ const isScheduleCurrent = (schedule) => {
                     <div 
                         v-for="schedule in mobileSchedules" 
                         :key="schedule.id"
-                        class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 transition relative overflow-hidden"
+                        @click="navigateToAttendance(schedule)"
+                        class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 transition relative overflow-hidden cursor-pointer hover:shadow-md hover:border-indigo-200 active:scale-[0.99]"
                         :class="isScheduleCurrent(schedule) ? 'ring-2 ring-indigo-500/10 border-indigo-200' : ''"
+                        :title="`Voir la liste de présence — ${schedule.group.nom_groupe}`"
                     >
                         <!-- Active Schedule Glow indicator bar on the left -->
                         <div v-if="isScheduleCurrent(schedule)" class="absolute left-0 top-0 bottom-0 w-1.5 bg-indigo-500"></div>
@@ -345,13 +365,13 @@ const isScheduleCurrent = (schedule) => {
                                 <!-- Actions for Directeur/Secretaire -->
                                 <div v-if="$page.props.auth.user.roles.some(r => ['Directeur', 'Secrétaire'].includes(r))" class="flex items-center gap-2">
                                     <button 
-                                        @click="openEditModal(schedule)" 
+                                        @click.stop="openEditModal(schedule)" 
                                         class="p-2.5 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 rounded-xl transition"
                                     >
                                         <PencilSquareIcon class="h-4 w-4" />
                                     </button>
                                     <button 
-                                        @click="deleteSchedule(schedule.id)" 
+                                        @click.stop="deleteSchedule(schedule.id)" 
                                         class="p-2.5 bg-red-50 text-red-600 hover:bg-red-100 rounded-xl transition"
                                     >
                                         <TrashIcon class="h-4 w-4" />
