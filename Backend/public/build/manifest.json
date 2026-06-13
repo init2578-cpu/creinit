@@ -482,7 +482,7 @@
     ]
   },
   "src/Pages/Dashboard/Director.vue": {
-    "file": "assets/Director-DEIUeIh-.js",
+    "file": "assets/Director-C15agGEz.js",
     "name": "Director",
     "src": "src/Pages/Dashboard/Director.vue",
     "isDynamicEntry": true,
@@ -498,8 +498,8 @@
       "_lodash-BBMKGxsJ.js"
     ],
     "css": [
-      "assets/Director-NqCqoaEh.css",
-      "assets/app-DQZ_EQv7.css"
+      "assets/Director-BbzSUor9.css",
+      "assets/app-BQWfOrmH.css"
     ]
   },
   "src/Pages/Ecosystem/EventsIndex.vue": {
@@ -1255,12 +1255,12 @@
     ]
   },
   "src/app.css": {
-    "file": "assets/app-DQZ_EQv7.css",
+    "file": "assets/app-BQWfOrmH.css",
     "src": "src/app.css",
     "isEntry": true
   },
   "src/app.js": {
-    "file": "assets/app-DI4fcYFT.js",
+    "file": "assets/app-BZ5XDCKJ.js",
     "name": "app",
     "src": "src/app.js",
     "isEntry": true,
@@ -1341,7 +1341,7 @@
       "src/Pages/Welcome.vue"
     ],
     "css": [
-      "assets/app-DQZ_EQv7.css"
+      "assets/app-BQWfOrmH.css"
     ]
   }
 }

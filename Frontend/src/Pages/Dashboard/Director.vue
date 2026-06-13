@@ -119,13 +119,13 @@ onUnmounted(() => {
     <AuthenticatedLayout>
         <div class="min-h-screen bg-[#fcfdfe] pb-24">
             <!-- Hero Header with Premium Gradient -->
-            <div class="relative overflow-hidden bg-white border-b border-gray-100 px-4 sm:px-6 lg:px-8 py-6 mb-6 -mt-4 sm:-mt-6 lg:-mt-8">
+            <div class="relative overflow-hidden bg-white border-b border-gray-100 px-4 sm:px-6 lg:px-8 py-3 mb-4 -mt-6 sm:-mt-8 lg:-mt-10">
                 <div class="absolute top-0 right-0 -mt-20 -mr-20 w-[600px] h-[600px] bg-blue-50/40 rounded-full blur-[100px] opacity-60"></div>
                 <div class="absolute bottom-0 left-0 -mb-20 -ml-20 w-96 h-96 bg-emerald-50/40 rounded-full blur-[80px] opacity-40"></div>
                 
                 <div class="max-w-7xl mx-auto relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-8">
                     <div class="max-w-3xl">
-                        <div class="flex items-center gap-3 mb-4">
+                        <div class="flex items-center gap-3 mb-2">
                             <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-100/50 text-blue-700 text-[10px] font-black uppercase tracking-[0.2em] rounded-full border border-blue-200/50">
                                 <span class="relative flex h-2 w-2">
                                   <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
@@ -138,7 +138,7 @@ onUnmounted(() => {
                         <h1 class="text-5xl font-black text-gray-900 tracking-tight leading-[1.1]">
                             Command <span class="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-indigo-600 to-emerald-600">Center</span>
                         </h1>
-                        <p class="text-lg text-gray-500 mt-4 font-medium leading-relaxed">
+                        <p class="text-lg text-gray-500 mt-2 font-medium leading-relaxed">
                             Analytiques haute précision pour le pilotage opérationnel et stratégique du CRE Kolda.
                         </p>
                     </div>
