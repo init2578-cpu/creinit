@@ -45,3 +45,40 @@
     to { transform: scale(1.1) translate(-2%, -2%); }
   }
 }
+
+/* Global inputs & fields readability styling for Admin/Secretary/Trainer/Student light dashboards */
+.bg-gray-50 input[type="text"],
+.bg-gray-50 input[type="email"],
+.bg-gray-50 input[type="password"],
+.bg-gray-50 input[type="number"],
+.bg-gray-50 input[type="date"],
+.bg-gray-50 textarea,
+.bg-gray-50 select {
+  border: 1px solid #cbd5e1 !important;
+  background-color: #ffffff !important;
+  color: #1e293b !important;
+  transition: all 0.2s ease-in-out;
+}
+
+.bg-gray-50 input[type="text"]:hover,
+.bg-gray-50 input[type="email"]:hover,
+.bg-gray-50 input[type="password"]:hover,
+.bg-gray-50 input[type="number"]:hover,
+.bg-gray-50 input[type="date"]:hover,
+.bg-gray-50 textarea:hover,
+.bg-gray-50 select:hover {
+  border-color: #94a3b8 !important;
+}
+
+.bg-gray-50 input[type="text"]:focus,
+.bg-gray-50 input[type="email"]:focus,
+.bg-gray-50 input[type="password"]:focus,
+.bg-gray-50 input[type="number"]:focus,
+.bg-gray-50 input[type="date"]:focus,
+.bg-gray-50 textarea:focus,
+.bg-gray-50 select:focus {
+  border-color: #4f46e5 !important;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15) !important;
+  outline: none !important;
+}
+
