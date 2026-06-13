@@ -22,7 +22,7 @@ const visionItems = [
     },
     {
         title: 'Émergence Kolda',
-        desc: "Positionner notre région comme un pôle technologique majeur dans le cadre du Plan Sénégal Émergent.",
+        desc: "Positionner notre région comme un pôle technologique majeur dans le cadre du New Deal Technologique.",
         icon: RocketLaunchIcon
     }
 ]
@@ -74,7 +74,7 @@ const visionItems = [
                         <div>
                             <h2 class="text-4xl font-black text-white mb-8 tracking-tight">L'Engagement du MESRI</h2>
                             <p class="text-slate-400 text-lg leading-relaxed mb-8">
-                                Sous la tutelle du Ministère de l'Enseignement Supérieur, de la Recherche et de l'Innovation, nous portons une ambition nationale : faire de la science un moteur du Plan Sénégal Émergent.
+                                Sous la tutelle du Ministère de l'Enseignement Supérieur, de la Recherche et de l'Innovation, nous portons une ambition nationale : faire de la science un moteur du New Deal Technologique.
                             </p>
                             <div class="flex flex-col gap-4">
                                 <div class="flex items-center gap-4 text-cyan-400 font-bold">

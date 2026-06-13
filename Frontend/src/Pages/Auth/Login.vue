@@ -167,7 +167,7 @@ const { verify, isLoading: passkeyLoading, isSupported: isPasskeySupported, erro
             <!-- Accents -->
             <div class="mt-8 flex items-center gap-8 opacity-40 grayscale flex-wrap justify-center font-sans">
                 <span class="text-xs font-black uppercase tracking-widest text-gray-400">CRE de Kolda</span>
-                <span class="text-xs font-black uppercase tracking-widest text-gray-400">Sénégal Émergent</span>
+                <span class="text-xs font-black uppercase tracking-widest text-gray-400">New Deal Technologique</span>
                 <span class="text-xs font-black uppercase tracking-widest text-gray-400">Excellence Inclusion</span>
             </div>
         </div>

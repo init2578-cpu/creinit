@@ -48,7 +48,7 @@ const pillars = [
     },
     {
         title: 'Émergence Numérique',
-        description: 'Propulser le Fouladou au cœur du Plan Sénégal Émergent par la maîtrise des outils du futur.',
+        description: 'Propulser le Fouladou au cœur du New Deal Technologique.',
         icon: RocketLaunchIcon,
         color: 'indigo'
     }
