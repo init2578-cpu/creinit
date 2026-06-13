@@ -5,6 +5,7 @@ import { Head } from '@inertiajs/vue3'
 import DoughnutChart from '@/Components/Charts/DoughnutChart.vue'
 import BarChart from '@/Components/Charts/BarChart.vue'
 import AreaChart from '@/Components/Charts/AreaChart.vue'
+import RadialGauge from '@/Components/Charts/RadialGauge.vue'
 import api from '@/services/api'
 import { 
     UsersIcon, 
@@ -75,6 +76,16 @@ const moduleLabels = computed(() => {
 const moduleData = computed(() => {
     if (!dashboardKpis.value || !dashboardKpis.value.module_validation_rates) return []
     return Object.values(dashboardKpis.value.module_validation_rates)
+})
+
+const weeklyTrendsLabels = computed(() => {
+    if (!dashboardKpis.value || !dashboardKpis.value.weekly_trends) return []
+    return dashboardKpis.value.weekly_trends.map(w => w.label)
+})
+
+const weeklyTrendsData = computed(() => {
+    if (!dashboardKpis.value || !dashboardKpis.value.weekly_trends) return []
+    return dashboardKpis.value.weekly_trends.map(w => w.rate)
 })
 
 let statsInterval = null
@@ -153,131 +164,164 @@ onUnmounted(() => {
             </div>
 
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
-                
-                <!-- KPI Section 1: Main Channels -->
-                <section>
+                         <!-- KPI Section 1: Main Channels -->
+                <section class="animate-in">
                     <div class="flex items-center gap-2 mb-6">
-                        <h2 class="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">Indicateurs Clés</h2>
+                        <h2 class="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">Indicateurs Stratégiques</h2>
                         <div class="h-px flex-1 bg-gray-100"></div>
                     </div>
                     
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                         <!-- Total Apprenants -->
-                        <div class="group relative bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm transition-all hover:shadow-2xl hover:border-blue-100 overflow-hidden">
-                            <div class="absolute top-0 right-0 w-24 h-24 -mr-8 -mt-8 bg-blue-50 rounded-full blur-2xl group-hover:bg-blue-100 transition-colors"></div>
-                            <div class="relative z-10">
-                                <div class="h-12 w-12 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600 mb-6 group-hover:bg-blue-600 group-hover:text-white transition-all transform group-hover:rotate-6 shadow-sm">
-                                    <UsersIcon class="h-6 w-6" />
+                        <div class="group relative bg-white p-6 rounded-3xl border border-gray-100 shadow-sm transition-all hover:shadow-xl hover:-translate-y-1 overflow-hidden">
+                            <div class="absolute top-0 right-0 w-24 h-24 -mr-8 -mt-8 bg-blue-50/50 rounded-full blur-2xl group-hover:bg-blue-100/50 transition-colors"></div>
+                            <div class="relative z-10 flex items-center justify-between">
+                                <div>
+                                    <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Effectif Actif</p>
+                                    <h3 class="text-3xl font-black text-gray-900 tracking-tighter">{{ dashboardKpis.total_learners }}</h3>
+                                    <span class="text-[10px] font-bold text-slate-400 mt-2 block">Apprenants inscrits</span>
                                 </div>
-                                <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Capacité Totale</p>
-                                <h3 class="text-4xl font-black text-gray-900 tracking-tighter">{{ dashboardKpis.total_learners }}</h3>
-                                <div class="mt-4 flex items-center gap-2">
-                                    <span class="text-xs font-bold text-gray-500">Apprenants actifs</span>
-                                    <span class="px-2 py-0.5 bg-blue-50 text-blue-600 text-[8px] font-black rounded-lg">LIVE</span>
+                                <div class="h-12 w-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center border border-blue-100/50 group-hover:bg-blue-600 group-hover:text-white transition-all transform group-hover:rotate-6">
+                                    <UsersIcon class="h-6 w-6" />
                                 </div>
                             </div>
                         </div>
 
                         <!-- Utilisateurs en Ligne -->
-                        <div class="group relative bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm transition-all hover:shadow-2xl hover:border-green-100 overflow-hidden">
-                             <div class="absolute top-0 right-0 w-24 h-24 -mr-8 -mt-8 bg-green-50 rounded-full blur-2xl group-hover:bg-green-100 transition-colors"></div>
-                            <div class="relative z-10">
-                                <div class="h-12 w-12 bg-green-50 rounded-2xl flex items-center justify-center text-green-600 mb-6 group-hover:bg-green-600 group-hover:text-white transition-all transform group-hover:scale-110 shadow-sm">
-                                    <span class="relative flex h-3 w-3">
-                                      <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                                      <span class="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
-                                    </span>
+                        <div class="group relative bg-white p-6 rounded-3xl border border-gray-100 shadow-sm transition-all hover:shadow-xl hover:-translate-y-1 overflow-hidden">
+                            <div class="absolute top-0 right-0 w-24 h-24 -mr-8 -mt-8 bg-emerald-50/50 rounded-full blur-2xl group-hover:bg-emerald-100/50 transition-colors"></div>
+                            <div class="relative z-10 flex items-center justify-between">
+                                <div>
+                                    <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Membres Actifs</p>
+                                    <h3 class="text-3xl font-black text-gray-900 tracking-tighter flex items-center gap-2">
+                                        {{ dashboardKpis.online_users_count || 0 }}
+                                        <span class="relative flex h-2 w-2">
+                                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                            <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                                        </span>
+                                    </h3>
+                                    <span class="text-[10px] font-bold text-slate-400 mt-2 block">Connectés en temps réel</span>
                                 </div>
-                                <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">En Ligne</p>
-                                <h3 class="text-4xl font-black text-gray-900 tracking-tighter">{{ dashboardKpis.online_users_count || 0 }}</h3>
-                                <div class="mt-4 flex items-center gap-2">
-                                    <span class="text-xs font-bold text-gray-500">Membres connectés</span>
-                                    <span class="px-2 py-0.5 bg-green-50 text-green-600 text-[8px] font-black rounded-lg">LIVE</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Absence Apprenants (Élèves) -->
-                        <div class="group relative bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm transition-all hover:shadow-2xl hover:border-red-100 overflow-hidden">
-                             <div class="absolute top-0 right-0 w-24 h-24 -mr-8 -mt-8 bg-red-50 rounded-full blur-2xl group-hover:bg-red-100 transition-colors"></div>
-                            <div class="relative z-10">
-                                <div class="h-12 w-12 bg-red-50 rounded-2xl flex items-center justify-center text-red-600 mb-6 group-hover:bg-red-600 group-hover:text-white transition-all transform group-hover:-rotate-6 shadow-sm">
-                                    <BoltIcon class="h-6 w-6" />
-                                </div>
-                                <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Absence Élèves</p>
-                                <div class="flex items-baseline gap-2">
-                                    <h3 class="text-4xl font-black text-gray-900 tracking-tighter">{{ dashboardKpis.attendance_stats?.learners_absence_rate || 0 }}%</h3>
-                                    <p class="text-[10px] font-black text-red-500 uppercase tracking-widest">{{ dashboardKpis.attendance_stats?.learners_absence_hours || 0 }}h cumulées</p>
-                                </div>
-                                <div class="mt-6 w-full bg-gray-100 h-2 rounded-full overflow-hidden p-0.5 shadow-inner">
-                                    <div class="bg-gradient-to-r from-red-400 to-red-600 h-full rounded-full transition-all duration-1000 shadow-sm" :style="{ width: (dashboardKpis.attendance_stats?.learners_absence_rate || 0) + '%' }"></div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Absence Stagiaires -->
-                        <div class="group relative bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm transition-all hover:shadow-2xl hover:border-pink-100 overflow-hidden">
-                             <div class="absolute top-0 right-0 w-24 h-24 -mr-8 -mt-8 bg-pink-50 rounded-full blur-2xl group-hover:bg-pink-100 transition-colors"></div>
-                            <div class="relative z-10">
-                                <div class="h-12 w-12 bg-pink-50 rounded-2xl flex items-center justify-center text-pink-600 mb-6 group-hover:bg-pink-600 group-hover:text-white transition-all transform group-hover:rotate-6 shadow-sm">
-                                    <BoltIcon class="h-6 w-6" />
-                                </div>
-                                <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Absence Stagiaires</p>
-                                <div class="flex items-baseline gap-2">
-                                    <h3 class="text-4xl font-black text-gray-900 tracking-tighter">{{ dashboardKpis.attendance_stats?.trainees_absence_rate || 0 }}%</h3>
-                                    <p class="text-[10px] font-black text-pink-500 uppercase tracking-widest">{{ dashboardKpis.attendance_stats?.trainees_absence_hours || 0 }}h cumulées</p>
-                                </div>
-                                <div class="mt-6 w-full bg-gray-100 h-2 rounded-full overflow-hidden p-0.5 shadow-inner">
-                                    <div class="bg-gradient-to-r from-pink-400 to-pink-600 h-full rounded-full transition-all duration-1000 shadow-sm" :style="{ width: (dashboardKpis.attendance_stats?.trainees_absence_rate || 0) + '%' }"></div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Absence Formateurs -->
-                        <div class="group relative bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm transition-all hover:shadow-2xl hover:border-orange-100 overflow-hidden">
-                             <div class="absolute top-0 right-0 w-24 h-24 -mr-8 -mt-8 bg-orange-50 rounded-full blur-2xl group-hover:bg-orange-100 transition-colors"></div>
-                            <div class="relative z-10">
-                                <div class="h-12 w-12 bg-orange-50 rounded-2xl flex items-center justify-center text-orange-600 mb-6 group-hover:bg-orange-600 group-hover:text-white transition-all transform group-hover:rotate-6 shadow-sm">
-                                    <ClockIcon class="h-6 w-6" />
-                                </div>
-                                <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Absence Formateurs</p>
-                                <div class="flex items-baseline gap-2">
-                                    <h3 class="text-4xl font-black text-gray-900 tracking-tighter">{{ dashboardKpis.attendance_stats?.trainers_absence_rate || 0 }}%</h3>
-                                    <p class="text-[10px] font-black text-orange-500 uppercase tracking-widest">{{ dashboardKpis.attendance_stats?.trainers_absence_hours || 0 }}h cumulées</p>
-                                </div>
-                                <div class="mt-6 w-full bg-gray-100 h-2 rounded-full overflow-hidden p-0.5 shadow-inner">
-                                    <div class="bg-gradient-to-r from-orange-400 to-orange-600 h-full rounded-full transition-all duration-1000 shadow-sm" :style="{ width: (dashboardKpis.attendance_stats?.trainers_absence_rate || 0) + '%' }"></div>
+                                <div class="h-12 w-12 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center border border-emerald-100/50 group-hover:bg-emerald-600 group-hover:text-white transition-all transform group-hover:scale-110">
+                                    <ComputerDesktopIcon class="h-6 w-6" />
                                 </div>
                             </div>
                         </div>
 
                         <!-- Pedagogical Performance -->
-                        <div class="group relative bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm transition-all hover:shadow-2xl hover:border-indigo-100">
-                            <div class="absolute top-0 right-0 w-24 h-24 -mr-8 -mt-8 bg-indigo-50 rounded-full blur-2xl group-hover:bg-indigo-100 transition-colors"></div>
-                            <div class="relative z-10">
-                                <div class="h-12 w-12 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600 mb-6 group-hover:bg-indigo-600 group-hover:text-white transition-all transform group-hover:scale-110 shadow-sm">
+                        <div class="group relative bg-white p-6 rounded-3xl border border-gray-100 shadow-sm transition-all hover:shadow-xl hover:-translate-y-1 overflow-hidden">
+                            <div class="absolute top-0 right-0 w-24 h-24 -mr-8 -mt-8 bg-indigo-50/50 rounded-full blur-2xl group-hover:bg-indigo-100/50 transition-colors"></div>
+                            <div class="relative z-10 flex items-center justify-between">
+                                <div>
+                                    <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Moyenne Examens</p>
+                                    <h3 class="text-3xl font-black text-gray-900 tracking-tighter">{{ dashboardKpis.pedagogical?.avg_exam_score || 0 }}<span class="text-sm text-gray-400 ml-1">/20</span></h3>
+                                    <span class="text-[10px] font-bold text-slate-400 mt-2 block">Validation: {{ dashboardKpis.pedagogical?.chapters_validated_rate || 0 }}% chapitres</span>
+                                </div>
+                                <div class="h-12 w-12 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center border border-indigo-100/50 group-hover:bg-indigo-600 group-hover:text-white transition-all transform group-hover:-rotate-6">
                                     <AcademicCapIcon class="h-6 w-6" />
                                 </div>
-                                <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Moyenne Examens</p>
-                                <h3 class="text-4xl font-black text-gray-900 tracking-tighter">{{ dashboardKpis.pedagogical?.avg_exam_score || 0 }}<span class="text-xs text-gray-400 ml-1">/20</span></h3>
-                                <p class="mt-4 text-xs font-bold text-gray-500">Validation: {{ dashboardKpis.pedagogical?.chapters_validated_rate || 0 }}% des chapitres</p>
                             </div>
                         </div>
 
                         <!-- Admission Pipe -->
-                        <div class="group relative bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm transition-all hover:shadow-2xl hover:border-orange-100">
-                            <div class="absolute top-0 right-0 w-24 h-24 -mr-8 -mt-8 bg-orange-50 rounded-full blur-2xl group-hover:bg-orange-100 transition-colors"></div>
-                            <div class="relative z-10">
-                                <div class="h-12 w-12 bg-orange-50 rounded-2xl flex items-center justify-center text-orange-600 mb-6 group-hover:bg-orange-600 group-hover:text-white transition-all transform group-hover:-scale-y-110 shadow-sm">
+                        <div class="group relative bg-white p-6 rounded-3xl border border-gray-100 shadow-sm transition-all hover:shadow-xl hover:-translate-y-1 overflow-hidden">
+                            <div class="absolute top-0 right-0 w-24 h-24 -mr-8 -mt-8 bg-amber-50/50 rounded-full blur-2xl group-hover:bg-amber-100/50 transition-colors"></div>
+                            <div class="relative z-10 flex items-center justify-between">
+                                <div>
+                                    <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Dossiers Admission</p>
+                                    <h3 class="text-3xl font-black text-gray-900 tracking-tighter">{{ dashboardKpis.admissions?.pending || 0 }}</h3>
+                                    <span class="text-[10px] font-bold text-slate-400 mt-2 block">Dossiers en attente de validation</span>
+                                </div>
+                                <div class="h-12 w-12 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center border border-amber-100/50 group-hover:bg-amber-600 group-hover:text-white transition-all transform group-hover:scale-110">
                                     <BriefcaseIcon class="h-6 w-6" />
                                 </div>
-                                <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Lead Validation</p>
-                                <h3 class="text-4xl font-black text-gray-900 tracking-tighter">{{ dashboardKpis.admissions?.pending || 0 }}</h3>
-                                <div class="mt-4 flex items-center gap-2">
-                                    <span class="text-xs font-bold text-gray-500">Dossiers en attente</span>
-                                    <div class="h-2 w-2 bg-orange-500 rounded-full animate-pulse"></div>
-                                </div>
                             </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section: Assiduity and Attendance analysis -->
+                <section class="grid grid-cols-1 lg:grid-cols-5 gap-8 animate-in">
+                    <!-- Column 1: Absence Rates RadialGauges (col-span-2) -->
+                    <div class="lg:col-span-2 bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm flex flex-col justify-between">
+                        <div class="flex items-center justify-between mb-8">
+                            <div>
+                                <h3 class="text-xl font-black text-gray-900 tracking-tight">Taux d'Absences</h3>
+                                <p class="text-xs text-gray-500 font-medium">Analyses de fréquentation par profil</p>
+                            </div>
+                            <div class="h-10 w-10 bg-rose-50 text-rose-600 rounded-xl flex items-center justify-center border border-rose-100">
+                                <ClockIcon class="h-5 w-5" />
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-3 gap-4 py-4 justify-items-center">
+                            <!-- Eleves -->
+                            <div class="flex flex-col items-center">
+                                <RadialGauge 
+                                    :value="dashboardKpis.attendance_stats?.learners_absence_rate || 0" 
+                                    color="#f43f5e" 
+                                    trackColor="#ffe4e6" 
+                                    :size="90" 
+                                    :strokeWidth="8"
+                                />
+                                <span class="text-[10px] font-black text-slate-500 uppercase mt-3 text-center">Élèves</span>
+                                <span class="text-[9px] font-bold text-rose-500 mt-0.5">{{ dashboardKpis.attendance_stats?.learners_absence_hours || 0 }}h</span>
+                            </div>
+                            
+                            <!-- Stagiaires -->
+                            <div class="flex flex-col items-center">
+                                <RadialGauge 
+                                    :value="dashboardKpis.attendance_stats?.trainees_absence_rate || 0" 
+                                    color="#ec4899" 
+                                    trackColor="#fce7f3" 
+                                    :size="90" 
+                                    :strokeWidth="8"
+                                />
+                                <span class="text-[10px] font-black text-slate-500 uppercase mt-3 text-center">Stagiaires</span>
+                                <span class="text-[9px] font-bold text-pink-500 mt-0.5">{{ dashboardKpis.attendance_stats?.trainees_absence_hours || 0 }}h</span>
+                            </div>
+
+                            <!-- Formateurs -->
+                            <div class="flex flex-col items-center">
+                                <RadialGauge 
+                                    :value="dashboardKpis.attendance_stats?.trainers_absence_rate || 0" 
+                                    color="#f97316" 
+                                    trackColor="#ffedd5" 
+                                    :size="90" 
+                                    :strokeWidth="8"
+                                />
+                                <span class="text-[10px] font-black text-slate-500 uppercase mt-3 text-center">Formateurs</span>
+                                <span class="text-[9px] font-bold text-orange-500 mt-0.5">{{ dashboardKpis.attendance_stats?.trainers_absence_hours || 0 }}h</span>
+                            </div>
+                        </div>
+
+                        <div class="mt-6 pt-4 border-t border-gray-50 flex justify-between text-[9px] font-bold text-slate-400">
+                            <span>Mise à jour: Temps réel</span>
+                            <span class="flex items-center gap-1"><span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>Présences normales</span>
+                        </div>
+                    </div>
+
+                    <!-- Column 2: Weekly Trends Line Chart (col-span-3) -->
+                    <div class="lg:col-span-3 bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm flex flex-col justify-between">
+                        <div class="flex items-center justify-between mb-6">
+                            <div>
+                                <h3 class="text-xl font-black text-gray-900 tracking-tight">Tendance de Présentation</h3>
+                                <p class="text-xs text-gray-500 font-medium">Évolution du taux global sur les 8 dernières semaines</p>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs font-black text-blue-600 bg-blue-50 border border-blue-100 px-3 py-1 rounded-full uppercase tracking-wider">
+                                    {{ dashboardKpis.attendance_rate || 0 }}% global
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="flex-1 min-h-[200px] mt-2">
+                            <AreaChart 
+                                :labels="weeklyTrendsLabels" 
+                                :data="weeklyTrendsData" 
+                                label="Taux global (%)" 
+                                color="#2563eb"
+                            />
                         </div>
                     </div>
                 </section>
@@ -285,90 +329,98 @@ onUnmounted(() => {
                 <!-- Section 2: Advanced Visualizations -->
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                     <!-- Academic Success Distribution -->
-                    <div class="bg-white p-10 rounded-[3rem] border border-gray-100 shadow-sm flex flex-col">
-                        <!-- Header -->
-                        <div class="flex items-start justify-between mb-8">
-                            <div>
-                                <h2 class="text-2xl font-black text-gray-900 tracking-tight">Performance Académique</h2>
-                                <p class="text-sm text-gray-500 font-medium mt-1">Taux de validation par filière</p>
+                    <div class="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm flex flex-col justify-between transition-all hover:shadow-xl">
+                        <div>
+                            <!-- Header -->
+                            <div class="flex items-start justify-between mb-8">
+                                <div>
+                                    <h2 class="text-2xl font-black text-gray-900 tracking-tight">Performance Académique</h2>
+                                    <p class="text-xs text-gray-500 font-medium mt-1">Taux de validation par filière</p>
+                                </div>
+                                <div class="h-12 w-12 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center border border-indigo-100 shrink-0">
+                                    <ChartBarIcon class="h-6 w-6" />
+                                </div>
                             </div>
-                            <div class="h-12 w-12 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center border border-indigo-100 shrink-0">
-                                <ChartBarIcon class="h-6 w-6" />
-                            </div>
-                        </div>
 
-                        <!-- Quick stats strip -->
-                        <div class="grid grid-cols-3 gap-3 mb-8" v-if="moduleData && moduleData.length > 0">
-                            <div class="p-4 bg-emerald-50/60 rounded-2xl border border-emerald-100/60 text-center">
-                                <p class="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-1">Meilleur</p>
-                                <p class="text-2xl font-black text-emerald-700">
-                                    {{ Math.max(...moduleData.map(v => v <= 1 ? Math.round(v * 100) : Math.round(v))) }}%
-                                </p>
+                            <!-- Quick stats strip -->
+                            <div class="grid grid-cols-3 gap-3 mb-8" v-if="moduleData && moduleData.length > 0">
+                                <div class="p-4 bg-emerald-50/60 rounded-2xl border border-emerald-100/60 text-center">
+                                    <p class="text-[9px] font-black text-emerald-600 uppercase tracking-widest mb-1">Meilleur</p>
+                                    <p class="text-xl font-black text-emerald-700">
+                                        {{ Math.max(...moduleData.map(v => v <= 1 ? Math.round(v * 100) : Math.round(v))) }}%
+                                    </p>
+                                </div>
+                                <div class="p-4 bg-indigo-50/60 rounded-2xl border border-indigo-100/60 text-center">
+                                    <p class="text-[9px] font-black text-indigo-600 uppercase tracking-widest mb-1">Moyenne</p>
+                                    <p class="text-xl font-black text-indigo-700">
+                                        {{ Math.round(moduleData.reduce((a, v) => a + (v <= 1 ? v * 100 : v), 0) / moduleData.length) }}%
+                                    </p>
+                                </div>
+                                <div class="p-4 bg-slate-50/80 rounded-2xl border border-slate-100 text-center">
+                                    <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Filières</p>
+                                    <p class="text-xl font-black text-slate-700">{{ moduleData.length }}</p>
+                                </div>
                             </div>
-                            <div class="p-4 bg-indigo-50/60 rounded-2xl border border-indigo-100/60 text-center">
-                                <p class="text-[10px] font-black text-indigo-600 uppercase tracking-widest mb-1">Moyenne</p>
-                                <p class="text-2xl font-black text-indigo-700">
-                                    {{ Math.round(moduleData.reduce((a, v) => a + (v <= 1 ? v * 100 : v), 0) / moduleData.length) }}%
-                                </p>
-                            </div>
-                            <div class="p-4 bg-gray-50/80 rounded-2xl border border-gray-100 text-center">
-                                <p class="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">Filières</p>
-                                <p class="text-2xl font-black text-gray-700">{{ moduleData.length }}</p>
-                            </div>
-                        </div>
 
-                        <!-- Bar Chart -->
-                        <div class="flex-1 min-h-[260px]">
-                            <BarChart :labels="moduleLabels" :data="moduleData" />
+                            <!-- Bar Chart -->
+                            <div class="flex-1 min-h-[260px]">
+                                <BarChart :labels="moduleLabels" :data="moduleData" />
+                            </div>
                         </div>
 
                         <!-- Status legend -->
                         <div class="flex items-center gap-4 mt-6 pt-4 border-t border-gray-50">
                             <div class="flex items-center gap-1.5">
-                                <span class="h-2.5 w-2.5 rounded-full bg-emerald-500 shrink-0"></span>
+                                <span class="h-2 w-2 rounded-full bg-emerald-500 shrink-0"></span>
                                 <span class="text-[10px] font-bold text-gray-400">≥ 75% Excellent</span>
                             </div>
                             <div class="flex items-center gap-1.5">
-                                <span class="h-2.5 w-2.5 rounded-full bg-amber-400 shrink-0"></span>
+                                <span class="h-2 w-2 rounded-full bg-amber-400 shrink-0"></span>
                                 <span class="text-[10px] font-bold text-gray-400">≥ 50% Satisfaisant</span>
                             </div>
                             <div class="flex items-center gap-1.5">
-                                <span class="h-2.5 w-2.5 rounded-full bg-red-400 shrink-0"></span>
+                                <span class="h-2 w-2 rounded-full bg-red-400 shrink-0"></span>
                                 <span class="text-[10px] font-bold text-gray-400">&lt; 50% À surveiller</span>
                             </div>
                         </div>
                     </div>
 
                     <!-- Gender & Demographics -->
-                    <div class="bg-white p-10 rounded-[3rem] border border-gray-100 shadow-sm flex flex-col lg:flex-row gap-10">
-                        <div class="flex-1">
-                            <h2 class="text-2xl font-black text-gray-900 tracking-tight mb-2">Démographie</h2>
-                            <p class="text-sm text-gray-500 font-medium mb-10">Distribution de genre et inclusion</p>
-                            
-                            <div class="space-y-6">
-                                <div class="p-6 bg-pink-50/50 rounded-3xl border border-pink-100/50">
-                                    <div class="flex justify-between items-center mb-2">
-                                        <p class="text-xs font-black text-pink-700 uppercase tracking-widest">Femmes</p>
-                                        <span class="text-xl font-black text-pink-600">{{ dashboardKpis.gender_parity?.female || 0 }}</span>
+                    <div class="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm flex flex-col justify-between lg:flex-row gap-8 transition-all hover:shadow-xl">
+                        <div class="flex-1 flex flex-col justify-between">
+                            <div>
+                                <h2 class="text-2xl font-black text-gray-900 tracking-tight mb-1">Démographie</h2>
+                                <p class="text-xs text-gray-500 font-medium mb-8">Distribution de genre et inclusion au sein du centre</p>
+                                
+                                <div class="space-y-4">
+                                    <div class="p-5 bg-pink-50/50 rounded-2xl border border-pink-100/30">
+                                        <div class="flex justify-between items-center mb-2">
+                                            <p class="text-[10px] font-black text-pink-700 uppercase tracking-widest">Femmes</p>
+                                            <span class="text-lg font-black text-pink-600">{{ dashboardKpis.gender_parity?.female || 0 }}</span>
+                                        </div>
+                                        <div class="w-full bg-pink-100/50 h-2 rounded-full">
+                                            <div class="bg-pink-500 h-full rounded-full transition-all duration-1000" :style="{ width: (dashboardKpis.gender_parity?.ratio || 0) + '%' }"></div>
+                                        </div>
                                     </div>
-                                    <div class="w-full bg-pink-100/50 h-2 rounded-full">
-                                        <div class="bg-pink-500 h-full rounded-full transition-all duration-1000" :style="{ width: (dashboardKpis.gender_parity?.ratio || 0) + '%' }"></div>
-                                    </div>
-                                </div>
 
-                                <div class="p-6 bg-blue-50/50 rounded-3xl border border-blue-100/50">
-                                    <div class="flex justify-between items-center mb-2">
-                                        <p class="text-xs font-black text-blue-700 uppercase tracking-widest">Hommes</p>
-                                        <span class="text-xl font-black text-blue-600">{{ dashboardKpis.gender_parity?.male || 0 }}</span>
-                                    </div>
-                                    <div class="w-full bg-blue-100/50 h-2 rounded-full">
-                                        <div class="bg-blue-500 h-full rounded-full transition-all duration-1000" :style="{ width: (100 - (dashboardKpis.gender_parity?.ratio || 0)) + '%' }"></div>
+                                    <div class="p-5 bg-blue-50/50 rounded-2xl border border-blue-100/30">
+                                        <div class="flex justify-between items-center mb-2">
+                                            <p class="text-[10px] font-black text-blue-700 uppercase tracking-widest">Hommes</p>
+                                            <span class="text-lg font-black text-blue-600">{{ dashboardKpis.gender_parity?.male || 0 }}</span>
+                                        </div>
+                                        <div class="w-full bg-blue-100/50 h-2 rounded-full">
+                                            <div class="bg-blue-500 h-full rounded-full transition-all duration-1000" :style="{ width: (100 - (dashboardKpis.gender_parity?.ratio || 0)) + '%' }"></div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
+
+                            <div class="mt-6 pt-4 border-t border-gray-50 text-[10px] font-bold text-gray-400">
+                                Parité cible: 50% / 50%
+                            </div>
                         </div>
                         <div class="lg:w-1/2 flex items-center justify-center">
-                            <div class="w-full max-w-[240px]">
+                            <div class="w-full max-w-[200px]">
                                 <DoughnutChart :male="dashboardKpis.gender_parity?.male || 0" :female="dashboardKpis.gender_parity?.female || 0" />
                             </div>
                         </div>
@@ -378,51 +430,51 @@ onUnmounted(() => {
                 <!-- Section 3: Operational Control & Ecosystem -->
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     <!-- Logistics & Inventory -->
-                    <div class="lg:col-span-2 bg-gray-900 p-10 rounded-[3rem] shadow-2xl relative overflow-hidden group">
+                    <div class="lg:col-span-2 bg-slate-900 p-8 rounded-[2.5rem] border border-slate-800 shadow-2xl relative overflow-hidden group">
                         <div class="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 blur-[80px] -mr-32 -mt-32"></div>
                         
-                        <div class="flex items-center justify-between mb-10 relative z-10">
+                        <div class="flex items-center justify-between mb-8 relative z-10">
                             <div>
                                 <h2 class="text-2xl font-black text-white tracking-tight">Gestion du Parc</h2>
-                                <p class="text-sm text-gray-400 font-medium">Indicateurs de maintenance et logistique</p>
+                                <p class="text-xs text-slate-400 font-medium">Indicateurs de maintenance et logistique</p>
                             </div>
-                            <div class="h-14 w-14 bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center border border-white/10 group-hover:scale-110 transition-transform">
-                                <ComputerDesktopIcon class="h-7 w-7 text-indigo-400" />
+                            <div class="h-12 w-12 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                                <ComputerDesktopIcon class="h-6 w-6 text-indigo-400" />
                             </div>
                         </div>
 
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-10 relative z-10">
-                            <div class="p-6 bg-white/5 border border-white/5 rounded-3xl backdrop-blur-xl">
-                                <p class="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2">Actifs Totaux</p>
-                                <p class="text-3xl font-black text-white">{{ dashboardKpis.logistics?.total_assets || 0 }}</p>
-                                <div class="mt-4 h-1 w-full bg-white/10 rounded-full overflow-hidden">
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8 relative z-10">
+                            <div class="p-5 bg-white/[0.02] border border-white/5 rounded-2xl backdrop-blur-xl">
+                                <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Actifs Totaux</p>
+                                <p class="text-2xl font-black text-white">{{ dashboardKpis.logistics?.total_assets || 0 }}</p>
+                                <div class="mt-3 h-1 w-full bg-white/10 rounded-full overflow-hidden">
                                     <div class="h-full bg-indigo-500" style="width: 100%"></div>
                                 </div>
                             </div>
-                            <div class="p-6 bg-white/5 border border-white/5 rounded-3xl backdrop-blur-xl">
-                                <p class="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2">Indice Santé</p>
-                                <p class="text-3xl font-black text-white">{{ dashboardKpis.operational_hardware }}%</p>
-                                <div class="mt-4 h-1 w-full bg-white/10 rounded-full overflow-hidden">
-                                    <div class="h-full bg-emerald-500" :style="{ width: dashboardKpis.operational_hardware + '%' }"></div>
+                            <div class="p-5 bg-white/[0.02] border border-white/5 rounded-2xl backdrop-blur-xl">
+                                <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Indice de Santé</p>
+                                <p class="text-2xl font-black text-white">{{ dashboardKpis.operational_hardware || 0 }}%</p>
+                                <div class="mt-3 h-1 w-full bg-white/10 rounded-full overflow-hidden">
+                                    <div class="h-full bg-emerald-500" :style="{ width: (dashboardKpis.operational_hardware || 0) + '%' }"></div>
                                 </div>
                             </div>
-                            <div class="p-6 bg-white/5 border border-white/5 rounded-3xl backdrop-blur-xl">
-                                <p class="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2">Prêts Actifs</p>
-                                <p class="text-3xl font-black text-white">{{ dashboardKpis.logistics?.active_loans || 0 }}</p>
-                                <div class="mt-4 h-1 w-full bg-white/10 rounded-full overflow-hidden">
-                                    <div class="h-full bg-blue-500" :style="{ width: ((dashboardKpis.logistics?.active_loans / dashboardKpis.logistics?.total_assets) * 100) + '%' }"></div>
+                            <div class="p-5 bg-white/[0.02] border border-white/5 rounded-2xl backdrop-blur-xl">
+                                <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Prêts Actifs</p>
+                                <p class="text-2xl font-black text-white">{{ dashboardKpis.logistics?.active_loans || 0 }}</p>
+                                <div class="mt-3 h-1 w-full bg-white/10 rounded-full overflow-hidden">
+                                    <div class="h-full bg-blue-500" :style="{ width: (dashboardKpis.logistics?.total_assets ? ((dashboardKpis.logistics.active_loans / dashboardKpis.logistics.total_assets) * 100) : 0) + '%' }"></div>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Defective Assets List -->
-                        <div class="bg-red-950/30 border border-red-900/30 rounded-3xl p-6 relative z-10">
-                            <div class="flex items-center gap-3 mb-4">
-                                <ExclamationCircleIcon class="h-5 w-5 text-red-500" />
-                                <h3 class="text-sm font-black text-red-200 uppercase tracking-widest">Alertes Maintenance ({{ dashboardKpis.alerts?.broken_assets?.length || 0 }})</h3>
+                        <div class="bg-red-950/20 border border-red-900/30 rounded-2xl p-5 relative z-10">
+                            <div class="flex items-center gap-3 mb-3">
+                                <ExclamationCircleIcon class="h-4 w-4 text-red-500" />
+                                <h3 class="text-xs font-black text-red-200 uppercase tracking-widest">Alertes Maintenance ({{ dashboardKpis.alerts?.broken_assets?.length || 0 }})</h3>
                             </div>
-                            <div v-if="dashboardKpis.alerts?.broken_assets?.length > 0" class="flex flex-wrap gap-3">
-                                <div v-for="asset in dashboardKpis.alerts.broken_assets.slice(0, 4)" :key="asset.id" class="px-4 py-2 bg-red-900/40 text-red-100 rounded-xl text-xs font-bold border border-red-800/40">
+                            <div v-if="dashboardKpis.alerts?.broken_assets?.length > 0" class="flex flex-wrap gap-2">
+                                <div v-for="asset in dashboardKpis.alerts.broken_assets.slice(0, 4)" :key="asset.id" class="px-3 py-1.5 bg-red-900/30 text-red-100 rounded-lg text-xs font-bold border border-red-800/30">
                                     {{ asset.nom }}
                                 </div>
                                 <span v-if="dashboardKpis.alerts.broken_assets.length > 4" class="text-red-400 text-xs font-bold flex items-center">+{{ dashboardKpis.alerts.broken_assets.length - 4 }} autres</span>
@@ -432,42 +484,44 @@ onUnmounted(() => {
                     </div>
 
                     <!-- Ecosystem & Partnerships -->
-                    <div class="bg-emerald-600 p-10 rounded-[3rem] shadow-2xl relative overflow-hidden group">
+                    <div class="bg-gradient-to-br from-emerald-600 to-teal-800 p-8 rounded-[2.5rem] shadow-2xl relative overflow-hidden group flex flex-col justify-between">
                         <div class="absolute top-0 right-0 w-64 h-64 bg-white/10 blur-[80px] -mr-32 -mt-32"></div>
                         
-                        <div class="relative z-10 flex flex-col h-full">
-                            <div class="flex items-center justify-between mb-10">
+                        <div class="relative z-10">
+                            <div class="flex items-center justify-between mb-8">
                                 <div>
                                     <h2 class="text-2xl font-black text-white tracking-tight">Écosystème</h2>
-                                    <p class="text-sm text-emerald-100 font-medium opacity-80">Réseau et influence du CRE</p>
+                                    <p class="text-xs text-emerald-100 font-medium opacity-80">Réseau et influence du CRE</p>
                                 </div>
-                                <div class="h-14 w-14 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center border border-white/10 group-hover:rotate-12 transition-transform">
-                                    <BuildingLibraryIcon class="h-7 w-7 text-emerald-100" />
+                                <div class="h-12 w-12 bg-white/10 border border-white/20 rounded-2xl flex items-center justify-center group-hover:rotate-12 transition-transform">
+                                    <BuildingLibraryIcon class="h-6 w-6 text-emerald-100" />
                                 </div>
                             </div>
 
-                            <div class="space-y-6 flex-1">
-                                <div class="flex items-center gap-4 group/item">
-                                    <div class="h-12 w-12 bg-white/10 rounded-2xl flex items-center justify-center text-white border border-white/5">
-                                        <RocketLaunchIcon class="h-6 w-6" />
+                            <div class="space-y-5">
+                                <div class="flex items-center gap-4">
+                                    <div class="h-10 w-10 bg-white/10 rounded-xl flex items-center justify-center text-white border border-white/5">
+                                        <RocketLaunchIcon class="h-5 w-5" />
                                     </div>
                                     <div>
-                                        <p class="text-3xl font-black text-white">{{ dashboardKpis.ecosystem?.total_partners || 0 }}</p>
-                                        <p class="text-[10px] font-black text-emerald-100 uppercase tracking-widest leading-none">Partenaires Actifs</p>
+                                        <p class="text-2xl font-black text-white leading-none mb-0.5">{{ dashboardKpis.ecosystem?.total_partners || 0 }}</p>
+                                        <p class="text-[9px] font-black text-emerald-100/80 uppercase tracking-widest leading-none">Partenaires Actifs</p>
                                     </div>
                                 </div>
                                 <div class="flex items-center gap-4">
-                                    <div class="h-12 w-12 bg-white/10 rounded-2xl flex items-center justify-center text-white border border-white/5">
-                                        <CalendarIcon class="h-6 w-6" />
+                                    <div class="h-10 w-10 bg-white/10 rounded-xl flex items-center justify-center text-white border border-white/5">
+                                        <CalendarIcon class="h-5 w-5" />
                                     </div>
                                     <div>
-                                        <p class="text-3xl font-black text-white">{{ dashboardKpis.ecosystem?.upcoming_events || 0 }}</p>
-                                        <p class="text-[10px] font-black text-emerald-100 uppercase tracking-widest leading-none">Événements Prévus</p>
+                                        <p class="text-2xl font-black text-white leading-none mb-0.5">{{ dashboardKpis.ecosystem?.upcoming_events || 0 }}</p>
+                                        <p class="text-[9px] font-black text-emerald-100/80 uppercase tracking-widest leading-none">Événements Prévus</p>
                                     </div>
                                 </div>
                             </div>
+                        </div>
 
-                            <button class="mt-10 w-full py-4 bg-white text-emerald-700 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-emerald-50 transition-colors shadow-lg">
+                        <div class="relative z-10 mt-8">
+                            <button class="w-full py-3 bg-white text-emerald-800 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-emerald-50 transition-colors shadow-lg">
                                 Gérer les Partenariats
                             </button>
                         </div>
@@ -475,53 +529,56 @@ onUnmounted(() => {
                 </div>
 
                 <!-- Section 4: Focus Alerts (Student Risks) -->
-                <section v-if="dashboardKpis.alerts?.learners_at_risk?.length > 0">
+                <section v-if="dashboardKpis.alerts?.learners_at_risk?.length > 0" class="animate-in">
                     <div class="flex items-center justify-between mb-6">
                         <div class="flex items-center gap-4">
-                            <div class="h-8 w-8 bg-red-100 text-red-600 rounded-full flex items-center justify-center">
+                            <div class="h-9 w-9 bg-red-50 text-red-600 rounded-xl flex items-center justify-center border border-red-100">
                                 <ExclamationCircleIcon class="h-5 w-5" />
                             </div>
-                            <h2 class="text-xl font-black text-gray-900 tracking-tight">Alertes de Vigilance Apprenants</h2>
-                            <span class="px-2.5 py-0.5 rounded-full bg-red-50 text-red-600 text-xs font-black">{{ dashboardKpis.alerts.learners_at_risk.length }}</span>
+                            <div>
+                                <h2 class="text-xl font-black text-gray-900 tracking-tight leading-none">Alertes de Vigilance Apprenants</h2>
+                                <p class="text-xs text-gray-500 font-medium mt-1">Élèves sous vigilance d'absence prolongée</p>
+                            </div>
+                            <span class="px-2.5 py-0.5 rounded-full bg-red-50 text-red-600 text-xs font-black border border-red-100/50">{{ dashboardKpis.alerts.learners_at_risk.length }}</span>
                         </div>
                         
                         <div class="flex-1 hidden sm:block h-px bg-red-50 mx-4"></div>
                     </div>
 
-                    <div class="space-y-8">
-                        <div v-for="(groups, trainerName) in alertsGroupedByTrainer" :key="trainerName" class="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm">
-                            <div class="flex items-center gap-3 mb-6">
-                                <div class="h-10 w-10 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center">
+                    <div class="space-y-6">
+                        <div v-for="(groups, trainerName) in alertsGroupedByTrainer" :key="trainerName" class="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm transition-all hover:shadow-md">
+                            <div class="flex items-center gap-3 mb-6 border-b border-slate-50 pb-4">
+                                <div class="h-10 w-10 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center border border-indigo-100/50">
                                     <AcademicCapIcon class="h-5 w-5" />
                                 </div>
                                 <div>
-                                    <h3 class="text-lg font-black text-gray-900">{{ trainerName }}</h3>
-                                    <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Formateur / Assistant</p>
+                                    <h3 class="text-base font-black text-gray-900">{{ trainerName }}</h3>
+                                    <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest">Formateur Principal / Tuteur</p>
                                 </div>
                             </div>
 
                             <div class="space-y-6">
                                 <div v-for="(students, groupName) in groups" :key="groupName">
-                                    <div class="flex items-center gap-2 mb-4 pl-2 border-l-2 border-indigo-100">
-                                        <UsersIcon class="h-4 w-4 text-gray-400" />
-                                        <h4 class="text-sm font-bold text-gray-700">{{ groupName }}</h4>
-                                        <span class="px-2 py-0.5 bg-red-50 text-red-600 text-[10px] font-black rounded-full">{{ students.length }} alertes</span>
+                                    <div class="flex items-center gap-2 mb-4 pl-2 border-l-2 border-indigo-500">
+                                        <UsersIcon class="h-4 w-4 text-slate-400" />
+                                        <h4 class="text-xs font-bold text-slate-700 uppercase tracking-wider">{{ groupName }}</h4>
+                                        <span class="px-2 py-0.5 bg-red-50 text-red-600 text-[9px] font-black rounded-full border border-red-100/50">{{ students.length }} alertes</span>
                                     </div>
                                     
                                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                        <div v-for="risk in students" :key="risk.user_id + '_' + risk.group_id" class="relative group bg-gray-50 border border-gray-100 p-4 rounded-2xl hover:shadow-md hover:border-red-200 hover:bg-white transition-all flex items-center gap-4">
-                                            <div class="h-12 w-12 bg-gradient-to-br from-red-50 to-orange-50 rounded-xl flex items-center justify-center text-red-600 border border-red-100 shrink-0">
-                                                <span class="text-xl font-black">{{ risk.user?.name?.charAt(0) || '?' }}</span>
+                                        <div v-for="risk in students" :key="risk.user_id + '_' + risk.group_id" class="relative group bg-slate-50 border border-slate-100/50 p-4 rounded-2xl hover:shadow-lg hover:border-red-200 hover:bg-white transition-all flex items-center gap-4">
+                                            <div class="h-10 w-10 bg-gradient-to-br from-red-50 to-orange-50 rounded-xl flex items-center justify-center text-red-600 border border-red-100 shrink-0 font-black">
+                                                {{ risk.user?.name?.charAt(0) || '?' }}
                                             </div>
                                             <div class="flex-1 min-w-0">
-                                                <h3 class="font-black text-gray-900 truncate" :title="risk.user?.name">{{ risk.user?.name }}</h3>
-                                                <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-2 truncate" :title="risk.user?.email">{{ risk.user?.email }}</p>
-                                                <div class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-red-50 text-red-600 rounded-full border border-red-100">
+                                                <h3 class="font-bold text-sm text-gray-900 truncate" :title="risk.user?.name">{{ risk.user?.name }}</h3>
+                                                <p class="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-2 truncate" :title="risk.user?.email">{{ risk.user?.email }}</p>
+                                                <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-red-50 text-red-600 rounded-full border border-red-100">
                                                     <span class="relative flex h-1.5 w-1.5">
                                                         <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
                                                         <span class="relative inline-flex rounded-full h-1.5 w-1.5 bg-red-500"></span>
                                                     </span>
-                                                    <span class="text-[10px] font-black">{{ risk.total_absences }} Absences</span>
+                                                    <span class="text-[9px] font-black uppercase tracking-wider">{{ risk.total_absences }} Absences</span>
                                                 </div>
                                             </div>
                                         </div>
@@ -533,7 +590,7 @@ onUnmounted(() => {
                 </section>
 
                 <!-- Section 5: Elite & Performance (Leaderboards) -->
-                <section>
+                <section class="animate-in">
                     <div class="flex items-center gap-2 mb-6">
                         <h2 class="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">Élite & Performance</h2>
                         <div class="h-px flex-1 bg-gray-100"></div>
@@ -541,63 +598,67 @@ onUnmounted(() => {
 
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                         <!-- Top Learners Leaderboard -->
-                        <div class="bg-white p-8 rounded-[3rem] border border-gray-100 shadow-sm">
-                            <div class="flex items-center justify-between mb-8">
-                                <div>
-                                    <h3 class="text-2xl font-black text-gray-900 tracking-tight leading-none mb-2">Major de Promotion</h3>
-                                    <p class="text-sm text-gray-500 font-medium">Top 5 des meilleurs stagiaires par examens</p>
-                                </div>
-                                <div class="h-12 w-12 bg-yellow-50 text-yellow-600 rounded-2xl flex items-center justify-center border border-yellow-100">
-                                    <AcademicCapIcon class="h-6 w-6" />
-                                </div>
-                            </div>
-
-                            <div class="space-y-4">
-                                <div v-for="(learner, index) in dashboardKpis.top_learners" :key="index" class="flex items-center justify-between p-4 bg-gray-50/50 rounded-2xl border border-gray-100/50 hover:bg-white hover:border-gray-200 hover:shadow-lg transition-all group">
-                                    <div class="flex items-center gap-4">
-                                        <div class="h-10 w-10 flex items-center justify-center font-black rounded-xl" :class="index === 0 ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-500'">
-                                            #{{ index + 1 }}
-                                        </div>
-                                        <div>
-                                            <p class="text-sm font-black text-gray-900">{{ learner.name }}</p>
-                                            <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">{{ learner.email }}</p>
-                                        </div>
+                        <div class="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm flex flex-col justify-between transition-all hover:shadow-xl">
+                            <div>
+                                <div class="flex items-center justify-between mb-8">
+                                    <div>
+                                        <h3 class="text-xl font-black text-gray-900 tracking-tight leading-none mb-1">Major de Promotion</h3>
+                                        <p class="text-xs text-gray-500 font-medium">Top 5 des meilleurs stagiaires par examens</p>
                                     </div>
-                                    <div class="text-right">
-                                        <p class="text-lg font-black text-indigo-600 leading-none">{{ learner.score }}</p>
-                                        <p class="text-[8px] font-black text-gray-400 uppercase tracking-widest mt-1">Pointage Moy.</p>
+                                    <div class="h-10 w-10 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center border border-amber-100">
+                                        <AcademicCapIcon class="h-5 w-5" />
+                                    </div>
+                                </div>
+
+                                <div class="space-y-3">
+                                    <div v-for="(learner, index) in dashboardKpis.top_learners" :key="index" class="flex items-center justify-between p-3.5 bg-slate-50/50 rounded-2xl border border-slate-100/50 hover:bg-white hover:border-slate-200 hover:shadow-md transition-all group">
+                                        <div class="flex items-center gap-3">
+                                            <div class="h-9 w-9 flex items-center justify-center font-black rounded-lg text-xs" :class="index === 0 ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-500'">
+                                                #{{ index + 1 }}
+                                            </div>
+                                            <div>
+                                                <p class="text-xs font-black text-gray-900">{{ learner.name }}</p>
+                                                <p class="text-[8px] text-gray-400 font-bold uppercase tracking-widest">{{ learner.email }}</p>
+                                            </div>
+                                        </div>
+                                        <div class="text-right">
+                                            <p class="text-base font-black text-indigo-600 leading-none">{{ learner.score }}</p>
+                                            <p class="text-[8px] font-black text-gray-400 uppercase tracking-widest mt-1">Pointage Moy.</p>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Trainers Productivity -->
-                        <div class="bg-white p-8 rounded-[3rem] border border-gray-100 shadow-sm">
-                            <div class="flex items-center justify-between mb-8">
-                                <div>
-                                    <h3 class="text-2xl font-black text-gray-900 tracking-tight leading-none mb-2">Activités Formateurs</h3>
-                                    <p class="text-sm text-gray-500 font-medium">Validations de modules par formateur</p>
+                        <div class="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm flex flex-col justify-between transition-all hover:shadow-xl">
+                            <div>
+                                <div class="flex items-center justify-between mb-8">
+                                    <div>
+                                        <h3 class="text-xl font-black text-gray-900 tracking-tight leading-none mb-1">Activités Formateurs</h3>
+                                        <p class="text-xs text-gray-500 font-medium">Validations de modules par formateur</p>
+                                    </div>
+                                    <div class="h-10 w-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center border border-blue-100">
+                                        <ClipboardDocumentCheckIcon class="h-5 w-5" />
+                                    </div>
                                 </div>
-                                <div class="h-12 w-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center border border-blue-100">
-                                    <ClipboardDocumentCheckIcon class="h-6 w-6" />
-                                </div>
-                            </div>
 
-                            <div class="space-y-4">
-                                <div v-for="(trainer, index) in dashboardKpis.trainers_performance" :key="index" class="flex items-center justify-between p-4 bg-white border border-gray-100 rounded-2xl hover:shadow-xl transition-all">
-                                    <div class="flex items-center gap-4">
-                                        <div class="h-10 w-10 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center font-black">
-                                            {{ trainer.name.charAt(0) }}
+                                <div class="space-y-3">
+                                    <div v-for="(trainer, index) in dashboardKpis.trainers_performance" :key="index" class="flex items-center justify-between p-3.5 bg-slate-50/50 border border-slate-100/50 rounded-2xl hover:bg-white hover:border-slate-200 hover:shadow-md transition-all">
+                                        <div class="flex items-center gap-3">
+                                            <div class="h-9 w-9 bg-indigo-50 text-indigo-600 rounded-lg flex items-center justify-center font-black text-xs border border-indigo-100/50">
+                                                {{ trainer.name.charAt(0) }}
+                                            </div>
+                                            <p class="text-xs font-black text-gray-900">{{ trainer.name }}</p>
                                         </div>
-                                        <p class="text-sm font-black text-gray-900">{{ trainer.name }}</p>
+                                        <div class="flex items-center gap-2">
+                                            <span class="text-xl font-black text-slate-800">{{ trainer.count }}</span>
+                                            <span class="text-[8px] font-black text-slate-400 uppercase tracking-widest">Validations</span>
+                                        </div>
                                     </div>
-                                    <div class="flex items-center gap-3">
-                                        <span class="text-2xl font-black text-gray-900">{{ trainer.count }}</span>
-                                        <span class="text-[8px] font-black text-gray-400 uppercase tracking-widest">Validations</span>
+                                    <div v-if="!dashboardKpis.trainers_performance || dashboardKpis.trainers_performance.length === 0" class="py-8 flex flex-col items-center text-gray-400 gap-2">
+                                        <p class="text-xs font-bold italic">Aucune donnée de performance enregistrée.</p>
                                     </div>
-                                </div>
-                                <div v-if="!dashboardKpis.trainers_performance || dashboardKpis.trainers_performance.length === 0" class="py-12 flex flex-col items-center text-gray-400 gap-3">
-                                    <p class="text-xs font-bold italic">Aucune donnée de performance enregistrée.</p>
                                 </div>
                             </div>
                         </div>
@@ -605,17 +666,17 @@ onUnmounted(() => {
                 </section>
 
                 <!-- Footer Summary View -->
-                <footer class="pt-20 border-t border-gray-100 flex flex-col md:flex-row items-center justify-between gap-6 opacity-60 grayscale hover:grayscale-0 transition-all">
+                <footer class="pt-16 border-t border-gray-100 flex flex-col md:flex-row items-center justify-between gap-6 opacity-60 hover:opacity-100 transition-opacity">
                     <div class="flex items-center gap-4">
-                        <div class="h-10 w-10 bg-gray-100 rounded-xl flex items-center justify-center text-gray-500">
-                           <RocketLaunchIcon class="h-6 w-6" />
+                        <div class="h-10 w-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-500 border border-slate-200">
+                           <RocketLaunchIcon class="h-5 w-5" />
                         </div>
                         <div>
                             <p class="text-sm font-black text-gray-900">E-CRE Platform Engine</p>
-                            <p class="text-xs font-bold text-gray-500">Version 2.5 Strategic Intelligence</p>
+                            <p class="text-[10px] font-bold text-gray-500">Version 2.5 Strategic Intelligence</p>
                         </div>
                     </div>
-                    <div class="flex items-center gap-8 text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                    <div class="flex items-center gap-8 text-[9px] font-black text-gray-400 uppercase tracking-widest">
                         <span>Sécurisé TLS 1.3</span>
                         <span>API Health: OK</span>
                         <span>Dernier Audit: {{ new Date().toLocaleDateString() }}</span>
