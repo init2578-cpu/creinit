@@ -235,12 +235,12 @@ onMounted(() => {
             <div class="max-w-7xl mx-auto px-4">
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-12">
                     <div v-for="(item, i) in [
-                        { title: 'Vision Radicale', desc: 'Transcender les limites de l\'éducation traditionnelle par l\'immersion technologique.', icon: LightBulbIcon },
-                        { title: 'Impact Local', desc: 'Propulser la région de Kolda au sommet de la scène numérique sénégalaise.', icon: MapPinIcon },
-                        { title: 'Excellence IA', desc: 'Maîtriser les outils de demain pour résoudre les problèmes d\'aujourd\'hui.', icon: CpuChipIcon }
+                        { title: 'Vision Radicale', desc: 'Transcender les limites de l\'éducation traditionnelle par l\'immersion technologique.', icon: LightBulbIcon, color: 'cyan' },
+                        { title: 'Impact Local', desc: 'Propulser la région de Kolda au sommet de la scène numérique sénégalaise.', icon: MapPinIcon, color: 'blue' },
+                        { title: 'Excellence IA', desc: 'Maîtriser les outils de demain pour résoudre les problèmes d\'aujourd\'hui.', icon: CpuChipIcon, color: 'indigo' }
                     ]" :key="i" class="glass-dark p-6 sm:p-10 rounded-[2rem] sm:rounded-[2.5rem] border border-white/5 hover:border-cyan-500/20 transition-all group" data-reveal :id="'mission-' + i">
-                        <div class="h-14 w-14 rounded-2xl bg-cyan-500/10 flex items-center justify-center mb-8 group-hover:bg-cyan-500 group-hover:text-slate-950 transition-all">
-                            <component :is="item.icon" class="h-8 w-8" />
+                        <div class="h-14 w-14 rounded-2xl flex items-center justify-center transition-all bg-slate-950 border border-white/5 group-hover:shadow-[0_0_15px_rgba(6,182,212,0.2)] shrink-0 mb-8" :class="`text-${item.color}-400`">
+                            <component :is="item.icon" class="h-7 w-7 animate-float" />
                         </div>
                         <h3 class="text-2xl font-black text-white mb-4 uppercase tracking-tighter">{{ item.title }}</h3>
                         <p class="text-slate-400 leading-relaxed">{{ item.desc }}</p>
