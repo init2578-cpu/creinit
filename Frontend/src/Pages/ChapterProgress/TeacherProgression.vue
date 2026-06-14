@@ -1,11 +1,12 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
-import { Head, useForm } from '@inertiajs/vue3'
+import { Head, useForm, router } from '@inertiajs/vue3'
 import { 
     CheckBadgeIcon, 
     BookOpenIcon, 
     ClockIcon,
-    ExclamationCircleIcon
+    ExclamationCircleIcon,
+    XMarkIcon
 } from '@heroicons/vue/24/outline'
 
 const props = defineProps({
@@ -34,6 +35,14 @@ function submitProgression() {
             form.chapter_ids = []
         }
     })
+}
+
+function cancelProgression(progressId) {
+    if (confirm('Voulez-vous vraiment annuler la progression de ce chapitre ?')) {
+        router.delete(route('chapter-progress.cancel', progressId), {
+            preserveScroll: true
+        })
+    }
 }
 </script>
 
@@ -93,7 +102,7 @@ function submitProgression() {
                             </div>
                         </div>
 
-                        <div>
+                        <div class="flex items-center gap-3">
                             <span v-if="progress[chapter.id]" class="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border" 
                                 :class="[
                                     progress[chapter.id].status === 'approved' ? 'bg-green-50 text-green-700 border-green-100' : '',
@@ -106,6 +115,17 @@ function submitProgression() {
                                 <template v-else-if="progress[chapter.id].status === 'rejected'">Rejeté</template>
                             </span>
                             <span v-else class="text-xs text-gray-300 italic group-hover:text-gray-400 transition">Non entamé</span>
+
+                            <!-- Revoke validation -->
+                            <button 
+                                v-if="progress[chapter.id]"
+                                type="button"
+                                @click="cancelProgression(progress[chapter.id].id)"
+                                class="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-all duration-250"
+                                title="Annuler la validation"
+                            >
+                                <XMarkIcon class="h-4 w-4" />
+                            </button>
                         </div>
                     </div>
                 </div>

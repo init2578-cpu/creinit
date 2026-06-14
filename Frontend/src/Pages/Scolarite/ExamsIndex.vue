@@ -1,7 +1,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import DateInput from '@/Components/DateInput.vue';
-import { Head, useForm, Link } from '@inertiajs/vue3';
+import { Head, useForm, Link, usePage, router } from '@inertiajs/vue3';
 import { 
     AcademicCapIcon, 
     PlusIcon, 
@@ -17,7 +17,8 @@ import {
     DocumentTextIcon,
     ClipboardDocumentCheckIcon,
     QueueListIcon,
-    XMarkIcon
+    XMarkIcon,
+    CheckIcon
 } from '@heroicons/vue/24/outline';
 import { ref, computed, watch } from 'vue';
 import axios from 'axios';
@@ -27,13 +28,21 @@ const props = defineProps({
     modules: Array
 });
 
+const page = usePage();
+const roles = computed(() => page.props.auth.user.roles);
+const isDirecteur = computed(() => roles.value.includes('Directeur'));
+
 const isModalOpen = ref(false);
 const isGradeModalOpen = ref(false);
 const editingExam = ref(null);
 const selectedExamForGrades = ref(null);
 const isQuestionModalOpen = ref(false);
 const editingQuestion = ref(null);
-const selectedExamForQuestion = ref(null);
+const selectedExamForQuestionId = ref(null);
+const selectedExamForQuestion = computed(() => {
+    if (!selectedExamForQuestionId.value) return null;
+    return props.exams.find(e => e.id === selectedExamForQuestionId.value);
+});
 
 const form = useForm({
     module_id: '',
@@ -60,6 +69,39 @@ const endTime = computed(() => `${endHour.value}:${endMin.value}`);
 const hourOptions = Array.from({ length: 24 }, (_, i) => i.toString().padStart(2, '0'));
 const minuteOptions = Array.from({ length: 12 }, (_, i) => (i * 5).toString().padStart(2, '0'));
 
+const currentHour = computed(() => new Date().getHours());
+const currentMinute = computed(() => new Date().getMinutes());
+
+const filteredStartHourOptions = computed(() => {
+    if (startDate.value === todayString.value) {
+        return hourOptions.filter(h => parseInt(h) >= currentHour.value);
+    }
+    return hourOptions;
+});
+
+const filteredStartMinuteOptions = computed(() => {
+    if (startDate.value === todayString.value) {
+        if (parseInt(startHour.value) === currentHour.value) {
+            return minuteOptions.filter(m => parseInt(m) >= currentMinute.value);
+        }
+    }
+    return minuteOptions;
+});
+
+const filteredEndHourOptions = computed(() => {
+    if (endDate.value === startDate.value) {
+        return hourOptions.filter(h => parseInt(h) >= (parseInt(startHour.value) || 0));
+    }
+    return hourOptions;
+});
+
+const filteredEndMinuteOptions = computed(() => {
+    if (endDate.value === startDate.value && startHour.value === endHour.value) {
+        return minuteOptions.filter(m => parseInt(m) >= (parseInt(startMin.value) || 0));
+    }
+    return minuteOptions;
+});
+
 const gradeForm = useForm({
     grades: [] // Array of { user_id, score }
 });
@@ -74,8 +116,45 @@ const questionForm = useForm({
     ]
 });
 
+const formatLocalDate = (dateObj) => {
+    const year = dateObj.getFullYear();
+    const month = (dateObj.getMonth() + 1).toString().padStart(2, '0');
+    const day = dateObj.getDate().toString().padStart(2, '0');
+    return `${year}-${month}-${day}`;
+};
+
+const todayString = computed(() => {
+    return formatLocalDate(new Date());
+});
+
 const openModal = (exam = null) => {
     editingExam.value = exam;
+    
+    const setInitialTimes = () => {
+        const now = new Date();
+        startDate.value = todayString.value;
+        startHour.value = now.getHours().toString().padStart(2, '0');
+        let roundedMin = Math.ceil(now.getMinutes() / 5) * 5;
+        if (roundedMin >= 60) {
+            startHour.value = ((now.getHours() + 1) % 24).toString().padStart(2, '0');
+            roundedMin = 0;
+        }
+        startMin.value = roundedMin.toString().padStart(2, '0');
+
+        const endNow = new Date(now.getTime() + 120 * 60000); // 2 hours later
+        endDate.value = formatLocalDate(endNow);
+        endHour.value = endNow.getHours().toString().padStart(2, '0');
+        let roundedEndMin = Math.ceil(endNow.getMinutes() / 5) * 5;
+        if (roundedEndMin >= 60) {
+            endHour.value = ((endNow.getHours() + 1) % 24).toString().padStart(2, '0');
+            roundedEndMin = 0;
+        }
+        endMin.value = roundedEndMin.toString().padStart(2, '0');
+
+        form.scheduled_at = `${startDate.value}T${startTime.value}`;
+        form.scheduled_end = `${endDate.value}T${endTime.value}`;
+    };
+
     if (exam) {
         form.module_id = exam.module_id;
         form.titre = exam.titre;
@@ -83,16 +162,15 @@ const openModal = (exam = null) => {
         form.description = exam.description;
         form.duree_minutes = exam.duree_minutes;
         form.total_points = exam.total_points;
-        form.scheduled_at = exam.scheduled_at ? new Date(exam.scheduled_at).toISOString().slice(0, 16) : '';
-        if (form.scheduled_at) {
+        if (exam.scheduled_at) {
             const dateObj = new Date(exam.scheduled_at);
-            startDate.value = dateObj.toISOString().slice(0, 10);
+            startDate.value = formatLocalDate(dateObj);
             startHour.value = dateObj.getHours().toString().padStart(2, '0');
             startMin.value = (Math.round(dateObj.getMinutes() / 5) * 5).toString().padStart(2, '0');
             if (parseInt(startMin.value) > 55) startMin.value = '55';
             
             const endObj = new Date(dateObj.getTime() + exam.duree_minutes * 60000);
-            endDate.value = endObj.toISOString().slice(0, 10);
+            endDate.value = formatLocalDate(endObj);
             endHour.value = endObj.getHours().toString().padStart(2, '0');
             endMin.value = (Math.round(endObj.getMinutes() / 5) * 5).toString().padStart(2, '0');
             if (parseInt(endMin.value) > 55) endMin.value = '55';
@@ -100,23 +178,11 @@ const openModal = (exam = null) => {
             form.scheduled_at = `${startDate.value}T${startTime.value}`;
             form.scheduled_end = `${endDate.value}T${endTime.value}`;
         } else {
-            startDate.value = '';
-            startHour.value = '08';
-            startMin.value = '00';
-            endDate.value = '';
-            endHour.value = '10';
-            endMin.value = '00';
-            form.scheduled_at = '';
-            form.scheduled_end = '';
+            setInitialTimes();
         }
     } else {
         form.reset();
-        startDate.value = '';
-        startHour.value = '08';
-        startMin.value = '00';
-        endDate.value = '';
-        endHour.value = '10';
-        endMin.value = '00';
+        setInitialTimes();
     }
     isModalOpen.value = true;
 };
@@ -170,8 +236,9 @@ const submitGrades = () => {
 };
 
 const openQuestionModal = (exam, question = null) => {
-    selectedExamForQuestion.value = exam;
+    selectedExamForQuestionId.value = exam.id;
     editingQuestion.value = question;
+    questionForm.clearErrors();
     if (question) {
         questionForm.enonce = question.enonce;
         questionForm.points = question.points;
@@ -204,11 +271,18 @@ const submitQuestionForm = () => {
         window.platformAlert(`Dépassement du barème : le total (${currentExamQuestionsTotalPoints.value + parseFloat(questionForm.points)}) ne peut pas dépasser ${selectedExamForQuestion.value.total_points} pts.`, 'error');
         return;
     }
-    questionForm.post(route('exams.questions.store', selectedExamForQuestion.value.id), {
-        onSuccess: () => {
-            isQuestionModalOpen.value = false;
-        }
-    });
+    questionForm
+        .transform((data) => ({
+            ...data,
+            options: data.type === 'open' ? [] : data.options
+        }))
+        .post(route('exams.questions.store', selectedExamForQuestion.value.id), {
+            onSuccess: () => {
+                // Keep the modal open, just reset the form for the next question
+                questionForm.reset();
+                questionForm.clearErrors();
+            }
+        });
 };
 
 const deleteQuestion = (id) => {
@@ -254,8 +328,53 @@ const isExamEnded = (exam) => {
 
 // Removed handleTimeInput since we now use dropdowns
 
-// Reactive duration calculation
-watch(() => [startDate.value, startTime.value, endDate.value, endTime.value], () => {
+// Reactive duration calculation and time constraints enforcement
+watch(() => [startDate.value, startHour.value, startMin.value, endDate.value, endHour.value, endMin.value], () => {
+    // 1. Force startHour/startMin to be >= current time if startDate is today
+    if (startDate.value === todayString.value) {
+        const now = new Date();
+        const curH = now.getHours();
+        const curM = now.getMinutes();
+
+        const selH = parseInt(startHour.value) || 0;
+        const selM = parseInt(startMin.value) || 0;
+
+        if (selH < curH) {
+            startHour.value = curH.toString().padStart(2, '0');
+        }
+
+        const updatedH = parseInt(startHour.value) || 0;
+        if (updatedH === curH && selM < curM) {
+            const nextMin = minuteOptions.find(m => parseInt(m) >= curM);
+            if (nextMin) {
+                startMin.value = nextMin;
+            } else {
+                startHour.value = ((curH + 1) % 24).toString().padStart(2, '0');
+                startMin.value = '00';
+            }
+        }
+    }
+
+    // 2. Adjust endHour/endMin if end time is before start time on the same day
+    if (endDate.value === startDate.value) {
+        const selH = parseInt(startHour.value) || 0;
+        const selM = parseInt(startMin.value) || 0;
+        const eh = parseInt(endHour.value) || 0;
+        const em = parseInt(endMin.value) || 0;
+
+        if (eh < selH) {
+            endHour.value = startHour.value;
+            endMin.value = startMin.value;
+        } else if (eh === selH && em < selM) {
+            endMin.value = startMin.value;
+        }
+    }
+
+    // Auto sync endDate if empty
+    if (startDate.value && (!endDate.value || endDate.value === '')) {
+        endDate.value = startDate.value;
+    }
+
     if (startDate.value && startTime.value) {
         form.scheduled_at = `${startDate.value}T${startTime.value}`;
     }
@@ -268,11 +387,29 @@ watch(() => [startDate.value, startTime.value, endDate.value, endTime.value], ()
         const start = new Date(form.scheduled_at);
         const end = new Date(form.scheduled_end);
         const diffMs = end.getTime() - start.getTime();
-        if (diffMs > 0) {
-            form.duree_minutes = Math.round(diffMs / 60000);
-        }
+        form.duree_minutes = Math.max(0, Math.round(diffMs / 60000));
+    } else {
+        form.duree_minutes = 60;
     }
 });
+
+const addOption = () => {
+    questionForm.options.push({ texte: '', is_correct: false });
+};
+
+const removeOption = (index) => {
+    if (questionForm.options.length > 2) {
+        questionForm.options.splice(index, 1);
+    }
+};
+
+function approveExam(examId) {
+    if (confirm('Voulez-vous vraiment valider cet examen ? Il sera alors visible par les apprenants.')) {
+        router.patch(route('exams.approve', examId), {}, {
+            preserveScroll: true
+        });
+    }
+}
 
 </script>
 
@@ -300,31 +437,31 @@ watch(() => [startDate.value, startTime.value, endDate.value, endTime.value], ()
 
             <!-- Stats Bar -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-                <div class="bg-white p-6 rounded-[2.5rem] shadow-sm border border-gray-100 flex items-center gap-5">
-                    <div class="h-14 w-14 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center">
+                <div class="bg-white p-6 rounded-[2.5rem] shadow-sm border border-gray-100 flex items-center gap-5 hover:-translate-y-1 hover:shadow-lg hover:shadow-blue-50/50 transition-all duration-300 group">
+                    <div class="h-14 w-14 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
                         <DocumentTextIcon class="h-7 w-7" />
                     </div>
                     <div>
                         <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Total Examens</p>
-                        <p class="text-2xl font-black text-gray-900">{{ exams.length }}</p>
+                        <p class="text-2xl font-black text-gray-900 mt-0.5">{{ exams.length }}</p>
                     </div>
                 </div>
-                <div class="bg-white p-6 rounded-[2.5rem] shadow-sm border border-gray-100 flex items-center gap-5">
-                    <div class="h-14 w-14 bg-green-50 text-green-600 rounded-2xl flex items-center justify-center">
+                <div class="bg-white p-6 rounded-[2.5rem] shadow-sm border border-gray-100 flex items-center gap-5 hover:-translate-y-1 hover:shadow-lg hover:shadow-green-50/50 transition-all duration-300 group">
+                    <div class="h-14 w-14 bg-green-50 text-green-600 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
                         <CheckCircleIcon class="h-7 w-7" />
                     </div>
                     <div>
                         <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Sessions en Ligne</p>
-                        <p class="text-2xl font-black text-gray-900">{{ exams.filter(e => e.type === 'online').length }}</p>
+                        <p class="text-2xl font-black text-gray-900 mt-0.5">{{ exams.filter(e => e.type === 'online').length }}</p>
                     </div>
                 </div>
-                <div class="bg-white p-6 rounded-[2.5rem] shadow-sm border border-gray-100 flex items-center gap-5">
-                    <div class="h-14 w-14 bg-purple-50 text-purple-600 rounded-2xl flex items-center justify-center">
+                <div class="bg-white p-6 rounded-[2.5rem] shadow-sm border border-gray-100 flex items-center gap-5 hover:-translate-y-1 hover:shadow-lg hover:shadow-purple-50/50 transition-all duration-300 group">
+                    <div class="h-14 w-14 bg-purple-50 text-purple-600 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
                         <PencilIcon class="h-7 w-7" />
                     </div>
                     <div>
                         <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Épreuves sur Table</p>
-                        <p class="text-2xl font-black text-gray-900">{{ exams.filter(e => e.type === 'paper').length }}</p>
+                        <p class="text-2xl font-black text-gray-900 mt-0.5">{{ exams.filter(e => e.type === 'paper').length }}</p>
                     </div>
                 </div>
             </div>
@@ -351,6 +488,12 @@ watch(() => [startDate.value, startTime.value, endDate.value, endTime.value], ()
                                         <div>
                                             <div class="flex items-center gap-2">
                                                 <p class="font-bold text-gray-900">{{ exam.titre }}</p>
+                                                <span v-if="!exam.is_approved" class="px-2 py-0.5 bg-yellow-50 text-yellow-700 border border-yellow-100 text-[9px] font-black uppercase rounded tracking-wider">
+                                                    En attente
+                                                </span>
+                                                <span v-else class="px-2 py-0.5 bg-green-50 text-green-700 border border-green-100 text-[9px] font-black uppercase rounded tracking-wider">
+                                                    Validé
+                                                </span>
                                                 <div v-if="isExamEnded(exam) && (exam.exam_results?.length < exam.expected_results_count)" 
                                                       class="px-2 py-0.5 bg-amber-500 text-white text-[8px] font-black uppercase rounded shadow-lg shadow-amber-100 ring-2 ring-amber-50 flex items-center gap-1.5">
                                                     <span class="h-1 w-1 rounded-full bg-white animate-ping"></span>
@@ -396,10 +539,26 @@ watch(() => [startDate.value, startTime.value, endDate.value, endTime.value], ()
                                 </td>
                                 <td class="px-6 py-4 text-right">
                                     <div class="flex justify-end gap-2">
+                                        <button v-if="isDirecteur && !exam.is_approved" @click="approveExam(exam.id)" class="p-2 text-emerald-600 hover:bg-emerald-50 rounded-xl transition" title="Valider l'examen">
+                                            <CheckCircleIcon class="h-6 w-6" />
+                                        </button>
                                         <button v-if="exam.type === 'online'" @click="openQuestionModal(exam)" class="p-2 text-blue-500 hover:bg-blue-50 rounded-xl transition" title="Gérer les questions">
                                             <QueueListIcon class="h-6 w-6" />
                                         </button>
-                                        <button @click="openGradeModal(exam)" class="p-2 text-green-600 hover:bg-green-50 rounded-xl transition" title="Consulter les notes / Saisie">
+                                        <button 
+                                            v-if="exam.is_approved"
+                                            @click="openGradeModal(exam)" 
+                                            class="p-2 text-green-600 hover:bg-green-50 rounded-xl transition" 
+                                            title="Consulter les notes / Saisie"
+                                        >
+                                            <ClipboardDocumentCheckIcon class="h-6 w-6" />
+                                        </button>
+                                        <button 
+                                            v-else 
+                                            disabled 
+                                            class="p-2 text-gray-300 cursor-not-allowed rounded-xl transition" 
+                                            title="L'attribution des notes est bloquée tant que le directeur n'a pas validé l'épreuve"
+                                        >
                                             <ClipboardDocumentCheckIcon class="h-6 w-6" />
                                         </button>
                                         <button @click="openModal(exam)" class="p-2 text-blue-600 hover:bg-blue-50 rounded-xl transition" title="Modifier">
@@ -419,7 +578,7 @@ watch(() => [startDate.value, startTime.value, endDate.value, endTime.value], ()
 
         <!-- Create/Edit Modal -->
         <div v-if="isModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-md transition-all duration-300">
-            <div class="bg-white w-full max-w-2xl rounded-[3rem] overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.1)] border border-gray-100 flex flex-col max-h-[90vh]">
+            <div class="bg-white w-full max-w-3xl rounded-[3rem] overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.1)] border border-gray-100 flex flex-col max-h-[90vh]">
                 <!-- Modal Header -->
                 <div class="p-8 border-b border-gray-50 flex items-center justify-between bg-white">
                     <div>
@@ -437,7 +596,6 @@ watch(() => [startDate.value, startTime.value, endDate.value, endTime.value], ()
                     </button>
                 </div>
 
-                <!-- Modal Body -->
                 <form @submit.prevent="submit" class="p-0 overflow-y-auto custom-scrollbar flex-1 bg-gray-50/30">
                     <div class="p-8 space-y-8">
                         <!-- Section: Informations Générales -->
@@ -447,23 +605,31 @@ watch(() => [startDate.value, startTime.value, endDate.value, endTime.value], ()
                                 Informations Générales
                             </h4>
                             
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
                                     <label class="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 ml-1">
-                                        <QueueListIcon class="h-3.5 w-3.5" />
                                         Module
                                     </label>
-                                    <select v-model="form.module_id" required class="w-full bg-white border-gray-100 rounded-2xl focus:ring-2 focus:ring-blue-500 font-bold px-5 py-4 appearance-none shadow-sm transition-all focus:border-blue-500">
-                                        <option value="">Sélectionner un module</option>
-                                        <option v-for="m in modules" :key="m.id" :value="m.id">{{ m.titre }}</option>
-                                    </select>
+                                    <div class="relative group">
+                                        <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-gray-400 group-focus-within:text-blue-600 transition-colors pointer-events-none">
+                                            <QueueListIcon class="h-5 w-5" />
+                                        </span>
+                                        <select v-model="form.module_id" required class="w-full pl-12 pr-10 py-4 bg-white border-2 border-transparent focus:border-blue-600 rounded-2xl font-bold text-gray-700 focus:ring-0 transition-all">
+                                            <option value="">Sélectionner un module</option>
+                                            <option v-for="m in modules" :key="m.id" :value="m.id">{{ m.titre }}</option>
+                                        </select>
+                                    </div>
                                 </div>
                                 <div>
                                     <label class="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 ml-1">
-                                        <AcademicCapIcon class="h-3.5 w-3.5" />
                                         Titre de l'examen
                                     </label>
-                                    <input v-model="form.titre" type="text" required placeholder="Ex: Examen Final Module 1" class="w-full bg-white border-gray-100 rounded-2xl focus:ring-2 focus:ring-blue-500 font-bold px-5 py-4 shadow-sm transition-all focus:border-blue-500">
+                                    <div class="relative group">
+                                        <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-gray-400 group-focus-within:text-blue-600 transition-colors pointer-events-none">
+                                            <AcademicCapIcon class="h-5 w-5" />
+                                        </span>
+                                        <input v-model="form.titre" type="text" required placeholder="Ex: Examen Final Module 1" class="w-full pl-12 pr-4 py-4 bg-white border-2 border-transparent focus:border-blue-600 rounded-2xl font-bold text-gray-700 focus:ring-0 transition-all outline-none">
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -478,14 +644,13 @@ watch(() => [startDate.value, startTime.value, endDate.value, endTime.value], ()
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
                                     <label class="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 ml-1">
-                                        <EyeIcon class="h-3.5 w-3.5" />
                                         Type d'examen
                                     </label>
-                                    <div class="grid grid-cols-2 gap-2 p-1.5 bg-gray-100 rounded-[1.5rem]">
+                                    <div class="grid grid-cols-2 gap-2 p-1.5 bg-gray-200/60 rounded-[1.5rem]">
                                         <button 
                                             type="button"
                                             @click="form.type = 'online'"
-                                            :class="form.type === 'online' ? 'bg-white text-blue-600 shadow-md' : 'text-gray-500 hover:text-gray-700'"
+                                            :class="form.type === 'online' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'"
                                             class="py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all duration-300"
                                         >
                                             En Ligne
@@ -493,7 +658,7 @@ watch(() => [startDate.value, startTime.value, endDate.value, endTime.value], ()
                                         <button 
                                             type="button"
                                             @click="form.type = 'paper'"
-                                            :class="form.type === 'paper' ? 'bg-white text-purple-600 shadow-md' : 'text-gray-500 hover:text-gray-700'"
+                                            :class="form.type === 'paper' ? 'bg-white text-purple-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'"
                                             class="py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all duration-300"
                                         >
                                             Sur Table
@@ -503,32 +668,30 @@ watch(() => [startDate.value, startTime.value, endDate.value, endTime.value], ()
 
                                 <div v-if="form.type === 'paper'" class="animate-in fade-in slide-in-from-top-2 duration-300">
                                     <label class="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 ml-1">
-                                        <DocumentIcon class="h-3.5 w-3.5" />
                                         Énoncé (PDF)
                                     </label>
-                                    <div class="relative group h-[52px]">
+                                    <div class="relative group h-[56px]">
                                         <input 
                                             type="file" 
                                             @input="form.document = $event.target.files[0]"
                                             class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                                             accept=".pdf,.doc,.docx"
                                         />
-                                        <div class="w-full h-full bg-white border border-gray-100 rounded-2xl px-4 flex items-center justify-between group-hover:border-purple-400 transition-all shadow-sm">
-                                            <span class="text-[10px] font-bold text-gray-500 truncate max-w-[150px]">
+                                        <div class="w-full h-full bg-white border-2 border-transparent group-hover:border-purple-600 rounded-2xl px-4 flex items-center justify-between transition-all shadow-sm">
+                                            <span class="text-[10px] font-bold text-gray-500 truncate max-w-[180px]">
                                                 {{ form.document ? form.document.name : 'Veuillez joindre l\'énoncé' }}
                                             </span>
-                                            <ArrowUpTrayIcon class="h-4 w-4 text-purple-400 group-hover:scale-110 transition-transform" />
+                                            <ArrowUpTrayIcon class="h-5 w-5 text-purple-400 group-hover:scale-110 transition-transform" />
                                         </div>
                                     </div>
                                 </div>
 
                                 <div v-else>
                                     <label class="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 ml-1">
-                                        <CheckCircleIcon class="h-3.5 w-3.5" />
                                         Notation
                                     </label>
-                                    <div class="flex items-center gap-3 bg-blue-50/50 p-4 rounded-2xl border border-blue-100/50" :class="{'border-red-200 bg-red-50/50': isModalTotalPointsInvalid}">
-                                        <div class="h-10 w-10 bg-white rounded-xl flex items-center justify-center text-blue-600 shadow-sm" :class="{'text-red-600': isModalTotalPointsInvalid}">
+                                    <div class="flex items-center gap-3 bg-white p-3.5 rounded-2xl border-2 border-transparent focus-within:border-blue-600 transition-all shadow-sm" :class="{'border-red-500 bg-red-50/50': isModalTotalPointsInvalid}">
+                                        <div class="h-10 w-12 bg-gray-50 rounded-xl flex items-center justify-center text-blue-600 shadow-sm border border-gray-100" :class="{'text-red-600': isModalTotalPointsInvalid}">
                                             <input v-model="form.total_points" type="number" step="0.5" required class="w-full bg-transparent border-0 text-center font-black p-0 focus:ring-0">
                                         </div>
                                         <div class="flex flex-col">
@@ -550,49 +713,58 @@ watch(() => [startDate.value, startTime.value, endDate.value, endTime.value], ()
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div class="space-y-3">
                                     <label class="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 ml-1">
-                                        <CalendarIcon class="h-3.5 w-3.5" />
                                         Début de l'épreuve (jj/mm/aaaa)
                                     </label>
                                     <div class="flex gap-2">
-                                        <DateInput v-model="startDate" required class="flex-1 bg-white border-gray-100 rounded-2xl focus:ring-2 focus:ring-orange-500 font-bold px-4 py-3.5 text-xs shadow-sm focus:border-orange-500" />
-                                        <div class="flex items-center bg-white border border-gray-100 rounded-2xl px-3 shadow-sm focus-within:ring-2 focus-within:ring-orange-500 transition-all">
-                                            <select v-model="startHour" class="bg-transparent border-0 font-black text-xs p-2 focus:ring-0 cursor-pointer">
-                                                <option v-for="h in hourOptions" :key="h" :value="h">{{ h }}h</option>
+                                        <div class="relative flex-1 group">
+                                            <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-gray-400 group-focus-within:text-orange-600 transition-colors pointer-events-none">
+                                                <CalendarIcon class="h-5 w-5" />
+                                            </span>
+                                            <DateInput v-model="startDate" :min-date="todayString" required class="w-full pl-12 pr-4 py-4 bg-white border-2 border-transparent focus:border-orange-600 rounded-2xl font-bold text-gray-700 focus:ring-0 transition-all outline-none text-xs" />
+                                        </div>
+                                        <div class="flex items-center bg-white border-2 border-transparent focus-within:border-orange-600 rounded-2xl px-3 transition-all">
+                                            <select v-model="startHour" class="bg-transparent border-0 font-black text-xs p-2 focus:ring-0 cursor-pointer text-gray-700">
+                                                <option v-for="h in filteredStartHourOptions" :key="h" :value="h">{{ h }}h</option>
                                             </select>
                                             <span class="text-gray-300 font-black text-xs">:</span>
-                                            <select v-model="startMin" class="bg-transparent border-0 font-black text-xs p-2 focus:ring-0 cursor-pointer">
-                                                <option v-for="m in minuteOptions" :key="m" :value="m">{{ m }}</option>
+                                            <select v-model="startMin" class="bg-transparent border-0 font-black text-xs p-2 focus:ring-0 cursor-pointer text-gray-700">
+                                                <option v-for="m in filteredStartMinuteOptions" :key="m" :value="m">{{ m }}</option>
                                             </select>
                                         </div>
                                     </div>
                                 </div>
                                 <div class="space-y-3">
                                     <label class="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 ml-1">
-                                        <CalendarIcon class="h-3.5 w-3.5 text-orange-400" />
                                         Fin de l'épreuve (jj/mm/aaaa)
                                     </label>
                                     <div class="flex gap-2">
-                                        <DateInput v-model="endDate" required class="flex-1 bg-white border-gray-100 rounded-2xl focus:ring-2 focus:ring-orange-500 font-bold px-4 py-3.5 text-xs shadow-sm focus:border-orange-500" />
-                                        <div class="flex items-center bg-white border border-gray-100 rounded-2xl px-3 shadow-sm focus-within:ring-2 focus-within:ring-orange-500 transition-all">
-                                            <select v-model="endHour" class="bg-transparent border-0 font-black text-xs p-2 focus:ring-0 cursor-pointer">
-                                                <option v-for="h in hourOptions" :key="h" :value="h">{{ h }}h</option>
+                                        <div class="relative flex-1 group">
+                                            <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-gray-400 group-focus-within:text-orange-600 transition-colors pointer-events-none">
+                                                <CalendarIcon class="h-5 w-5" />
+                                            </span>
+                                            <DateInput v-model="endDate" :min-date="todayString" required class="w-full pl-12 pr-4 py-4 bg-white border-2 border-transparent focus:border-orange-600 rounded-2xl font-bold text-gray-700 focus:ring-0 transition-all outline-none text-xs" />
+                                        </div>
+                                        <div class="flex items-center bg-white border-2 border-transparent focus-within:border-orange-600 rounded-2xl px-3 transition-all">
+                                            <select v-model="endHour" class="bg-transparent border-0 font-black text-xs p-2 focus:ring-0 cursor-pointer text-gray-700">
+                                                <option v-for="h in filteredEndHourOptions" :key="h" :value="h">{{ h }}h</option>
                                             </select>
                                             <span class="text-gray-300 font-black text-xs">:</span>
-                                            <select v-model="endMin" class="bg-transparent border-0 font-black text-xs p-2 focus:ring-0 cursor-pointer">
-                                                <option v-for="m in minuteOptions" :key="m" :value="m">{{ m }}</option>
+                                            <select v-model="endMin" class="bg-transparent border-0 font-black text-xs p-2 focus:ring-0 cursor-pointer text-gray-700">
+                                                <option v-for="m in filteredEndMinuteOptions" :key="m" :value="m">{{ m }}</option>
                                             </select>
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
-                            <div v-if="form.duree_minutes" class="flex items-center gap-4 bg-orange-50/50 p-4 rounded-2xl border border-orange-100/50 animate-in zoom-in duration-300">
-                                <div class="h-12 w-12 bg-white rounded-xl flex items-center justify-center text-orange-600 shadow-sm">
+                            <div v-if="form.scheduled_at && form.scheduled_end" class="flex items-center gap-4 bg-orange-50/60 p-5 rounded-[2rem] border border-orange-100/50 animate-in zoom-in duration-300">
+                                <div class="h-12 w-12 bg-white rounded-2xl flex items-center justify-center text-orange-600 shadow-sm border border-orange-100/30">
                                     <ClockIcon class="h-6 w-6" />
                                 </div>
                                 <div>
                                     <p class="text-[10px] font-black text-orange-400 uppercase tracking-widest">Durée de la session</p>
-                                    <p class="text-xl font-black text-orange-600 tracking-tight">{{ form.duree_minutes }} <span class="text-sm">minutes</span></p>
+                                    <p v-if="form.duree_minutes > 0" class="text-xl font-black text-orange-600 tracking-tight">{{ form.duree_minutes }} <span class="text-sm font-bold">minutes</span></p>
+                                    <p v-else class="text-xl font-black text-red-600 tracking-tight">Intervalle invalide</p>
                                 </div>
                             </div>
                         </div>
@@ -600,22 +772,34 @@ watch(() => [startDate.value, startTime.value, endDate.value, endTime.value], ()
                         <!-- Description -->
                         <div class="space-y-3">
                             <label class="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">
-                                <DocumentTextIcon class="h-3.5 w-3.5" />
                                 Description / Consignes
                             </label>
-                            <textarea v-model="form.description" rows="3" placeholder="Écrivez ici les consignes pour les apprenants..." class="w-full bg-white border-gray-100 rounded-[2rem] focus:ring-2 focus:ring-blue-500 font-bold px-6 py-4 shadow-sm transition-all focus:border-blue-500"></textarea>
+                            <div class="relative group">
+                                <span class="absolute top-4 left-0 flex items-start pl-4 text-gray-400 group-focus-within:text-blue-600 transition-colors pointer-events-none">
+                                    <DocumentTextIcon class="h-5 w-5" />
+                                </span>
+                                <textarea v-model="form.description" rows="3" placeholder="Écrivez ici les consignes pour les apprenants..." class="w-full pl-12 pr-4 py-4 bg-white border-2 border-transparent focus:border-blue-600 rounded-[2rem] font-bold text-gray-700 focus:ring-0 transition-all outline-none"></textarea>
+                            </div>
                         </div>
                     </div>
 
                     <!-- Modal Actions -->
                     <div class="p-8 bg-gray-50 border-t border-gray-100 flex gap-4 sticky bottom-0">
-                        <button type="button" @click="closeModal" class="flex-1 py-4.5 bg-white text-gray-500 rounded-[1.5rem] font-black text-xs uppercase tracking-widest hover:bg-gray-100 transition-all shadow-sm border border-gray-200">Annuler</button>
+                        <button 
+                            type="button" 
+                            @click="closeModal" 
+                            class="flex-1 py-4 bg-white text-gray-600 hover:text-gray-900 rounded-2xl font-black text-[11px] uppercase tracking-widest hover:bg-gray-50 hover:border-gray-300 hover:shadow-sm border border-gray-200 transition-all duration-300 active:scale-98 flex items-center justify-center gap-2"
+                        >
+                            <XMarkIcon class="h-4 w-4 text-gray-400" />
+                            Annuler
+                        </button>
                         <button 
                             type="submit" 
                             :disabled="form.processing"
-                            class="flex-1 py-4.5 bg-gray-900 text-white rounded-[1.5rem] font-black text-xs uppercase tracking-widest hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-xl shadow-gray-200 flex items-center justify-center gap-2"
+                            class="flex-1 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-2xl font-black text-[11px] uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-blue-500/20 hover:shadow-xl hover:shadow-blue-500/30 hover:-translate-y-0.5 active:translate-y-0 active:scale-98 transition-all duration-300 flex items-center justify-center gap-2"
                         >
                             <div v-if="form.processing" class="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                            <CheckIcon v-else class="h-4 w-4 text-white" />
                             {{ editingExam ? 'Mettre à jour' : 'Confirmer la création' }}
                         </button>
                     </div>
@@ -655,7 +839,7 @@ watch(() => [startDate.value, startTime.value, endDate.value, endTime.value], ()
                                  :style="`animation-delay: ${index * 30}ms`">
                                 
                                 <div class="flex items-center gap-4">
-                                    <div class="h-12 w-12 rounded-2xl bg-gradient-to-tr from-gray-50 to-gray-100 text-gray-400 flex items-center justify-center font-black text-sm border border-gray-200 shadow-inner group-hover:from-green-50 group-hover:to-green-100 group-hover:text-green-600 group-hover:border-green-200 transition-colors">
+                                    <div class="h-12 w-12 rounded-2xl bg-gradient-to-tr from-gray-50 to-gray-100 text-gray-400 flex items-center justify-center font-black text-sm border-2 border-gray-100 shadow-inner group-hover:from-green-50 group-hover:to-green-100 group-hover:text-green-600 group-hover:border-green-300 transition-all duration-300">
                                         {{ student.name.charAt(0) }}
                                     </div>
                                     <div>
@@ -665,18 +849,36 @@ watch(() => [startDate.value, startTime.value, endDate.value, endTime.value], ()
                                 </div>
 
                                 <div class="flex items-center gap-4">
-                                    <div class="relative w-32">
+                                    <!-- Note de Base -->
+                                    <div class="relative w-28 group-focus-within:scale-105 transition-transform duration-300">
                                         <input 
                                             v-model="student.score" 
                                             type="number" 
                                             step="0.25" 
                                             min="0" 
                                             :max="selectedExamForGrades?.total_points"
-                                            class="w-full bg-gray-50 border-gray-100 rounded-2xl focus:ring-2 focus:ring-green-500 font-black text-center px-4 py-3.5 text-sm transition-all focus:bg-white"
+                                            :disabled="selectedExamForGrades?.type === 'online'"
+                                            class="w-full bg-gray-50 border-2 border-transparent focus:border-green-600 rounded-2xl font-black text-center px-3 py-3 text-xs transition-all focus:bg-white focus:ring-0 outline-none text-gray-700 shadow-inner disabled:opacity-60 disabled:cursor-not-allowed"
+                                            placeholder="0.00"
+                                            title="La note est calculée automatiquement pour les QCM en ligne"
+                                        >
+                                        <div class="absolute -top-2.5 -right-1">
+                                            <span class="px-1.5 py-0.5 bg-gray-900 text-white text-[7px] font-black rounded-lg shadow-lg">Base /{{ selectedExamForGrades?.total_points }}</span>
+                                        </div>
+                                    </div>
+
+                                    <!-- Bonus / Plus -->
+                                    <div class="relative w-28 group-focus-within:scale-105 transition-transform duration-300">
+                                        <input 
+                                            v-model="student.bonus" 
+                                            type="number" 
+                                            step="0.25" 
+                                            min="0" 
+                                            class="w-full bg-green-50/30 border-2 border-dashed border-green-200 focus:border-green-600 focus:border-solid focus:bg-white rounded-2xl font-black text-center px-3 py-3 text-xs transition-all focus:ring-0 outline-none text-green-700 shadow-sm"
                                             placeholder="0.00"
                                         >
                                         <div class="absolute -top-2.5 -right-1">
-                                            <span class="px-2 py-0.5 bg-gray-900 text-white text-[8px] font-black rounded-lg shadow-lg">/ {{ selectedExamForGrades?.total_points }}</span>
+                                            <span class="px-1.5 py-0.5 bg-green-600 text-white text-[7px] font-black rounded-lg shadow-lg">Bonus (+)</span>
                                         </div>
                                     </div>
                                 </div>
@@ -799,6 +1001,15 @@ watch(() => [startDate.value, startTime.value, endDate.value, endTime.value], ()
                                 Nouvelle Question
                             </h4>
                             
+                            <div v-if="Object.keys(questionForm.errors).length > 0" class="p-4 bg-red-50 border border-red-100 rounded-2xl text-red-600 mb-6 space-y-1">
+                                <p class="text-[10px] font-black uppercase tracking-widest flex items-center gap-2 mb-1 text-red-700">
+                                    <XMarkIcon class="h-4 w-4" /> Erreurs de validation
+                                </p>
+                                <ul class="list-disc pl-4 text-xs font-bold space-y-0.5">
+                                    <li v-for="(err, key) in questionForm.errors" :key="key">{{ err }}</li>
+                                </ul>
+                            </div>
+
                             <form @submit.prevent="submitQuestionForm" class="space-y-6">
                                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                                     <div class="md:col-span-2">
@@ -825,7 +1036,10 @@ watch(() => [startDate.value, startTime.value, endDate.value, endTime.value], ()
                                     <div>
                                         <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2.5 ml-1">Coefficient/Points</label>
                                         <div class="relative group">
-                                            <input v-model="questionForm.points" type="number" step="0.5" class="w-full bg-gray-50 border-gray-100 rounded-2xl focus:ring-2 focus:ring-blue-500 font-black px-5 py-4 text-center">
+                                            <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-gray-400 group-focus-within:text-blue-600 transition-colors pointer-events-none">
+                                                <ClipboardDocumentCheckIcon class="h-5 w-5" />
+                                            </span>
+                                            <input v-model="questionForm.points" type="number" step="0.5" class="w-full bg-gray-50 border-2 border-transparent focus:border-blue-600 rounded-2xl font-black pl-12 pr-12 py-4 text-center text-gray-700 outline-none transition-all shadow-inner focus:bg-white">
                                             <div class="absolute inset-y-0 right-4 flex items-center pointer-events-none">
                                                 <span class="text-[10px] font-black text-gray-400">PTS</span>
                                             </div>
@@ -835,7 +1049,12 @@ watch(() => [startDate.value, startTime.value, endDate.value, endTime.value], ()
 
                                 <div class="space-y-3">
                                     <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 ml-1">Énoncé de la question</label>
-                                    <textarea v-model="questionForm.enonce" rows="3" required placeholder="Tapez ici votre question..." class="w-full bg-gray-50 border-gray-100 rounded-[2rem] focus:ring-2 focus:ring-blue-500 font-bold px-6 py-5 shadow-inner transition-all focus:border-blue-500"></textarea>
+                                    <div class="relative group">
+                                        <span class="absolute top-4 left-0 flex items-start pl-4 text-gray-400 group-focus-within:text-blue-600 transition-colors pointer-events-none">
+                                            <DocumentTextIcon class="h-5 w-5" />
+                                        </span>
+                                        <textarea v-model="questionForm.enonce" rows="3" required placeholder="Tapez ici votre question..." class="w-full pl-12 pr-4 py-4 bg-gray-50 border-2 border-transparent focus:border-blue-600 rounded-[2rem] font-bold text-gray-700 focus:ring-0 outline-none transition-all shadow-inner focus:bg-white"></textarea>
+                                    </div>
                                 </div>
 
                                 <!-- Options for QCM -->
@@ -854,9 +1073,9 @@ watch(() => [startDate.value, startTime.value, endDate.value, endTime.value], ()
                                     </div>
                                     
                                     <div class="grid grid-cols-1 gap-3">
-                                        <div v-for="(opt, idx) in questionForm.options" :key="idx" class="flex items-center gap-3 p-3 bg-gray-50/50 rounded-2xl border border-gray-100 transition-all hover:bg-white hover:border-blue-200 group">
-                                            <input type="checkbox" v-model="opt.is_correct" class="h-5 w-5 rounded-lg text-green-500 focus:ring-green-500 border-gray-200 cursor-pointer shadow-sm transition-all hover:scale-110" title="Marquer comme correcte">
-                                            <input v-model="opt.texte" placeholder="Saisissez l'option..." class="flex-1 bg-transparent border-0 font-bold text-sm px-2 focus:ring-0 text-gray-700 p-0">
+                                        <div v-for="(opt, idx) in questionForm.options" :key="idx" class="flex items-center gap-3 p-3 bg-gray-50/50 rounded-2xl border-2 border-transparent transition-all focus-within:border-blue-600 focus-within:bg-white shadow-sm hover:border-blue-100 group">
+                                            <input type="checkbox" v-model="opt.is_correct" class="h-5 w-5 rounded-lg text-green-500 focus:ring-green-500 border-gray-300 cursor-pointer shadow-sm transition-all hover:scale-110" title="Marquer comme correcte">
+                                            <input v-model="opt.texte" placeholder="Saisissez l'option..." class="flex-1 bg-transparent border-0 font-bold text-sm px-2 focus:ring-0 text-gray-700 p-0 outline-none">
                                             <button v-if="questionForm.options.length > 2" type="button" @click="removeOption(idx)" class="opacity-0 group-hover:opacity-100 p-2 text-gray-300 hover:text-red-500 transition-all hover:bg-red-50 rounded-xl">
                                                 <XMarkIcon class="h-5 w-5" />
                                             </button>

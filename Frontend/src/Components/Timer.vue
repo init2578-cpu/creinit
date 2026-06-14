@@ -14,17 +14,9 @@ const props = defineProps({
 
 const emit = defineEmits(['expired'])
 
-const calculateTimeLeft = () => {
-    const durationSeconds = props.durationMinutes * 60;
-    if (props.absoluteEndTime) {
-        const globalRemaining = Math.max(0, Math.floor((new Date(props.absoluteEndTime) - new Date()) / 1000));
-        return Math.min(durationSeconds, globalRemaining);
-    }
-    return durationSeconds;
-};
-
-const timeLeft = ref(calculateTimeLeft())
+const timeLeft = ref(props.durationMinutes * 60)
 let timerInterval = null
+const targetEndTime = ref(null)
 
 const formattedTime = computed(() => {
     const hours = Math.floor(timeLeft.value / 3600)
@@ -36,14 +28,28 @@ const formattedTime = computed(() => {
 const isLowTime = computed(() => timeLeft.value <= 300) // 5 minutes
 
 onMounted(() => {
-    timerInterval = setInterval(() => {
-        if (timeLeft.value > 0) {
-            timeLeft.value--
-        } else {
-            clearInterval(timerInterval)
-            emit('expired')
+    const durationSeconds = props.durationMinutes * 60;
+    let end;
+    if (props.absoluteEndTime) {
+        const globalEnd = new Date(props.absoluteEndTime);
+        const maxSessionEnd = new Date(Date.now() + durationSeconds * 1000);
+        end = globalEnd < maxSessionEnd ? globalEnd : maxSessionEnd;
+    } else {
+        end = new Date(Date.now() + durationSeconds * 1000);
+    }
+    targetEndTime.value = end;
+
+    const tick = () => {
+        const remaining = Math.max(0, Math.floor((targetEndTime.value - new Date()) / 1000));
+        timeLeft.value = remaining;
+        if (remaining <= 0) {
+            clearInterval(timerInterval);
+            emit('expired');
         }
-    }, 1000)
+    };
+
+    tick();
+    timerInterval = setInterval(tick, 1000);
 })
 
 onUnmounted(() => {

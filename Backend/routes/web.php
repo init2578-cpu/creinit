@@ -268,6 +268,7 @@ Route::middleware(['auth'])->group(function (): void {
         // Admin Exam/Exercise Management (Scolarité)
         Route::group(['prefix' => 'admin-scolarite'], function () {
             Route::resource('exams', AdminExamController::class);
+            Route::patch('exams/{exam}/approve', [AdminExamController::class, 'approve'])->name('exams.approve');
             Route::get('exams/{exam}/results', [AdminExamController::class, 'getResults'])->name('exams.results');
             Route::post('exams/{exam}/grades', [AdminExamController::class, 'enterGrades'])->name('exams.enter-grades');
             Route::get('exercises', [AdminExerciseController::class, 'index'])->name('exercises.index');
@@ -348,6 +349,7 @@ Route::middleware(['auth'])->group(function (): void {
     Route::post('/chapter-progress', [\App\Http\Controllers\ChapterProgressController::class, 'submit'])->name('chapter-progress.submit');
     Route::patch('/chapter-progress/{chapterGroupProgress}/approve', [\App\Http\Controllers\ChapterProgressController::class, 'approve'])->name('chapter-progress.approve');
     Route::patch('/chapter-progress/{chapterGroupProgress}/reject', [\App\Http\Controllers\ChapterProgressController::class, 'reject'])->name('chapter-progress.reject');
+    Route::delete('/chapter-progress/{chapterGroupProgress}', [\App\Http\Controllers\ChapterProgressController::class, 'cancel'])->name('chapter-progress.cancel');
 
     // Community Hub
     Route::get('/community', [\App\Http\Controllers\AnnouncementController::class, 'index'])->name('community.index');

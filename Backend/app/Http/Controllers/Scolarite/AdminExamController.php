@@ -61,20 +61,34 @@ class AdminExamController extends Controller
             $validated['document_path'] = $path;
         }
 
+        $user = $request->user();
+        $validated['is_approved'] = $user->hasRole('Directeur');
+        $validated['user_id'] = $user->id;
+
         $exam = Exam::create($validated);
         $exam->load('module');
 
-        // Notify students enrolled in this module
-        $students = User::role('Apprenant')
-            ->whereHas('studentGroups', function ($query) use ($exam) {
-                $query->where('module_id', $exam->module_id);
-            })->get();
+        if ($exam->is_approved) {
+            // Notify students enrolled in this module
+            $students = User::role('Apprenant')
+                ->whereHas('studentGroups', function ($query) use ($exam) {
+                    $query->where('module_id', $exam->module_id);
+                })->get();
 
-        foreach ($students as $student) {
-            $student->notify(new NewExamAvailableNotification($exam));
+            foreach ($students as $student) {
+                $student->notify(new NewExamAvailableNotification($exam));
+            }
+            $message = 'Examen créé avec succès.';
+        } else {
+            // Notify Directeur that a new exam proposal is pending validation
+            $directors = User::role('Directeur')->get();
+            foreach ($directors as $director) {
+                $director->notify(new \App\Notifications\ExamPendingValidationNotification($exam, $user));
+            }
+            $message = 'Examen proposé avec succès. En attente de validation par la Direction.';
         }
 
-        return redirect()->back()->with('success', 'Examen créé avec succès.');
+        return redirect()->back()->with('success', $message);
     }
 
     public function update(Request $request, Exam $exam): RedirectResponse
@@ -122,17 +136,45 @@ class AdminExamController extends Controller
      */
     public function enterGrades(Request $request, Exam $exam): RedirectResponse
     {
+        if (!$exam->is_approved) {
+            abort(403, 'Impossible d\'attribuer des notes car cet examen n\'a pas encore été validé par le directeur.');
+        }
+
         $validated = $request->validate([
             'grades' => 'required|array',
             'grades.*.user_id' => 'required|exists:users,id',
             'grades.*.score' => 'required|numeric|min:0|max:' . $exam->total_points,
+            'grades.*.bonus' => 'nullable|numeric|min:0',
         ]);
 
+        $directors = User::role('Directeur')->get();
+
         foreach ($validated['grades'] as $gradeData) {
+            $bonus = isset($gradeData['bonus']) ? (float)$gradeData['bonus'] : 0.00;
+
+            // Find existing result to compare bonus
+            $existing = ExamResult::where('exam_id', $exam->id)
+                ->where('user_id', $gradeData['user_id'])
+                ->first();
+
+            $oldBonus = $existing ? (float)$existing->bonus : 0.00;
+
             $result = ExamResult::updateOrCreate(
                 ['exam_id' => $exam->id, 'user_id' => $gradeData['user_id']],
-                ['score' => $gradeData['score'], 'finished_at' => now()]
+                [
+                    'score' => $gradeData['score'],
+                    'bonus' => $bonus,
+                    'finished_at' => $existing ? $existing->finished_at : now()
+                ]
             );
+
+            // If bonus is newly added or changed
+            if ($bonus > 0 && $bonus !== $oldBonus) {
+                // Notify directors
+                foreach ($directors as $director) {
+                    $director->notify(new \App\Notifications\ExamBonusGivenNotification($result, $request->user()));
+                }
+            }
 
             // Notify student
             $result->user->notify(new \App\Notifications\ExamResultGradedNotification($result));
@@ -174,10 +216,12 @@ class AdminExamController extends Controller
 
         // Merge results into students data
         $formattedResults = $students->map(function ($student) use ($results) {
+            $res = $results->get($student->id);
             return [
                 'user_id' => $student->id,
                 'name'    => $student->name,
-                'score'   => $results->has($student->id) ? $results->get($student->id)->score : null,
+                'score'   => $res ? $res->score : null,
+                'bonus'   => $res ? $res->bonus : 0.00,
             ];
         });
 
@@ -194,8 +238,8 @@ class AdminExamController extends Controller
             'points' => 'required|numeric|min:0',
             'type' => 'required|in:qcm,open',
             'options' => 'array',
-            'options.*.texte' => 'required_if:type,qcm|string',
-            'options.*.is_correct' => 'required_if:type,qcm|boolean',
+            'options.*.texte' => 'required_if:type,qcm|nullable|string',
+            'options.*.is_correct' => 'required_if:type,qcm|nullable|boolean',
         ]);
 
         $currentPoints = $exam->questions()->sum('points');
@@ -217,5 +261,33 @@ class AdminExamController extends Controller
         }
 
         return redirect()->back()->with('success', 'Question ajoutée.');
+    }
+
+    /**
+     * Approve a proposed exam (Directeur only).
+     */
+    public function approve(Request $request, Exam $exam): RedirectResponse
+    {
+        if (!$request->user()->hasRole('Directeur')) {
+            abort(403, 'Seul le directeur peut valider les examens.');
+        }
+
+        $exam->update(['is_approved' => true]);
+
+        // Notify students enrolled in this module
+        $students = User::role('Apprenant')
+            ->whereHas('studentGroups', function ($query) use ($exam) {
+                $query->where('module_id', $exam->module_id);
+            })->get();
+
+        foreach ($students as $student) {
+            $student->notify(new NewExamAvailableNotification($exam));
+        }
+
+        if ($exam->user && $exam->user_id !== $request->user()->id) {
+            $exam->user->notify(new \App\Notifications\ExamApprovedNotification($exam));
+        }
+
+        return redirect()->back()->with('success', 'L\'examen a été validé avec succès.');
     }
 }

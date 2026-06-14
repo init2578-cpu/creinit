@@ -26,6 +26,7 @@ class ExamController extends Controller
         $moduleIds = $user->studentGroups()->pluck('module_id');
 
         $exams = Exam::whereIn('module_id', $moduleIds)
+            ->where('is_approved', true)
             ->with(['module', 'questions.options'])
             ->get()
             ->map(function ($exam) use ($user) {
@@ -44,8 +45,12 @@ class ExamController extends Controller
         ]);
     }
 
-    public function show(Exam $exam): Response
+    public function show(Exam $exam): Response|RedirectResponse
     {
+        if (!$exam->is_approved) {
+            return redirect()->route('student.exams.index')->with('error', "Cet examen n'est pas accessible actuellement.");
+        }
+
         $exam->load(['questions.options']);
 
         // Ensure questions stay as a sequential array even if custom ordered
@@ -67,6 +72,10 @@ class ExamController extends Controller
      */
     public function submit(Request $request, Exam $exam): Response|RedirectResponse
     {
+        if (!$exam->is_approved) {
+            return redirect()->route('student.exams.index')->with('error', "Cet examen n'est pas accessible actuellement.");
+        }
+
         $validated = $request->validate([
             'answers' => ['required', 'array'],
         ]);

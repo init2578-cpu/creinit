@@ -154,4 +154,23 @@ class ChapterProgressController extends Controller
             ->back()
             ->with('success', 'La progression a été rejetée et renvoyée au formateur.');
     }
+
+    /**
+     * Cancel a chapter progress validation (Formateur).
+     */
+    public function cancel(ChapterGroupProgress $chapterGroupProgress): RedirectResponse
+    {
+        /** @var \App\Models\User $user */
+        $user = auth()->user();
+
+        if (!$user->isTrainer()) {
+            abort(403, 'Seul le formateur de ce groupe peut annuler cette progression.');
+        }
+
+        $chapterGroupProgress->delete();
+
+        return redirect()
+            ->back()
+            ->with('success', 'La progression a été annulée.');
+    }
 }

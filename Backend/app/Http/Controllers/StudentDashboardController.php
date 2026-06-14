@@ -63,11 +63,10 @@ class StudentDashboardController extends Controller
         // 4. Examens à venir pour le module actuel
         $upcomingExams = [];
         if ($group) {
-            $upcomingExams = Exam::where(function($query) use ($group) {
-                $query->where('module_id', $group->module_id);
-            })->where(function($query) {
-                $query->where('is_active', true);
-            })->get();
+            $upcomingExams = Exam::where('module_id', $group->module_id)
+                ->where('is_active', true)
+                ->where('is_approved', true)
+                ->get();
         }
 
         // 5. Résultats récents d'exercices

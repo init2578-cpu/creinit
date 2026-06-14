@@ -24,6 +24,10 @@ class LoanController extends Controller
      */
     public function index(): Response
     {
+        if (!auth()->user()->hasRole(['Directeur', 'Secrétaire'])) {
+            abort(403, 'Accès non autorisé.');
+        }
+
         $loans = Loan::with(['asset', 'user', 'giver'])
             ->orderByDesc('borrowed_at')
             ->paginate(20);

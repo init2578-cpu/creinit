@@ -179,7 +179,7 @@ function jumpToQuestion(index) {
             </div>
 
             <div class="flex items-center gap-6">
-                <Timer :duration-minutes="exam.duree_minutes" :absolute-end-time="exam.end_at" @expired="emergencySubmit" />
+                <Timer v-if="isStarted" :duration-minutes="exam.duree_minutes" :absolute-end-time="exam.end_at" @expired="emergencySubmit" />
                 <button v-if="!exam.is_practice" @click="requestFullscreen" class="p-3 bg-white/5 rounded-xl border border-white/5 hover:bg-white/10 transition text-slate-400" title="Rétablir le plein écran">
                     <ArrowsPointingOutIcon class="h-5 w-5" />
                 </button>

@@ -16,6 +16,7 @@ class Exam extends Model
 
     protected $fillable = [
         'module_id',
+        'user_id',
         'titre',
         'type',
         'document_path',
@@ -25,6 +26,7 @@ class Exam extends Model
         'total_points',
         'is_active',
         'is_practice',
+        'is_approved',
     ];
 
     protected $appends = ['is_online', 'has_ended', 'can_start', 'end_at'];
@@ -66,7 +68,7 @@ class Exam extends Model
     {
         return Attribute::make(
             get: fn () => $this->is_active 
-                && ($this->type === 'online' || $this->type === 'quizz')
+                && $this->is_approved
                 && (!$this->scheduled_at || now()->isAfter($this->scheduled_at))
                 && !$this->isExpired(),
         );
@@ -76,6 +78,7 @@ class Exam extends Model
     {
         return [
             'is_active' => 'boolean',
+            'is_approved' => 'boolean',
             'is_practice' => 'boolean',
             'duree_minutes' => 'integer',
             'total_points' => 'decimal:2',
@@ -86,6 +89,11 @@ class Exam extends Model
     public function module(): BelongsTo
     {
         return $this->belongsTo(Module::class);
+    }
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
     }
 
     public function questions(): HasMany

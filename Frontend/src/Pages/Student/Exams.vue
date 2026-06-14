@@ -16,12 +16,20 @@ const props = defineProps({
 
 const statusLabel = (exam) => {
     if (!exam.my_result) return 'À faire'
-    return `${exam.my_result.score?.toFixed(1)} / 20`
+    const scoreVal = parseFloat(exam.my_result.score) || 0
+    const bonusVal = parseFloat(exam.my_result.bonus) || 0
+    const total = scoreVal + bonusVal
+    if (bonusVal > 0) {
+        return `${total.toFixed(1)} / 20 (+${bonusVal.toFixed(1)} bonus)`
+    }
+    return `${total.toFixed(1)} / 20`
 }
 
 const statusClass = (exam) => {
     if (!exam.my_result) return 'bg-amber-50 text-amber-600 border-amber-100'
-    const score = exam.my_result.score
+    const scoreVal = parseFloat(exam.my_result.score) || 0
+    const bonusVal = parseFloat(exam.my_result.bonus) || 0
+    const score = scoreVal + bonusVal
     if (score >= 14) return 'bg-green-50 text-green-600 border-green-100'
     if (score >= 10) return 'bg-blue-50 text-blue-600 border-blue-100'
     return 'bg-red-50 text-red-600 border-red-100'
@@ -90,37 +98,44 @@ const formatTime = (dateString) => {
                     </div>
 
                     <div class="flex items-center gap-4">
-                        <!-- Énoncé pour examen sur table -->
-                        <a 
-                            v-if="!exam.is_online && exam.document_path"
-                            :href="'/storage/' + exam.document_path"
-                            target="_blank"
-                            class="px-4 py-2 bg-purple-100 text-purple-700 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-purple-200 transition flex items-center gap-2 border border-purple-200"
-                        >
-                            <ArrowDownTrayIcon class="h-3.5 w-3.5" />
-                            Énoncé
-                        </a>
+                        <!-- Énoncé pour examen sur table (accessible uniquement si débuté) -->
+                        <template v-if="!exam.is_online && exam.document_path">
+                            <a 
+                                v-if="exam.can_start"
+                                :href="'/storage/' + exam.document_path"
+                                target="_blank"
+                                class="px-4 py-2 bg-purple-100 text-purple-700 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-purple-200 transition flex items-center gap-2 border border-purple-200"
+                            >
+                                <ArrowDownTrayIcon class="h-3.5 w-3.5" />
+                                Énoncé
+                            </a>
+                            <span 
+                                v-else
+                                class="px-4 py-2 bg-gray-50 text-gray-400 rounded-xl text-[9px] font-black uppercase tracking-widest border border-gray-200 italic"
+                                title="L'énoncé sera téléchargeable à l'heure prévue"
+                            >
+                                En attente
+                            </span>
+                        </template>
 
                         <span v-if="!exam.is_online" class="px-3 py-1 bg-gray-100 text-gray-500 text-[9px] font-black uppercase tracking-tighter rounded-md border border-gray-200">
                             Sur Table
                         </span>
 
-                        <!-- État de disponibilité (Online) -->
-                        <template v-if="exam.is_online">
-                            <span v-if="exam.has_ended && !exam.my_result" class="px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border bg-red-50 text-red-400 border-red-100 italic">
-                                Terminé
-                            </span>
-                            <span v-else-if="!exam.can_start && !exam.my_result" class="px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border bg-blue-50 text-blue-500 border-blue-100 italic animate-pulse">
-                                Bientôt
-                            </span>
-                        </template>
+                        <!-- État de disponibilité -->
+                        <span v-if="exam.has_ended && !exam.my_result" class="px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border bg-red-50 text-red-400 border-red-100 italic">
+                            Terminé
+                        </span>
+                        <span v-else-if="!exam.can_start && !exam.my_result" class="px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border bg-blue-50 text-blue-500 border-blue-100 italic animate-pulse">
+                            Bientôt
+                        </span>
 
                         <span v-if="exam.my_result" class="px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border" :class="statusClass(exam)">
                             {{ statusLabel(exam) }}
                         </span>
 
                         <Link
-                            v-if="exam.can_start && (!exam.my_result || exam.is_practice)"
+                            v-if="exam.is_online && exam.can_start && (!exam.my_result || exam.is_practice)"
                             :href="route('student.exams.show', exam.id)"
                             class="px-5 py-2.5 bg-gray-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-red-600 transition shadow-lg shadow-gray-200"
                         >
