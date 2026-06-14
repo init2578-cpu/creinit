@@ -1,7 +1,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
-import { ref } from 'vue'
-import { useForm, Link } from '@inertiajs/vue3'
+import { ref, computed } from 'vue'
+import { useForm, Link, usePage } from '@inertiajs/vue3'
 import { 
     ChevronLeftIcon,
     CheckCircleIcon,
@@ -88,12 +88,30 @@ function formatDate(dateString) {
     return new Date(dateString).toLocaleDateString('fr-FR', options);
 }
 
+const page = usePage()
+
+const isTrainer = computed(() => {
+    const user = page.props.auth.user
+    if (!user) return false
+    return !user.roles.includes('Directeur') && !user.roles.includes('Secrétaire')
+})
+
 const statusConfig = {
     present: { label: 'Présent', color: 'text-green-600', bg: 'bg-green-50', border: 'border-green-100', icon: CheckCircleIcon },
     absent_non_justifie: { label: 'Absent', color: 'text-red-600', bg: 'bg-red-50', border: 'border-red-100', icon: XCircleIcon },
     late: { label: 'Retard', color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-100', icon: ClockIcon },
     justifie: { label: 'Justifié', color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-100', icon: InformationCircleIcon },
 }
+
+const filteredStatusConfig = computed(() => {
+    if (isTrainer.value) {
+        return {
+            present: statusConfig.present,
+            absent_non_justifie: statusConfig.absent_non_justifie,
+        }
+    }
+    return statusConfig
+})
 
 </script>
 
@@ -171,7 +189,7 @@ const statusConfig = {
                                 <td class="px-10 py-6">
                                     <div class="flex justify-center items-center gap-2 p-1.5 bg-gray-50 rounded-2xl w-fit mx-auto border border-gray-100 shadow-inner">
                                         <button 
-                                            v-for="(config, key) in statusConfig" 
+                                            v-for="(config, key) in filteredStatusConfig" 
                                             :key="key"
                                             type="button"
                                             @click="student.status = key"

@@ -1,7 +1,14 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
-import { ref } from 'vue'
-import { Head, Link, router } from '@inertiajs/vue3'
+import { ref, computed } from 'vue'
+import { Head, Link, router, usePage } from '@inertiajs/vue3'
+
+const page = usePage()
+const isTrainer = computed(() => {
+    const user = page.props.auth.user
+    if (!user) return false
+    return !user.roles.includes('Directeur') && !user.roles.includes('Secrétaire')
+})
 import { 
     ChevronLeftIcon,
     CalendarIcon,
@@ -159,11 +166,11 @@ const startNewSession = () => {
                                 <div class="text-sm font-black">{{ item.absent }}</div>
                                 <div class="text-[8px] font-black uppercase tracking-widest opacity-75">Absents</div>
                             </div>
-                            <div class="bg-amber-50 border border-amber-100 text-amber-700 px-4 py-2.5 rounded-2xl text-center min-w-[70px]">
+                            <div v-if="!isTrainer" class="bg-amber-50 border border-amber-100 text-amber-700 px-4 py-2.5 rounded-2xl text-center min-w-[70px]">
                                 <div class="text-sm font-black">{{ item.late }}</div>
                                 <div class="text-[8px] font-black uppercase tracking-widest opacity-75">Retards</div>
                             </div>
-                            <div class="bg-blue-50 border border-blue-100 text-blue-700 px-4 py-2.5 rounded-2xl text-center min-w-[70px]">
+                            <div v-if="!isTrainer" class="bg-blue-50 border border-blue-100 text-blue-700 px-4 py-2.5 rounded-2xl text-center min-w-[70px]">
                                 <div class="text-sm font-black">{{ item.justified }}</div>
                                 <div class="text-[8px] font-black uppercase tracking-widest opacity-75">Justifiés</div>
                             </div>
