@@ -104,7 +104,7 @@ function handleFileUpload(event) {
 
 <style>
 /* Hide the default stop/start buttons if any are injected */
-#qr-reader-* video {
+[id^="qr-reader-"] video {
     border-radius: 1rem !important;
 }
 </style>
