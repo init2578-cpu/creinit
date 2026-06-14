@@ -112,11 +112,11 @@ class StudentsController extends Controller
     /**
      * Update the specified learner.
      */
-    public function update(Request $request, User $user)
+    public function update(Request $request, User $student)
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
+            'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users')->ignore($student->id)],
             'password' => 'nullable|string|min:8',
             'telephone' => 'nullable|string|max:20',
             'adresse' => 'nullable|string|max:255',
@@ -129,8 +129,8 @@ class StudentsController extends Controller
             'sexe' => 'nullable|string|in:M,F',
         ]);
 
-        DB::transaction(function() use ($validated, $user) {
-            $user->update([
+        DB::transaction(function() use ($validated, $student) {
+            $student->update([
                 'name' => $validated['name'],
                 'email' => $validated['email'],
                 'telephone' => $validated['telephone'],
@@ -139,16 +139,16 @@ class StudentsController extends Controller
             ]);
 
             if (!empty($validated['password'])) {
-                $user->update(['password' => Hash::make($validated['password'])]);
+                $student->update(['password' => Hash::make($validated['password'])]);
             }
 
             // Update or Create Application profile
             Application::updateOrCreate(
-                ['user_id' => $user->id],
+                ['user_id' => $student->id],
                 [
-                    'nom_complet' => $user->name,
-                    'telephone' => $user->telephone,
-                    'adresse_reelle' => $user->adresse,
+                    'nom_complet' => $student->name,
+                    'telephone' => $student->telephone,
+                    'adresse_reelle' => $student->adresse,
                     'date_naissance' => $validated['date_naissance'],
                     'lieu_naissance' => $validated['lieu_naissance'],
                     'niveau_etude' => $validated['niveau_etude'],
@@ -165,12 +165,12 @@ class StudentsController extends Controller
     /**
      * Remove the specified learner.
      */
-    public function destroy(User $user)
+    public function destroy(User $student)
     {
-        DB::transaction(function() use ($user) {
+        DB::transaction(function() use ($student) {
             // Delete associated application/profile
-            Application::where('user_id', $user->id)->delete();
-            $user->delete();
+            Application::where('user_id', $student->id)->delete();
+            $student->delete();
         });
 
         return back()->with('success', 'Apprenant supprimé avec succès.');
