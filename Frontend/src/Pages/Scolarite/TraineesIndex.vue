@@ -78,17 +78,28 @@ const filteredTrainees = computed(() => {
 const isPreviewOpen = ref(false)
 const previewTrainee = ref(null)
 const previewType = ref(null)
+const isZoomed = ref(false)
+
+const isPreviewImage = computed(() => {
+    if (!previewTrainee.value || !previewType.value) return false
+    const path = previewTrainee.value.internship?.[previewType.value]
+    if (!path) return false
+    const ext = path.split('.').pop().toLowerCase()
+    return ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext)
+})
 
 function openPreview(trainee, type) {
     previewTrainee.value = trainee
     previewType.value = type
     isPreviewOpen.value = true
+    isZoomed.value = false
 }
 
 function closePreview() {
     isPreviewOpen.value = false
     previewTrainee.value = null
     previewType.value = null
+    isZoomed.value = false
 }
 
 function openViewModal(trainee) {
@@ -716,8 +727,27 @@ function getStatusClass(status) {
                         </button>
                     </div>
                 </div>
-                <div class="flex-1 bg-gray-100 overflow-hidden relative">
+                <div class="flex-1 bg-gray-100 overflow-hidden flex flex-col min-h-0 relative">
+                    <div v-if="isPreviewImage" class="flex-1 bg-gray-900 overflow-auto custom-scrollbar flex items-center justify-center p-6 relative">
+                        <button 
+                            type="button"
+                            @click="isZoomed = !isZoomed"
+                            class="absolute bottom-6 right-6 z-10 px-4 py-2 bg-white/90 backdrop-blur text-gray-800 rounded-xl font-black text-xs shadow-lg hover:bg-white transition flex items-center gap-1.5"
+                        >
+                            <MagnifyingGlassIcon class="h-4 w-4" />
+                            {{ isZoomed ? 'Ajuster à l\'écran' : 'Taille réelle' }}
+                        </button>
+                        <img 
+                            :src="route('trainees.preview', { trainee: previewTrainee.id, type: previewType })" 
+                            :class="[
+                                isZoomed ? 'max-w-none max-h-none' : 'max-w-full max-h-full object-contain',
+                                'rounded-2xl shadow-2xl transition-all duration-300'
+                            ]"
+                            alt="Aperçu du document"
+                        />
+                    </div>
                     <iframe 
+                        v-else
                         :src="route('trainees.preview', { trainee: previewTrainee.id, type: previewType })" 
                         class="w-full h-full border-0 shadow-inner"
                     ></iframe>

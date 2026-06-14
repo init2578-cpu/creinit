@@ -96,16 +96,29 @@ const enrollForm = useForm({
 const isLinkGenOpen = ref(false)
 const selectedModuleForLink = ref('')
 const generatedLink = ref('')
+const isZoomed = ref(false)
+
+const isPreviewImage = computed(() => {
+    if (!selectedApplication.value || !previewType.value) return false
+    const path = previewType.value === 'cni' 
+        ? selectedApplication.value.cni_path 
+        : selectedApplication.value.diploma_path
+    if (!path) return false
+    const ext = path.split('.').pop().toLowerCase()
+    return ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext)
+})
 
 function openPreview(app, type) {
     selectedApplication.value = app
     previewType.value = type
     isPreviewOpen.value = true
+    isZoomed.value = false
 }
 
 function closePreview() {
     isPreviewOpen.value = false
     selectedApplication.value = null
+    isZoomed.value = false
 }
 
 function openDetails(app) {
@@ -782,8 +795,27 @@ const getStatusClass = (status) => {
                         <XMarkIcon class="h-6 w-6" />
                     </button>
                 </div>
-                <div class="flex-1 bg-gray-100">
+                <div class="flex-1 bg-gray-100 overflow-hidden flex flex-col min-h-0">
+                    <div v-if="isPreviewImage" class="flex-1 bg-gray-900 overflow-auto custom-scrollbar flex items-center justify-center p-6 relative">
+                        <button 
+                            type="button"
+                            @click="isZoomed = !isZoomed"
+                            class="absolute bottom-6 right-6 z-10 px-4 py-2 bg-white/90 backdrop-blur text-gray-800 rounded-xl font-black text-xs shadow-lg hover:bg-white transition flex items-center gap-1.5"
+                        >
+                            <MagnifyingGlassIcon class="h-4 w-4" />
+                            {{ isZoomed ? 'Ajuster à l\'écran' : 'Taille réelle' }}
+                        </button>
+                        <img 
+                            :src="route('applications.preview', { application: selectedApplication.id, type: previewType })" 
+                            :class="[
+                                isZoomed ? 'max-w-none max-h-none' : 'max-w-full max-h-full object-contain',
+                                'rounded-2xl shadow-2xl transition-all duration-300'
+                            ]"
+                            alt="Aperçu du document"
+                        />
+                    </div>
                     <iframe 
+                        v-else
                         :src="route('applications.preview', { application: selectedApplication.id, type: previewType })" 
                         class="w-full h-full border-0"
                     ></iframe>
