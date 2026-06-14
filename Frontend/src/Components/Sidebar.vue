@@ -66,9 +66,21 @@ const navigation = computed(() => {
             { name: 'Rapports', href: route('reports.index'), icon: DocumentChartBarIcon },
             { name: 'Paramètres', href: route('settings.index'), icon: Cog6ToothIcon },
         )
-    }
-
-    if (roles.value.includes('Secrétaire')) {
+    } else if (roles.value.includes('Formateur') || page.props.auth.user?.is_trainer) {
+        menu.push(
+            { name: 'Mes Groupes', href: route('trainer.groups'), icon: AcademicCapIcon },
+            { name: 'Communauté', href: route('community.index'), icon: ChatBubbleLeftRightIcon, badge: page.props.auth.user?.unread_announcements_count },
+            { name: 'Émargement', href: route('attendances.trainer-groups'), icon: ClipboardDocumentCheckIcon },
+            { name: 'Gestion des Cours', href: route('modules.index'), icon: BookOpenIcon },
+            { name: 'Examens', href: route('exams.index'), icon: PencilSquareIcon },
+            { name: 'Exercices (Correction)', href: route('exercises.index'), icon: ClipboardDocumentCheckIcon },
+            { name: 'Aperçu Plateforme', href: route('student.courses'), icon: AcademicCapIcon },
+            { name: 'Inventaire Matériel', href: route('assets.index'), icon: ArchiveBoxIcon },
+            { name: 'Prêts & Retours', href: route('loans.index'), icon: BriefcaseIcon },
+            { name: 'Progression', href: route('chapter-progress.groups'), icon: ChartBarIcon },
+            { name: 'Emploi du Temps', href: route('schedules.index'), icon: CalendarIcon },
+        )
+    } else if (roles.value.includes('Secrétaire')) {
         menu.push(
             { name: 'Tableau de Bord', href: route('dashboard.director'), icon: HomeIcon },
             { name: 'Communauté', href: route('community.index'), icon: ChatBubbleLeftRightIcon, badge: page.props.auth.user?.unread_announcements_count },
@@ -84,29 +96,7 @@ const navigation = computed(() => {
             { name: 'Prêts & Retours', href: route('loans.index'), icon: BriefcaseIcon },
             { name: 'Rapports', href: route('reports.index'), icon: DocumentChartBarIcon },
         )
-    }
-
-    if (roles.value.includes('Formateur') || page.props.auth.user?.is_trainer) {
-        menu.push(
-            { name: 'Mes Groupes', href: route('trainer.groups'), icon: AcademicCapIcon },
-            { name: 'Communauté', href: route('community.index'), icon: ChatBubbleLeftRightIcon, badge: page.props.auth.user?.unread_announcements_count },
-            { name: 'Émargement', href: route('attendances.trainer-groups'), icon: ClipboardDocumentCheckIcon },
-            { name: 'Gestion des Cours', href: route('modules.index'), icon: BookOpenIcon },
-            { name: 'Examens', href: route('exams.index'), icon: PencilSquareIcon },
-            { name: 'Exercices (Correction)', href: route('exercises.index'), icon: ClipboardDocumentCheckIcon },
-            { name: 'Aperçu Plateforme', href: route('student.courses'), icon: AcademicCapIcon },
-            { name: 'Inventaire Matériel', href: route('assets.index'), icon: ArchiveBoxIcon },
-            { name: 'Prêts & Retours', href: route('loans.index'), icon: BriefcaseIcon },
-            { name: 'Progression', href: route('chapter-progress.groups'), icon: ChartBarIcon },
-            { name: 'Emploi du Temps', href: route('schedules.index'), icon: CalendarIcon },
-        )
-    }
-
-    if (
-        (roles.value.includes('Apprenant') || (roles.value.includes('Stagiaire') && !page.props.auth.user?.is_trainer))
-        && !roles.value.includes('Secrétaire')
-        && !roles.value.includes('Directeur')
-    ) {
+    } else if (roles.value.includes('Apprenant') || roles.value.includes('Stagiaire')) {
         menu.push(
             { name: 'Mon Parcours', href: route('student.dashboard'), icon: AcademicCapIcon },
             { name: 'Communauté', href: route('community.index'), icon: ChatBubbleLeftRightIcon, badge: page.props.auth.user?.unread_announcements_count },
