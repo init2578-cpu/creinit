@@ -4,11 +4,7 @@ import { ref, computed } from 'vue'
 import { Head, Link, router, usePage } from '@inertiajs/vue3'
 
 const page = usePage()
-const isTrainer = computed(() => {
-    const user = page.props.auth.user
-    if (!user) return false
-    return !user.roles.includes('Directeur') && !user.roles.includes('Secrétaire')
-})
+const isTrainer = computed(() => page.props.auth.user?.is_trainer ?? false)
 import { 
     ChevronLeftIcon,
     CalendarIcon,

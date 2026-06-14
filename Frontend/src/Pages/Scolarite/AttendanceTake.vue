@@ -90,11 +90,7 @@ function formatDate(dateString) {
 
 const page = usePage()
 
-const isTrainer = computed(() => {
-    const user = page.props.auth.user
-    if (!user) return false
-    return !user.roles.includes('Directeur') && !user.roles.includes('Secrétaire')
-})
+const isTrainer = computed(() => page.props.auth.user?.is_trainer ?? false)
 
 const statusConfig = {
     present: { label: 'Présent', color: 'text-green-600', bg: 'bg-green-50', border: 'border-green-100', icon: CheckCircleIcon },
