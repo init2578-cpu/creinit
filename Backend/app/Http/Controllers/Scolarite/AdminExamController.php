@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Exam;
 use App\Models\ExamResult;
 use App\Models\Module;
+use App\Models\Group;
 use App\Models\User;
 use App\Notifications\NewExamAvailableNotification;
 use Illuminate\Http\RedirectResponse;
