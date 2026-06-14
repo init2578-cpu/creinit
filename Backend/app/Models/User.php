@@ -186,7 +186,7 @@ class User extends Authenticatable implements PasskeyUser
         return $this->hasRole('Formateur') || (
             $this->hasRole('Stagiaire') &&
             in_array($this->internshipRecord?->internship_type, $teachingTypes, true)
-        );
+        ) || \App\Models\Group::where('formateur_id', $this->id)->exists();
     }
 
     /**

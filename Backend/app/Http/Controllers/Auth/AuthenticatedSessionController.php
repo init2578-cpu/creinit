@@ -23,10 +23,10 @@ class AuthenticatedSessionController extends Controller
         if (Auth::check()) {
             $user = Auth::user();
             $route = 'dashboard.director'; // Default
-            if ($user->hasRole('Directeur') || $user->hasRole('Secrétaire')) {
-                $route = 'dashboard.director';
-            } elseif ($user->isTrainer()) {
+            if ($user->isTrainer()) {
                 $route = 'trainer.groups';
+            } elseif ($user->hasRole('Directeur') || $user->hasRole('Secrétaire')) {
+                $route = 'dashboard.director';
             } elseif ($user->hasRole('Apprenant') || $user->hasRole('Stagiaire')) {
                 $route = 'student.dashboard';
             }
@@ -62,10 +62,10 @@ class AuthenticatedSessionController extends Controller
 
         $route = 'dashboard.director'; // Default
 
-        if ($user->hasRole('Directeur') || $user->hasRole('Secrétaire')) {
-            $route = 'dashboard.director';
-        } elseif ($user->isTrainer()) {
+        if ($user->isTrainer()) {
             $route = 'trainer.groups';
+        } elseif ($user->hasRole('Directeur') || $user->hasRole('Secrétaire')) {
+            $route = 'dashboard.director';
         } elseif ($user->hasRole('Apprenant') || $user->hasRole('Stagiaire')) {
             $route = 'student.dashboard';
         }
@@ -120,10 +120,10 @@ class AuthenticatedSessionController extends Controller
         $user->forceFill(['last_login_at' => now()])->save();
 
         $route = 'dashboard.director'; // Default
-        if ($user->hasRole('Directeur') || $user->hasRole('Secrétaire')) {
-            $route = 'dashboard.director';
-        } elseif ($user->isTrainer()) {
+        if ($user->isTrainer()) {
             $route = 'trainer.groups';
+        } elseif ($user->hasRole('Directeur') || $user->hasRole('Secrétaire')) {
+            $route = 'dashboard.director';
         } elseif ($user->hasRole('Apprenant') || $user->hasRole('Stagiaire')) {
             $route = 'student.dashboard';
         }
