@@ -133,6 +133,24 @@ function submitChapter() {
     }
 }
 
+function togglePublish(chapter) {
+    router.post(route('modules.chapters.update', chapter.id), {
+        titre: chapter.titre,
+        is_published: chapter.is_published,
+        content: chapter.content || '',
+        video_url: chapter.video_url || '',
+    }, {
+        preserveScroll: true,
+        onSuccess: () => {
+            selectedModule.value = props.modules_detailed.find(m => m.id === selectedModule.value.id)
+            localChapters.value = [...selectedModule.value.chapters]
+            if (editingChapter.value && editingChapter.value.id === chapter.id) {
+                chapterForm.is_published = chapter.is_published
+            }
+        }
+    })
+}
+
 function deleteChapter(chapterId) {
     if (confirm('Supprimer ce chapitre ?')) {
         router.delete(route('modules.chapters.destroy', chapterId), {
@@ -293,8 +311,8 @@ function handleReorder() {
 
         <!-- Chapter Management Modal -->
         <div v-if="isChapterModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/80 backdrop-blur-sm">
-            <div class="bg-gray-50 w-full max-w-4xl h-[85vh] rounded-[3rem] overflow-hidden shadow-2xl flex flex-col border border-white/20">
-                <div class="bg-white p-10 flex items-center justify-between border-b border-gray-100">
+            <div class="bg-gray-50 w-full max-w-5xl h-[85vh] rounded-[3rem] overflow-hidden shadow-2xl flex flex-col border border-white/20">
+                <div class="bg-white p-10 flex items-center justify-between border-b border-gray-100 flex-shrink-0">
                     <div>
                         <span class="text-[10px] font-black text-blue-500 uppercase tracking-widest">{{ selectedModule.code_module }}</span>
                         <h3 class="text-3xl font-black text-gray-900 tracking-tight">{{ selectedModule.titre }}</h3>
@@ -305,10 +323,20 @@ function handleReorder() {
                     </button>
                 </div>
                 
-                <div class="flex-1 overflow-y-auto p-10 flex flex-col md:flex-row gap-10">
+                <div class="flex-1 flex flex-col md:flex-row gap-10 p-10 overflow-hidden min-h-0">
                     <!-- Chapter List -->
-                    <div class="flex-1">
-                        <div v-if="selectedModule.chapters.length === 0" class="flex flex-col items-center justify-center py-20 bg-white rounded-[2rem] border-2 border-dashed border-gray-200 text-gray-400">
+                    <div class="flex-grow-0 md:flex-none md:w-[22rem] flex flex-col min-h-0 overflow-y-auto pr-2 custom-scrollbar">
+                        <div class="flex items-center justify-between mb-6 flex-shrink-0">
+                            <h4 class="text-xs font-black text-gray-400 uppercase tracking-widest">Chapitres ({{ localChapters.length }})</h4>
+                            <button @click="cancelEditChapter()" 
+                                    type="button"
+                                    class="flex items-center gap-1 px-2.5 py-1.5 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-100 transition text-[10px] font-black uppercase tracking-widest">
+                                <PlusIcon class="h-3.5 w-3.5" />
+                                Nouveau
+                            </button>
+                        </div>
+
+                        <div v-if="selectedModule.chapters.length === 0" class="flex flex-col items-center justify-center py-20 bg-white rounded-[2rem] border-2 border-dashed border-gray-200 text-gray-400 flex-grow">
                             <Bars4Icon class="h-12 w-12 mb-4" />
                             <p class="font-black text-sm uppercase tracking-widest">Aucun chapitre</p>
                         </div>
@@ -321,39 +349,77 @@ function handleReorder() {
                             class="space-y-4"
                         >
                             <template #item="{element, index}">
-                                <div class="bg-white p-6 rounded-2xl border border-gray-100 flex items-center gap-6 group hover:border-blue-200 transition shadow-sm"
-                                    :class="{'opacity-50 pointer-events-none': isReordering}">
-                                    <div class="drag-handle cursor-grab active:cursor-grabbing p-2 -ml-2 text-gray-300 hover:text-blue-500 transition-colors">
+                                <div 
+                                    class="bg-white p-5 rounded-2xl border flex items-center gap-4 group transition-all duration-300 cursor-pointer shadow-sm"
+                                    :class="[
+                                        editingChapter && editingChapter.id === element.id
+                                            ? 'border-blue-500 bg-blue-50/20 ring-2 ring-blue-500/10'
+                                            : 'border-gray-100 hover:border-blue-200 hover:bg-gray-50/30',
+                                        {'opacity-50 pointer-events-none': isReordering}
+                                    ]"
+                                    @click="editChapter(element)"
+                                >
+                                    <!-- Drag Handle -->
+                                    <div class="drag-handle cursor-grab active:cursor-grabbing p-1.5 -ml-1.5 text-gray-300 hover:text-blue-500 transition-colors" @click.stop>
                                         <Bars4Icon class="h-5 w-5" />
                                     </div>
-                                    <div class="flex-shrink-0 w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center text-gray-400 font-black text-sm">
+                                    
+                                    <!-- Number -->
+                                    <div 
+                                        class="flex-shrink-0 w-8 h-8 rounded-xl flex items-center justify-center font-black text-xs transition-colors"
+                                        :class="[
+                                            editingChapter && editingChapter.id === element.id
+                                                ? 'bg-blue-100 text-blue-700'
+                                                : 'bg-gray-50 text-gray-400 group-hover:bg-blue-50 group-hover:text-blue-600'
+                                        ]"
+                                    >
                                         {{ index + 1 }}
                                     </div>
-                                    <div class="flex-grow">
-                                        <h4 class="font-black text-gray-900 leading-tight">{{ element.titre }}</h4>
+                                    
+                                    <!-- Title -->
+                                    <div class="flex-grow min-w-0">
+                                        <h4 class="font-black text-gray-900 leading-tight truncate" :title="element.titre">{{ element.titre }}</h4>
                                     </div>
-                                    <div class="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <div class="flex items-center gap-1 bg-gray-50 px-3 py-1.5 rounded-xl border border-gray-100">
-                                            <input type="checkbox" v-model="element.is_published" @change="editingChapter = element; chapterForm.titre = element.titre; chapterForm.ordre = element.ordre; chapterForm.is_published = element.is_published; submitChapter()" class="rounded text-blue-600 focus:ring-blue-500">
-                                            <span class="text-[10px] font-black uppercase text-gray-400">Public</span>
-                                        </div>
-                                        <div class="flex items-center gap-3">
-                                        <button @click="editChapter(element)" class="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-600 hover:text-white transition-all text-[10px] font-black uppercase tracking-widest">
-                                            <PencilSquareIcon class="h-4 w-4" />
-                                            Gérer le contenu
+                                    
+                                    <!-- Actions -->
+                                    <div class="flex items-center gap-1.5 flex-shrink-0" @click.stop>
+                                        <!-- Status Badge Button -->
+                                        <button 
+                                            type="button" 
+                                            @click="element.is_published = !element.is_published; togglePublish(element)" 
+                                            class="flex items-center gap-1 px-2 py-1 rounded-lg border text-[8px] font-black uppercase tracking-wider transition-all"
+                                            :class="element.is_published 
+                                                ? 'bg-green-50 text-green-700 border-green-100' 
+                                                : 'bg-gray-50 text-gray-400 border-gray-100'"
+                                        >
+                                            <span class="h-1.5 w-1.5 rounded-full" :class="element.is_published ? 'bg-green-500' : 'bg-gray-400'"></span>
+                                            {{ element.is_published ? 'Public' : 'Brouillon' }}
                                         </button>
-                                        <button @click="deleteChapter(element.id)" class="p-2 text-gray-300 hover:text-red-500 transition">
+                                        
+                                        <!-- Delete -->
+                                        <button 
+                                            type="button" 
+                                            @click="deleteChapter(element.id)" 
+                                            class="p-1.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition"
+                                            title="Supprimer"
+                                        >
                                             <TrashIcon class="h-4 w-4" />
                                         </button>
-                                    </div>
+                                        
+                                        <!-- Chevron -->
+                                        <ChevronRightIcon 
+                                            class="h-3.5 w-3.5 text-gray-300 group-hover:text-blue-500 transition-all duration-300"
+                                            :class="{'text-blue-500 translate-x-0.5': editingChapter && editingChapter.id === element.id}"
+                                        />
                                     </div>
                                 </div>
                             </template>
                         </draggable>
                     </div>
 
-                    <div class="w-full md:w-80 flex-shrink-0">
-                        <div class="bg-white p-8 rounded-[2rem] border border-gray-100 shadow-sm sticky top-0">
+                    <!-- Editor / Content Form -->
+                    <div class="flex-1 min-w-0 flex flex-col min-h-0 overflow-y-auto pl-2 custom-scrollbar">
+                        <div class="bg-white p-8 rounded-[2rem] border border-gray-100 shadow-sm">
                             <h4 class="text-xs font-black text-gray-400 uppercase tracking-widest mb-6">
                                 {{ editingChapter ? 'Modifier le chapitre' : 'Ajouter un chapitre' }}
                             </h4>
@@ -431,7 +497,7 @@ function handleReorder() {
                                     </div>
                                     <h5 class="text-sm font-black text-gray-900 mb-2">Modifier le contenu</h5>
                                     <p class="text-[10px] font-bold text-gray-400 uppercase leading-loose tracking-widest px-4">
-                                        Cliquez sur l'icône <span class="text-blue-600">crayon</span> du chapitre à gauche pour rédiger son contenu, ajouter des vidéos ou des documents.
+                                        Sélectionnez un chapitre à gauche pour rédiger son contenu, ajouter des vidéos ou des documents.
                                     </p>
                                 </div>
                                 <button type="submit" :disabled="chapterForm.processing" class="w-full py-4 bg-blue-600 text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-blue-700 transition shadow-lg shadow-blue-100 disabled:opacity-50 mt-4">
@@ -445,10 +511,27 @@ function handleReorder() {
                     </div>
                 </div>
 
-                <div class="bg-white p-8 border-t border-gray-100 flex justify-end">
+                <div class="bg-white p-8 border-t border-gray-100 flex justify-end flex-shrink-0">
                     <button @click="isChapterModalOpen = false" class="px-8 py-3 bg-gray-900 text-white rounded-xl font-black text-xs uppercase tracking-widest">Terminer</button>
                 </div>
             </div>
         </div>
     </AuthenticatedLayout>
 </template>
+
+<style scoped>
+.custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #e5e7eb;
+    border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #d1d5db;
+}
+</style>
