@@ -22,24 +22,27 @@ class AdminExamController extends Controller
     {
         $user = $request->user();
 
-        $examQuery = Exam::with(['module', 'questions', 'examResults.user'])->orderBy('created_at', 'desc');
+        $examQuery = Exam::with(['module', 'questions', 'examResults.user', 'groups'])->orderBy('created_at', 'desc');
         $moduleQuery = Module::query();
+        $groupsQuery = Group::query();
 
-        if (!$user->hasRole('Directeur') && $user->isTrainer()) {
+        if (!$user->hasRole('Directeur') && !$user->hasRole('Secrétaire') && $user->isTrainer()) {
             $moduleIds = $user->groupsAsFormateur()->pluck('module_id');
             $examQuery->whereIn('module_id', $moduleIds);
             $moduleQuery->whereIn('id', $moduleIds);
+            $groupsQuery->where('formateur_id', $user->id);
         }
 
         return Inertia::render('Scolarite/ExamsIndex', [
             'exams'   => $examQuery->get()->map(function ($exam) {
                 $exam->expected_results_count = User::role('Apprenant')
                     ->whereHas('studentGroups', function ($query) use ($exam) {
-                        $query->where('module_id', $exam->module_id);
+                        $query->whereIn('groups.id', $exam->groups->pluck('id'));
                     })->count();
                 return $exam;
             }),
             'modules' => $moduleQuery->get(),
+            'groups'  => $groupsQuery->get(),
         ]);
     }
 
@@ -54,6 +57,8 @@ class AdminExamController extends Controller
             'total_points' => 'required|numeric|min:0',
             'scheduled_at' => 'nullable|date',
             'document' => 'nullable|file|mimes:pdf,doc,docx|max:10240',
+            'group_ids' => 'nullable|array',
+            'group_ids.*' => 'exists:groups,id',
         ]);
 
         if ($request->hasFile('document')) {
@@ -68,11 +73,15 @@ class AdminExamController extends Controller
         $exam = Exam::create($validated);
         $exam->load('module');
 
+        if ($request->has('group_ids')) {
+            $exam->groups()->sync($request->input('group_ids'));
+        }
+
         if ($exam->is_approved) {
-            // Notify students enrolled in this module
+            // Notify students enrolled in the assigned groups
             $students = User::role('Apprenant')
                 ->whereHas('studentGroups', function ($query) use ($exam) {
-                    $query->where('module_id', $exam->module_id);
+                    $query->whereIn('groups.id', $exam->groups->pluck('id'));
                 })->get();
 
             foreach ($students as $student) {
@@ -102,6 +111,8 @@ class AdminExamController extends Controller
             'total_points' => 'required|numeric|min:0',
             'scheduled_at' => 'nullable|date',
             'document' => 'nullable|file|mimes:pdf,doc,docx|max:10240',
+            'group_ids' => 'nullable|array',
+            'group_ids.*' => 'exists:groups,id',
         ]);
 
         if ($request->hasFile('document')) {
@@ -118,6 +129,10 @@ class AdminExamController extends Controller
         }
 
         $exam->update($validated);
+
+        if ($request->has('group_ids')) {
+            $exam->groups()->sync($request->input('group_ids'));
+        }
 
         return redirect()->back()->with('success', 'Examen mis à jour.');
     }
@@ -263,9 +278,6 @@ class AdminExamController extends Controller
         return redirect()->back()->with('success', 'Question ajoutée.');
     }
 
-    /**
-     * Approve a proposed exam (Directeur only).
-     */
     public function approve(Request $request, Exam $exam): RedirectResponse
     {
         if (!$request->user()->hasRole('Directeur')) {
@@ -274,10 +286,14 @@ class AdminExamController extends Controller
 
         $exam->update(['is_approved' => true]);
 
-        // Notify students enrolled in this module
+        if ($request->has('group_ids')) {
+            $exam->groups()->sync($request->input('group_ids'));
+        }
+
+        // Notify students enrolled in the assigned groups
         $students = User::role('Apprenant')
             ->whereHas('studentGroups', function ($query) use ($exam) {
-                $query->where('module_id', $exam->module_id);
+                $query->whereIn('groups.id', $exam->groups->pluck('id'));
             })->get();
 
         foreach ($students as $student) {

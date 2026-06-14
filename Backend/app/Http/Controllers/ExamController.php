@@ -22,10 +22,12 @@ class ExamController extends Controller
     {
         $user = $request->user();
 
-        // Get the student's groups and their module IDs
-        $moduleIds = $user->studentGroups()->pluck('module_id');
+        // Get the student's group IDs
+        $groupIds = $user->studentGroups()->pluck('groups.id');
 
-        $exams = Exam::whereIn('module_id', $moduleIds)
+        $exams = Exam::whereHas('groups', function ($query) use ($groupIds) {
+                $query->whereIn('groups.id', $groupIds);
+            })
             ->where('is_approved', true)
             ->with(['module', 'questions.options'])
             ->get()

@@ -106,6 +106,11 @@ class Exam extends Model
         return $this->hasMany(ExamResult::class);
     }
 
+    public function groups(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(Group::class, 'exam_group');
+    }
+
     /**
      * Check if the exam session has officially ended.
      */

@@ -25,12 +25,14 @@ import axios from 'axios';
 
 const props = defineProps({
     exams: Array,
-    modules: Array
+    modules: Array,
+    groups: Array
 });
 
 const page = usePage();
 const roles = computed(() => page.props.auth.user.roles);
 const isDirecteur = computed(() => roles.value.includes('Directeur'));
+const isSecretaire = computed(() => roles.value.includes('Secrétaire'));
 
 const isModalOpen = ref(false);
 const isGradeModalOpen = ref(false);
@@ -44,6 +46,11 @@ const selectedExamForQuestion = computed(() => {
     return props.exams.find(e => e.id === selectedExamForQuestionId.value);
 });
 
+const filteredGroups = computed(() => {
+    if (!form.module_id) return props.groups || [];
+    return (props.groups || []).filter(g => g.module_id === parseInt(form.module_id));
+});
+
 const form = useForm({
     module_id: '',
     titre: '',
@@ -53,7 +60,8 @@ const form = useForm({
     total_points: 20,
     scheduled_at: '',
     scheduled_end: '',
-    document: null
+    document: null,
+    group_ids: []
 });
 
 const startDate = ref('');
@@ -162,6 +170,7 @@ const openModal = (exam = null) => {
         form.description = exam.description;
         form.duree_minutes = exam.duree_minutes;
         form.total_points = exam.total_points;
+        form.group_ids = exam.groups ? exam.groups.map(g => g.id) : [];
         if (exam.scheduled_at) {
             const dateObj = new Date(exam.scheduled_at);
             startDate.value = formatLocalDate(dateObj);
@@ -182,6 +191,7 @@ const openModal = (exam = null) => {
         }
     } else {
         form.reset();
+        form.group_ids = [];
         setInitialTimes();
     }
     isModalOpen.value = true;
@@ -500,7 +510,21 @@ function approveExam(examId) {
                                                     MANQUE {{ exam.expected_results_count - exam.exam_results?.length }} NOTES
                                                 </div>
                                             </div>
-                                            <p class="text-[10px] text-gray-400 font-black uppercase tracking-wider italic">{{ exam.module?.titre }}</p>
+                                            <div class="flex items-center gap-1.5 mt-1 flex-wrap">
+                                                <span class="text-[9px] text-gray-400 font-black uppercase tracking-wider italic">
+                                                    {{ exam.module?.titre }}
+                                                </span>
+                                                <span v-if="exam.groups && exam.groups.length > 0" class="text-gray-300 text-[9px]">•</span>
+                                                <div class="flex gap-1 flex-wrap">
+                                                    <span 
+                                                        v-for="g in exam.groups" 
+                                                        :key="g.id"
+                                                        class="px-1.5 py-0.5 bg-blue-50 text-blue-600 rounded text-[8px] font-black uppercase tracking-wider border border-blue-100"
+                                                    >
+                                                        {{ g.nom_groupe }}
+                                                    </span>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </td>
@@ -629,6 +653,36 @@ function approveExam(examId) {
                                             <AcademicCapIcon class="h-5 w-5" />
                                         </span>
                                         <input v-model="form.titre" type="text" required placeholder="Ex: Examen Final Module 1" class="w-full pl-12 pr-4 py-4 bg-white border-2 border-transparent focus:border-blue-600 rounded-2xl font-bold text-gray-700 focus:ring-0 transition-all outline-none">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Groupes affectés -->
+                            <div v-if="isDirecteur || isSecretaire" class="space-y-3 pt-2">
+                                <label class="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 ml-1">
+                                    Groupes affectés
+                                </label>
+                                <div class="bg-gray-100/50 p-4 rounded-[1.5rem] border border-gray-200/50 max-h-48 overflow-y-auto custom-scrollbar">
+                                    <div v-if="filteredGroups.length === 0" class="text-center py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">
+                                        Aucun groupe disponible pour ce module
+                                    </div>
+                                    <div v-else class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                        <label 
+                                            v-for="g in filteredGroups" 
+                                            :key="g.id"
+                                            class="flex items-center gap-3 p-3 bg-white border border-gray-100 rounded-2xl cursor-pointer hover:border-blue-300 transition-all select-none shadow-sm"
+                                        >
+                                            <input 
+                                                type="checkbox" 
+                                                :value="g.id" 
+                                                v-model="form.group_ids"
+                                                class="h-5 w-5 rounded-lg text-blue-600 focus:ring-blue-500 border-gray-300 cursor-pointer shadow-sm transition-all"
+                                            >
+                                            <div class="flex flex-col">
+                                                <span class="text-xs font-black text-gray-700 tracking-tight">{{ g.nom_groupe }}</span>
+                                                <span class="text-[9px] text-gray-400 font-bold uppercase tracking-wider">Année: {{ g.annee_academique }}</span>
+                                            </div>
+                                        </label>
                                     </div>
                                 </div>
                             </div>

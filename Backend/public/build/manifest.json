@@ -490,7 +490,7 @@
     ]
   },
   "src/Pages/Dashboard/Director.vue": {
-    "file": "assets/Director-R8IjQPmq.js",
+    "file": "assets/Director-CXcZEXoh.js",
     "name": "Director",
     "src": "src/Pages/Dashboard/Director.vue",
     "isDynamicEntry": true,
@@ -856,7 +856,7 @@
     ]
   },
   "src/Pages/Scolarite/ExamsIndex.vue": {
-    "file": "assets/ExamsIndex-CUCvjmWv.js",
+    "file": "assets/ExamsIndex-DeUq62QL.js",
     "name": "ExamsIndex",
     "src": "src/Pages/Scolarite/ExamsIndex.vue",
     "isDynamicEntry": true,
@@ -872,7 +872,7 @@
       "_ConfirmModal-Dv-v3Nlk.js"
     ],
     "css": [
-      "assets/ExamsIndex-D1GIXujJ.css"
+      "assets/ExamsIndex-CiBZRYAY.css"
     ]
   },
   "src/Pages/Scolarite/ExercisesIndex.vue": {
@@ -1293,7 +1293,7 @@
     "isEntry": true
   },
   "src/app.js": {
-    "file": "assets/app-D8keM_ON.js",
+    "file": "assets/app-BalGXsZA.js",
     "name": "app",
     "src": "src/app.js",
     "isEntry": true,
