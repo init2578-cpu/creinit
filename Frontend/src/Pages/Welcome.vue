@@ -257,7 +257,7 @@ onMounted(() => {
             </div>
 
             <div class="max-w-7xl mx-auto px-4 relative z-10">
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-24 items-center mb-32">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-24 items-center">
                     <div data-reveal id="ai-vision" class="relative">
                         <div class="absolute -left-10 -top-10 h-20 w-20 border-l-2 border-t-2 border-cyan-500/20"></div>
                         <h2 class="text-4xl sm:text-6xl lg:text-7xl font-black text-white tracking-tighter leading-tight mb-8 font-display">
