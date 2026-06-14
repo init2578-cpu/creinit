@@ -20,6 +20,18 @@ class AuthenticatedSessionController extends Controller
      */
     public function create()
     {
+        if (Auth::check()) {
+            $user = Auth::user();
+            $route = 'dashboard.director'; // Default
+            if ($user->hasRole('Directeur') || $user->hasRole('Secrétaire')) {
+                $route = 'dashboard.director';
+            } elseif ($user->isTrainer()) {
+                $route = 'trainer.groups';
+            } elseif ($user->hasRole('Apprenant') || $user->hasRole('Stagiaire')) {
+                $route = 'student.dashboard';
+            }
+            return redirect()->route($route);
+        }
         return Inertia::render('Auth/Login');
     }
 
@@ -58,7 +70,7 @@ class AuthenticatedSessionController extends Controller
             $route = 'student.dashboard';
         }
 
-        return redirect()->intended(route($route));
+        return redirect()->route($route);
     }
 
     /**
@@ -116,6 +128,6 @@ class AuthenticatedSessionController extends Controller
             $route = 'student.dashboard';
         }
 
-        return redirect()->intended(route($route))->with('success', 'Votre mot de passe a été mis à jour avec succès.');
+        return redirect()->route($route)->with('success', 'Votre mot de passe a été mis à jour avec succès.');
     }
 }

@@ -1,9 +1,10 @@
 <script setup>
-import { ref } from 'vue'
-import { Link } from '@inertiajs/vue3'
+import { ref, computed } from 'vue'
+import { Link, usePage } from '@inertiajs/vue3'
 import AIAssistant from '@/Components/AIAssistant.vue'
 import { Bars3Icon, XMarkIcon } from '@heroicons/vue/24/outline'
 
+const page = usePage()
 const mobileMenuOpen = ref(false)
 const toggleMenu = () => mobileMenuOpen.value = !mobileMenuOpen.value
 const closeMenu = () => mobileMenuOpen.value = false
@@ -17,6 +18,19 @@ const navLinks = [
     { label: 'Contact', route: 'contact.index' },
     { label: 'Candidater', route: 'applications.create' },
 ]
+
+const consoleRoute = computed(() => {
+    const user = page.props.auth?.user
+    if (!user) return '#'
+    const roles = user.roles || []
+    if (roles.includes('Directeur') || roles.includes('Secrétaire')) {
+        return route('dashboard.director')
+    }
+    if (roles.includes('Formateur') || user.is_trainer) {
+        return route('trainer.groups')
+    }
+    return route('student.dashboard')
+})
 </script>
 
 <template>
@@ -54,7 +68,7 @@ const navLinks = [
                     </Link>
                     <Link 
                         v-else
-                        :href="route('dashboard.director')" 
+                        :href="consoleRoute" 
                         class="px-4 py-2 bg-slate-800 text-white rounded-xl text-xs font-black border border-slate-700 hover:bg-slate-700 transition"
                     >
                         Console
