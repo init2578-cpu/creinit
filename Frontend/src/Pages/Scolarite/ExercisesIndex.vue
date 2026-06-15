@@ -10,6 +10,8 @@ import {
     EyeIcon,
     AcademicCapIcon,
     ChevronRightIcon,
+    ChevronUpIcon,
+    ChevronDownIcon,
     UserCircleIcon,
     XMarkIcon,
     PencilIcon,
@@ -50,6 +52,18 @@ const selectedChapterForQuestion = computed(() => {
     return null;
 });
 
+const isFileModalOpen = ref(false);
+const selectedChapterForFileId = ref(null);
+const selectedChapterForFile = computed(() => {
+    if (!selectedChapterForFileId.value) return null;
+    for (const module of props.modules) {
+        if (!module.chapters) continue;
+        const chapter = module.chapters.find(c => c.id === selectedChapterForFileId.value);
+        if (chapter) return chapter;
+    }
+    return null;
+});
+
 // Correction mode state
 const isGradeModalOpen = ref(false);
 const selectedSubmission = ref(null);
@@ -78,6 +92,10 @@ const questionForm = useForm({
         { texte: '', is_correct: false },
         { texte: '', is_correct: false }
     ]
+});
+
+const fileForm = useForm({
+    attachment: null
 });
 
 const openGradeModal = (submission, exercise) => {
@@ -200,7 +218,7 @@ const submitQuestionForm = () => {
     if (editingQuestion.value) {
         questionForm
             .transform(transformData)
-            .put(route('questions.update', editingQuestion.value.id), {
+            .patch(route('questions.update', editingQuestion.value.id), {
                 onSuccess: () => {
                     questionForm.reset();
                     questionForm.clearErrors();
@@ -222,6 +240,45 @@ const submitQuestionForm = () => {
 const deleteQuestion = (id) => {
     if (confirm('Supprimer cette question ?')) {
         useForm({}).delete(route('questions.destroy', id));
+    }
+};
+
+const openFileModal = (chapter) => {
+    selectedChapterForFileId.value = chapter.id;
+    fileForm.reset();
+    fileForm.clearErrors();
+    isFileModalOpen.value = true;
+};
+
+const deleteExercise = (chapter) => {
+    if (confirm('Attention : Cette action est irréversible. Êtes-vous sûr de vouloir supprimer cet exercice et toutes ses données (fichiers, questions, rendus des apprenants) ?')) {
+        useForm({}).delete(route('exercises.destroy', chapter.id), {
+            preserveScroll: true,
+            onSuccess: () => {
+                if (selectedChapterForQuestionId.value === chapter.id) {
+                    isQuestionModalOpen.value = false;
+                }
+                if (selectedChapterForFileId.value === chapter.id) {
+                    isFileModalOpen.value = false;
+                }
+            }
+        });
+    }
+};
+
+const submitFileForm = () => {
+    if (!fileForm.attachment) return;
+    fileForm.post(route('exercises.attachments.store', selectedChapterForFile.value.id), {
+        onSuccess: () => {
+            fileForm.reset();
+            // Optional: close modal or leave it open
+        }
+    });
+};
+
+const deleteAttachment = (chapterId, index) => {
+    if (confirm('Supprimer ce fichier ?')) {
+        useForm({}).delete(route('exercises.attachments.destroy', { chapter: chapterId, index }));
     }
 };
 
@@ -270,6 +327,12 @@ const isSubmissionCorrect = (question, submission) => {
     const answer = answers[question.id];
     const correctOption = question.options.find(o => o.is_correct);
     return answer && correctOption && Number(answer) === correctOption.id;
+};
+
+const collapsedModules = ref({});
+
+const toggleModule = (moduleId) => {
+    collapsedModules.value[moduleId] = !collapsedModules.value[moduleId];
 };
 
 </script>
@@ -435,25 +498,29 @@ const isSubmissionCorrect = (question, submission) => {
                     </button>
                 </div>
                 <div v-for="module in modules" :key="module.id" class="bg-white rounded-[3rem] shadow-sm border border-gray-100 overflow-hidden">
-                    <div class="p-8 border-b border-gray-50 bg-gray-50/30 flex items-center justify-between">
+                    <div @click="toggleModule(module.id)" class="p-8 border-b border-gray-50 bg-gray-50/30 flex items-center justify-between cursor-pointer hover:bg-gray-50/50 transition">
                         <div>
                             <span class="text-[10px] font-black text-blue-600 uppercase tracking-widest px-3 py-1 bg-blue-50 rounded-full mb-2 inline-block">{{ module.code_module }}</span>
                             <h3 class="text-xl font-black text-gray-900 tracking-tight">{{ module.titre }}</h3>
                         </div>
-                        <div class="h-12 w-12 bg-white rounded-2xl flex items-center justify-center shadow-sm border border-gray-100 text-gray-400">
-                            <Squares2X2Icon class="h-6 w-6" />
-                        </div>
+                        <button class="h-12 w-12 bg-white rounded-2xl flex items-center justify-center shadow-sm border border-gray-100 text-gray-400 hover:text-blue-600 hover:border-blue-100 transition">
+                            <ChevronDownIcon v-if="collapsedModules[module.id]" class="h-6 w-6" />
+                            <ChevronUpIcon v-else class="h-6 w-6" />
+                        </button>
                     </div>
 
-                    <div class="p-4 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                    <div v-show="!collapsedModules[module.id]" class="p-4 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                         <div v-for="chapter in module.chapters" :key="chapter.id" class="p-6 rounded-[2.5rem] border border-gray-100 hover:border-blue-200 transition bg-gray-50/30">
                             <div class="flex items-start justify-between mb-4">
                                 <div class="h-10 w-10 bg-white rounded-xl flex items-center justify-center shadow-sm border border-gray-100 text-blue-600">
                                     <span class="font-black text-xs">{{ chapter.ordre }}</span>
                                 </div>
                                 <div v-if="!isSecretaire" class="flex gap-2">
-                                    <button @click="openEditModal(chapter)" class="p-2 bg-white text-gray-400 hover:text-blue-600 rounded-xl shadow-sm border border-gray-100 transition">
+                                    <button @click="openEditModal(chapter)" class="p-2 bg-white text-gray-400 hover:text-blue-600 rounded-xl shadow-sm border border-gray-100 transition" title="Modifier l'exercice">
                                         <PencilIcon class="h-5 w-5" />
+                                    </button>
+                                    <button v-if="isDirecteur" @click="deleteExercise(chapter)" class="p-2 bg-white text-red-400 hover:text-red-600 hover:bg-red-50 rounded-xl shadow-sm border border-gray-100 hover:border-red-100 transition" title="Supprimer l'exercice">
+                                        <TrashIcon class="h-5 w-5" />
                                     </button>
                                 </div>
                             </div>
@@ -471,6 +538,13 @@ const isSubmissionCorrect = (question, submission) => {
                                     <button @click="openQuestionModal(chapter)" class="text-blue-600 hover:text-blue-700 text-[10px] font-black uppercase tracking-widest flex items-center gap-1">
                                         <PlusIcon v-if="!isSecretaire" class="h-3.5 w-3.5" />
                                         {{ isSecretaire ? 'Voir' : 'Gérer' }}
+                                    </button>
+                                </div>
+                                <div v-else-if="chapter.exercise_type === 'file'" class="pt-2 border-t border-gray-100 flex items-center justify-between">
+                                    <span class="text-[10px] font-black text-gray-500 uppercase tracking-widest">{{ chapter.attachments?.length || 0 }} Fichier(s)</span>
+                                    <button @click="openFileModal(chapter)" class="text-blue-600 hover:text-blue-700 text-[10px] font-black uppercase tracking-widest flex items-center gap-1">
+                                        <PlusIcon v-if="!isSecretaire" class="h-3.5 w-3.5" />
+                                        {{ isSecretaire ? 'Voir' : 'Gérer le fichier' }}
                                     </button>
                                 </div>
                             </div>
@@ -656,6 +730,58 @@ const isSubmissionCorrect = (question, submission) => {
                                 class="w-full py-4 bg-blue-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-blue-700 transition shadow-lg shadow-blue-100 mt-6 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 Ajouter la question
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- File Management Modal -->
+        <div v-if="isFileModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/80 backdrop-blur-sm">
+            <div class="bg-white w-full max-w-lg rounded-[2.5rem] overflow-hidden shadow-2xl">
+                <div class="p-8 border-b border-gray-100 flex items-center justify-between bg-gray-50/30">
+                    <div>
+                        <h3 class="text-2xl font-black text-gray-900 tracking-tight italic">Gérer les Fichiers</h3>
+                        <p class="text-xs text-gray-400 font-bold mt-1 uppercase tracking-widest truncate max-w-[300px]">{{ selectedChapterForFile?.titre }}</p>
+                    </div>
+                    <button @click="isFileModalOpen = false" class="p-2 hover:bg-gray-100 rounded-xl transition">
+                        <XMarkIcon class="h-6 w-6 text-gray-400" />
+                    </button>
+                </div>
+                <div class="p-8 space-y-6">
+                    <div v-if="selectedChapterForFile?.attachments && selectedChapterForFile.attachments.length > 0" class="space-y-3">
+                        <h4 class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Fichiers Existants</h4>
+                        <div v-for="(file, index) in selectedChapterForFile.attachments" :key="index" class="flex items-center justify-between p-4 bg-gray-50 rounded-2xl border border-gray-100 group">
+                            <div class="flex items-center gap-3 overflow-hidden">
+                                <div class="h-10 w-10 shrink-0 bg-white rounded-xl flex items-center justify-center shadow-sm border border-blue-50 text-blue-600">
+                                    <DocumentIcon class="h-5 w-5" />
+                                </div>
+                                <span class="text-xs font-bold text-gray-700 truncate">{{ file.name }}</span>
+                            </div>
+                            <div class="flex items-center gap-2 shrink-0">
+                                <a :href="'/chapters/' + selectedChapterForFile.id + '/attachments/' + index" target="_blank" class="p-2 bg-white text-blue-600 rounded-xl shadow-sm border border-blue-50 hover:bg-blue-600 hover:text-white transition" title="Télécharger">
+                                    <EyeIcon class="h-4 w-4" />
+                                </a>
+                                <button v-if="!isSecretaire" @click="deleteAttachment(selectedChapterForFile.id, index)" class="p-2 bg-white text-red-500 rounded-xl shadow-sm border border-red-50 hover:bg-red-500 hover:text-white transition" title="Supprimer">
+                                    <TrashIcon class="h-4 w-4" />
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div v-else class="text-center py-6 italic text-gray-400 font-bold text-sm">
+                        Aucun fichier attaché.
+                    </div>
+
+                    <div v-if="!isSecretaire" class="pt-6 border-t border-gray-100">
+                        <h4 class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">Ajouter un fichier</h4>
+                        <form @submit.prevent="submitFileForm" class="space-y-4">
+                            <div>
+                                <input type="file" @input="fileForm.attachment = $event.target.files[0]" class="w-full text-sm text-gray-500 file:mr-4 file:py-3 file:px-6 file:rounded-xl file:border-0 file:text-xs file:font-black file:uppercase file:tracking-widest file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 transition" required>
+                                <div v-if="fileForm.errors.attachment" class="mt-2 text-xs font-bold text-red-500">{{ fileForm.errors.attachment }}</div>
+                            </div>
+                            <button type="submit" :disabled="fileForm.processing" class="w-full py-4 bg-gray-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-blue-600 transition shadow-xl shadow-gray-200 disabled:opacity-50">
+                                Uploader
                             </button>
                         </form>
                     </div>

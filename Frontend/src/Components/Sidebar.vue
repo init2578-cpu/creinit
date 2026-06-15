@@ -61,6 +61,7 @@ const navigation = computed(() => {
             { name: 'Inventaire Matériel', href: route('assets.index'), icon: ArchiveBoxIcon },
             { name: 'Prêts & Retours', href: route('loans.index'), icon: BriefcaseIcon },
             { name: 'Rayonnement', href: route('ecosystem.index'), icon: GlobeAltIcon },
+            { name: 'Congés', href: route('leaves.index'), icon: CalendarIcon },
             { name: 'Utilisateurs', href: route('users.index'), icon: UsersIcon },
             { name: 'Statistiques', href: route('stats.index'), icon: ChartBarIcon },
             { name: 'Rapports', href: route('reports.index'), icon: DocumentChartBarIcon },
@@ -76,7 +77,8 @@ const navigation = computed(() => {
             { name: 'Exercices (Correction)', href: route('exercises.index'), icon: ClipboardDocumentCheckIcon },
             { name: 'Aperçu Plateforme', href: route('student.courses'), icon: AcademicCapIcon },
             { name: 'Inventaire Matériel', href: route('assets.index'), icon: ArchiveBoxIcon },
-            { name: 'Progression', href: route('chapter-progress.groups'), icon: ChartBarIcon },
+            { name: 'Congés', href: route('leaves.index'), icon: CalendarIcon },
+            { name: 'Progression', href: route('chapter-progress.groups'), icon: ChartBarIcon, badge: page.props.auth.user?.unread_rejections_count },
             { name: 'Emploi du Temps', href: route('schedules.index'), icon: CalendarIcon },
         )
     } else if (roles.value.includes('Secrétaire')) {
@@ -95,6 +97,8 @@ const navigation = computed(() => {
             { name: 'Exercices (Correction)', href: route('exercises.index'), icon: ClipboardDocumentCheckIcon },
             { name: 'Inventaire Matériel', href: route('assets.index'), icon: ArchiveBoxIcon },
             { name: 'Prêts & Retours', href: route('loans.index'), icon: BriefcaseIcon },
+            { name: 'Congés', href: route('leaves.index'), icon: CalendarIcon },
+            { name: 'Rayonnement', href: route('ecosystem.index'), icon: GlobeAltIcon },
             { name: 'Rapports', href: route('reports.index'), icon: DocumentChartBarIcon },
         )
     } else if (roles.value.includes('Apprenant') || roles.value.includes('Stagiaire')) {
@@ -104,7 +108,7 @@ const navigation = computed(() => {
             { name: 'Mes Cours', href: route('student.courses'), icon: BookOpenIcon },
             { name: 'Exercices', href: route('student.exercises.index'), icon: BeakerIcon },
             { name: 'Examens', href: route('student.exams.index'), icon: PencilSquareIcon, badge: page.props.auth.user?.unread_exams_count },
-            { name: 'Validation Progression', href: route('chapter-progress.groups'), icon: ChartBarIcon }
+            { name: 'Validation Progression', href: route('chapter-progress.groups'), icon: ChartBarIcon, badge: page.props.auth.user?.unread_progressions_count }
         )
     }
 

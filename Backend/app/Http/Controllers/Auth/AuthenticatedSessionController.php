@@ -57,6 +57,26 @@ class AuthenticatedSessionController extends Controller
 
         $user = Auth::user();
 
+        if (!$user->is_active) {
+            Auth::guard('web')->logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            throw ValidationException::withMessages([
+                'login' => "Votre compte a été désactivé. Veuillez contacter l'administration.",
+            ]);
+        }
+
+        if ($user->roles->isEmpty()) {
+            Auth::guard('web')->logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            throw ValidationException::withMessages([
+                'login' => "Votre candidature est en cours de traitement. Vous pourrez vous connecter dès qu'elle sera validée.",
+            ]);
+        }
+
         // Record last login timestamp
         $user->forceFill(['last_login_at' => now()])->save();
 

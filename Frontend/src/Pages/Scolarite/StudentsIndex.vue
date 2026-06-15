@@ -37,6 +37,8 @@ const editingStudent = ref(null)
 const activeTab = ref('id') // 'id', 'contact', 'profile'
 
 // Form state
+const maxBirthDate = `${new Date().getFullYear() - 6}-12-31`
+
 const studentForm = useForm({
     name: '',
     email: '',
@@ -389,7 +391,7 @@ function deleteLearner(id) {
                                         <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-gray-400 group-focus-within:text-blue-600 transition-colors">
                                             <LockClosedIcon class="h-5 w-5" />
                                         </span>
-                                        <input v-model="studentForm.password" type="password" class="w-full pl-12 pr-4 py-4 bg-gray-50 focus:bg-white border-2 border-transparent focus:border-blue-600 rounded-2xl font-bold text-gray-700 focus:ring-0 transition-all outline-none" :required="!editingStudent" :placeholder="editingStudent ? 'Laisser vide pour ne pas changer' : '••••••••'">
+                                        <input v-model="studentForm.password" type="password" class="w-full pl-12 pr-4 py-4 bg-gray-50 focus:bg-white border-2 border-transparent focus:border-blue-600 rounded-2xl font-bold text-gray-700 focus:ring-0 transition-all outline-none" :placeholder="editingStudent ? 'Laisser vide pour ne pas changer' : 'Par défaut : password'">
                                     </div>
                                 </div>
                                 <div class="space-y-2">
@@ -453,7 +455,7 @@ function deleteLearner(id) {
                                         <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-gray-400 group-focus-within:text-blue-600 transition-colors">
                                             <CalendarIcon class="h-5 w-5" />
                                         </span>
-                                        <DateInput v-model="studentForm.date_naissance" class="w-full pl-12 pr-4 py-4 bg-gray-50 focus:bg-white border-2 border-transparent focus:border-blue-600 rounded-2xl font-bold text-gray-700 focus:ring-0 transition-all outline-none" />
+                                        <DateInput :max-date="maxBirthDate" v-model="studentForm.date_naissance" class="w-full pl-12 pr-4 py-4 bg-gray-50 focus:bg-white border-2 border-transparent focus:border-blue-600 rounded-2xl font-bold text-gray-700 focus:ring-0 transition-all outline-none" />
                                     </div>
                                 </div>
                                 <div class="space-y-2">

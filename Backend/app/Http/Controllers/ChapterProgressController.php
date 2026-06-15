@@ -9,6 +9,7 @@ use App\Http\Requests\ChapterProgress\SubmitChapterProgressRequest;
 use App\Models\ChapterGroupProgress;
 use App\Models\Group;
 use App\Notifications\ChapterSubmittedNotification;
+use App\Notifications\ChapterRejectedNotification;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -33,6 +34,17 @@ class ChapterProgressController extends Controller
             $groups = Group::with('module')
                 ->whereIn('formateur_id', $trainerIds)
                 ->get();
+        }
+
+        // Mark related notifications as read
+        if ($user) {
+            $user->unreadNotifications()
+                 ->whereIn('type', [
+                     \App\Notifications\ChapterSubmittedNotification::class,
+                     \App\Notifications\ChapterRejectedNotification::class,
+                 ])
+                 ->get()
+                 ->markAsRead();
         }
 
         return Inertia::render('ChapterProgress/GroupsIndex', [
@@ -149,6 +161,11 @@ class ChapterProgressController extends Controller
             'validated_by' => $request->user()->id,
             'validated_at' => now(),
         ]);
+
+        $chapterGroupProgress->load(['submitter', 'chapter', 'group']);
+        if ($chapterGroupProgress->submitter) {
+            $chapterGroupProgress->submitter->notify(new ChapterRejectedNotification($chapterGroupProgress));
+        }
 
         return redirect()
             ->back()

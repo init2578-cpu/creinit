@@ -1,7 +1,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
-import { Head, useForm, router } from '@inertiajs/vue3'
-import { ref } from 'vue'
+import { Head, useForm, router, usePage } from '@inertiajs/vue3'
+import { ref, computed } from 'vue'
 import { 
     PlusIcon, 
     PencilSquareIcon, 
@@ -25,6 +25,9 @@ const form = useForm({
     capacite: '',
     type_salle: ''
 })
+
+const page = usePage()
+const isDirecteur = computed(() => page.props.auth.user?.roles?.includes('Directeur'))
 
 const openCreateModal = () => {
     isEditing.value = false
@@ -77,6 +80,7 @@ const deleteRoom = (id) => {
                     <p class="text-gray-500 font-medium">Configurez les espaces physiques de formation.</p>
                 </div>
                 <button 
+                    v-if="isDirecteur"
                     @click="openCreateModal"
                     class="inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3.5 rounded-2xl font-black transition-all shadow-xl shadow-indigo-100 active:scale-95"
                 >
@@ -93,7 +97,7 @@ const deleteRoom = (id) => {
                             <th class="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Nom de la Salle</th>
                             <th class="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Capacité</th>
                             <th class="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Type</th>
-                            <th class="px-8 py-5 text-[10px] font-black text-gray-400 text-right uppercase tracking-widest">Actions</th>
+                            <th v-if="isDirecteur" class="px-8 py-5 text-[10px] font-black text-gray-400 text-right uppercase tracking-widest">Actions</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-50">
@@ -122,7 +126,7 @@ const deleteRoom = (id) => {
                                     {{ room.type_salle }}
                                 </span>
                             </td>
-                            <td class="px-8 py-6">
+                            <td v-if="isDirecteur" class="px-8 py-6">
                                 <div class="flex items-center justify-end gap-2">
                                     <button 
                                         @click="openEditModal(room)"

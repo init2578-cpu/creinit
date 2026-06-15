@@ -10,7 +10,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class NewExerciseAvailableNotification extends Notification
+class NewExerciseAvailableNotification extends Notification implements ShouldQueue
 {
     use Queueable;
 
@@ -23,7 +23,11 @@ class NewExerciseAvailableNotification extends Notification
      */
     public function via(object $notifiable): array
     {
-        return ['mail', 'database'];
+        $channels = ['database'];
+        if (!empty($notifiable->email)) {
+            $channels[] = 'mail';
+        }
+        return $channels;
     }
 
     public function toMail(object $notifiable): MailMessage

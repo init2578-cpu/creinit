@@ -65,6 +65,7 @@ class ExamResultGradedNotification extends Notification implements ShouldQueue
     public function toArray(object $notifiable): array
     {
         return [
+            'title' => 'Résultat d\'examen',
             'exam_id' => $this->examResult->exam_id,
             'exam_title' => $this->examResult->exam->titre,
             'module_title' => $this->examResult->exam->module->titre,

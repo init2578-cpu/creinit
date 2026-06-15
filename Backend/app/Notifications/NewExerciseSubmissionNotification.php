@@ -60,6 +60,7 @@ class NewExerciseSubmissionNotification extends Notification implements ShouldQu
     public function toArray(object $notifiable): array
     {
         return [
+            'title' => 'Nouvel exercice soumis',
             'submission_id' => $this->submission->id,
             'student_name' => $this->submission->user->name,
             'module_title' => $this->submission->chapter->module->titre,

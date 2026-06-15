@@ -1,8 +1,8 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
 import DateInput from '@/Components/DateInput.vue'
-import { Head, useForm, router } from '@inertiajs/vue3'
-import { ref } from 'vue'
+import { Head, useForm, router, usePage } from '@inertiajs/vue3'
+import { ref, computed } from 'vue'
 import { formatTime, formatDate } from '@/utils/format'
 import { 
     UsersIcon, 
@@ -21,6 +21,9 @@ import {
 const props = defineProps({
     partnerships: Array
 })
+
+const page = usePage()
+const isDirecteur = computed(() => page.props.auth.user?.roles?.includes('Directeur'))
 
 const showAddModal = ref(false)
 const editingPartner = ref(null)
@@ -115,6 +118,7 @@ function openDetailModal(partner) {
                     <p class="text-gray-500">Rayonnement institutionnel et alliances stratégiques.</p>
                 </div>
                 <button 
+                    v-if="isDirecteur"
                     @click="openAddModal"
                     class="px-5 py-3 bg-indigo-600 text-white rounded-2xl font-black flex items-center gap-2 hover:bg-black transition shadow-lg shadow-indigo-100"
                 >
@@ -167,16 +171,18 @@ function openDetailModal(partner) {
                             <button @click="openDetailModal(partner)" class="p-2 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-indigo-600 transition">
                                 <EyeIcon class="h-4 w-4" />
                             </button>
-                            <button @click="openEditModal(partner)" class="p-2 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-indigo-600 transition">
-                                <PencilSquareIcon class="h-4 w-4" />
-                            </button>
-                            <button @click="toggleStatus(partner.id)" class="p-2 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-orange-600 transition">
-                                <PauseCircleIcon v-if="partner.status === 'actif'" class="h-4 w-4" />
-                                <PlayCircleIcon v-else class="h-4 w-4" />
-                            </button>
-                            <button @click="deletePartner(partner.id)" class="p-2 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-red-600 transition">
-                                <TrashIcon class="h-4 w-4" />
-                            </button>
+                            <template v-if="isDirecteur">
+                                <button @click="openEditModal(partner)" class="p-2 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-indigo-600 transition">
+                                    <PencilSquareIcon class="h-4 w-4" />
+                                </button>
+                                <button @click="toggleStatus(partner.id)" class="p-2 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-orange-600 transition">
+                                    <PauseCircleIcon v-if="partner.status === 'actif'" class="h-4 w-4" />
+                                    <PlayCircleIcon v-else class="h-4 w-4" />
+                                </button>
+                                <button @click="deletePartner(partner.id)" class="p-2 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-red-600 transition">
+                                    <TrashIcon class="h-4 w-4" />
+                                </button>
+                            </template>
                             <a v-if="partner.document_path" :href="'/storage/' + partner.document_path" target="_blank" class="p-2 bg-gray-50 text-gray-400 hover:text-indigo-600 rounded-lg transition">
                                 <DocumentTextIcon class="h-5 w-5" />
                             </a>

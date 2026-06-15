@@ -203,13 +203,15 @@ Route::middleware(['auth'])->group(function (): void {
         Route::delete('/groups/{group}/students/{student}', [\App\Http\Controllers\Scolarite\GroupStudentController::class, 'destroy'])
             ->name('groups.students.destroy');
 
-        // Room Management
-        Route::post('/rooms', [\App\Http\Controllers\Scolarite\RoomController::class, 'store'])
-            ->name('rooms.store');
-        Route::put('/rooms/{room}', [\App\Http\Controllers\Scolarite\RoomController::class, 'update'])
-            ->name('rooms.update');
-        Route::delete('/rooms/{room}', [\App\Http\Controllers\Scolarite\RoomController::class, 'destroy'])
-            ->name('rooms.destroy');
+        // Room Management (Directeur only for modification)
+        Route::middleware(['role:Directeur'])->group(function () {
+            Route::post('/rooms', [\App\Http\Controllers\Scolarite\RoomController::class, 'store'])
+                ->name('rooms.store');
+            Route::put('/rooms/{room}', [\App\Http\Controllers\Scolarite\RoomController::class, 'update'])
+                ->name('rooms.update');
+            Route::delete('/rooms/{room}', [\App\Http\Controllers\Scolarite\RoomController::class, 'destroy'])
+                ->name('rooms.destroy');
+        });
 
         // Curriculum Management
         Route::resource('modules', \App\Http\Controllers\ModuleController::class)->except(['index', 'show']);
@@ -223,6 +225,8 @@ Route::middleware(['auth'])->group(function (): void {
             ->name('modules.chapters.destroy');
         Route::delete('/chapters/{chapter}/attachments/{index}', [\App\Http\Controllers\ModuleController::class, 'destroyAttachment'])
             ->name('modules.chapters.attachments.destroy');
+        Route::get('/chapters/{chapter}/attachments/{index}', [\App\Http\Controllers\ModuleController::class, 'downloadAttachment'])
+            ->name('modules.chapters.attachments.download');
 
         // Student & Trainee Management
         Route::resource('students', \App\Http\Controllers\StudentsController::class)->except(['index']);
@@ -280,6 +284,9 @@ Route::middleware(['auth'])->group(function (): void {
             Route::get('exercises', [AdminExerciseController::class, 'index'])->name('exercises.index');
             Route::post('exercises', [AdminExerciseController::class, 'store'])->name('exercises.store');
             Route::put('exercises/{chapter}', [AdminExerciseController::class, 'update'])->name('exercises.update');
+            Route::delete('exercises/{chapter}', [AdminExerciseController::class, 'destroy'])->name('exercises.destroy');
+            Route::post('exercises/{chapter}/attachments', [AdminExerciseController::class, 'updateAttachment'])->name('exercises.attachments.store');
+            Route::delete('exercises/{chapter}/attachments/{index}', [AdminExerciseController::class, 'deleteAttachment'])->name('exercises.attachments.destroy');
             Route::post('exercises/{submission}/grade', [AdminExerciseController::class, 'gradeSubmission'])->name('exercises.grade-submission');
             Route::post('exercises/{chapter}/questions', [AdminExerciseController::class, 'storeQuestion'])->name('exercises.questions.store');
             Route::post('exams/{exam}/questions', [AdminExamController::class, 'storeQuestion'])->name('exams.questions.store');
@@ -311,17 +318,23 @@ Route::middleware(['auth'])->group(function (): void {
     
     // Partnerships
     Route::get('/ecosystem/partnerships', [\App\Http\Controllers\EcosystemController::class, 'partnerships'])->name('ecosystem.partnerships');
-    Route::post('/ecosystem/partnerships', [\App\Http\Controllers\EcosystemController::class, 'storePartnership'])->name('ecosystem.partnerships.store');
-    Route::put('/ecosystem/partnerships/{partnership}', [\App\Http\Controllers\EcosystemController::class, 'updatePartnership'])->name('ecosystem.partnerships.update');
-    Route::delete('/ecosystem/partnerships/{partnership}', [\App\Http\Controllers\EcosystemController::class, 'destroyPartnership'])->name('ecosystem.partnerships.destroy');
-    Route::patch('/ecosystem/partnerships/{partnership}/toggle', [\App\Http\Controllers\EcosystemController::class, 'togglePartnershipStatus'])->name('ecosystem.partnerships.toggle');
+    
+    Route::middleware(['role:Directeur'])->group(function () {
+        Route::post('/ecosystem/partnerships', [\App\Http\Controllers\EcosystemController::class, 'storePartnership'])->name('ecosystem.partnerships.store');
+        Route::put('/ecosystem/partnerships/{partnership}', [\App\Http\Controllers\EcosystemController::class, 'updatePartnership'])->name('ecosystem.partnerships.update');
+        Route::delete('/ecosystem/partnerships/{partnership}', [\App\Http\Controllers\EcosystemController::class, 'destroyPartnership'])->name('ecosystem.partnerships.destroy');
+        Route::patch('/ecosystem/partnerships/{partnership}/toggle', [\App\Http\Controllers\EcosystemController::class, 'togglePartnershipStatus'])->name('ecosystem.partnerships.toggle');
+    });
     
     // Events
     Route::get('/ecosystem/events', [\App\Http\Controllers\EcosystemController::class, 'events'])->name('ecosystem.events');
-    Route::post('/ecosystem/events', [\App\Http\Controllers\EcosystemController::class, 'storeEvent'])->name('ecosystem.events.store');
-    Route::put('/ecosystem/events/{event}', [\App\Http\Controllers\EcosystemController::class, 'updateEvent'])->name('ecosystem.events.update');
-    Route::delete('/ecosystem/events/{event}', [\App\Http\Controllers\EcosystemController::class, 'destroyEvent'])->name('ecosystem.events.destroy');
-    Route::patch('/ecosystem/events/{event}/toggle', [\App\Http\Controllers\EcosystemController::class, 'toggleEventStatus'])->name('ecosystem.events.toggle');
+    
+    Route::middleware(['role:Directeur'])->group(function () {
+        Route::post('/ecosystem/events', [\App\Http\Controllers\EcosystemController::class, 'storeEvent'])->name('ecosystem.events.store');
+        Route::put('/ecosystem/events/{event}', [\App\Http\Controllers\EcosystemController::class, 'updateEvent'])->name('ecosystem.events.update');
+        Route::delete('/ecosystem/events/{event}', [\App\Http\Controllers\EcosystemController::class, 'destroyEvent'])->name('ecosystem.events.destroy');
+        Route::patch('/ecosystem/events/{event}/toggle', [\App\Http\Controllers\EcosystemController::class, 'toggleEventStatus'])->name('ecosystem.events.toggle');
+    });
 
     // Media Mentions
     Route::post('/ecosystem/media', [\App\Http\Controllers\EcosystemController::class, 'storeMediaMention'])->name('ecosystem.media.store');
@@ -367,6 +380,15 @@ Route::middleware(['auth'])->group(function (): void {
     Route::post('/community/{announcement}/replies', [\App\Http\Controllers\AnnouncementReplyController::class, 'store'])->name('community.replies.store');
     Route::delete('/community/replies/{reply}', [\App\Http\Controllers\AnnouncementReplyController::class, 'destroy'])->name('community.replies.destroy');
     Route::post('/community/{announcement}/like', [\App\Http\Controllers\AnnouncementLikeController::class, 'toggle'])->name('community.likes.toggle');
+
+    // Leaves Management
+    Route::get('/leaves', [\App\Http\Controllers\LeaveController::class, 'index'])->name('leaves.index');
+    Route::post('/leaves', [\App\Http\Controllers\LeaveController::class, 'store'])->name('leaves.store');
+    Route::post('/leaves/{leaf}/update', [\App\Http\Controllers\LeaveController::class, 'update'])->name('leaves.update');
+    Route::delete('/leaves/{leaf}', [\App\Http\Controllers\LeaveController::class, 'destroy'])->name('leaves.destroy');
+    Route::middleware(['role:Directeur'])->group(function () {
+        Route::patch('/leaves/{leaf}/status', [\App\Http\Controllers\LeaveController::class, 'updateStatus'])->name('leaves.status.update');
+    });
 
     // AI Agent Assane
     Route::post('/assane/chat', [\App\Http\Controllers\Scolarite\AssaneChatController::class, 'chat'])->name('assane.chat');

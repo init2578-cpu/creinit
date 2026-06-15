@@ -1,8 +1,8 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
 import DateInput from '@/Components/DateInput.vue'
-import { Head, useForm, router } from '@inertiajs/vue3'
-import { ref, onMounted } from 'vue'
+import { Head, useForm, router, usePage } from '@inertiajs/vue3'
+import { ref, onMounted, computed } from 'vue'
 import { formatTime, formatDate, storageUrl } from '@/utils/format'
 import { 
     CalendarDaysIcon, 
@@ -20,6 +20,9 @@ import {
 const props = defineProps({
     events: Array
 })
+
+const page = usePage()
+const isDirecteur = computed(() => page.props.auth.user?.roles?.includes('Directeur'))
 
 const showAddModal = ref(false)
 const editingEvent = ref(null)
@@ -122,6 +125,7 @@ function openDetailModal(event) {
                     <p class="text-gray-500">Suivre les activités externes et événements communautaires.</p>
                 </div>
                 <button 
+                    v-if="isDirecteur"
                     @click="openAddModal"
                     class="px-5 py-3 bg-pink-600 text-white rounded-2xl font-black flex items-center gap-2 hover:bg-black transition shadow-lg shadow-pink-100"
                 >
@@ -164,16 +168,18 @@ function openDetailModal(event) {
                                 <button @click="openDetailModal(event)" class="p-2 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-pink-600 transition">
                                     <EyeIcon class="h-4 w-4" />
                                 </button>
-                                <button @click="openEditModal(event)" class="p-2 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-indigo-600 transition">
-                                    <PencilSquareIcon class="h-4 w-4" />
-                                </button>
-                                <button @click="toggleStatus(event.id)" class="p-2 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-orange-600 transition">
-                                    <PauseCircleIcon v-if="event.status === 'actif'" class="h-4 w-4" />
-                                    <PlayCircleIcon v-else class="h-4 w-4" />
-                                </button>
-                                <button @click="deleteEvent(event.id)" class="p-2 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-red-600 transition">
-                                    <TrashIcon class="h-4 w-4" />
-                                </button>
+                                <template v-if="isDirecteur">
+                                    <button @click="openEditModal(event)" class="p-2 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-indigo-600 transition">
+                                        <PencilSquareIcon class="h-4 w-4" />
+                                    </button>
+                                    <button @click="toggleStatus(event.id)" class="p-2 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-orange-600 transition">
+                                        <PauseCircleIcon v-if="event.status === 'actif'" class="h-4 w-4" />
+                                        <PlayCircleIcon v-else class="h-4 w-4" />
+                                    </button>
+                                    <button @click="deleteEvent(event.id)" class="p-2 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-red-600 transition">
+                                        <TrashIcon class="h-4 w-4" />
+                                    </button>
+                                </template>
                             </div>
                         </div>
                         

@@ -55,6 +55,8 @@ const isDetailsOpen = ref(false)
 const applicationForDetails = ref(null)
 
 // Editing
+const maxBirthDate = `${new Date().getFullYear() - 6}-12-31`
+
 const isEditOpen = ref(false)
 const editForm = useForm({
     id: null,
@@ -535,7 +537,7 @@ const getStatusClass = (status) => {
                                 </div>
                                 <div>
                                     <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Date de Naissance (jj/mm/aaaa) <span class="text-red-500">*</span></label>
-                                    <DateInput v-model="enrollForm.date_naissance" required class="w-full bg-gray-50 border-0 rounded-2xl focus:ring-2 focus:ring-blue-500 font-bold px-5 py-3.5" />
+                                    <DateInput :max-date="maxBirthDate" v-model="enrollForm.date_naissance" required class="w-full bg-gray-50 border-0 rounded-2xl focus:ring-2 focus:ring-blue-500 font-bold px-5 py-3.5" />
                                     <p v-if="enrollForm.errors.date_naissance" class="text-red-500 text-[10px] mt-1 font-bold">{{ enrollForm.errors.date_naissance }}</p>
                                 </div>
                                 <div>
@@ -729,7 +731,7 @@ const getStatusClass = (status) => {
                             </div>
                             <div>
                                 <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Date de Naissance (jj/mm/aaaa)</label>
-                                <DateInput v-model="editForm.date_naissance" required class="w-full bg-gray-50 border-0 rounded-2xl focus:ring-2 focus:ring-blue-500 font-bold px-5 py-3.5" />
+                                <DateInput :max-date="maxBirthDate" v-model="editForm.date_naissance" required class="w-full bg-gray-50 border-0 rounded-2xl focus:ring-2 focus:ring-blue-500 font-bold px-5 py-3.5" />
                                 <p v-if="editForm.errors.date_naissance" class="text-red-500 text-[10px] mt-1 font-bold">{{ editForm.errors.date_naissance }}</p>
                             </div>
                             <div>

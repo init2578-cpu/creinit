@@ -23,6 +23,8 @@ const props = defineProps({
 
 const step = ref(1)
 
+const maxBirthDate = `${new Date().getFullYear() - 6}-12-31`
+
 const form = useForm({
     nom_complet: '',
     email: '',
@@ -148,7 +150,7 @@ function handleFile(e, field) {
                             </div>
                             <div class="space-y-2">
                                 <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Date de Naissance (jj/mm/aaaa) <span class="text-red-500">*</span></label>
-                                <DateInput v-model="form.date_naissance" required class="w-full bg-slate-900/50 border border-white/5 rounded-2xl p-4 text-white focus:border-cyan-500 focus:ring-0 transition-all" />
+                                <DateInput :max-date="maxBirthDate" v-model="form.date_naissance" required class="w-full bg-slate-900/50 border border-white/5 rounded-2xl p-4 text-white focus:border-cyan-500 focus:ring-0 transition-all" />
                                 <p v-if="form.errors.date_naissance" class="text-red-500 text-[10px] mt-1 font-bold">{{ form.errors.date_naissance }}</p>
                             </div>
                         </div>

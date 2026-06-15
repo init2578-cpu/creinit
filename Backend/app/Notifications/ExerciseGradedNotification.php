@@ -31,7 +31,11 @@ class ExerciseGradedNotification extends Notification implements ShouldQueue
      */
     public function via(object $notifiable): array
     {
-        return ['mail', 'database'];
+        $channels = ['database'];
+        if (!empty($notifiable->email)) {
+            $channels[] = 'mail';
+        }
+        return $channels;
     }
 
     /**
@@ -67,6 +71,7 @@ class ExerciseGradedNotification extends Notification implements ShouldQueue
     public function toArray(object $notifiable): array
     {
         return [
+            'title' => 'Exercice corrigé',
             'submission_id' => $this->submission->id,
             'module_title' => $this->submission->chapter->module->titre,
             'chapter_title' => $this->submission->chapter->titre,

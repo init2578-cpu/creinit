@@ -138,6 +138,69 @@ class AdminExerciseController extends Controller
         return redirect()->back()->with('success', 'Exercice mis à jour.');
     }
 
+    public function destroy(Request $request, Chapter $chapter): RedirectResponse
+    {
+        if (!$request->user()->hasRole('Directeur')) {
+            abort(403, 'Seul le directeur peut supprimer un exercice.');
+        }
+
+        // Delete associated files if any
+        if (!empty($chapter->attachments)) {
+            foreach ($chapter->attachments as $attachment) {
+                \Illuminate\Support\Facades\Storage::disk('private')->delete($attachment['path']);
+            }
+        }
+
+        // Delete questions and submissions (should be handled by DB cascade, but we can do it manually if needed)
+        $chapter->questions()->delete();
+        $chapter->exerciseSubmissions()->delete();
+        
+        $chapter->delete();
+
+        return redirect()->back()->with('success', 'Exercice supprimé.');
+    }
+
+    public function updateAttachment(Request $request, Chapter $chapter): RedirectResponse
+    {
+        if ($request->user()->hasRole('Secrétaire')) {
+            abort(403, 'Action non autorisée pour les secrétaires.');
+        }
+
+        $request->validate([
+            'attachment' => 'required|file|max:51200', // 50MB max
+        ]);
+
+        $file = $request->file('attachment');
+        $path = $file->store('chapters/attachments/' . $chapter->id, 'private');
+        
+        $attachments = $chapter->attachments ?? [];
+        $attachments[] = [
+            'name' => $file->getClientOriginalName(),
+            'path' => $path,
+            'type' => $file->getClientMimeType(),
+        ];
+
+        $chapter->update(['attachments' => $attachments]);
+
+        return redirect()->back()->with('success', 'Fichier ajouté avec succès.');
+    }
+
+    public function deleteAttachment(Request $request, Chapter $chapter, int $index): RedirectResponse
+    {
+        if ($request->user()->hasRole('Secrétaire')) {
+            abort(403, 'Action non autorisée pour les secrétaires.');
+        }
+
+        $attachments = $chapter->attachments ?? [];
+        if (isset($attachments[$index])) {
+            \Illuminate\Support\Facades\Storage::disk('private')->delete($attachments[$index]['path']);
+            array_splice($attachments, $index, 1);
+            $chapter->update(['attachments' => $attachments]);
+        }
+
+        return redirect()->back()->with('success', 'Fichier supprimé.');
+    }
+
     public function gradeSubmission(Request $request, ExerciseSubmission $submission): RedirectResponse
     {
         if ($request->user()->hasRole('Secrétaire')) {

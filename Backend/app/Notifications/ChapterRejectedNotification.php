@@ -10,7 +10,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class ChapterSubmittedNotification extends Notification implements ShouldQueue
+class ChapterRejectedNotification extends Notification implements ShouldQueue
 {
     use Queueable;
 
@@ -18,9 +18,6 @@ class ChapterSubmittedNotification extends Notification implements ShouldQueue
         public readonly ChapterGroupProgress $progress,
     ) {}
 
-    /**
-     * @return list<string>
-     */
     public function via(object $notifiable): array
     {
         return ['mail', 'database'];
@@ -30,29 +27,27 @@ class ChapterSubmittedNotification extends Notification implements ShouldQueue
     {
         $group   = $this->progress->group;
         $chapter = $this->progress->chapter;
-        $trainer = $this->progress->submitter;
 
         return (new MailMessage())
-            ->subject('Chapitre soumis pour validation')
+            ->subject('Chapitre rejeté')
             ->greeting('Bonjour,')
-            ->line("Le formateur **{$trainer->name}** a soumis le chapitre **\"{$chapter->titre}\"** pour le groupe **{$group->nom_groupe}**.")
-            ->line('En tant que Responsable de Groupe, veuillez valider ce chapitre.')
-            ->action('Voir le chapitre', url("/groups/{$this->progress->group_id}/chapter-progress"))
+            ->line("La validation de votre chapitre **\"{$chapter->titre}\"** pour le groupe **{$group->nom_groupe}** a été refusée.")
+            ->line('Veuillez vérifier vos émargements et resoumettre si nécessaire.')
+            ->action('Voir la progression', url("/groups/{$group->id}/chapter-progress"))
             ->salutation('Cordialement, E-CRE Kolda');
     }
 
     public function toArray(object $notifiable): array
     {
         return [
-            'type'          => 'chapter_submitted',
-            'title'         => 'Validation requise',
-            'message'       => "Le formateur {$this->progress->submitter->name} a soumis le chapitre \"{$this->progress->chapter->titre}\".",
-            'action_url'    => url("/groups/{$this->progress->group_id}/chapter-progress"),
+            'type'          => 'chapter_rejected',
+            'title'         => 'Progression rejetée',
+            'message'       => "La validation du chapitre \"{$this->progress->chapter->titre}\" a été refusée par le groupe.",
+            'action_url'    => url("/chapter-progress/groups"),
             'progress_id'   => $this->progress->id,
             'group_id'      => $this->progress->group_id,
             'chapter_id'    => $this->progress->chapter_id,
             'chapter_title' => $this->progress->chapter->titre,
-            'trainer_name'  => $this->progress->submitter->name,
             'group_name'    => $this->progress->group->nom_groupe,
         ];
     }

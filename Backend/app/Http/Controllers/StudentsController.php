@@ -68,7 +68,7 @@ class StudentsController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:8',
+            'password' => 'nullable|string|min:8',
             'telephone' => 'nullable|string|max:20',
             'adresse' => 'nullable|string|max:255',
             // Profile fields
@@ -83,7 +83,7 @@ class StudentsController extends Controller
             $user = User::create([
                 'name' => $validated['name'],
                 'email' => $validated['email'],
-                'password' => Hash::make($validated['password']),
+                'password' => Hash::make($validated['password'] ?? 'password'),
                 'telephone' => $validated['telephone'],
                 'adresse' => $validated['adresse'],
                 'is_active' => true,

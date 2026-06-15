@@ -108,10 +108,9 @@ class ApplicationController extends Controller
             $user = \App\Models\User::create([
                 'email' => $validated['email'],
                 'name' => $this->formatTitleCase($validated['nom_complet']),
-                'password' => \Illuminate\Support\Facades\Hash::make(\Illuminate\Support\Str::random(12)),
+                'password' => \Illuminate\Support\Facades\Hash::make('password'),
                 'telephone' => $validated['telephone'],
             ]);
-            $user->assignRole('Apprenant');
         }
 
         $cniPath = $request->hasFile('cni') ? $request->file('cni')->store('applications/cni', 'private') : 'manual_enrollment';
@@ -183,12 +182,10 @@ class ApplicationController extends Controller
             $user = \App\Models\User::create([
                'email' => $request->email,
                'name' => $this->formatTitleCase($request->nom_complet),
-               'password' => \Illuminate\Support\Facades\Hash::make(\Illuminate\Support\Str::random(12)),
+               'password' => \Illuminate\Support\Facades\Hash::make('password'),
                'telephone' => $request->telephone,
            ]);
         }
-       
-        $user->assignRole('Apprenant');
         
         $cniPath = $request->file('cni')->store('applications/cni', 'private');
         $diplomaPath = $request->file('diploma')->store('applications/diplomas', 'private');

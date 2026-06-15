@@ -24,6 +24,10 @@ const props = defineProps({
     minDate: {
         type: String,
         default: ''
+    },
+    maxDate: {
+        type: String,
+        default: ''
     }
 })
 
@@ -34,7 +38,26 @@ const showCalendar = ref(false)
 const containerRef = ref(null)
 
 // Calendar state
-const currentDate = ref(new Date())
+const getDefaultDate = () => {
+    const now = new Date()
+    if (props.maxDate) {
+        const [maxY, maxM, maxD] = props.maxDate.split('-').map(Number)
+        const maxDateObj = new Date(maxY, maxM - 1, maxD)
+        if (now > maxDateObj) {
+            return new Date(maxY, maxM - 1, 1)
+        }
+    }
+    if (props.minDate) {
+        const [minY, minM, minD] = props.minDate.split('-').map(Number)
+        const minDateObj = new Date(minY, minM - 1, minD)
+        if (now < minDateObj) {
+            return new Date(minY, minM - 1, 1)
+        }
+    }
+    return new Date(now.getFullYear(), now.getMonth(), 1)
+}
+
+const currentDate = ref(getDefaultDate())
 const selectedDate = ref(null)
 
 const months = [
@@ -53,6 +76,7 @@ watch(() => props.modelValue, (newVal) => {
     } else {
         displayValue.value = ''
         selectedDate.value = null
+        currentDate.value = getDefaultDate()
     }
 }, { immediate: true })
 
@@ -108,6 +132,30 @@ const calendarDays = computed(() => {
     return grid
 })
 
+const availableYears = computed(() => {
+    const currentYr = new Date().getFullYear()
+    let minYear = currentYr - 100
+    let maxYear = currentYr + 10
+    
+    if (props.minDate) {
+        minYear = parseInt(props.minDate.split('-')[0])
+    }
+    if (props.maxDate) {
+        maxYear = parseInt(props.maxDate.split('-')[0])
+    }
+    
+    const years = []
+    for (let i = minYear; i <= maxYear; i++) {
+        years.push(i)
+    }
+    return years.reverse() // Reverse to show newest years first
+})
+
+const onYearChange = (event) => {
+    const newYear = parseInt(event.target.value)
+    currentDate.value = new Date(newYear, currentDate.value.getMonth(), 1)
+}
+
 const prevMonth = () => {
     currentDate.value = new Date(currentDate.value.getFullYear(), currentDate.value.getMonth() - 1, 1)
 }
@@ -155,6 +203,18 @@ const onInput = (event) => {
             }
         }
         
+        if (props.maxDate) {
+            const [maxY, maxM, maxD] = props.maxDate.split('-').map(Number)
+            const maxDateObj = new Date(maxY, maxM - 1, maxD)
+            const inputDateObj = new Date(parseInt(year), parseInt(month) - 1, parseInt(day))
+            
+            if (inputDateObj > maxDateObj) {
+                displayValue.value = ''
+                emit('update:modelValue', '')
+                return
+            }
+        }
+        
         emit('update:modelValue', dateStr)
     } else {
         emit('update:modelValue', '')
@@ -191,13 +251,22 @@ const isToday = (dayObj) => {
 }
 
 const isDayDisabled = (dayObj) => {
-    if (!props.minDate) return false
-    
-    const [minY, minM, minD] = props.minDate.split('-').map(Number)
-    const minDateObj = new Date(minY, minM - 1, minD)
+    let disabled = false;
     const targetDateObj = new Date(dayObj.year, dayObj.month, dayObj.day)
     
-    return targetDateObj < minDateObj
+    if (props.minDate) {
+        const [minY, minM, minD] = props.minDate.split('-').map(Number)
+        const minDateObj = new Date(minY, minM - 1, minD)
+        if (targetDateObj < minDateObj) disabled = true;
+    }
+    
+    if (props.maxDate) {
+        const [maxY, maxM, maxD] = props.maxDate.split('-').map(Number)
+        const maxDateObj = new Date(maxY, maxM - 1, maxD)
+        if (targetDateObj > maxDateObj) disabled = true;
+    }
+    
+    return disabled;
 }
 </script>
 
@@ -221,9 +290,19 @@ const isDayDisabled = (dayObj) => {
                 <button type="button" @click="prevMonth" class="p-1.5 hover:bg-gray-50 rounded-xl text-gray-600 transition">
                     <ChevronLeftIcon class="h-5 w-5" />
                 </button>
-                <span class="font-black text-xs text-gray-900 uppercase tracking-wider">
-                    {{ currentMonthName }} {{ currentYear }}
-                </span>
+                <div class="flex items-center gap-1.5">
+                    <span class="font-black text-xs text-gray-900 uppercase tracking-wider">
+                        {{ currentMonthName }}
+                    </span>
+                    <select 
+                        :value="currentYear" 
+                        @change="onYearChange"
+                        class="font-black text-xs text-blue-600 uppercase tracking-wider bg-transparent border-none py-0 pl-1 pr-6 focus:ring-0 cursor-pointer appearance-none hover:bg-blue-50 rounded-lg transition-colors"
+                        style="background-position: right 2px center; background-size: 12px;"
+                    >
+                        <option v-for="y in availableYears" :key="y" :value="y">{{ y }}</option>
+                    </select>
+                </div>
                 <button type="button" @click="nextMonth" class="p-1.5 hover:bg-gray-50 rounded-xl text-gray-600 transition">
                     <ChevronRightIcon class="h-5 w-5" />
                 </button>
