@@ -91,6 +91,8 @@ const navigation = computed(() => {
             { name: 'Gestion des Salles', href: route('rooms.index'), icon: HomeModernIcon },
             { name: 'Emplois du temps', href: route('schedules.index'), icon: CalendarIcon },
             { name: 'Émargement', href: route('attendance.index'), icon: ClipboardDocumentCheckIcon },
+            { name: 'Examens', href: route('exams.index'), icon: PencilSquareIcon },
+            { name: 'Exercices (Correction)', href: route('exercises.index'), icon: ClipboardDocumentCheckIcon },
             { name: 'Inventaire Matériel', href: route('assets.index'), icon: ArchiveBoxIcon },
             { name: 'Prêts & Retours', href: route('loans.index'), icon: BriefcaseIcon },
             { name: 'Rapports', href: route('reports.index'), icon: DocumentChartBarIcon },
@@ -101,7 +103,7 @@ const navigation = computed(() => {
             { name: 'Communauté', href: route('community.index'), icon: ChatBubbleLeftRightIcon, badge: page.props.auth.user?.unread_announcements_count },
             { name: 'Mes Cours', href: route('student.courses'), icon: BookOpenIcon },
             { name: 'Exercices', href: route('student.exercises.index'), icon: BeakerIcon },
-            { name: 'Examens', href: route('student.exams.index'), icon: PencilSquareIcon },
+            { name: 'Examens', href: route('student.exams.index'), icon: PencilSquareIcon, badge: page.props.auth.user?.unread_exams_count },
             { name: 'Validation Progression', href: route('chapter-progress.groups'), icon: ChartBarIcon }
         )
     }

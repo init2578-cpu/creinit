@@ -108,8 +108,13 @@ Route::middleware(['auth'])->group(function (): void {
 
         // Exams
         Route::get('/exams', [ExamController::class, 'index'])->name('exams.index');
-        Route::get('/exams/{exam}', [ExamController::class, 'show'])->name('exams.show');
+        Route::post('/exams/{exam}/start', [ExamController::class, 'start'])->name('exams.start');
         Route::post('/exams/{exam}/submit', [ExamController::class, 'submit'])->name('exams.submit');
+        
+        Route::middleware(\App\Http\Middleware\EnsureWithinPremises::class)->group(function () {
+            Route::get('/exams/{exam}', [ExamController::class, 'show'])->name('exams.show');
+            Route::get('/exams/{exam}/download', [ExamController::class, 'download'])->name('exams.download');
+        });
     });
 
     // Profile Management
@@ -271,6 +276,7 @@ Route::middleware(['auth'])->group(function (): void {
             Route::patch('exams/{exam}/approve', [AdminExamController::class, 'approve'])->name('exams.approve');
             Route::get('exams/{exam}/results', [AdminExamController::class, 'getResults'])->name('exams.results');
             Route::post('exams/{exam}/grades', [AdminExamController::class, 'enterGrades'])->name('exams.enter-grades');
+            Route::post('exams/{exam}/unlock/{user}', [AdminExamController::class, 'unlock'])->name('exams.unlock');
             Route::get('exercises', [AdminExerciseController::class, 'index'])->name('exercises.index');
             Route::put('exercises/{chapter}', [AdminExerciseController::class, 'update'])->name('exercises.update');
             Route::post('exercises/{submission}/grade', [AdminExerciseController::class, 'gradeSubmission'])->name('exercises.grade-submission');

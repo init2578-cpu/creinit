@@ -23,7 +23,11 @@ class AdminExamController extends Controller
     {
         $user = $request->user();
 
-        $examQuery = Exam::with(['module', 'questions', 'examResults.user', 'groups'])->orderBy('created_at', 'desc');
+        if ($user->hasRole('Secrétaire')) {
+            $examQuery = Exam::with(['module', 'questions', 'groups'])->orderBy('created_at', 'desc');
+        } else {
+            $examQuery = Exam::with(['module', 'questions', 'examResults.user', 'groups'])->orderBy('created_at', 'desc');
+        }
         $moduleQuery = Module::query();
         $groupsQuery = Group::query();
 
@@ -49,6 +53,10 @@ class AdminExamController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
+        if ($request->user()->hasRole('Secrétaire')) {
+            abort(403, 'Action non autorisée pour les secrétaires.');
+        }
+
         $validated = $request->validate([
             'module_id' => 'required|exists:modules,id',
             'titre' => 'required|string|max:255',
@@ -74,8 +82,15 @@ class AdminExamController extends Controller
         $exam = Exam::create($validated);
         $exam->load('module');
 
-        if ($request->has('group_ids')) {
-            $exam->groups()->sync($request->input('group_ids'));
+        $user = $request->user();
+        if ($user->hasRole('Directeur')) {
+            $exam->groups()->sync($request->input('group_ids', []));
+        } elseif ($user->isTrainer()) {
+            $trainerGroupIds = \App\Models\Group::where('formateur_id', $user->id)->pluck('id')->toArray();
+            $currentGroupIds = $exam->groups()->pluck('groups.id')->toArray();
+            $otherGroupIds = array_diff($currentGroupIds, $trainerGroupIds);
+            $newTrainerGroupIds = array_intersect($request->input('group_ids', []), $trainerGroupIds);
+            $exam->groups()->sync(array_merge($otherGroupIds, $newTrainerGroupIds));
         }
 
         if ($exam->is_approved) {
@@ -103,6 +118,10 @@ class AdminExamController extends Controller
 
     public function update(Request $request, Exam $exam): RedirectResponse
     {
+        if ($request->user()->hasRole('Secrétaire')) {
+            abort(403, 'Action non autorisée pour les secrétaires.');
+        }
+
         $validated = $request->validate([
             'module_id' => 'required|exists:modules,id',
             'titre' => 'required|string|max:255',
@@ -131,15 +150,26 @@ class AdminExamController extends Controller
 
         $exam->update($validated);
 
-        if ($request->has('group_ids')) {
-            $exam->groups()->sync($request->input('group_ids'));
+        $user = $request->user();
+        if ($user->hasRole('Directeur')) {
+            $exam->groups()->sync($request->input('group_ids', []));
+        } elseif ($user->isTrainer()) {
+            $trainerGroupIds = \App\Models\Group::where('formateur_id', $user->id)->pluck('id')->toArray();
+            $currentGroupIds = $exam->groups()->pluck('groups.id')->toArray();
+            $otherGroupIds = array_diff($currentGroupIds, $trainerGroupIds);
+            $newTrainerGroupIds = array_intersect($request->input('group_ids', []), $trainerGroupIds);
+            $exam->groups()->sync(array_merge($otherGroupIds, $newTrainerGroupIds));
         }
 
         return redirect()->back()->with('success', 'Examen mis à jour.');
     }
 
-    public function destroy(Exam $exam): RedirectResponse
+    public function destroy(Request $request, Exam $exam): RedirectResponse
     {
+        if ($request->user()->hasRole('Secrétaire')) {
+            abort(403, 'Action non autorisée pour les secrétaires.');
+        }
+
         if ($exam->document_path) {
             Storage::disk('public')->delete($exam->document_path);
         }
@@ -152,6 +182,10 @@ class AdminExamController extends Controller
      */
     public function enterGrades(Request $request, Exam $exam): RedirectResponse
     {
+        if ($request->user()->hasRole('Secrétaire')) {
+            abort(403, 'Action non autorisée pour les secrétaires.');
+        }
+
         if (!$exam->is_approved) {
             abort(403, 'Impossible d\'attribuer des notes car cet examen n\'a pas encore été validé par le directeur.');
         }
@@ -159,13 +193,17 @@ class AdminExamController extends Controller
         $validated = $request->validate([
             'grades' => 'required|array',
             'grades.*.user_id' => 'required|exists:users,id',
-            'grades.*.score' => 'required|numeric|min:0|max:' . $exam->total_points,
+            'grades.*.score' => 'nullable|numeric|min:0|max:20',
             'grades.*.bonus' => 'nullable|numeric|min:0',
         ]);
 
         $directors = User::role('Directeur')->get();
 
         foreach ($validated['grades'] as $gradeData) {
+            if (!isset($gradeData['score']) || $gradeData['score'] === null) {
+                continue;
+            }
+
             $bonus = isset($gradeData['bonus']) ? (float)$gradeData['bonus'] : 0.00;
 
             // Find existing result to compare bonus
@@ -196,11 +234,24 @@ class AdminExamController extends Controller
             $result->user->notify(new \App\Notifications\ExamResultGradedNotification($result));
         }
 
-        return redirect()->back()->with('success', 'Notes enregistrées.');
+        if (!$exam->are_grades_published) {
+            $exam->update(['are_grades_published' => true]);
+
+            // Notify directors that grades have been published
+            foreach ($directors as $director) {
+                $director->notify(new \App\Notifications\ExamGradesPublishedNotification($exam, $request->user()));
+            }
+        }
+
+        return redirect()->back()->with('success', 'Notes enregistrées et publiées aux apprenants.');
     }
 
     public function getResults(Request $request, Exam $exam): \Illuminate\Http\JsonResponse
     {
+        if ($request->user()->hasRole('Secrétaire')) {
+            abort(403, 'Action non autorisée pour les secrétaires.');
+        }
+
         $user = $request->user();
 
         // Get students enrolled in the module, but restrict to formateur's groups if necessary
@@ -238,17 +289,48 @@ class AdminExamController extends Controller
                 'name'    => $student->name,
                 'score'   => $res ? $res->score : null,
                 'bonus'   => $res ? $res->bonus : 0.00,
+                'status'  => $res ? $res->status : null,
             ];
         });
 
-        return response()->json($formattedResults);
+        return response()->json($formattedResults->values());
     }
+
+    /**
+     * Unlock a blocked exam result for a student.
+     */
+    public function unlock(Request $request, Exam $exam, \App\Models\User $user): RedirectResponse
+    {
+        if ($request->user()->hasRole('Secrétaire')) {
+            abort(403, 'Action non autorisée pour les secrétaires.');
+        }
+
+        if (!$user->hasRole(['Apprenant', 'Stagiaire'])) {
+            abort(403, 'Utilisateur invalide.');
+        }
+
+        $result = ExamResult::where('exam_id', $exam->id)
+            ->where('user_id', $user->id)
+            ->first();
+
+        if ($result) {
+            $result->delete();
+            return redirect()->back()->with('success', 'L\'examen a été réinitialisé pour cet étudiant. Il peut recommencer à zéro.');
+        }
+
+        return redirect()->back()->with('error', 'Aucune tentative trouvée pour cet étudiant.');
+    }
+
 
     /**
      * Manage Questions for an exam.
      */
     public function storeQuestion(Request $request, Exam $exam): RedirectResponse
     {
+        if ($request->user()->hasRole('Secrétaire')) {
+            abort(403, 'Action non autorisée pour les secrétaires.');
+        }
+
         $validated = $request->validate([
             'enonce' => 'required|string',
             'points' => 'required|numeric|min:0',

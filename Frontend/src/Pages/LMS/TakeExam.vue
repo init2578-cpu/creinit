@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { Head, useForm, router } from '@inertiajs/vue3'
+import axios from 'axios'
 import Timer from '@/Components/Timer.vue'
 import { 
     ExclamationTriangleIcon, 
@@ -21,7 +22,7 @@ const props = defineProps({
 const currentQuestionIndex = ref(0)
 const showViolationModal = ref(false)
 const violationMessage = ref('')
-const countdown = ref(10)
+const countdown = ref(15)
 const isStarted = ref(false)
 const showQuestionMap = ref(false)
 const showConfirmSubmit = ref(false)
@@ -33,10 +34,19 @@ const form = useForm({
 
 // Fullscreen & Anti-Cheat
 function startExam() {
-    isStarted.value = true
-    if (!props.exam.is_practice) {
-        requestFullscreen()
+    if (props.exam.is_practice) {
+        isStarted.value = true
+        return
     }
+
+    axios.post(route('student.exams.start', props.exam.id))
+        .then(() => {
+            isStarted.value = true
+            requestFullscreen()
+        })
+        .catch((error) => {
+            alert(error.response?.data?.error || "Erreur: Impossible de démarrer l'examen. Il est possible qu'il soit bloqué.");
+        })
 }
 
 function requestFullscreen() {
@@ -59,13 +69,15 @@ function handleVisibilityChange() {
 function handleFullscreenChange() {
     if (!document.fullscreenElement && !props.exam.is_practice && isStarted.value) {
         triggerViolation("Le mode plein écran est obligatoire.")
+    } else if (document.fullscreenElement && countdownInterval) {
+        stopViolationCountdown()
     }
 }
 
 function triggerViolation(message) {
     showViolationModal.value = true
     violationMessage.value = message
-    countdown.value = 10
+    countdown.value = 15
     
     if (countdownInterval) clearInterval(countdownInterval)
     
@@ -80,11 +92,13 @@ function triggerViolation(message) {
 }
 
 function stopViolationCountdown() {
-    if (countdownInterval) {
-        clearInterval(countdownInterval)
-        countdownInterval = null
+    if (!document.hidden && document.fullscreenElement) {
+        if (countdownInterval) {
+            clearInterval(countdownInterval)
+            countdownInterval = null
+        }
+        showViolationModal.value = false
     }
-    showViolationModal.value = false
 }
 
 // Emergency auto-submit
@@ -343,14 +357,21 @@ function jumpToQuestion(index) {
                 <div class="relative w-32 h-32 mx-auto mb-10 flex items-center justify-center">
                     <svg class="absolute inset-0 w-full h-full -rotate-90">
                         <circle cx="64" cy="64" r="60" fill="none" stroke="#f1f5f9" stroke-width="8" />
-                        <circle cx="64" cy="64" r="60" fill="none" stroke="#dc2626" stroke-width="8" stroke-dasharray="377" :stroke-dashoffset="377 - (377 * countdown / 10)" class="transition-all duration-1000 linear" />
+                        <circle cx="64" cy="64" r="60" fill="none" stroke="#dc2626" stroke-width="8" stroke-dasharray="377" :stroke-dashoffset="377 - (377 * countdown / 15)" class="transition-all duration-1000 linear" />
                     </svg>
                     <span class="text-4xl font-black text-red-600">{{ countdown }}s</span>
                 </div>
 
-                <div class="py-4 px-6 bg-red-50 text-red-700 rounded-2xl font-black text-xs uppercase tracking-widest">
+                <div class="py-4 px-6 mb-6 bg-red-50 text-red-700 rounded-2xl font-black text-xs uppercase tracking-widest">
                     L'EXAMEN SERA SOUMIS AUTOMATIQUEMENT À L'EXPIRATION DU DÉLAI.
                 </div>
+                
+                <button 
+                    @click="requestFullscreen"
+                    class="w-full py-4 bg-red-600 hover:bg-red-700 text-white rounded-xl font-black text-xs uppercase tracking-widest transition-colors shadow-lg shadow-red-500/30"
+                >
+                    Reprendre l'examen en plein écran
+                </button>
             </div>
         </div>
 

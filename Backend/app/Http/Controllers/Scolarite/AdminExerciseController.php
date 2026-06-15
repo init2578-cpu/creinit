@@ -58,6 +58,10 @@ class AdminExerciseController extends Controller
      */
     public function update(Request $request, Chapter $chapter): RedirectResponse
     {
+        if ($request->user()->hasRole('Secrétaire')) {
+            abort(403, 'Action non autorisée pour les secrétaires.');
+        }
+
         $validated = $request->validate([
             'exercise_title' => 'required|string|max:255',
             'exercise_type' => 'required|in:online,file',
@@ -91,6 +95,10 @@ class AdminExerciseController extends Controller
 
     public function gradeSubmission(Request $request, ExerciseSubmission $submission): RedirectResponse
     {
+        if ($request->user()->hasRole('Secrétaire')) {
+            abort(403, 'Action non autorisée pour les secrétaires.');
+        }
+
         $validated = $request->validate([
             'grade' => 'required|numeric|min:0|max:' . ($submission->chapter->exercise_points ?? 20),
             'trainer_feedback' => 'nullable|string',
@@ -110,6 +118,10 @@ class AdminExerciseController extends Controller
      */
     public function storeQuestion(Request $request, Chapter $chapter): RedirectResponse
     {
+        if ($request->user()->hasRole('Secrétaire')) {
+            abort(403, 'Action non autorisée pour les secrétaires.');
+        }
+
         $validated = $request->validate([
             'enonce' => 'required|string',
             'points' => 'required|numeric|min:0',
@@ -142,6 +154,10 @@ class AdminExerciseController extends Controller
 
     public function updateQuestion(Request $request, Question $question): RedirectResponse
     {
+        if ($request->user()->hasRole('Secrétaire')) {
+            abort(403, 'Action non autorisée pour les secrétaires.');
+        }
+
         $validated = $request->validate([
             'points' => 'required|numeric|min:0',
             'enonce' => 'sometimes|required|string',
@@ -170,6 +186,10 @@ class AdminExerciseController extends Controller
 
     public function destroyQuestion(Question $question): RedirectResponse
     {
+        if (request()->user()->hasRole('Secrétaire')) {
+            abort(403, 'Action non autorisée pour les secrétaires.');
+        }
+
         $question->delete();
         return redirect()->back()->with('success', 'Question supprimée.');
     }

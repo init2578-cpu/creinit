@@ -38,6 +38,15 @@ class EnsureWithinPremises
             }
         }
 
+        // Check for exam practice bypass
+        $exam = $request->route('exam');
+        if (is_numeric($exam)) {
+            $exam = \App\Models\Exam::find($exam);
+        }
+        if ($exam instanceof \App\Models\Exam && $exam->is_practice) {
+            return $next($request);
+        }
+
         $latitude  = (float) $request->input('latitude');
         $longitude = (float) $request->input('longitude');
 

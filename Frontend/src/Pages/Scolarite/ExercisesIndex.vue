@@ -1,6 +1,6 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { Head, useForm } from '@inertiajs/vue3';
+import { Head, useForm, usePage } from '@inertiajs/vue3';
 import { 
     BookOpenIcon,
     CheckCircleIcon,
@@ -25,6 +25,12 @@ const props = defineProps({
     exercises: Array,
     modules: Array
 });
+
+const page = usePage();
+const roles = computed(() => page.props.auth.user.roles);
+const isDirecteur = computed(() => roles.value.includes('Directeur'));
+const isSecretaire = computed(() => roles.value.includes('Secrétaire'));
+const isTrainer = computed(() => page.props.auth.user.is_trainer);
 
 const viewMode = ref('correction'); // 'correction' or 'admin'
 const isEditModalOpen = ref(false);
@@ -338,7 +344,7 @@ const isSubmissionCorrect = (question, submission) => {
                                                 @click="openGradeModal(sub, selectedExercise)"
                                                 class="px-4 py-2 bg-gray-900 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-600 transition"
                                             >
-                                                Corriger
+                                                {{ isSecretaire ? 'Voir' : 'Corriger' }}
                                             </button>
                                         </td>
                                     </tr>
@@ -381,7 +387,7 @@ const isSubmissionCorrect = (question, submission) => {
                                 <div class="h-10 w-10 bg-white rounded-xl flex items-center justify-center shadow-sm border border-gray-100 text-blue-600">
                                     <span class="font-black text-xs">{{ chapter.ordre }}</span>
                                 </div>
-                                <div class="flex gap-2">
+                                <div v-if="!isSecretaire" class="flex gap-2">
                                     <button @click="openEditModal(chapter)" class="p-2 bg-white text-gray-400 hover:text-blue-600 rounded-xl shadow-sm border border-gray-100 transition">
                                         <PencilIcon class="h-5 w-5" />
                                     </button>
@@ -399,8 +405,8 @@ const isSubmissionCorrect = (question, submission) => {
                                 <div v-if="chapter.exercise_type === 'online'" class="pt-2 border-t border-gray-100 flex items-center justify-between">
                                     <span class="text-[10px] font-black text-gray-500 uppercase tracking-widest">{{ chapter.questions?.length || 0 }} Questions</span>
                                     <button @click="openQuestionModal(chapter)" class="text-blue-600 hover:text-blue-700 text-[10px] font-black uppercase tracking-widest flex items-center gap-1">
-                                        <PlusIcon class="h-3.5 w-3.5" />
-                                        Gérer
+                                        <PlusIcon v-if="!isSecretaire" class="h-3.5 w-3.5" />
+                                        {{ isSecretaire ? 'Voir' : 'Gérer' }}
                                     </button>
                                 </div>
                             </div>
@@ -457,7 +463,7 @@ const isSubmissionCorrect = (question, submission) => {
             <div class="bg-white w-full max-w-2xl rounded-[2.5rem] overflow-hidden shadow-2xl">
                 <div class="p-8 border-b border-gray-100 flex items-center justify-between bg-gray-50/30">
                     <div>
-                        <h3 class="text-2xl font-black text-gray-900 tracking-tight italic">Gestion des Questions</h3>
+                        <h3 class="text-2xl font-black text-gray-900 tracking-tight italic">{{ isSecretaire ? 'Banque de Questions' : 'Gestion des Questions' }}</h3>
                         <p class="text-xs text-gray-400 font-bold mt-1 uppercase tracking-widest truncate max-w-[300px]">{{ selectedChapterForQuestion?.titre }}</p>
                     </div>
                     <button @click="isQuestionModalOpen = false" class="p-2 hover:bg-gray-100 rounded-xl transition">
@@ -465,7 +471,7 @@ const isSubmissionCorrect = (question, submission) => {
                     </button>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 divide-x divide-gray-100">
+                <div :class="isSecretaire ? 'md:grid-cols-1' : 'md:grid-cols-2'" class="grid grid-cols-1 divide-x divide-gray-100">
                     <!-- Questions List -->
                     <div class="p-8 space-y-4 max-h-[60vh] overflow-y-auto custom-scrollbar">
                         <div class="flex items-center justify-between mb-4">
@@ -485,6 +491,7 @@ const isSubmissionCorrect = (question, submission) => {
                                 <div class="flex items-center gap-2">
                                     <label class="text-[9px] font-black text-gray-400 uppercase tracking-widest whitespace-nowrap">Barème</label>
                                     <input
+                                        v-if="!isSecretaire"
                                         type="number"
                                         v-model.number="q.points"
                                         @change="updateQuestionPoints(q)"
@@ -493,9 +500,10 @@ const isSubmissionCorrect = (question, submission) => {
                                         class="w-16 text-center bg-blue-50 text-blue-700 border-0 rounded-lg font-black text-[11px] py-1 focus:ring-2 focus:ring-blue-400"
                                         title="Barème (points)"
                                     />
+                                    <span v-else class="px-3 py-1 bg-blue-50 text-blue-700 text-[11px] font-black rounded-lg">{{ q.points }}</span>
                                     <span class="text-[9px] font-bold text-gray-400">pts</span>
                                 </div>
-                                <button @click="deleteQuestion(q.id)" class="opacity-0 group-hover:opacity-100 p-1 text-red-400 hover:text-red-600 transition">
+                                <button v-if="!isSecretaire" @click="deleteQuestion(q.id)" class="opacity-0 group-hover:opacity-100 p-1 text-red-400 hover:text-red-600 transition">
                                     <TrashIcon class="h-4 w-4" />
                                 </button>
                             </div>
@@ -508,7 +516,7 @@ const isSubmissionCorrect = (question, submission) => {
                     </div>
 
                     <!-- Add/Edit Question Form -->
-                    <div class="p-8 bg-gray-50/30">
+                    <div v-if="!isSecretaire" class="p-8 bg-gray-50/30">
                         <h4 class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-6">Ajouter une question</h4>
                         <form @submit.prevent="submitQuestionForm" class="space-y-4">
                             <div>
@@ -567,7 +575,7 @@ const isSubmissionCorrect = (question, submission) => {
             <div class="bg-white w-full max-w-lg rounded-[2.5rem] overflow-hidden shadow-2xl">
                 <div class="p-8 border-b border-gray-100 flex items-center justify-between">
                     <div>
-                        <h3 class="text-2xl font-black text-gray-900 tracking-tight italic">Correction</h3>
+                        <h3 class="text-2xl font-black text-gray-900 tracking-tight italic">{{ isSecretaire ? 'Détails du rendu' : 'Correction' }}</h3>
                         <p class="text-xs text-gray-400 font-bold mt-1 uppercase tracking-widest">{{ selectedSubmission.user.name }}</p>
                     </div>
                     <button @click="isGradeModalOpen = false" class="p-2 hover:bg-gray-100 rounded-xl transition">
@@ -626,11 +634,11 @@ const isSubmissionCorrect = (question, submission) => {
                         <div class="grid grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Note ({{ selectedExercise.exercise_points }} max)</label>
-                                <input v-model="gradeForm.grade" type="number" step="0.5" required class="w-full bg-gray-50 border-0 rounded-2xl focus:ring-2 focus:ring-blue-500 font-bold px-5 py-3.5">
+                                <input :disabled="isSecretaire" v-model="gradeForm.grade" type="number" step="0.5" required class="w-full bg-gray-50 disabled:opacity-75 border-0 rounded-2xl focus:ring-2 focus:ring-blue-500 font-bold px-5 py-3.5">
                             </div>
                             <div>
                                 <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Décision</label>
-                                <select v-model="gradeForm.status" required class="w-full bg-gray-50 border-0 rounded-2xl focus:ring-2 focus:ring-blue-500 font-bold px-5 py-3.5 appearance-none">
+                                <select :disabled="isSecretaire" v-model="gradeForm.status" required class="w-full bg-gray-50 disabled:opacity-75 border-0 rounded-2xl focus:ring-2 focus:ring-blue-500 font-bold px-5 py-3.5 appearance-none">
                                     <option value="graded">Valider</option>
                                     <option value="rejected">À retravailler</option>
                                 </select>
@@ -639,12 +647,13 @@ const isSubmissionCorrect = (question, submission) => {
 
                         <div>
                             <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Feedback / Observations</label>
-                            <textarea v-model="gradeForm.trainer_feedback" rows="3" class="w-full bg-gray-50 border-0 rounded-2xl focus:ring-2 focus:ring-blue-500 font-bold px-5 py-3.5 placeholder:font-normal" placeholder="Conseils à l'apprenant..."></textarea>
+                            <textarea :disabled="isSecretaire" v-model="gradeForm.trainer_feedback" rows="3" class="w-full bg-gray-50 disabled:opacity-75 border-0 rounded-2xl focus:ring-2 focus:ring-blue-500 font-bold px-5 py-3.5 placeholder:font-normal" placeholder="Conseils à l'apprenant..."></textarea>
                         </div>
 
                         <div class="pt-4 flex gap-3">
                             <button type="button" @click="isGradeModalOpen = false" class="flex-1 py-4 bg-gray-100 text-gray-500 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-gray-200 transition">Fermer</button>
                             <button 
+                                v-if="!isSecretaire"
                                 type="submit" 
                                 :disabled="gradeForm.processing"
                                 class="flex-1 py-4 bg-gray-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-blue-600 transition shadow-xl shadow-gray-200"

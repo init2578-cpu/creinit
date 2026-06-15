@@ -27,6 +27,7 @@ class Exam extends Model
         'is_active',
         'is_practice',
         'is_approved',
+        'are_grades_published',
     ];
 
     protected $appends = ['is_online', 'has_ended', 'can_start', 'end_at'];
@@ -80,6 +81,7 @@ class Exam extends Model
             'is_active' => 'boolean',
             'is_approved' => 'boolean',
             'is_practice' => 'boolean',
+            'are_grades_published' => 'boolean',
             'duree_minutes' => 'integer',
             'total_points' => 'decimal:2',
             'scheduled_at' => 'datetime',

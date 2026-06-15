@@ -10,7 +10,8 @@ import {
     ArrowRightIcon,
     ArrowTrendingUpIcon,
     ClockIcon,
-    PencilSquareIcon
+    PencilSquareIcon,
+    ArrowPathIcon
 } from '@heroicons/vue/24/outline'
 import { formatTime } from '@/utils/format'
 
@@ -35,10 +36,48 @@ const getAbsenceLabel = computed(() => {
     return 'Situation Régulière'
 })
 
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
+import { router } from '@inertiajs/vue3'
 
 const DAYS = ['', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim']
 const dayLabel = (d) => DAYS[d] ?? String(d).substring(0, 3)
+
+const isLocating = ref(false)
+const loadingExamId = ref(null)
+
+const handleExamAction = (exam) => {
+    if (exam.is_practice) {
+        router.get(route('student.exams.show', exam.id))
+        return
+    }
+
+    isLocating.value = true
+    loadingExamId.value = exam.id
+
+    if (!navigator.geolocation) {
+        window.platformAlert("La géolocalisation n'est pas supportée par votre navigateur.", 'error')
+        isLocating.value = false
+        loadingExamId.value = null
+        return
+    }
+
+    navigator.geolocation.getCurrentPosition(
+        (position) => {
+            isLocating.value = false
+            loadingExamId.value = null
+            router.get(route('student.exams.show', exam.id), { 
+                latitude: position.coords.latitude, 
+                longitude: position.coords.longitude 
+            })
+        },
+        (error) => {
+            window.platformAlert("Impossible de récupérer votre position. Veuillez autoriser l'accès au GPS pour passer l'examen.", 'error')
+            isLocating.value = false
+            loadingExamId.value = null
+        },
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 30000 }
+    )
+}
 </script>
 
 <template>
@@ -169,9 +208,14 @@ const dayLabel = (d) => DAYS[d] ?? String(d).substring(0, 3)
                                         <p class="text-[8px] text-rose-500 font-black uppercase tracking-widest mt-0.5">{{ exam.is_practice ? 'Entraînement' : 'Examen Final' }}</p>
                                     </div>
                                 </div>
-                                <Link :href="route('student.exams.show', exam.id)" class="px-4 py-2 bg-rose-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-rose-700 transition active:scale-95 shadow-sm hover:shadow">
-                                    Commencer
-                                </Link>
+                                <button 
+                                    @click="handleExamAction(exam)"
+                                    :disabled="isLocating && loadingExamId === exam.id"
+                                    class="px-4 py-2 bg-rose-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-rose-700 transition active:scale-95 shadow-sm hover:shadow flex items-center justify-center gap-2 disabled:opacity-50"
+                                >
+                                    <ArrowPathIcon v-if="isLocating && loadingExamId === exam.id" class="h-3.5 w-3.5 animate-spin" />
+                                    {{ isLocating && loadingExamId === exam.id ? 'GPS...' : 'Commencer' }}
+                                </button>
                             </div>
                             <div v-if="upcomingExams.length === 0" class="py-8 text-center text-gray-400 font-bold italic text-xs">
                                 Aucun examen prévu.

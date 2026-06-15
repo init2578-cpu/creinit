@@ -22,6 +22,11 @@ class ExamController extends Controller
     {
         $user = $request->user();
 
+        // Mark exam-related notifications as read
+        $user->unreadNotifications()
+             ->where('type', \App\Notifications\ExamResultGradedNotification::class)
+             ->update(['read_at' => now()]);
+
         // Get the student's group IDs
         $groupIds = $user->studentGroups()->pluck('groups.id');
 
@@ -47,10 +52,29 @@ class ExamController extends Controller
         ]);
     }
 
-    public function show(Exam $exam): Response|RedirectResponse
+    public function show(Request $request, Exam $exam): Response|RedirectResponse
     {
         if (!$exam->is_approved) {
             return redirect()->route('student.exams.index')->with('error', "Cet examen n'est pas accessible actuellement.");
+        }
+
+        if (!$exam->is_practice) {
+            $existing = ExamResult::where('exam_id', $exam->id)
+                ->where('user_id', $request->user()->id)
+                ->first();
+
+            if ($existing) {
+                if ($existing->status === 'completed') {
+                    return redirect()->route('student.exams.index')->with('success', "Vous avez déjà passé cet examen.");
+                }
+                
+                if ($existing->status === 'blocked' || $existing->status === 'started') {
+                    if ($existing->status === 'started') {
+                        $existing->update(['status' => 'blocked']);
+                    }
+                    return redirect()->route('student.exams.index')->with('error', "Cet examen a été bloqué suite à une interruption. Veuillez contacter votre formateur pour le débloquer.");
+                }
+            }
         }
 
         $exam->load(['questions.options']);
@@ -67,6 +91,30 @@ class ExamController extends Controller
         return Inertia::render($component, [
             'exam' => $exam,
         ]);
+    }
+
+    public function start(Request $request, Exam $exam): \Illuminate\Http\JsonResponse
+    {
+        if (!$exam->is_approved || (!$exam->can_start && !$exam->is_practice)) {
+            return response()->json(['error' => "Cet examen n'est pas accessible actuellement."], 403);
+        }
+
+        if (!$exam->is_practice) {
+            $existing = ExamResult::where('exam_id', $exam->id)
+                ->where('user_id', $request->user()->id)
+                ->first();
+
+            if (!$existing) {
+                ExamResult::create([
+                    'exam_id' => $exam->id,
+                    'user_id' => $request->user()->id,
+                    'status' => 'started',
+                    'started_at' => now(),
+                ]);
+            }
+        }
+
+        return response()->json(['success' => true]);
     }
 
     /**
@@ -116,13 +164,29 @@ class ExamController extends Controller
         }
 
         if (!$exam->is_practice) {
-            ExamResult::create([
-                'exam_id' => $exam->id,
-                'user_id' => $request->user()->id,
-                'score' => $totalPoints > 0 ? ($score / $totalPoints) * 20 : 0, // Ramenant sur 20
-                'finished_at' => now(),
-                'answers' => $validated['answers'],
-            ]);
+            $result = ExamResult::where('exam_id', $exam->id)
+                ->where('user_id', $request->user()->id)
+                ->first();
+
+            $finalScore = $totalPoints > 0 ? ($score / $totalPoints) * 20 : 0;
+
+            if ($result) {
+                $result->update([
+                    'score' => $finalScore,
+                    'status' => 'completed',
+                    'finished_at' => now(),
+                    'answers' => $validated['answers'],
+                ]);
+            } else {
+                ExamResult::create([
+                    'exam_id' => $exam->id,
+                    'user_id' => $request->user()->id,
+                    'score' => $finalScore,
+                    'status' => 'completed',
+                    'finished_at' => now(),
+                    'answers' => $validated['answers'],
+                ]);
+            }
 
             return redirect()->route('student.dashboard')->with('success', 'Examen terminé.');
         }
@@ -134,5 +198,27 @@ class ExamController extends Controller
             'feedback' => $feedback,
             'exam' => $exam,
         ]);
+    }
+
+    /**
+     * Download the exam document (énoncé).
+     */
+    public function download(Request $request, Exam $exam): \Symfony\Component\HttpFoundation\BinaryFileResponse|RedirectResponse
+    {
+        if (!$exam->is_approved || (!$exam->can_start && !$exam->is_practice)) {
+            return redirect()->back()->with('error', "Cet examen n'est pas accessible actuellement.");
+        }
+
+        if ($exam->is_online || !$exam->document_path) {
+            return redirect()->back()->with('error', "Aucun énoncé disponible pour cet examen.");
+        }
+
+        $filePath = storage_path('app/public/' . $exam->document_path);
+
+        if (!file_exists($filePath)) {
+            return redirect()->back()->with('error', "Le fichier n'existe pas.");
+        }
+
+        return response()->download($filePath);
     }
 }

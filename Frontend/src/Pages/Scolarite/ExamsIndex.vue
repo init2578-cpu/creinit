@@ -18,7 +18,8 @@ import {
     ClipboardDocumentCheckIcon,
     QueueListIcon,
     XMarkIcon,
-    CheckIcon
+    CheckIcon,
+    ArrowPathIcon
 } from '@heroicons/vue/24/outline';
 import { ref, computed, watch } from 'vue';
 import axios from 'axios';
@@ -33,6 +34,7 @@ const page = usePage();
 const roles = computed(() => page.props.auth.user.roles);
 const isDirecteur = computed(() => roles.value.includes('Directeur'));
 const isSecretaire = computed(() => roles.value.includes('Secrétaire'));
+const isTrainer = computed(() => page.props.auth.user.is_trainer);
 
 const isModalOpen = ref(false);
 const isGradeModalOpen = ref(false);
@@ -209,12 +211,26 @@ const submit = () => {
             window.platformAlert(`Impossible de réduire le barème : le total des points des questions existantes (${currentQuestionsPoints}) dépasse le nouveau barème (${form.total_points}).`, 'error');
             return;
         }
-        form.post(route('exams.update', { exam: editingExam.value.id, _method: 'PUT' }), {
+        form.transform((data) => {
+            const transformed = { ...data, _method: 'PUT' };
+            if (!(transformed.document instanceof File)) {
+                delete transformed.document;
+            }
+            return transformed;
+        }).post(route('exams.update', editingExam.value.id), {
             onSuccess: () => closeModal(),
+            forceFormData: true,
         });
     } else {
-        form.post(route('exams.store'), {
+        form.transform((data) => {
+            const transformed = { ...data };
+            if (!(transformed.document instanceof File)) {
+                delete transformed.document;
+            }
+            return transformed;
+        }).post(route('exams.store'), {
             onSuccess: () => closeModal(),
+            forceFormData: true,
         });
     }
 };
@@ -241,8 +257,25 @@ const submitGrades = () => {
     gradeForm.post(route('exams.enter-grades', selectedExamForGrades.value.id), {
         onSuccess: () => {
             isGradeModalOpen.value = false;
+            window.platformAlert("Les notes ont été enregistrées avec succès.", "success");
         },
+        onError: (errors) => {
+            console.error('Validation errors:', errors);
+            window.platformAlert("Certaines notes sont invalides ou manquantes.", "error");
+        }
     });
+};
+
+const unlockExam = (userId) => {
+    if (confirm('Êtes-vous sûr de vouloir débloquer cet examen pour cet apprenant ? Sa tentative sera réinitialisée.')) {
+        router.post(route('exams.unlock', { exam: selectedExamForGrades.value.id, user: userId }), {}, {
+            preserveScroll: true,
+            onSuccess: async () => {
+                const response = await axios.get(route('exams.results', selectedExamForGrades.value.id));
+                gradeForm.grades = response.data;
+            }
+        });
+    }
 };
 
 const openQuestionModal = (exam, question = null) => {
@@ -437,6 +470,7 @@ function approveExam(examId) {
                     <p class="mt-2 text-gray-500 font-medium">Gérez vos sessions d'examens en ligne et sur table.</p>
                 </div>
                 <button 
+                    v-if="!isSecretaire"
                     @click="openModal()"
                     class="flex items-center justify-center gap-2 px-6 py-3.5 bg-gray-900 text-white rounded-2xl font-black text-sm hover:bg-blue-600 transition-all shadow-xl shadow-gray-200 hover:shadow-blue-100"
                 >
@@ -566,11 +600,11 @@ function approveExam(examId) {
                                         <button v-if="isDirecteur && !exam.is_approved" @click="approveExam(exam.id)" class="p-2 text-emerald-600 hover:bg-emerald-50 rounded-xl transition" title="Valider l'examen">
                                             <CheckCircleIcon class="h-6 w-6" />
                                         </button>
-                                        <button v-if="exam.type === 'online'" @click="openQuestionModal(exam)" class="p-2 text-blue-500 hover:bg-blue-50 rounded-xl transition" title="Gérer les questions">
+                                        <button v-if="exam.type === 'online'" @click="openQuestionModal(exam)" class="p-2 text-blue-500 hover:bg-blue-50 rounded-xl transition" :title="isSecretaire ? 'Voir les questions' : 'Gérer les questions'">
                                             <QueueListIcon class="h-6 w-6" />
                                         </button>
                                         <button 
-                                            v-if="exam.is_approved"
+                                            v-if="exam.is_approved && !isSecretaire"
                                             @click="openGradeModal(exam)" 
                                             class="p-2 text-green-600 hover:bg-green-50 rounded-xl transition" 
                                             title="Consulter les notes / Saisie"
@@ -578,17 +612,17 @@ function approveExam(examId) {
                                             <ClipboardDocumentCheckIcon class="h-6 w-6" />
                                         </button>
                                         <button 
-                                            v-else 
+                                            v-else-if="!isSecretaire"
                                             disabled 
                                             class="p-2 text-gray-300 cursor-not-allowed rounded-xl transition" 
                                             title="L'attribution des notes est bloquée tant que le directeur n'a pas validé l'épreuve"
                                         >
                                             <ClipboardDocumentCheckIcon class="h-6 w-6" />
                                         </button>
-                                        <button @click="openModal(exam)" class="p-2 text-blue-600 hover:bg-blue-50 rounded-xl transition" title="Modifier">
+                                        <button v-if="!isSecretaire" @click="openModal(exam)" class="p-2 text-blue-600 hover:bg-blue-50 rounded-xl transition" title="Modifier">
                                             <PencilIcon class="h-6 w-6" />
                                         </button>
-                                        <button @click="deleteExam(exam.id)" class="p-2 text-red-600 hover:bg-red-50 rounded-xl transition" title="Supprimer">
+                                        <button v-if="!isSecretaire" @click="deleteExam(exam.id)" class="p-2 text-red-600 hover:bg-red-50 rounded-xl transition" title="Supprimer">
                                             <TrashIcon class="h-6 w-6" />
                                         </button>
                                     </div>
@@ -622,6 +656,15 @@ function approveExam(examId) {
 
                 <form @submit.prevent="submit" class="p-0 overflow-y-auto custom-scrollbar flex-1 bg-gray-50/30">
                     <div class="p-8 space-y-8">
+                        <div v-if="Object.keys(form.errors).length > 0" class="p-4 bg-red-50 border border-red-100 rounded-2xl text-red-600 space-y-1">
+                            <p class="text-[10px] font-black uppercase tracking-widest flex items-center gap-2 mb-1 text-red-700">
+                                <XMarkIcon class="h-4 w-4" /> Erreurs de validation
+                            </p>
+                            <ul class="list-disc pl-4 text-xs font-bold space-y-0.5">
+                                <li v-for="(err, key) in form.errors" :key="key">{{ err }}</li>
+                            </ul>
+                        </div>
+
                         <!-- Section: Informations Générales -->
                         <div class="space-y-4">
                             <h4 class="text-[10px] font-black text-blue-600 uppercase tracking-[0.2em] flex items-center gap-2 mb-6">
@@ -658,7 +701,7 @@ function approveExam(examId) {
                             </div>
 
                             <!-- Groupes affectés -->
-                            <div v-if="isDirecteur || isSecretaire" class="space-y-3 pt-2">
+                            <div v-if="isDirecteur || isTrainer" class="space-y-3 pt-2">
                                 <label class="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 ml-1">
                                     Groupes affectés
                                 </label>
@@ -903,38 +946,54 @@ function approveExam(examId) {
                                 </div>
 
                                 <div class="flex items-center gap-4">
-                                    <!-- Note de Base -->
-                                    <div class="relative w-28 group-focus-within:scale-105 transition-transform duration-300">
-                                        <input 
-                                            v-model="student.score" 
-                                            type="number" 
-                                            step="0.25" 
-                                            min="0" 
-                                            :max="selectedExamForGrades?.total_points"
-                                            :disabled="selectedExamForGrades?.type === 'online'"
-                                            class="w-full bg-gray-50 border-2 border-transparent focus:border-green-600 rounded-2xl font-black text-center px-3 py-3 text-xs transition-all focus:bg-white focus:ring-0 outline-none text-gray-700 shadow-inner disabled:opacity-60 disabled:cursor-not-allowed"
-                                            placeholder="0.00"
-                                            title="La note est calculée automatiquement pour les QCM en ligne"
-                                        >
-                                        <div class="absolute -top-2.5 -right-1">
-                                            <span class="px-1.5 py-0.5 bg-gray-900 text-white text-[7px] font-black rounded-lg shadow-lg">Base /{{ selectedExamForGrades?.total_points }}</span>
+                                    <template v-if="student.status === 'blocked' || student.status === 'started'">
+                                        <span class="px-3 py-1 font-bold rounded-lg text-[10px] uppercase"
+                                              :class="student.status === 'blocked' ? 'bg-red-100 text-red-600' : 'bg-amber-100 text-amber-600'">
+                                            {{ student.status === 'blocked' ? 'Bloqué' : 'En cours / Déconnecté' }}
+                                        </span>
+                                        <button type="button" @click="unlockExam(student.user_id)" class="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded-lg text-[10px] font-bold uppercase transition-colors shadow-sm">
+                                            {{ student.status === 'blocked' ? 'Débloquer' : 'Réinitialiser' }}
+                                        </button>
+                                    </template>
+                                    <template v-else>
+                                        <!-- Note de Base -->
+                                        <div class="relative w-28 group-focus-within:scale-105 transition-transform duration-300">
+                                            <input 
+                                                v-model="student.score" 
+                                                type="number" 
+                                                step="0.25" 
+                                                min="0" 
+                                                :max="20"
+                                                :disabled="selectedExamForGrades?.type === 'online'"
+                                                class="w-full bg-gray-50 border-2 border-transparent focus:border-green-600 rounded-2xl font-black text-center px-3 py-3 text-xs transition-all focus:bg-white focus:ring-0 outline-none text-gray-700 shadow-inner disabled:opacity-60 disabled:cursor-not-allowed"
+                                                placeholder="0.00"
+                                                title="La note est calculée automatiquement pour les QCM en ligne"
+                                            >
+                                            <div class="absolute -top-2.5 -right-1">
+                                                <span class="px-1.5 py-0.5 bg-gray-900 text-white text-[7px] font-black rounded-lg shadow-lg">Base /20</span>
+                                            </div>
                                         </div>
-                                    </div>
 
-                                    <!-- Bonus / Plus -->
-                                    <div class="relative w-28 group-focus-within:scale-105 transition-transform duration-300">
-                                        <input 
-                                            v-model="student.bonus" 
-                                            type="number" 
-                                            step="0.25" 
-                                            min="0" 
-                                            class="w-full bg-green-50/30 border-2 border-dashed border-green-200 focus:border-green-600 focus:border-solid focus:bg-white rounded-2xl font-black text-center px-3 py-3 text-xs transition-all focus:ring-0 outline-none text-green-700 shadow-sm"
-                                            placeholder="0.00"
-                                        >
-                                        <div class="absolute -top-2.5 -right-1">
-                                            <span class="px-1.5 py-0.5 bg-green-600 text-white text-[7px] font-black rounded-lg shadow-lg">Bonus (+)</span>
+                                        <!-- Bonus / Plus -->
+                                        <div class="relative w-28 group-focus-within:scale-105 transition-transform duration-300">
+                                            <input 
+                                                v-model="student.bonus" 
+                                                type="number" 
+                                                step="0.25" 
+                                                min="0" 
+                                                class="w-full bg-green-50/30 border-2 border-dashed border-green-200 focus:border-green-600 focus:border-solid focus:bg-white rounded-2xl font-black text-center px-3 py-3 text-xs transition-all focus:ring-0 outline-none text-green-700 shadow-sm"
+                                                placeholder="0.00"
+                                            >
+                                            <div class="absolute -top-2.5 -right-1">
+                                                <span class="px-1.5 py-0.5 bg-green-600 text-white text-[7px] font-black rounded-lg shadow-lg">Bonus (+)</span>
+                                            </div>
                                         </div>
-                                    </div>
+                                        
+                                        <!-- Reset / Unlock for completed exams if needed -->
+                                        <button v-if="student.status === 'completed'" type="button" @click="unlockExam(student.user_id)" class="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors" title="Réinitialiser la tentative de l'étudiant">
+                                            <ArrowPathIcon class="h-5 w-5" />
+                                        </button>
+                                    </template>
                                 </div>
                             </div>
 
@@ -955,7 +1014,7 @@ function approveExam(examId) {
                             class="flex-1 py-4.5 bg-green-600 text-white rounded-[1.5rem] font-black text-xs uppercase tracking-widest hover:bg-green-700 disabled:opacity-50 transition-all shadow-xl shadow-green-100 flex items-center justify-center gap-3"
                         >
                             <CheckCircleIcon class="h-5 w-5" />
-                            {{ gradeForm.processing ? 'Enregistrement...' : 'Enregistrer les notes' }}
+                            {{ gradeForm.processing ? 'Enregistrement...' : 'Valider et Publier les notes' }}
                         </button>
                     </div>
                 </form>
@@ -987,7 +1046,7 @@ function approveExam(examId) {
 
                 <div class="grid grid-cols-1 lg:grid-cols-5 flex-1 overflow-hidden divide-x divide-gray-50">
                     <!-- Questions List (Left) -->
-                    <div class="lg:col-span-2 p-8 space-y-6 overflow-y-auto custom-scrollbar bg-gray-50/20">
+                    <div :class="isSecretaire ? 'lg:col-span-5' : 'lg:col-span-2'" class="p-8 space-y-6 overflow-y-auto custom-scrollbar bg-gray-50/20">
                         <div class="flex items-center justify-between mb-4">
                             <h4 class="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
                                 Questions existantes
@@ -1014,6 +1073,7 @@ function approveExam(examId) {
                                         </span>
                                         <div class="flex items-center gap-1.5 bg-gray-50 px-2 py-0.5 rounded-lg border border-gray-100">
                                             <input
+                                                v-if="!isSecretaire"
                                                 type="number"
                                                 v-model.number="q.points"
                                                 @change="updateQuestionPoints(q)"
@@ -1021,6 +1081,7 @@ function approveExam(examId) {
                                                 step="0.5"
                                                 class="w-8 text-center bg-transparent border-0 font-black text-[10px] p-0 focus:ring-0 text-gray-900"
                                             />
+                                            <span v-else class="w-8 text-center bg-transparent border-0 font-black text-[10px] p-0 text-gray-900">{{ q.points }}</span>
                                             <span class="text-[9px] font-bold text-gray-400 uppercase tracking-tighter">pts</span>
                                         </div>
                                     </div>
@@ -1033,7 +1094,7 @@ function approveExam(examId) {
                                         </span>
                                     </div>
                                 </div>
-                                <button @click="deleteQuestion(q.id)" class="opacity-0 group-hover:opacity-100 p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all duration-300">
+                                <button v-if="!isSecretaire" @click="deleteQuestion(q.id)" class="opacity-0 group-hover:opacity-100 p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all duration-300">
                                     <TrashIcon class="h-5 w-5" />
                                 </button>
                             </div>
@@ -1048,7 +1109,7 @@ function approveExam(examId) {
                     </div>
 
                     <!-- Add Question Form (Right) -->
-                    <div class="lg:col-span-3 p-10 space-y-8 overflow-y-auto custom-scrollbar bg-white">
+                    <div v-if="!isSecretaire" class="lg:col-span-3 p-10 space-y-8 overflow-y-auto custom-scrollbar bg-white">
                         <div>
                             <h4 class="text-[10px] font-black text-blue-600 uppercase tracking-[0.2em] flex items-center gap-2 mb-6">
                                 <PlusIcon class="h-4 w-4" />
