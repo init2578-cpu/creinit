@@ -54,6 +54,51 @@ class AdminExerciseController extends Controller
     }
 
     /**
+     * Create a new exercise (by creating a new Chapter configured as an exercise).
+     */
+    public function store(Request $request): RedirectResponse
+    {
+        if ($request->user()->hasRole('Secrétaire')) {
+            abort(403, 'Action non autorisée pour les secrétaires.');
+        }
+
+        $validated = $request->validate([
+            'module_id' => 'required|exists:modules,id',
+            'exercise_title' => 'required|string|max:255',
+            'exercise_type' => 'required|in:online,file',
+            'exercise_instructions' => 'nullable|string',
+            'exercise_points' => 'required|numeric|min:0',
+        ]);
+
+        $module = Module::findOrFail($validated['module_id']);
+        $ordre = $module->chapters()->max('ordre') + 1;
+
+        $chapter = $module->chapters()->create([
+            'titre' => $validated['exercise_title'],
+            'content' => $validated['exercise_instructions'],
+            'ordre' => $ordre,
+            'exercise_type' => $validated['exercise_type'],
+            'exercise_points' => $validated['exercise_points'],
+            'exercise_title' => $validated['exercise_title'],
+            'exercise_instructions' => $validated['exercise_instructions'],
+            'is_published' => true,
+        ]);
+
+        // Notify students
+        $chapter->load('module');
+        $students = User::role('Apprenant')
+            ->whereHas('studentGroups', function ($query) use ($chapter) {
+                $query->where('module_id', $chapter->module_id);
+            })->get();
+
+        foreach ($students as $student) {
+            $student->notify(new NewExerciseAvailableNotification($chapter));
+        }
+
+        return redirect()->back()->with('success', 'Exercice créé avec succès.');
+    }
+
+    /**
      * Update exercise settings for a chapter.
      */
     public function update(Request $request, Chapter $chapter): RedirectResponse
@@ -126,6 +171,7 @@ class AdminExerciseController extends Controller
             'enonce' => 'required|string',
             'points' => 'required|numeric|min:0',
             'type' => 'required|in:qcm,open',
+            'expected_answer' => 'nullable|string',
             'options' => 'array',
             'options.*.texte' => 'required_if:type,qcm|string',
             'options.*.is_correct' => 'required_if:type,qcm|boolean',
@@ -140,6 +186,7 @@ class AdminExerciseController extends Controller
             'enonce' => $validated['enonce'],
             'points' => $validated['points'],
             'type' => $validated['type'],
+            'expected_answer' => $validated['expected_answer'] ?? null,
             'ordre' => $chapter->questions()->count() + 1,
         ]);
 
@@ -149,7 +196,7 @@ class AdminExerciseController extends Controller
             }
         }
 
-        return redirect()->back()->with('success', 'Question ajoutée.');
+        return redirect()->back();
     }
 
     public function updateQuestion(Request $request, Question $question): RedirectResponse
@@ -162,6 +209,7 @@ class AdminExerciseController extends Controller
             'points' => 'required|numeric|min:0',
             'enonce' => 'sometimes|required|string',
             'type' => 'sometimes|required|in:qcm,open',
+            'expected_answer' => 'nullable|string',
             'options' => 'nullable|array',
             'options.*.id' => 'nullable|exists:options,id',
             'options.*.texte' => 'required_if:type,qcm|string',

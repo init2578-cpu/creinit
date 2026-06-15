@@ -13,6 +13,7 @@ import {
     UserCircleIcon,
     XMarkIcon,
     PencilIcon,
+    PencilSquareIcon,
     TrashIcon,
     PlusIcon,
     Squares2X2Icon,
@@ -34,10 +35,20 @@ const isTrainer = computed(() => page.props.auth.user.is_trainer);
 
 const viewMode = ref('correction'); // 'correction' or 'admin'
 const isEditModalOpen = ref(false);
+const isCreatingExercise = ref(false);
 const editingExercise = ref(null);
 const isQuestionModalOpen = ref(false);
 const editingQuestion = ref(null);
-const selectedChapterForQuestion = ref(null);
+const selectedChapterForQuestionId = ref(null);
+const selectedChapterForQuestion = computed(() => {
+    if (!selectedChapterForQuestionId.value) return null;
+    for (const module of props.modules) {
+        if (!module.chapters) continue;
+        const chapter = module.chapters.find(c => c.id === selectedChapterForQuestionId.value);
+        if (chapter) return chapter;
+    }
+    return null;
+});
 
 // Correction mode state
 const isGradeModalOpen = ref(false);
@@ -51,6 +62,7 @@ const gradeForm = useForm({
 });
 
 const adminForm = useForm({
+    module_id: '',
     exercise_title: '',
     exercise_type: 'online',
     exercise_instructions: '',
@@ -59,6 +71,7 @@ const adminForm = useForm({
 
 const questionForm = useForm({
     enonce: '',
+    expected_answer: '',
     points: 5,
     type: 'qcm',
     options: [
@@ -84,7 +97,18 @@ const submitGrade = () => {
     });
 };
 
+const openCreateModal = () => {
+    isCreatingExercise.value = true;
+    editingExercise.value = null;
+    adminForm.reset();
+    adminForm.module_id = props.modules.length > 0 ? props.modules[0].id : '';
+    adminForm.exercise_type = 'online';
+    adminForm.exercise_points = 20;
+    isEditModalOpen.value = true;
+};
+
 const openEditModal = (exercise) => {
+    isCreatingExercise.value = false;
     editingExercise.value = exercise;
     adminForm.exercise_title = exercise.exercise_title || exercise.titre;
     adminForm.exercise_type = exercise.exercise_type;
@@ -100,25 +124,34 @@ const isModalTotalPointsInvalid = computed(() => {
 });
 
 const submitAdminForm = () => {
-    if (editingExercise.value) {
-        const currentQuestionsPoints = editingExercise.value.questions?.reduce((sum, q) => sum + (parseFloat(q.points) || 0), 0) || 0;
-        if (adminForm.exercise_points < currentQuestionsPoints) {
-            window.platformAlert(`Impossible de réduire le barème : le total des points des questions existantes (${currentQuestionsPoints}) dépasse le nouveau barème (${adminForm.exercise_points}).`, 'error');
-            return;
+    if (isCreatingExercise.value) {
+        adminForm.post(route('exercises.store'), {
+            onSuccess: () => {
+                isEditModalOpen.value = false;
+            }
+        });
+    } else {
+        if (editingExercise.value) {
+            const currentQuestionsPoints = editingExercise.value.questions?.reduce((sum, q) => sum + (parseFloat(q.points) || 0), 0) || 0;
+            if (adminForm.exercise_points < currentQuestionsPoints) {
+                window.platformAlert(`Impossible de réduire le barème : le total des points des questions existantes (${currentQuestionsPoints}) dépasse le nouveau barème (${adminForm.exercise_points}).`, 'error');
+                return;
+            }
         }
+        adminForm.put(route('exercises.update', editingExercise.value.id), {
+            onSuccess: () => {
+                isEditModalOpen.value = false;
+            }
+        });
     }
-    adminForm.put(route('exercises.update', editingExercise.value.id), {
-        onSuccess: () => {
-            isEditModalOpen.value = false;
-        }
-    });
 };
 
 const openQuestionModal = (chapter, question = null) => {
-    selectedChapterForQuestion.value = chapter;
+    selectedChapterForQuestionId.value = chapter.id;
     editingQuestion.value = question;
     if (question) {
         questionForm.enonce = question.enonce;
+        questionForm.expected_answer = question.expected_answer || '';
         questionForm.points = question.points;
         questionForm.type = question.type;
         questionForm.options = question.options.length > 0 ? [...question.options] : [{ texte: '', is_correct: false }, { texte: '', is_correct: false }];
@@ -144,8 +177,13 @@ const currentChapterQuestionsTotalPoints = computed(() => {
 
 const isQuestionLimitExceeded = computed(() => {
     if (!selectedChapterForQuestion.value) return false;
-    const currentPoints = currentChapterQuestionsTotalPoints.value;
+    let currentPoints = currentChapterQuestionsTotalPoints.value;
     const newPoints = parseFloat(questionForm.points) || 0;
+    
+    if (editingQuestion.value) {
+        currentPoints -= parseFloat(editingQuestion.value.points) || 0;
+    }
+    
     return (currentPoints + newPoints) > selectedChapterForQuestion.value.exercise_points;
 });
 
@@ -154,11 +192,31 @@ const submitQuestionForm = () => {
         window.platformAlert(`Dépassement du barème : le total (${currentChapterQuestionsTotalPoints.value + parseFloat(questionForm.points)}) ne peut pas dépasser ${selectedChapterForQuestion.value.exercise_points} pts.`, 'error');
         return;
     }
-    questionForm.post(route('exercises.questions.store', selectedChapterForQuestion.value.id), {
-        onSuccess: () => {
-            isQuestionModalOpen.value = false;
-        }
+    const transformData = (data) => ({
+        ...data,
+        options: data.type === 'open' ? [] : data.options
     });
+
+    if (editingQuestion.value) {
+        questionForm
+            .transform(transformData)
+            .put(route('questions.update', editingQuestion.value.id), {
+                onSuccess: () => {
+                    questionForm.reset();
+                    questionForm.clearErrors();
+                    editingQuestion.value = null;
+                }
+            });
+    } else {
+        questionForm
+            .transform(transformData)
+            .post(route('exercises.questions.store', selectedChapterForQuestion.value.id), {
+                onSuccess: () => {
+                    questionForm.reset();
+                    questionForm.clearErrors();
+                }
+            });
+    }
 };
 
 const deleteQuestion = (id) => {
@@ -370,6 +428,12 @@ const isSubmissionCorrect = (question, submission) => {
 
             <!-- Administration View -->
             <div v-else class="space-y-8">
+                <div class="flex justify-end">
+                    <button v-if="!isSecretaire" @click="openCreateModal" class="px-6 py-3 bg-blue-600 text-white rounded-[1.5rem] font-black text-xs uppercase tracking-widest hover:bg-blue-700 transition shadow-xl shadow-blue-100 flex items-center gap-2">
+                        <PlusIcon class="h-5 w-5" />
+                        Nouvel Exercice
+                    </button>
+                </div>
                 <div v-for="module in modules" :key="module.id" class="bg-white rounded-[3rem] shadow-sm border border-gray-100 overflow-hidden">
                     <div class="p-8 border-b border-gray-50 bg-gray-50/30 flex items-center justify-between">
                         <div>
@@ -421,12 +485,19 @@ const isSubmissionCorrect = (question, submission) => {
         <div v-if="isEditModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/80 backdrop-blur-sm">
             <div class="bg-white w-full max-w-lg rounded-[2.5rem] overflow-hidden shadow-2xl">
                 <div class="p-8 border-b border-gray-100 flex items-center justify-between">
-                    <h3 class="text-2xl font-black text-gray-900 tracking-tight italic">Configurer l'exercice</h3>
+                    <h3 class="text-2xl font-black text-gray-900 tracking-tight italic">{{ isCreatingExercise ? 'Créer un exercice' : 'Configurer l\'exercice' }}</h3>
                     <button @click="isEditModalOpen = false" class="p-2 hover:bg-gray-100 rounded-xl transition">
                         <XMarkIcon class="h-6 w-6 text-gray-400" />
                     </button>
                 </div>
                 <form @submit.prevent="submitAdminForm" class="p-8 space-y-5">
+                    <div v-if="isCreatingExercise">
+                        <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Module</label>
+                        <select v-model="adminForm.module_id" required class="w-full bg-gray-50 border-0 rounded-2xl focus:ring-2 focus:ring-blue-500 font-bold px-5 py-3.5 appearance-none">
+                            <option value="" disabled>Sélectionner un module</option>
+                            <option v-for="mod in modules" :key="mod.id" :value="mod.id">{{ mod.titre }}</option>
+                        </select>
+                    </div>
                     <div>
                         <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Titre de l'exercice</label>
                         <input v-model="adminForm.exercise_title" type="text" required class="w-full bg-gray-50 border-0 rounded-2xl focus:ring-2 focus:ring-blue-500 font-bold px-5 py-3.5">
@@ -503,9 +574,14 @@ const isSubmissionCorrect = (question, submission) => {
                                     <span v-else class="px-3 py-1 bg-blue-50 text-blue-700 text-[11px] font-black rounded-lg">{{ q.points }}</span>
                                     <span class="text-[9px] font-bold text-gray-400">pts</span>
                                 </div>
-                                <button v-if="!isSecretaire" @click="deleteQuestion(q.id)" class="opacity-0 group-hover:opacity-100 p-1 text-red-400 hover:text-red-600 transition">
-                                    <TrashIcon class="h-4 w-4" />
-                                </button>
+                                <div class="flex items-center gap-1">
+                                    <button v-if="!isSecretaire" @click="openQuestionModal(selectedChapterForQuestion, q)" class="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-blue-600 transition" title="Modifier">
+                                        <PencilSquareIcon class="h-4 w-4" />
+                                    </button>
+                                    <button v-if="!isSecretaire" @click="deleteQuestion(q.id)" class="opacity-0 group-hover:opacity-100 p-1 text-red-400 hover:text-red-600 transition" title="Supprimer">
+                                        <TrashIcon class="h-4 w-4" />
+                                    </button>
+                                </div>
                             </div>
                             <p class="text-xs font-bold text-gray-900 mt-1">{{ q.enonce }}</p>
                             <span class="text-[9px] font-black text-gray-400 uppercase tracking-widest">{{ q.type }}</span>
@@ -518,6 +594,16 @@ const isSubmissionCorrect = (question, submission) => {
                     <!-- Add/Edit Question Form -->
                     <div v-if="!isSecretaire" class="p-8 bg-gray-50/30">
                         <h4 class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-6">Ajouter une question</h4>
+                        
+                        <div v-if="Object.keys(questionForm.errors).length > 0" class="p-4 bg-red-50 border border-red-100 rounded-2xl text-red-600 mb-6 space-y-1">
+                            <p class="text-[10px] font-black uppercase tracking-widest flex items-center gap-2 mb-1 text-red-700">
+                                <XMarkIcon class="h-4 w-4" /> Erreurs de validation
+                            </p>
+                            <ul class="list-disc pl-4 text-xs font-bold space-y-0.5">
+                                <li v-for="(err, key) in questionForm.errors" :key="key">{{ err }}</li>
+                            </ul>
+                        </div>
+
                         <form @submit.prevent="submitQuestionForm" class="space-y-4">
                             <div>
                                 <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Énoncé</label>
@@ -550,6 +636,13 @@ const isSubmissionCorrect = (question, submission) => {
                                         <XMarkIcon class="h-4 w-4" />
                                     </button>
                                 </div>
+                            </div>
+
+                            <!-- Expected Answer for Open Question -->
+                            <div v-if="questionForm.type === 'open'" class="pt-2">
+                                <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Corrigé / Réponse attendue (optionnel)</label>
+                                <textarea v-model="questionForm.expected_answer" rows="3" class="w-full bg-white border-0 rounded-2xl focus:ring-2 focus:ring-blue-500 font-bold px-4 py-3 text-sm" placeholder="Saisissez les éléments de réponse attendus..."></textarea>
+                                <p class="text-[9px] font-bold text-gray-400 mt-1">Sert de référence lors de la correction.</p>
                             </div>
 
                             <div v-if="isQuestionLimitExceeded" class="p-3 bg-red-50 border border-red-100 rounded-xl text-red-600 flex items-center gap-2 animate-pulse mt-4">

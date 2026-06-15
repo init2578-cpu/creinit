@@ -120,6 +120,7 @@ const gradeForm = useForm({
 
 const questionForm = useForm({
     enonce: '',
+    expected_answer: '',
     points: 5,
     type: 'qcm',
     options: [
@@ -294,6 +295,7 @@ const openQuestionModal = (exam, question = null) => {
     questionForm.clearErrors();
     if (question) {
         questionForm.enonce = question.enonce;
+        questionForm.expected_answer = question.expected_answer || '';
         questionForm.points = question.points;
         questionForm.type = question.type;
         questionForm.options = (question.options && question.options.length > 0) ? [...question.options] : [{ texte: '', is_correct: false }, { texte: '', is_correct: false }];
@@ -1236,6 +1238,20 @@ function approveExam(examId) {
                                             </button>
                                         </div>
                                     </div>
+                                </div>
+
+                                <!-- Expected Answer for Open Question -->
+                                <div v-if="questionForm.type === 'open'" class="space-y-3 pt-4 border-t border-gray-50 animate-in slide-in-from-bottom-5 duration-500">
+                                    <div class="flex items-center gap-2 mb-2">
+                                        <span class="p-1.5 bg-blue-50 text-blue-500 rounded-lg">
+                                            <DocumentTextIcon class="h-4 w-4" />
+                                        </span>
+                                        <label class="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Corrigé / Réponse attendue (Optionnel)</label>
+                                    </div>
+                                    <div class="relative group">
+                                        <textarea v-model="questionForm.expected_answer" rows="3" placeholder="Saisissez les éléments de réponse attendus..." class="w-full px-6 py-4 bg-gray-50 border-2 border-transparent focus:border-blue-600 rounded-[2rem] font-bold text-gray-700 focus:ring-0 outline-none transition-all shadow-inner focus:bg-white"></textarea>
+                                    </div>
+                                    <p class="text-[9px] font-bold text-gray-400 pl-2">Sert de référence lors de la correction.</p>
                                 </div>
 
                                 <div v-if="isQuestionLimitExceeded" class="p-4 bg-red-50 border border-red-100 rounded-2xl flex items-center gap-3 text-red-600 animate-pulse">

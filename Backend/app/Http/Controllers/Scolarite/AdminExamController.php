@@ -385,6 +385,7 @@ class AdminExamController extends Controller
             'enonce' => 'required|string',
             'points' => 'required|numeric|min:0',
             'type' => 'required|in:qcm,open',
+            'expected_answer' => 'nullable|string',
             'options' => 'array',
             'options.*.texte' => 'required_if:type,qcm|nullable|string',
             'options.*.is_correct' => 'required_if:type,qcm|nullable|boolean',
@@ -399,6 +400,7 @@ class AdminExamController extends Controller
             'enonce' => $validated['enonce'],
             'points' => $validated['points'],
             'type' => $validated['type'],
+            'expected_answer' => $validated['expected_answer'] ?? null,
             'ordre' => $exam->questions()->count() + 1,
         ]);
 
@@ -408,7 +410,7 @@ class AdminExamController extends Controller
             }
         }
 
-        return redirect()->back()->with('success', 'Question ajoutée.');
+        return redirect()->back();
     }
 
     public function approve(Request $request, Exam $exam): RedirectResponse
