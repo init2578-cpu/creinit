@@ -146,7 +146,7 @@ function calculateDays(startDate, endDate) {
             </header>
 
             <!-- KPI Cards for Directeur -->
-            <div v-if="isDirecteur" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div v-if="isDirecteur && stats" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                 <div class="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm flex items-center gap-5">
                     <div class="w-14 h-14 rounded-2xl bg-amber-50 text-amber-500 flex items-center justify-center">
                         <ClockIcon class="w-7 h-7" />
@@ -177,7 +177,7 @@ function calculateDays(startDate, endDate) {
             </div>
 
             <!-- KPI Cards for User -->
-            <div v-else class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div v-else-if="stats" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                 <div class="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm flex items-center gap-5">
                     <div class="w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-500 flex items-center justify-center">
                         <CalendarDaysIcon class="w-7 h-7" />
