@@ -50,9 +50,28 @@ const selectedExamForQuestion = computed(() => {
     return props.exams.find(e => e.id === selectedExamForQuestionId.value);
 });
 
+const groupSearchQuery = ref('');
+
 const filteredGroups = computed(() => {
-    if (!form.module_id) return props.groups || [];
-    return (props.groups || []).filter(g => g.module_id === parseInt(form.module_id));
+    let result = props.groups || [];
+    
+    // Filter by module if selected
+    if (form.module_id) {
+        result = result.filter(g => g.module_id === parseInt(form.module_id));
+    }
+    
+    // Filter by search query
+    if (groupSearchQuery.value) {
+        const query = groupSearchQuery.value.toLowerCase();
+        result = result.filter(g => 
+            g.nom_groupe.toLowerCase().includes(query) || 
+            (g.annee_academique && g.annee_academique.toLowerCase().includes(query))
+        );
+        return result;
+    }
+    
+    // If no search query, return the first 10
+    return result.slice(0, 10);
 });
 
 const form = useForm({
@@ -738,9 +757,17 @@ function approveExam(examId) {
 
                             <!-- Groupes affectés -->
                             <div v-if="isDirecteur || isTrainer" class="space-y-3 pt-2">
-                                <label class="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 ml-1">
-                                    Groupes affectés
-                                </label>
+                                <div class="flex items-center justify-between mb-2 ml-1">
+                                    <label class="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                                        Groupes affectés
+                                    </label>
+                                    <input 
+                                        type="text" 
+                                        v-model="groupSearchQuery" 
+                                        placeholder="Rechercher un groupe..." 
+                                        class="text-xs px-3 py-1.5 border border-gray-200 rounded-lg focus:border-blue-600 focus:ring-0 outline-none placeholder:text-gray-300 font-bold"
+                                    >
+                                </div>
                                 <div class="bg-gray-100/50 p-4 rounded-[1.5rem] border border-gray-200/50 max-h-48 overflow-y-auto custom-scrollbar">
                                     <div v-if="filteredGroups.length === 0" class="text-center py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">
                                         Aucun groupe disponible pour ce module
