@@ -50,9 +50,40 @@ class LeaveStatusUpdatedNotification extends Notification implements ShouldQueue
             $message->line("Commentaire de l'administration : {$this->leave->admin_commentaire}");
         }
 
-        return $message
-            ->action('Voir mes congés', url('/leaves'))
+        $message->action('Voir mes congés', url('/leaves'))
             ->line('Merci de votre confiance.');
+
+        if ($this->leave->status === 'approuve') {
+            $icsContent = $this->generateIcs();
+            $message->attachData($icsContent, 'mon_conge.ics', [
+                'mime' => 'text/calendar',
+            ]);
+        }
+
+        return $message;
+    }
+
+    private function generateIcs(): string
+    {
+        $start = $this->leave->date_debut->format('Ymd');
+        // iCal all-day end dates are exclusive, so we add 1 day
+        $end = $this->leave->date_fin->copy()->addDay()->format('Ymd');
+        $now = now()->timezone('UTC')->format('Ymd\THis\Z');
+        $uid = uniqid() . '@e-cre.com';
+        $type = $this->leave->type;
+
+        return "BEGIN:VCALENDAR\r\n" .
+               "VERSION:2.0\r\n" .
+               "PRODID:-//E-CRE//NONSGML v1.0//EN\r\n" .
+               "BEGIN:VEVENT\r\n" .
+               "UID:{$uid}\r\n" .
+               "DTSTAMP:{$now}\r\n" .
+               "DTSTART;VALUE=DATE:{$start}\r\n" .
+               "DTEND;VALUE=DATE:{$end}\r\n" .
+               "SUMMARY:Congé ({$type})\r\n" .
+               "DESCRIPTION:Congé approuvé via la plateforme E-CRE.\r\n" .
+               "END:VEVENT\r\n" .
+               "END:VCALENDAR";
     }
 
     /**

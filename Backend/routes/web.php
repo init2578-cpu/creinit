@@ -385,6 +385,7 @@ Route::middleware(['auth'])->group(function (): void {
     Route::get('/leaves', [\App\Http\Controllers\LeaveController::class, 'index'])->name('leaves.index');
     Route::post('/leaves', [\App\Http\Controllers\LeaveController::class, 'store'])->name('leaves.store');
     Route::post('/leaves/{leaf}/update', [\App\Http\Controllers\LeaveController::class, 'update'])->name('leaves.update');
+    Route::get('/leaves/{leaf}/document', [\App\Http\Controllers\LeaveController::class, 'downloadDocument'])->name('leaves.document');
     Route::delete('/leaves/{leaf}', [\App\Http\Controllers\LeaveController::class, 'destroy'])->name('leaves.destroy');
     Route::middleware(['role:Directeur'])->group(function () {
         Route::patch('/leaves/{leaf}/status', [\App\Http\Controllers\LeaveController::class, 'updateStatus'])->name('leaves.status.update');

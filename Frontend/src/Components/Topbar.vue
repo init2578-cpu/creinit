@@ -77,7 +77,8 @@ function markAllAsRead() {
                                     :href="notif.data.action_url ? notif.data.action_url : (
                                           notif.data.type === 'nomination_proposed' ? route('nominations.index') : 
                                           notif.data.type === 'new_exam_available' ? route('student.exams.index') :
-                                          notif.data.type === 'new_exercise_available' ? route('student.exercises.index') : '#'
+                                          notif.data.type === 'new_exercise_available' ? route('student.exercises.index') : 
+                                          (notif.data.type === 'leave_status' || notif.data.type === 'new_leave_request') ? route('leaves.index') : '#'
                                     )"
                                     class="block px-4 py-3 hover:bg-gray-50/50 transition border-b border-gray-50 last:border-0"
                                     @click="isNotificationsOpen = false"

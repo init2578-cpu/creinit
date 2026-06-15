@@ -13,11 +13,14 @@ import {
     XCircleIcon,
     ClockIcon,
     XMarkIcon,
-    PencilSquareIcon
+    PencilSquareIcon,
+    DocumentCheckIcon,
+    UserGroupIcon
 } from '@heroicons/vue/24/outline'
 
 const props = defineProps({
-    leaves: Array
+    leaves: Array,
+    stats: Object
 })
 
 const page = usePage()
@@ -39,6 +42,19 @@ const form = useForm({
 const reviewForm = useForm({
     status: '',
     admin_commentaire: ''
+})
+
+const numberOfDays = computed(() => {
+    if (!form.date_debut || !form.date_fin) return null;
+    const start = new Date(form.date_debut);
+    const end = new Date(form.date_fin);
+    if (isNaN(start) || isNaN(end)) return null;
+    
+    if (end < start) return 0;
+    
+    const diffTime = Math.abs(end - start);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; 
+    return diffDays;
 })
 
 function openAddModal() {
@@ -100,6 +116,14 @@ function deleteLeave(id) {
         router.delete(route('leaves.destroy', id))
     }
 }
+
+function calculateDays(startDate, endDate) {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    if (isNaN(start) || isNaN(end)) return 0;
+    const diffTime = Math.abs(end - start);
+    return Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+}
 </script>
 
 <template>
@@ -121,12 +145,75 @@ function deleteLeave(id) {
                 </button>
             </header>
 
+            <!-- KPI Cards for Directeur -->
+            <div v-if="isDirecteur" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div class="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm flex items-center gap-5">
+                    <div class="w-14 h-14 rounded-2xl bg-amber-50 text-amber-500 flex items-center justify-center">
+                        <ClockIcon class="w-7 h-7" />
+                    </div>
+                    <div>
+                        <p class="text-[11px] font-black uppercase tracking-widest text-gray-400">Demandes en attente</p>
+                        <p class="text-3xl font-black text-gray-900">{{ stats.pending_count }}</p>
+                    </div>
+                </div>
+                <div class="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm flex items-center gap-5">
+                    <div class="w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-500 flex items-center justify-center">
+                        <UserGroupIcon class="w-7 h-7" />
+                    </div>
+                    <div>
+                        <p class="text-[11px] font-black uppercase tracking-widest text-gray-400">Agents en congé</p>
+                        <p class="text-3xl font-black text-gray-900">{{ stats.active_count }}</p>
+                    </div>
+                </div>
+                <div class="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm flex items-center gap-5">
+                    <div class="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-500 flex items-center justify-center">
+                        <DocumentCheckIcon class="w-7 h-7" />
+                    </div>
+                    <div>
+                        <p class="text-[11px] font-black uppercase tracking-widest text-gray-400">Approuvés (Année)</p>
+                        <p class="text-3xl font-black text-gray-900">{{ stats.approved_year_count }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- KPI Cards for User -->
+            <div v-else class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div class="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm flex items-center gap-5">
+                    <div class="w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-500 flex items-center justify-center">
+                        <CalendarDaysIcon class="w-7 h-7" />
+                    </div>
+                    <div>
+                        <p class="text-[11px] font-black uppercase tracking-widest text-gray-400">Jours Restants</p>
+                        <p class="text-3xl font-black text-gray-900">{{ stats.remaining_days }}</p>
+                    </div>
+                </div>
+                <div class="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm flex items-center gap-5">
+                    <div class="w-14 h-14 rounded-2xl bg-gray-50 text-gray-500 flex items-center justify-center">
+                        <DocumentCheckIcon class="w-7 h-7" />
+                    </div>
+                    <div>
+                        <p class="text-[11px] font-black uppercase tracking-widest text-gray-400">Jours Consommés</p>
+                        <p class="text-3xl font-black text-gray-900">{{ stats.consumed_days }}</p>
+                    </div>
+                </div>
+                <div class="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm flex items-center gap-5">
+                    <div class="w-14 h-14 rounded-2xl bg-amber-50 text-amber-500 flex items-center justify-center">
+                        <ClockIcon class="w-7 h-7" />
+                    </div>
+                    <div>
+                        <p class="text-[11px] font-black uppercase tracking-widest text-gray-400">En attente</p>
+                        <p class="text-3xl font-black text-gray-900">{{ stats.pending_count }}</p>
+                    </div>
+                </div>
+            </div>
+
             <div class="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden">
                 <table class="w-full text-left border-collapse">
                     <thead>
                         <tr class="bg-gray-50/50 border-b border-gray-100">
                             <th v-if="isDirecteur" class="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Utilisateur</th>
                             <th class="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Type & Période</th>
+                            <th class="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Durée</th>
                             <th class="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Statut</th>
                             <th class="px-8 py-5 text-[10px] font-black text-gray-400 text-right uppercase tracking-widest">Actions</th>
                         </tr>
@@ -144,6 +231,11 @@ function deleteLeave(id) {
                                     Du {{ formatDate(leave.date_debut) }} au {{ formatDate(leave.date_fin) }}
                                 </div>
                             </td>
+                            <td class="px-8 py-6 text-center">
+                                <span class="inline-flex items-center justify-center px-3 py-1 bg-gray-100 text-gray-700 text-xs font-black rounded-xl">
+                                    {{ calculateDays(leave.date_debut, leave.date_fin) }} j
+                                </span>
+                            </td>
                             <td class="px-8 py-6">
                                 <span v-if="leave.status === 'en_attente'" class="px-3 py-1.5 bg-amber-50 text-amber-600 text-[10px] font-black uppercase tracking-widest rounded-lg flex items-center gap-1.5 w-max">
                                     <ClockIcon class="h-3.5 w-3.5" /> En attente
@@ -160,7 +252,7 @@ function deleteLeave(id) {
                             </td>
                             <td class="px-8 py-6">
                                 <div class="flex items-center justify-end gap-2">
-                                    <a v-if="leave.document_path" :href="'/storage/' + leave.document_path" target="_blank" class="p-2.5 bg-gray-50 text-gray-400 hover:text-indigo-600 rounded-xl transition" title="Voir le justificatif">
+                                    <a v-if="leave.document_path" :href="route('leaves.document', leave.id)" target="_blank" class="p-2.5 bg-gray-50 text-gray-400 hover:text-indigo-600 rounded-xl transition" title="Voir le justificatif">
                                         <DocumentTextIcon class="h-5 w-5" />
                                     </a>
                                     <button 
@@ -209,7 +301,7 @@ function deleteLeave(id) {
                             <select v-model="form.type" class="w-full bg-gray-50 border-0 rounded-xl font-bold py-3 px-4 focus:ring-2 focus:ring-indigo-600">
                                 <option value="Annuel">Annuel</option>
                                 <option value="Maladie">Maladie</option>
-                                <option value="Maternité/Paternité">Maternité/Paternité</option>
+                                <option value="Maternité">Maternité</option>
                                 <option value="Sans solde">Sans solde</option>
                                 <option value="Autre">Autre</option>
                             </select>
@@ -225,6 +317,17 @@ function deleteLeave(id) {
                                 <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-1">Date de fin</label>
                                 <DateInput v-model="form.date_fin" class="w-full bg-gray-50 border-0 rounded-xl font-bold py-3 px-4" />
                                 <p v-if="form.errors.date_fin" class="mt-1 text-[10px] text-red-600 font-bold">{{ form.errors.date_fin }}</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Highlighted Duration -->
+                        <div v-if="numberOfDays" class="bg-indigo-50 border border-indigo-100 rounded-2xl p-4 flex items-center justify-between shadow-sm shadow-indigo-100/50">
+                            <div class="flex items-center gap-2 text-indigo-600">
+                                <ClockIcon class="h-6 w-6" />
+                                <span class="text-sm font-black uppercase tracking-widest">Durée estimée</span>
+                            </div>
+                            <div class="text-3xl font-black text-indigo-700">
+                                {{ numberOfDays }} <span class="text-sm font-bold opacity-70">jour{{ numberOfDays > 1 ? 's' : '' }}</span>
                             </div>
                         </div>
                         <div>
