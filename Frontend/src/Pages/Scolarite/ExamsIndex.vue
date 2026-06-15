@@ -55,6 +55,9 @@ const groupSearchQuery = ref('');
 const filteredGroups = computed(() => {
     let result = props.groups || [];
     
+    // Always filter out closed groups
+    result = result.filter(g => g.status !== 'closed');
+    
     // Filter by module if selected
     if (form.module_id) {
         result = result.filter(g => g.module_id === parseInt(form.module_id));
