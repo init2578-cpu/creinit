@@ -24,9 +24,9 @@ class AdminExamController extends Controller
         $user = $request->user();
 
         if ($user->hasRole('Secrétaire')) {
-            $examQuery = Exam::with(['module', 'questions', 'groups'])->orderBy('created_at', 'desc');
+            $examQuery = Exam::with(['module', 'questions.options', 'groups'])->orderBy('created_at', 'desc');
         } else {
-            $examQuery = Exam::with(['module', 'questions', 'examResults.user', 'groups'])->orderBy('created_at', 'desc');
+            $examQuery = Exam::with(['module', 'questions.options', 'examResults.user', 'groups'])->orderBy('created_at', 'desc');
         }
         $moduleQuery = Module::query();
         $groupsQuery = Group::query();
@@ -122,6 +122,10 @@ class AdminExamController extends Controller
             abort(403, 'Action non autorisée pour les secrétaires.');
         }
 
+        if ($exam->scheduled_at && $exam->scheduled_at->isPast() && !$request->user()->hasRole('Directeur')) {
+            return redirect()->back()->with('error', 'Impossible de modifier cet examen car il a déjà commencé.');
+        }
+
         $validated = $request->validate([
             'module_id' => 'required|exists:modules,id',
             'titre' => 'required|string|max:255',
@@ -170,11 +174,53 @@ class AdminExamController extends Controller
             abort(403, 'Action non autorisée pour les secrétaires.');
         }
 
+        if ($exam->scheduled_at && $exam->scheduled_at->isPast() && !$request->user()->hasRole('Directeur')) {
+            return redirect()->back()->with('error', 'Impossible de supprimer cet examen car il a déjà commencé.');
+        }
+
         if ($exam->document_path) {
             Storage::disk('public')->delete($exam->document_path);
         }
         $exam->delete();
         return redirect()->back()->with('success', 'Examen supprimé.');
+    }
+
+    public function duplicate(Request $request, Exam $exam): RedirectResponse
+    {
+        if ($request->user()->hasRole('Secrétaire')) {
+            abort(403, 'Action non autorisée pour les secrétaires.');
+        }
+
+        $newExam = $exam->replicate();
+        $newExam->titre = $exam->titre . ' - Copie';
+        $newExam->scheduled_at = null;
+        $newExam->is_approved = false;
+        $newExam->are_grades_published = false;
+        
+        if ($exam->document_path && Storage::disk('public')->exists($exam->document_path)) {
+            $extension = pathinfo($exam->document_path, PATHINFO_EXTENSION);
+            $newPath = 'exams/' . uniqid() . '.' . $extension;
+            Storage::disk('public')->copy($exam->document_path, $newPath);
+            $newExam->document_path = $newPath;
+        }
+
+        $newExam->save();
+
+        foreach ($exam->questions as $question) {
+            $newQuestion = $question->replicate();
+            $newQuestion->exam_id = $newExam->id;
+            $newQuestion->save();
+
+            if ($question->type === 'qcm') {
+                foreach ($question->options as $option) {
+                    $newOption = $option->replicate();
+                    $newOption->question_id = $newQuestion->id;
+                    $newOption->save();
+                }
+            }
+        }
+
+        return redirect()->back()->with('success', 'Examen dupliqué avec succès. Veuillez modifier la copie pour lui assigner un groupe et une date.');
     }
 
     /**
@@ -329,6 +375,10 @@ class AdminExamController extends Controller
     {
         if ($request->user()->hasRole('Secrétaire')) {
             abort(403, 'Action non autorisée pour les secrétaires.');
+        }
+
+        if ($exam->scheduled_at && $exam->scheduled_at->isPast() && !$request->user()->hasRole('Directeur')) {
+            return redirect()->back()->with('error', 'Impossible de modifier la banque de questions car cet examen a déjà commencé.');
         }
 
         $validated = $request->validate([

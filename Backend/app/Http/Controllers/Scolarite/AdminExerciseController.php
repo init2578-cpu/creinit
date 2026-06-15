@@ -161,10 +161,20 @@ class AdminExerciseController extends Controller
         $validated = $request->validate([
             'points' => 'required|numeric|min:0',
             'enonce' => 'sometimes|required|string',
+            'type' => 'sometimes|required|in:qcm,open',
+            'options' => 'nullable|array',
+            'options.*.id' => 'nullable|exists:options,id',
+            'options.*.texte' => 'required_if:type,qcm|string',
+            'options.*.is_correct' => 'required_if:type,qcm|boolean',
         ]);
 
         if ($question->exam_id) {
             $exam = $question->exam;
+            
+            if ($exam->scheduled_at && $exam->scheduled_at->isPast() && !request()->user()->hasRole('Directeur')) {
+                return redirect()->back()->with('error', 'Impossible de modifier la question car cet examen a déjà commencé.');
+            }
+            
             $otherPoints = $exam->questions()->where('id', '!=', $question->id)->sum('points');
             
             if (($otherPoints + $validated['points']) > $exam->total_points) {
@@ -181,6 +191,27 @@ class AdminExerciseController extends Controller
 
         $question->update($validated);
 
+        if (isset($validated['type'])) {
+            if ($validated['type'] === 'qcm' && !empty($validated['options'])) {
+                $keepIds = [];
+                foreach ($validated['options'] as $optionData) {
+                    if (!empty($optionData['id'])) {
+                        $option = $question->options()->find($optionData['id']);
+                        if ($option) {
+                            $option->update($optionData);
+                            $keepIds[] = $option->id;
+                        }
+                    } else {
+                        $newOption = $question->options()->create($optionData);
+                        $keepIds[] = $newOption->id;
+                    }
+                }
+                $question->options()->whereNotIn('id', $keepIds)->delete();
+            } else {
+                $question->options()->delete();
+            }
+        }
+
         return redirect()->back()->with('success', 'Question mise à jour.');
     }
 
@@ -188,6 +219,13 @@ class AdminExerciseController extends Controller
     {
         if (request()->user()->hasRole('Secrétaire')) {
             abort(403, 'Action non autorisée pour les secrétaires.');
+        }
+
+        if ($question->exam_id) {
+            $exam = $question->exam;
+            if ($exam->scheduled_at && $exam->scheduled_at->isPast() && !request()->user()->hasRole('Directeur')) {
+                return redirect()->back()->with('error', 'Impossible de supprimer la question car cet examen a déjà commencé.');
+            }
         }
 
         $question->delete();

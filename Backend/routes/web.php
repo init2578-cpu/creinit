@@ -282,6 +282,7 @@ Route::middleware(['auth'])->group(function (): void {
             Route::post('exercises/{submission}/grade', [AdminExerciseController::class, 'gradeSubmission'])->name('exercises.grade-submission');
             Route::post('exercises/{chapter}/questions', [AdminExerciseController::class, 'storeQuestion'])->name('exercises.questions.store');
             Route::post('exams/{exam}/questions', [AdminExamController::class, 'storeQuestion'])->name('exams.questions.store');
+            Route::post('exams/{exam}/duplicate', [AdminExamController::class, 'duplicate'])->name('exams.duplicate');
             Route::patch('questions/{question}', [AdminExerciseController::class, 'updateQuestion'])->name('questions.update');
             Route::delete('questions/{question}', [AdminExerciseController::class, 'destroyQuestion'])->name('questions.destroy');
             Route::resource('certificates', \App\Http\Controllers\Scolarite\AdminCertificateController::class)->only(['index', 'destroy']);

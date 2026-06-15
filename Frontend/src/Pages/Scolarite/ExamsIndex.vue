@@ -19,7 +19,9 @@ import {
     QueueListIcon,
     XMarkIcon,
     CheckIcon,
-    ArrowPathIcon
+    ArrowPathIcon,
+    PencilSquareIcon,
+    DocumentDuplicateIcon
 } from '@heroicons/vue/24/outline';
 import { ref, computed, watch } from 'vue';
 import axios from 'axios';
@@ -241,6 +243,14 @@ const deleteExam = (id) => {
     }
 };
 
+const duplicateExam = (id) => {
+    if (confirm('Voulez-vous dupliquer cet examen ? Une nouvelle copie sera créée, prête à être assignée à un autre groupe.')) {
+        router.post(route('exams.duplicate', id), {}, {
+            preserveScroll: true
+        });
+    }
+};
+
 const openGradeModal = async (exam) => {
     selectedExamForGrades.value = exam;
     try {
@@ -286,7 +296,7 @@ const openQuestionModal = (exam, question = null) => {
         questionForm.enonce = question.enonce;
         questionForm.points = question.points;
         questionForm.type = question.type;
-        questionForm.options = question.options.length > 0 ? [...question.options] : [{ texte: '', is_correct: false }, { texte: '', is_correct: false }];
+        questionForm.options = (question.options && question.options.length > 0) ? [...question.options] : [{ texte: '', is_correct: false }, { texte: '', is_correct: false }];
     } else {
         questionForm.reset();
         questionForm.options = [{ texte: '', is_correct: false }, { texte: '', is_correct: false }];
@@ -302,30 +312,46 @@ const currentExamQuestionsTotalPoints = computed(() => {
 const isQuestionLimitExceeded = computed(() => {
     if (!selectedExamForQuestion.value) return false;
     let currentPoints = currentExamQuestionsTotalPoints.value;
-    // If we're editing a question in the list, we don't handle it through questionForm yet
-    // but the inline edit uses updateQuestionPoints.
-    // For the "Add" form (questionForm):
     const newPoints = parseFloat(questionForm.points) || 0;
+    
+    if (editingQuestion.value) {
+        currentPoints -= parseFloat(editingQuestion.value.points) || 0;
+    }
+    
     return (currentPoints + newPoints) > selectedExamForQuestion.value.total_points;
 });
 
 const submitQuestionForm = () => {
     if (isQuestionLimitExceeded.value) {
-        window.platformAlert(`Dépassement du barème : le total (${currentExamQuestionsTotalPoints.value + parseFloat(questionForm.points)}) ne peut pas dépasser ${selectedExamForQuestion.value.total_points} pts.`, 'error');
+        window.platformAlert(`Dépassement du barème : le total ne peut pas dépasser ${selectedExamForQuestion.value.total_points} pts.`, 'error');
         return;
     }
-    questionForm
-        .transform((data) => ({
-            ...data,
-            options: data.type === 'open' ? [] : data.options
-        }))
-        .post(route('exams.questions.store', selectedExamForQuestion.value.id), {
-            onSuccess: () => {
-                // Keep the modal open, just reset the form for the next question
-                questionForm.reset();
-                questionForm.clearErrors();
-            }
-        });
+    
+    const transformData = (data) => ({
+        ...data,
+        options: data.type === 'open' ? [] : data.options
+    });
+
+    if (editingQuestion.value) {
+        questionForm
+            .transform(transformData)
+            .patch(route('questions.update', editingQuestion.value.id), {
+                onSuccess: () => {
+                    questionForm.reset();
+                    questionForm.clearErrors();
+                    editingQuestion.value = null;
+                }
+            });
+    } else {
+        questionForm
+            .transform(transformData)
+            .post(route('exams.questions.store', selectedExamForQuestion.value.id), {
+                onSuccess: () => {
+                    questionForm.reset();
+                    questionForm.clearErrors();
+                }
+            });
+    }
 };
 
 const deleteQuestion = (id) => {
@@ -367,6 +393,11 @@ const isExamEnded = (exam) => {
     if (!exam.scheduled_at) return false;
     const end = new Date(new Date(exam.scheduled_at).getTime() + exam.duree_minutes * 60000);
     return new Date() > end;
+};
+
+const isExamStarted = (exam) => {
+    if (!exam || !exam.scheduled_at) return false;
+    return new Date(exam.scheduled_at) <= new Date();
 };
 
 // Removed handleTimeInput since we now use dropdowns
@@ -619,10 +650,13 @@ function approveExam(examId) {
                                         >
                                             <ClipboardDocumentCheckIcon class="h-6 w-6" />
                                         </button>
-                                        <button v-if="!isSecretaire" @click="openModal(exam)" class="p-2 text-blue-600 hover:bg-blue-50 rounded-xl transition" title="Modifier">
+                                        <button v-if="!isSecretaire && (isDirecteur || !isExamStarted(exam))" @click="openModal(exam)" class="p-2 text-blue-600 hover:bg-blue-50 rounded-xl transition" title="Modifier">
                                             <PencilIcon class="h-6 w-6" />
                                         </button>
-                                        <button v-if="!isSecretaire" @click="deleteExam(exam.id)" class="p-2 text-red-600 hover:bg-red-50 rounded-xl transition" title="Supprimer">
+                                        <button v-if="!isSecretaire" @click="duplicateExam(exam.id)" class="p-2 text-indigo-600 hover:bg-indigo-50 rounded-xl transition" title="Dupliquer pour un autre groupe">
+                                            <DocumentDuplicateIcon class="h-6 w-6" />
+                                        </button>
+                                        <button v-if="!isSecretaire && (isDirecteur || !isExamStarted(exam))" @click="deleteExam(exam.id)" class="p-2 text-red-600 hover:bg-red-50 rounded-xl transition" title="Supprimer">
                                             <TrashIcon class="h-6 w-6" />
                                         </button>
                                     </div>
@@ -1046,7 +1080,7 @@ function approveExam(examId) {
 
                 <div class="grid grid-cols-1 lg:grid-cols-5 flex-1 overflow-hidden divide-x divide-gray-50">
                     <!-- Questions List (Left) -->
-                    <div :class="isSecretaire ? 'lg:col-span-5' : 'lg:col-span-2'" class="p-8 space-y-6 overflow-y-auto custom-scrollbar bg-gray-50/20">
+                    <div :class="(isSecretaire || (!isDirecteur && isExamStarted(selectedExamForQuestion))) ? 'lg:col-span-5' : 'lg:col-span-2'" class="p-8 space-y-6 overflow-y-auto custom-scrollbar bg-gray-50/20">
                         <div class="flex items-center justify-between mb-4">
                             <h4 class="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
                                 Questions existantes
@@ -1073,7 +1107,7 @@ function approveExam(examId) {
                                         </span>
                                         <div class="flex items-center gap-1.5 bg-gray-50 px-2 py-0.5 rounded-lg border border-gray-100">
                                             <input
-                                                v-if="!isSecretaire"
+                                                v-if="!isSecretaire && (isDirecteur || !isExamStarted(selectedExamForQuestion))"
                                                 type="number"
                                                 v-model.number="q.points"
                                                 @change="updateQuestionPoints(q)"
@@ -1094,9 +1128,14 @@ function approveExam(examId) {
                                         </span>
                                     </div>
                                 </div>
-                                <button v-if="!isSecretaire" @click="deleteQuestion(q.id)" class="opacity-0 group-hover:opacity-100 p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all duration-300">
-                                    <TrashIcon class="h-5 w-5" />
-                                </button>
+                                <div class="flex flex-col gap-1">
+                                    <button v-if="!isSecretaire && (isDirecteur || !isExamStarted(selectedExamForQuestion))" @click="openQuestionModal(selectedExamForQuestion, q)" class="opacity-0 group-hover:opacity-100 p-2 text-gray-300 hover:text-blue-500 hover:bg-blue-50 rounded-xl transition-all duration-300" title="Modifier la question">
+                                        <PencilSquareIcon class="h-5 w-5" />
+                                    </button>
+                                    <button v-if="!isSecretaire && (isDirecteur || !isExamStarted(selectedExamForQuestion))" @click="deleteQuestion(q.id)" class="opacity-0 group-hover:opacity-100 p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all duration-300" title="Supprimer la question">
+                                        <TrashIcon class="h-5 w-5" />
+                                    </button>
+                                </div>
                             </div>
                         </div>
 
@@ -1109,11 +1148,12 @@ function approveExam(examId) {
                     </div>
 
                     <!-- Add Question Form (Right) -->
-                    <div v-if="!isSecretaire" class="lg:col-span-3 p-10 space-y-8 overflow-y-auto custom-scrollbar bg-white">
+                    <div v-if="!isSecretaire && (isDirecteur || !isExamStarted(selectedExamForQuestion))" class="lg:col-span-3 p-10 space-y-8 overflow-y-auto custom-scrollbar bg-white">
                         <div>
                             <h4 class="text-[10px] font-black text-blue-600 uppercase tracking-[0.2em] flex items-center gap-2 mb-6">
-                                <PlusIcon class="h-4 w-4" />
-                                Nouvelle Question
+                                <PlusIcon v-if="!editingQuestion" class="h-4 w-4" />
+                                <PencilSquareIcon v-else class="h-4 w-4" />
+                                {{ editingQuestion ? 'Modifier la question' : 'Nouvelle Question' }}
                             </h4>
                             
                             <div v-if="Object.keys(questionForm.errors).length > 0" class="p-4 bg-red-50 border border-red-100 rounded-2xl text-red-600 mb-6 space-y-1">
@@ -1203,14 +1243,25 @@ function approveExam(examId) {
                                     <p class="text-[9px] font-black uppercase tracking-widest">Le cumul avec cette question ({{ currentExamQuestionsTotalPoints + parseFloat(questionForm.points) }}) dépasse le total autorisé.</p>
                                 </div>
 
-                                <button 
-                                    type="submit" 
-                                    :disabled="questionForm.processing || isQuestionLimitExceeded"
-                                    class="w-full py-5 bg-blue-600 text-white rounded-[2rem] font-black text-xs uppercase tracking-[0.3em] hover:bg-blue-700 active:scale-[0.98] transition-all shadow-xl shadow-blue-100 flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                    <CheckCircleIcon class="h-5 w-5" />
-                                    {{ questionForm.processing ? 'Enregistrement...' : 'Valider la question' }}
-                                </button>
+                                <div class="flex items-center gap-3">
+                                    <button 
+                                        type="button" 
+                                        v-if="editingQuestion"
+                                        @click="openQuestionModal(selectedExamForQuestion, null)" 
+                                        class="px-6 py-5 bg-gray-100 text-gray-500 rounded-[2rem] font-black text-xs uppercase tracking-[0.3em] hover:bg-gray-200 active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-sm"
+                                    >
+                                        <XMarkIcon class="h-4 w-4" />
+                                        Annuler
+                                    </button>
+                                    <button 
+                                        type="submit" 
+                                        :disabled="questionForm.processing || isQuestionLimitExceeded"
+                                        class="flex-1 py-5 bg-blue-600 text-white rounded-[2rem] font-black text-xs uppercase tracking-[0.3em] hover:bg-blue-700 active:scale-[0.98] transition-all shadow-xl shadow-blue-100 flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        <CheckCircleIcon class="h-5 w-5" />
+                                        {{ questionForm.processing ? 'Enregistrement...' : (editingQuestion ? 'Mettre à jour' : 'Valider la question') }}
+                                    </button>
+                                </div>
                             </form>
                         </div>
                     </div>
