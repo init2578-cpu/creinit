@@ -284,6 +284,7 @@ Route::middleware(['auth'])->group(function (): void {
             Route::get('exercises', [AdminExerciseController::class, 'index'])->name('exercises.index');
             Route::post('exercises', [AdminExerciseController::class, 'store'])->name('exercises.store');
             Route::put('exercises/{chapter}', [AdminExerciseController::class, 'update'])->name('exercises.update');
+            Route::patch('exercises/{chapter}/publish', [AdminExerciseController::class, 'togglePublish'])->name('exercises.publish');
             Route::delete('exercises/{chapter}', [AdminExerciseController::class, 'destroy'])->name('exercises.destroy');
             Route::post('exercises/{chapter}/attachments', [AdminExerciseController::class, 'updateAttachment'])->name('exercises.attachments.store');
             Route::delete('exercises/{chapter}/attachments/{index}', [AdminExerciseController::class, 'deleteAttachment'])->name('exercises.attachments.destroy');

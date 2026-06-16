@@ -1,6 +1,6 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { Head, useForm, usePage } from '@inertiajs/vue3';
+import { Head, useForm, usePage, router } from '@inertiajs/vue3';
 import { 
     BookOpenIcon,
     CheckCircleIcon,
@@ -8,6 +8,7 @@ import {
     DocumentIcon,
     ChatBubbleLeftRightIcon,
     EyeIcon,
+    EyeSlashIcon,
     AcademicCapIcon,
     ChevronRightIcon,
     ChevronUpIcon,
@@ -22,7 +23,7 @@ import {
     ListBulletIcon,
     QueueListIcon
 } from '@heroicons/vue/24/outline';
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 
 const props = defineProps({
     exercises: Array,
@@ -115,6 +116,27 @@ const submitGrade = () => {
     });
 };
 
+watch(() => gradeForm.grade, (newGrade) => {
+    if (newGrade !== '' && newGrade !== null && selectedExercise.value) {
+        const maxPoints = selectedExercise.value.exercise_points || 20;
+        const ratio = Number(newGrade) / maxPoints;
+        
+        if (ratio >= 0.8) {
+            gradeForm.status = 'excellent';
+        } else if (ratio >= 0.7) {
+            gradeForm.status = 'very_good';
+        } else if (ratio >= 0.6) {
+            gradeForm.status = 'good';
+        } else if (ratio >= 0.5) {
+            gradeForm.status = 'satisfactory';
+        } else if (ratio >= 0.25) {
+            gradeForm.status = 'rejected';
+        } else {
+            gradeForm.status = 'weak';
+        }
+    }
+});
+
 const openCreateModal = () => {
     isCreatingExercise.value = true;
     editingExercise.value = null;
@@ -140,6 +162,15 @@ const isModalTotalPointsInvalid = computed(() => {
     const currentQuestionsPoints = editingExercise.value.questions?.reduce((sum, q) => sum + (parseFloat(q.points) || 0), 0) || 0;
     return adminForm.exercise_points < currentQuestionsPoints;
 });
+
+const togglePublish = (chapter) => {
+    const action = chapter.is_published ? 'masquer cet exercice' : 'publier cet exercice et notifier les apprenants';
+    if (confirm(`Voulez-vous vraiment ${action} ?`)) {
+        router.patch(route('exercises.publish', chapter.id), {}, {
+            preserveScroll: true
+        });
+    }
+};
 
 const submitAdminForm = () => {
     if (isCreatingExercise.value) {
@@ -292,8 +323,13 @@ const updateQuestionPoints = (question) => {
 const getStatusLabel = (status) => {
     const labels = {
         'pending': 'À corriger',
-        'graded': 'Noté',
-        'rejected': 'Refusé'
+        'excellent': 'Excellent',
+        'very_good': 'Très Bien',
+        'good': 'Bien',
+        'satisfactory': 'Passable',
+        'graded': 'Validé',
+        'rejected': 'À retravailler',
+        'weak': 'Faible'
     };
     return labels[status] || status;
 };
@@ -301,8 +337,13 @@ const getStatusLabel = (status) => {
 const getStatusClass = (status) => {
     const classes = {
         'pending': 'bg-amber-50 text-amber-600 border-amber-100',
+        'excellent': 'bg-emerald-50 text-emerald-600 border-emerald-100',
+        'very_good': 'bg-green-50 text-green-600 border-green-100',
+        'good': 'bg-lime-50 text-lime-600 border-lime-100',
+        'satisfactory': 'bg-blue-50 text-blue-600 border-blue-100',
         'graded': 'bg-green-50 text-green-600 border-green-100',
-        'rejected': 'bg-red-50 text-red-600 border-red-100'
+        'rejected': 'bg-orange-50 text-orange-600 border-orange-100',
+        'weak': 'bg-red-50 text-red-600 border-red-100'
     };
     return classes[status] || 'bg-gray-50 text-gray-600 border-gray-100';
 };
@@ -516,6 +557,10 @@ const toggleModule = (moduleId) => {
                                     <span class="font-black text-xs">{{ chapter.ordre }}</span>
                                 </div>
                                 <div v-if="!isSecretaire" class="flex gap-2">
+                                    <button @click="togglePublish(chapter)" class="p-2 bg-white rounded-xl shadow-sm border border-gray-100 transition" :class="chapter.is_published ? 'text-green-600 hover:bg-green-50 hover:border-green-100' : 'text-amber-500 hover:bg-amber-50 hover:border-amber-100'" :title="chapter.is_published ? 'Publié (Cliquez pour masquer)' : 'Masqué (Cliquez pour publier)'">
+                                        <EyeIcon class="h-5 w-5" v-if="chapter.is_published" />
+                                        <EyeSlashIcon class="h-5 w-5" v-else />
+                                    </button>
                                     <button @click="openEditModal(chapter)" class="p-2 bg-white text-gray-400 hover:text-blue-600 rounded-xl shadow-sm border border-gray-100 transition" title="Modifier l'exercice">
                                         <PencilIcon class="h-5 w-5" />
                                     </button>
@@ -858,8 +903,13 @@ const toggleModule = (moduleId) => {
                             <div>
                                 <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Décision</label>
                                 <select :disabled="isSecretaire" v-model="gradeForm.status" required class="w-full bg-gray-50 disabled:opacity-75 border-0 rounded-2xl focus:ring-2 focus:ring-blue-500 font-bold px-5 py-3.5 appearance-none">
-                                    <option value="graded">Valider</option>
+                                    <option value="excellent">Validé (Excellent)</option>
+                                    <option value="very_good">Validé (Très Bien)</option>
+                                    <option value="good">Validé (Bien)</option>
+                                    <option value="satisfactory">Validé (Passable)</option>
+                                    <option value="graded">Validé</option>
                                     <option value="rejected">À retravailler</option>
+                                    <option value="weak">Faible</option>
                                 </select>
                             </div>
                         </div>

@@ -44,7 +44,7 @@ class AdminExerciseController extends Controller
 
             $moduleQuery->whereIn('id', $moduleIds);
         } else {
-            $exerciseQuery->with('exerciseSubmissions.user');
+            $exerciseQuery->with('exerciseSubmissions.user.studentGroups');
         }
 
         return Inertia::render('Scolarite/ExercisesIndex', [
@@ -81,21 +81,35 @@ class AdminExerciseController extends Controller
             'exercise_points' => $validated['exercise_points'],
             'exercise_title' => $validated['exercise_title'],
             'exercise_instructions' => $validated['exercise_instructions'],
-            'is_published' => true,
+            'is_published' => false,
         ]);
 
-        // Notify students
-        $chapter->load('module');
-        $students = User::role('Apprenant')
-            ->whereHas('studentGroups', function ($query) use ($chapter) {
-                $query->where('module_id', $chapter->module_id);
-            })->get();
+        return redirect()->back()->with('success', 'Exercice créé et sauvegardé en brouillon.');
+    }
 
-        foreach ($students as $student) {
-            $student->notify(new NewExerciseAvailableNotification($chapter));
+    public function togglePublish(Request $request, Chapter $chapter): RedirectResponse
+    {
+        if ($request->user()->hasRole('Secrétaire')) {
+            abort(403, 'Action non autorisée pour les secrétaires.');
         }
 
-        return redirect()->back()->with('success', 'Exercice créé avec succès.');
+        $chapter->update([
+            'is_published' => !$chapter->is_published,
+        ]);
+
+        if ($chapter->is_published) {
+            $chapter->load('module');
+            $students = User::role('Apprenant')
+                ->whereHas('studentGroups', function ($query) use ($chapter) {
+                    $query->where('module_id', $chapter->module_id);
+                })->get();
+
+            foreach ($students as $student) {
+                $student->notify(new NewExerciseAvailableNotification($chapter));
+            }
+        }
+
+        return redirect()->back()->with('success', 'Statut de publication mis à jour.');
     }
 
     /**
@@ -210,7 +224,7 @@ class AdminExerciseController extends Controller
         $validated = $request->validate([
             'grade' => 'required|numeric|min:0|max:' . ($submission->chapter->exercise_points ?? 20),
             'trainer_feedback' => 'nullable|string',
-            'status' => 'required|in:graded,rejected',
+            'status' => 'required|in:graded,rejected,excellent,very_good,good,satisfactory,weak',
         ]);
 
         $submission->update($validated);

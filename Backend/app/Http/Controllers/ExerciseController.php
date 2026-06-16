@@ -21,10 +21,15 @@ class ExerciseController extends Controller
     public function index(Request $request): Response
     {
         $user = $request->user();
+        
+        // Clear unread notifications about graded exercises when visiting this page
+        $user->unreadNotifications()->where('type', \App\Notifications\ExerciseGradedNotification::class)->update(['read_at' => now()]);
+        
         $moduleIds = $user->studentGroups()->pluck('module_id');
 
         $chapters = Chapter::whereIn('module_id', $moduleIds)
             ->whereIn('exercise_type', ['online', 'file'])
+            ->where('is_published', true)
             ->with(['module', 'questions'])
             ->get()
             ->map(function ($chapter) use ($user) {
@@ -43,11 +48,16 @@ class ExerciseController extends Controller
     /**
      * Show the online exercise (quiz) page for a student.
      */
-    public function showOnline(Chapter $chapter): Response
+    public function showOnline(Request $request, Chapter $chapter): Response
     {
+        if (!$chapter->is_published) {
+            abort(403, 'Cet exercice n\'est pas encore publié.');
+        }
+
         $chapter->load(['module', 'questions.options']);
         return Inertia::render('Student/TakeExercise', [
             'exercise' => $chapter,
+            'is_practice' => $request->query('practice') == '1',
         ]);
     }
 
@@ -57,6 +67,10 @@ class ExerciseController extends Controller
      */
     public function submit(Request $request, Chapter $chapter): RedirectResponse
     {
+        if (!$chapter->is_published) {
+            abort(403, 'Cet exercice n\'est pas encore publié.');
+        }
+
         $user = Auth::user();
         $type = $request->input('type');
 
@@ -82,6 +96,20 @@ class ExerciseController extends Controller
                 } else {
                     $hasOpenQuestions = true;
                 }
+            }
+
+            if ($request->boolean('is_practice')) {
+                // Find existing submission ID to redirect to
+                $existingSubmission = ExerciseSubmission::where('user_id', $user->id)
+                    ->where('chapter_id', $chapter->id)
+                    ->first();
+                
+                return redirect()->route('student.exercises.result', $existingSubmission->id)
+                    ->with([
+                        'practice_answers' => $answers,
+                        'practice_grade' => $autoGrade,
+                        'success' => 'Entraînement terminé. Voici votre correction automatique.'
+                    ]);
             }
 
             $submission = ExerciseSubmission::updateOrCreate(
@@ -171,14 +199,25 @@ class ExerciseController extends Controller
      */
     public function showResult(ExerciseSubmission $submission): Response
     {
+        // Add auth check
         if (Auth::id() !== $submission->user_id) {
             abort(403);
         }
 
-        $submission->load(['chapter.questions.options', 'chapter.module']);
+        $submission->load(['chapter.module', 'chapter.questions.options']);
+
+        if (session()->has('practice_answers')) {
+            $submission->answers = session('practice_answers');
+            $submission->grade = session('practice_grade');
+            $submission->trainer_feedback = "Ceci est le résultat de votre session d'entraînement. Votre note officielle n'a pas été modifiée.";
+            $is_practice = true;
+        } else {
+            $is_practice = false;
+        }
 
         return Inertia::render('Student/ExerciseResult', [
             'submission' => $submission,
+            'is_practice' => $is_practice,
         ]);
     }
 

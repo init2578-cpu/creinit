@@ -29,17 +29,52 @@ const submitExercise = () => {
 }
 
 const statusLabel = (sub) => {
-    if (!sub) return 'Non rendu'
-    if (sub.status === 'graded') return `Noté : ${sub.grade} pts`
-    if (sub.status === 'rejected') return 'À retravailler'
-    return 'En attente de correction'
+    if (!sub) return 'Non rendu';
+    if (sub.status === 'pending') return 'En attente de correction';
+    if (sub.status === 'rejected') return 'À retravailler';
+    
+    const labels = {
+        'excellent': 'Excellent',
+        'very_good': 'Très Bien',
+        'good': 'Bien',
+        'satisfactory': 'Passable',
+        'graded': 'Validé',
+        'weak': 'Faible'
+    };
+    
+    if (labels[sub.status]) {
+        return `${labels[sub.status]} : ${sub.grade} pts`;
+    }
+    
+    return 'En attente de correction';
 }
 
 const statusClass = (sub) => {
-    if (!sub) return 'bg-gray-50 text-gray-400 border-gray-100'
-    if (sub.status === 'graded') return 'bg-green-50 text-green-600 border-green-100'
-    if (sub.status === 'rejected') return 'bg-red-50 text-red-500 border-red-100'
-    return 'bg-amber-50 text-amber-600 border-amber-100'
+    if (!sub) return 'bg-gray-50 text-gray-400 border-gray-100';
+    if (sub.status === 'pending') return 'bg-amber-50 text-amber-600 border-amber-100';
+    if (sub.status === 'rejected') return 'bg-orange-50 text-orange-600 border-orange-100';
+    if (sub.status === 'weak') return 'bg-red-50 text-red-600 border-red-100';
+    if (sub.status === 'excellent') return 'bg-emerald-50 text-emerald-600 border-emerald-100';
+    if (sub.status === 'very_good' || sub.status === 'graded') return 'bg-green-50 text-green-600 border-green-100';
+    if (sub.status === 'good') return 'bg-lime-50 text-lime-600 border-lime-100';
+    if (sub.status === 'satisfactory') return 'bg-blue-50 text-blue-600 border-blue-100';
+    return 'bg-amber-50 text-amber-600 border-amber-100';
+}
+
+const isSuccess = (status) => {
+    return ['excellent', 'very_good', 'good', 'satisfactory', 'graded'].includes(status);
+}
+
+const accentClass = (sub) => {
+    if (!sub) return 'bg-gray-200';
+    if (sub.status === 'pending') return 'bg-amber-400';
+    if (sub.status === 'rejected') return 'bg-orange-400';
+    if (sub.status === 'weak') return 'bg-red-400';
+    if (sub.status === 'excellent') return 'bg-emerald-400';
+    if (sub.status === 'very_good' || sub.status === 'graded') return 'bg-green-400';
+    if (sub.status === 'good') return 'bg-lime-400';
+    if (sub.status === 'satisfactory') return 'bg-blue-400';
+    return 'bg-amber-400';
 }
 </script>
 
@@ -55,23 +90,34 @@ const statusClass = (sub) => {
                 <p class="mt-2 text-gray-500 font-medium">Consultez et soumettez vos exercices pratiques.</p>
             </header>
 
-            <div class="space-y-4">
+            <div class="space-y-5">
                 <div
                     v-for="ex in exercises"
                     :key="ex.id"
-                    class="bg-white p-6 rounded-[2.5rem] shadow-sm border border-gray-100 hover:border-blue-200 transition"
+                    class="bg-white p-5 sm:p-6 rounded-[2rem] sm:rounded-[2.5rem] shadow-sm hover:shadow-xl hover:shadow-blue-900/5 border border-gray-100 hover:border-blue-200 transition-all duration-300 hover:-translate-y-1 relative overflow-hidden group"
                 >
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center gap-5">
-                            <div class="h-14 w-14 rounded-2xl flex items-center justify-center shadow-sm border border-gray-100"
-                                :class="ex.my_submission?.status === 'graded' ? 'bg-green-50 text-green-600' : 'bg-blue-50 text-blue-600'"
-                            >
-                                <CheckCircleIcon v-if="ex.my_submission?.status === 'graded'" class="h-7 w-7" />
-                                <ClockIcon v-else class="h-7 w-7" />
+                    <!-- Gradient accent -->
+                    <div class="absolute left-0 top-0 bottom-0 w-1.5 transition-colors duration-300" :class="accentClass(ex.my_submission)"></div>
+
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 pl-2 sm:pl-4">
+                        <div class="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-5">
+                            <div class="flex items-center gap-4">
+                                <div class="h-14 w-14 rounded-2xl flex items-center justify-center shadow-sm border border-gray-100 shrink-0 transition-transform group-hover:scale-105"
+                                    :class="isSuccess(ex.my_submission?.status) ? 'bg-green-50 text-green-600' : 'bg-blue-50 text-blue-600'"
+                                >
+                                    <CheckCircleIcon v-if="isSuccess(ex.my_submission?.status)" class="h-7 w-7" />
+                                    <ClockIcon v-else class="h-7 w-7" />
+                                </div>
+                                <!-- Mobile status badge -->
+                                <div class="sm:hidden">
+                                    <span class="px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border" :class="statusClass(ex.my_submission)">
+                                        {{ statusLabel(ex.my_submission) }}
+                                    </span>
+                                </div>
                             </div>
                             <div>
-                                <h3 class="font-black text-gray-900 text-lg tracking-tight">{{ ex.exercise_title || ex.titre }}</h3>
-                                <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">
+                                <h3 class="font-black text-gray-900 text-lg tracking-tight leading-snug group-hover:text-blue-600 transition-colors">{{ ex.exercise_title || ex.titre }}</h3>
+                                <p class="text-[11px] font-bold text-gray-400 uppercase tracking-widest mt-1.5">
                                     {{ ex.module?.titre }} •
                                     {{ ex.exercise_type === 'online' ? 'En ligne' : 'Dépôt fichier' }} •
                                     {{ ex.exercise_points }} pts
@@ -79,24 +125,32 @@ const statusClass = (sub) => {
                             </div>
                         </div>
 
-                        <div class="flex items-center gap-4">
-                            <span class="px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border" :class="statusClass(ex.my_submission)">
+                        <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mt-2 md:mt-0 pt-4 md:pt-0 border-t border-gray-50 md:border-t-0">
+                            <!-- Desktop status badge -->
+                            <span class="hidden sm:inline-block px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border text-center whitespace-nowrap" :class="statusClass(ex.my_submission)">
                                 {{ statusLabel(ex.my_submission) }}
                             </span>
                             
                             <!-- Online exercise -->
                             <template v-if="ex.exercise_type === 'online'">
-                                <Link
-                                    v-if="ex.my_submission?.status === 'graded'"
-                                    :href="route('student.exercises.result', ex.my_submission.id)"
-                                    class="px-5 py-2.5 bg-green-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-green-700 transition"
-                                >
-                                    Voir résultats
-                                </Link>
+                                <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2" v-if="isSuccess(ex.my_submission?.status) || ex.my_submission?.status === 'weak'">
+                                    <Link
+                                        :href="route('student.exercises.result', ex.my_submission.id)"
+                                        class="w-full sm:w-auto px-5 py-3 sm:py-2.5 bg-green-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest text-center hover:bg-green-700 hover:shadow-lg hover:shadow-green-100 transition-all"
+                                    >
+                                        Voir résultats
+                                    </Link>
+                                    <Link
+                                        :href="route('student.exercises.start', ex.id) + '?practice=1'"
+                                        class="w-full sm:w-auto px-5 py-3 sm:py-2.5 bg-blue-100 text-blue-600 rounded-2xl text-[10px] font-black uppercase tracking-widest text-center hover:bg-blue-200 transition-all"
+                                    >
+                                        S'entraîner
+                                    </Link>
+                                </div>
                                 <Link
                                     v-else
                                     :href="route('student.exercises.start', ex.id)"
-                                    class="px-5 py-2.5 bg-blue-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-700 transition"
+                                    class="w-full sm:w-auto px-5 py-3 sm:py-2.5 bg-blue-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest text-center hover:bg-blue-700 hover:shadow-lg hover:shadow-blue-100 transition-all"
                                 >
                                     {{ ex.my_submission ? 'Refaire' : 'Démarrer' }}
                                 </Link>
@@ -106,7 +160,7 @@ const statusClass = (sub) => {
                             <button
                                 v-if="ex.exercise_type === 'file'"
                                 @click="openSubmit(ex)"
-                                class="px-5 py-2.5 bg-gray-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-600 transition"
+                                class="w-full sm:w-auto px-5 py-3 sm:py-2.5 bg-gray-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest text-center hover:bg-blue-600 hover:shadow-lg hover:shadow-gray-200 transition-all"
                             >
                                 {{ ex.my_submission ? 'Re-soumettre' : 'Soumettre' }}
                             </button>

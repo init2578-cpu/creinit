@@ -51,6 +51,7 @@ class HandleInertiaRequests extends Middleware
                     'unread_notifications_count' => $request->user()->unreadNotifications()->count(),
                     'unread_messages_count' => \App\Models\ContactMessage::where('is_read', false)->count(),
                     'unread_exams_count' => $request->user()->unreadNotifications()->where('type', \App\Notifications\ExamResultGradedNotification::class)->count(),
+                    'unread_exercises_count' => $request->user()->unreadNotifications()->where('type', \App\Notifications\ExerciseGradedNotification::class)->count(),
                     'unread_progressions_count' => $request->user()->unreadNotifications()->where('type', \App\Notifications\ChapterSubmittedNotification::class)->count(),
                     'unread_rejections_count' => $request->user()->unreadNotifications()->where('type', \App\Notifications\ChapterRejectedNotification::class)->count(),
                     'unread_announcements_count' => call_user_func(function () use ($request) {

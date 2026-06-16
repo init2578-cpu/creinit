@@ -7,6 +7,7 @@ import { router } from '@inertiajs/vue3'
 
 const props = defineProps({
     exercise: Object, // Chapter with questions.options
+    is_practice: Boolean,
 })
 
 // Build reactive answers map: { [question_id]: answer }
@@ -29,8 +30,13 @@ const submit = () => {
     form.transform(() => ({
         answers: answers.value,
         type: 'online',
+        is_practice: props.is_practice,
     })).post(route('student.exercises.submit', props.exercise.id), {
-        onSuccess: () => { submitted.value = true }
+        onSuccess: () => { 
+            if (!props.is_practice) {
+                submitted.value = true 
+            }
+        }
     })
 }
 </script>
@@ -71,42 +77,46 @@ const submit = () => {
                     class="bg-white rounded-[2.5rem] shadow-sm border border-gray-100 overflow-hidden"
                 >
                     <!-- Question Header -->
-                    <div class="px-8 pt-8 pb-4 flex items-start justify-between">
-                        <div class="flex items-start gap-4 flex-1">
-                            <span class="h-8 w-8 bg-blue-600 text-white rounded-xl flex items-center justify-center font-black text-sm shrink-0 mt-0.5">{{ idx + 1 }}</span>
-                            <p class="font-black text-gray-900 text-lg tracking-tight leading-snug">{{ question.enonce }}</p>
+                    <div class="px-5 sm:px-8 pt-6 sm:pt-8 pb-4 flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+                        <div class="flex items-start gap-3 sm:gap-4 flex-1">
+                            <span class="h-8 w-8 bg-blue-600 text-white rounded-xl flex items-center justify-center font-black text-sm shrink-0 mt-0.5 shadow-md shadow-blue-200">{{ idx + 1 }}</span>
+                            <p class="font-black text-gray-900 text-base sm:text-lg tracking-tight leading-snug">{{ question.enonce }}</p>
                         </div>
-                        <span class="text-[10px] font-black text-blue-600 bg-blue-50 px-3 py-1 rounded-full ml-4 shrink-0 border border-blue-100">{{ question.points }} pts</span>
+                        <span class="self-start sm:self-auto text-[10px] font-black text-blue-600 bg-blue-50 px-3 py-1.5 rounded-full shrink-0 border border-blue-100 shadow-sm">{{ question.points }} pts</span>
                     </div>
 
                     <!-- QCM Options -->
-                    <div v-if="question.type === 'qcm'" class="px-8 pb-8 space-y-3">
+                    <div v-if="question.type === 'qcm'" class="px-5 sm:px-8 pb-6 sm:pb-8 space-y-3 sm:space-y-4">
                         <label
                             v-for="option in question.options"
                             :key="option.id"
-                            class="flex items-center gap-4 p-4 rounded-2xl border cursor-pointer transition-all"
+                            class="group relative flex items-center gap-4 p-4 sm:p-5 rounded-2xl border cursor-pointer transition-all duration-300 transform active:scale-[0.98]"
                             :class="answers[question.id] === option.id
-                                ? 'border-blue-500 bg-blue-50 shadow-sm shadow-blue-100'
-                                : 'border-gray-100 hover:border-blue-200 hover:bg-blue-50/30'"
+                                ? 'border-blue-500 bg-blue-50 shadow-md shadow-blue-100/50'
+                                : 'border-gray-100 hover:border-blue-200 hover:bg-blue-50/30 hover:shadow-sm'"
                         >
+                            <div class="relative flex items-center justify-center w-6 h-6 shrink-0 rounded-full border transition-colors duration-300"
+                                :class="answers[question.id] === option.id ? 'border-blue-500 bg-blue-500' : 'border-gray-300 bg-white group-hover:border-blue-400'">
+                                <div class="w-2.5 h-2.5 rounded-full bg-white transition-transform duration-300" :class="answers[question.id] === option.id ? 'scale-100' : 'scale-0'"></div>
+                            </div>
                             <input
                                 type="radio"
                                 :name="'q_' + question.id"
                                 :value="option.id"
                                 v-model="answers[question.id]"
-                                class="accent-blue-600 w-4 h-4"
+                                class="sr-only"
                             />
-                            <span class="font-bold text-gray-800">{{ option.texte }}</span>
+                            <span class="font-bold text-gray-800 text-sm sm:text-base leading-snug">{{ option.texte }}</span>
                         </label>
                     </div>
 
                     <!-- Open Question -->
-                    <div v-else class="px-8 pb-8">
+                    <div v-else class="px-5 sm:px-8 pb-6 sm:pb-8">
                         <textarea
                             v-model="answers[question.id]"
                             rows="4"
                             placeholder="Rédigez votre réponse ici..."
-                            class="w-full bg-gray-50 border-0 rounded-2xl focus:ring-2 focus:ring-blue-500 font-medium px-5 py-4 text-sm resize-none"
+                            class="w-full bg-gray-50 border-0 rounded-2xl focus:ring-2 focus:ring-blue-500 font-medium px-5 py-4 text-sm resize-none transition-shadow hover:bg-gray-100 focus:bg-white"
                         ></textarea>
                     </div>
                 </div>
@@ -117,11 +127,11 @@ const submit = () => {
                 </div>
 
                 <!-- Submit -->
-                <div v-if="exercise.questions?.length" class="flex justify-end pt-4">
+                <div v-if="exercise.questions?.length" class="flex justify-end pt-4 sm:pt-6 pb-20 sm:pb-4">
                     <button
                         @click="submit"
                         :disabled="form.processing || !allAnswered"
-                        class="px-10 py-4 bg-blue-600 text-white rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-blue-700 transition shadow-xl shadow-blue-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                        class="w-full sm:w-auto px-10 py-5 sm:py-4 bg-blue-600 text-white rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-blue-700 transition shadow-2xl shadow-blue-200 disabled:opacity-50 disabled:cursor-not-allowed transform active:scale-[0.98]"
                     >
                         {{ form.processing ? 'Envoi…' : 'Soumettre l\'exercice' }}
                     </button>

@@ -106,7 +106,7 @@ const navigation = computed(() => {
             { name: 'Mon Parcours', href: route('student.dashboard'), icon: AcademicCapIcon },
             { name: 'Communauté', href: route('community.index'), icon: ChatBubbleLeftRightIcon, badge: page.props.auth.user?.unread_announcements_count },
             { name: 'Mes Cours', href: route('student.courses'), icon: BookOpenIcon },
-            { name: 'Exercices', href: route('student.exercises.index'), icon: BeakerIcon },
+            { name: 'Exercices', href: route('student.exercises.index'), icon: BeakerIcon, badge: page.props.auth.user?.unread_exercises_count },
             { name: 'Examens', href: route('student.exams.index'), icon: PencilSquareIcon, badge: page.props.auth.user?.unread_exams_count },
             { name: 'Validation Progression', href: route('chapter-progress.groups'), icon: ChartBarIcon, badge: page.props.auth.user?.unread_progressions_count }
         )
