@@ -1,7 +1,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
-import { Head, useForm } from '@inertiajs/vue3'
-import { BeakerIcon, CheckCircleIcon } from '@heroicons/vue/24/outline'
+import { Head, useForm, Link } from '@inertiajs/vue3'
+import { BeakerIcon, CheckCircleIcon, ArrowLeftIcon } from '@heroicons/vue/24/outline'
 import { ref, computed } from 'vue'
 import { router } from '@inertiajs/vue3'
 
@@ -48,6 +48,13 @@ const submit = () => {
 
             <!-- Header -->
             <header class="mb-10">
+                <Link
+                    :href="route('student.exercises.index')"
+                    class="inline-flex items-center gap-2 px-4 py-2 mb-6 bg-white rounded-xl shadow-sm border border-gray-100 text-sm font-bold text-gray-600 hover:text-blue-600 hover:bg-blue-50 transition"
+                >
+                    <ArrowLeftIcon class="h-4 w-4" />
+                    Retour aux exercices
+                </Link>
                 <div class="flex items-center gap-3 mb-4">
                     <div class="h-12 w-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center shadow-sm border border-blue-100">
                         <BeakerIcon class="h-6 w-6" />
@@ -66,7 +73,14 @@ const submit = () => {
             <div v-if="submitted" class="py-20 text-center bg-green-50 rounded-[3rem] border border-green-100">
                 <CheckCircleIcon class="h-16 w-16 text-green-500 mx-auto mb-4" />
                 <h2 class="text-2xl font-black text-green-800 tracking-tight">Exercice soumis !</h2>
-                <p class="text-sm text-green-600 font-medium mt-2">Votre réponse a été enregistrée. Le formateur la corrigera prochainement.</p>
+                <p class="text-sm text-green-600 font-medium mt-2 mb-8">Votre réponse a été enregistrée. Le formateur la corrigera prochainement.</p>
+                
+                <Link
+                    :href="route('student.exercises.index')"
+                    class="inline-block px-8 py-4 bg-green-600 text-white rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-green-700 transition shadow-xl shadow-green-200"
+                >
+                    Retour aux exercices
+                </Link>
             </div>
 
             <!-- Quiz Form -->

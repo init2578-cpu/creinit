@@ -19,9 +19,12 @@ const props = defineProps({
     nextSchedules: Array,
     absenceCount: Number,
     progress: Number,
+    individualProgress: Number,
     group: Object,
     upcomingExams: Array,
-    recentExercises: Array
+    recentExercises: Array,
+    recentExams: Array,
+    stats: Object
 })
 
 const getAbsenceStatus = computed(() => {
@@ -122,31 +125,66 @@ const handleExamAction = (exam) => {
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <!-- Main Activity (Progress & Planning) -->
                 <div class="lg:col-span-2 space-y-8">
+                    <!-- Stats / KPIs -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div class="bg-indigo-600 text-white p-6 rounded-[2rem] shadow-sm relative overflow-hidden group hover:scale-[1.02] transition-transform">
+                            <div class="absolute -right-4 -top-4 opacity-10 group-hover:opacity-20 transition-opacity"><BookOpenIcon class="h-32 w-32" /></div>
+                            <h3 class="text-xs font-black uppercase tracking-widest text-indigo-200 mb-2">Moyenne Exercices</h3>
+                            <div class="text-4xl font-black">{{ stats?.exerciseAvg !== null ? stats.exerciseAvg : '--' }}<span class="text-xl text-indigo-300">/20</span></div>
+                            <p class="text-[10px] text-indigo-200 mt-2">{{ stats?.exercisesDone || 0 }} devoirs notés</p>
+                        </div>
+                        <div class="bg-emerald-600 text-white p-6 rounded-[2rem] shadow-sm relative overflow-hidden group hover:scale-[1.02] transition-transform">
+                            <div class="absolute -right-4 -top-4 opacity-10 group-hover:opacity-20 transition-opacity"><AcademicCapIcon class="h-32 w-32" /></div>
+                            <h3 class="text-xs font-black uppercase tracking-widest text-emerald-200 mb-2">Moyenne Examens</h3>
+                            <div class="text-4xl font-black">{{ stats?.examAvg !== null ? stats.examAvg : '--' }}<span class="text-xl text-emerald-300">/20</span></div>
+                            <p class="text-[10px] text-emerald-200 mt-2">{{ stats?.examsDone || 0 }} examens validés</p>
+                        </div>
+                    </div>
+
                     <!-- Progress Section -->
-                    <div class="bg-white p-8 rounded-[2.5rem] shadow-sm border border-gray-100 transition-all hover:shadow-xl">
-                        <div class="flex items-center justify-between mb-6">
-                            <div class="flex items-center gap-3">
-                                <div class="h-10 w-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center border border-blue-100">
-                                    <BookOpenIcon class="h-5 w-5" />
+                    <div class="bg-white p-8 rounded-[2.5rem] shadow-sm border border-gray-100 transition-all hover:shadow-xl space-y-8">
+                        
+                        <!-- Progression du Groupe -->
+                        <div>
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="flex items-center gap-3">
+                                    <div class="h-10 w-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center border border-blue-100">
+                                        <BookOpenIcon class="h-5 w-5" />
+                                    </div>
+                                    <div>
+                                        <h2 class="text-lg font-black text-gray-900 tracking-tight">Progression de la Classe</h2>
+                                        <p class="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Programme validé par le formateur</p>
+                                    </div>
                                 </div>
-                                <div>
-                                    <h2 class="text-xl font-black text-gray-900 tracking-tight">Ma Progression</h2>
-                                    <p class="text-xs text-gray-500 font-medium">Avancement dans le programme actuel</p>
-                                </div>
+                                <span class="text-2xl font-black text-blue-600">{{ progress }}%</span>
                             </div>
-                            <span class="text-2xl font-black text-blue-600">{{ progress }}%</span>
+                            <div class="w-full h-3 bg-slate-100 rounded-full overflow-hidden">
+                                <div class="h-full bg-gradient-to-r from-blue-400 to-blue-600 rounded-full transition-all duration-1000 ease-out" :style="{ width: progress + '%' }"></div>
+                            </div>
+                        </div>
+
+                        <!-- Progression Individuelle -->
+                        <div>
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="flex items-center gap-3">
+                                    <div class="h-10 w-10 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center border border-indigo-100">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                                    </div>
+                                    <div>
+                                        <h2 class="text-lg font-black text-gray-900 tracking-tight">Ma Progression Individuelle</h2>
+                                        <p class="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Exercices et devoirs soumis</p>
+                                    </div>
+                                </div>
+                                <span class="text-2xl font-black text-indigo-600">{{ individualProgress }}%</span>
+                            </div>
+                            <div class="w-full h-3 bg-slate-100 rounded-full overflow-hidden mb-2">
+                                <div class="h-full bg-gradient-to-r from-indigo-400 to-indigo-600 rounded-full transition-all duration-1000 ease-out" :style="{ width: individualProgress + '%' }"></div>
+                            </div>
+                            <p class="text-gray-500 text-xs font-medium mt-3">
+                                {{ individualProgress >= 100 ? 'Félicitations ! Vous avez terminé tous vos exercices.' : 'Continuez à soumettre vos exercices pour progresser individuellement.' }}
+                            </p>
                         </div>
                         
-                        <div class="w-full h-3 bg-slate-100 rounded-full overflow-hidden mb-4">
-                            <div 
-                                class="h-full bg-gradient-to-r from-blue-500 via-indigo-500 to-indigo-600 rounded-full transition-all duration-1000 ease-out"
-                                :style="{ width: progress + '%' }"
-                            ></div>
-                        </div>
-                        
-                        <p class="text-gray-500 text-sm font-medium">
-                            {{ progress >= 100 ? 'Félicitations ! Vous avez complété tous les chapitres.' : 'Continuez vos efforts pour valider le module actuel.' }}
-                        </p>
                     </div>
 
                     <!-- Upcoming Classes -->
@@ -240,11 +278,11 @@ const handleExamAction = (exam) => {
                             <div v-for="ex in recentExercises" :key="ex.id" class="flex items-center justify-between border-b border-white/5 pb-3.5 last:border-0 last:pb-0">
                                 <div class="min-w-0 flex-1 pr-4">
                                     <p class="font-bold text-sm text-slate-100 truncate">{{ ex.chapter.titre }}</p>
-                                    <p class="text-[8px] font-black uppercase tracking-widest text-slate-500 mt-0.5">{{ ex.status === 'graded' ? 'Évalué' : 'En attente' }}</p>
+                                    <p class="text-[8px] font-black uppercase tracking-widest text-slate-500 mt-0.5">{{ !['pending', 'rejected'].includes(ex.status) ? 'Évalué' : 'En attente' }}</p>
                                 </div>
                                 <div class="text-right shrink-0">
-                                    <div v-if="ex.status === 'graded'" class="text-lg font-black text-blue-400">
-                                        {{ ex.grade }}<span class="text-[10px] text-slate-600">/20</span>
+                                    <div v-if="!['pending', 'rejected'].includes(ex.status)" class="text-lg font-black text-blue-400">
+                                        {{ ex.grade }}<span class="text-[10px] text-slate-600">/{{ ex.chapter?.exercise_points || 20 }}</span>
                                     </div>
                                     <div v-else class="text-[10px] font-black uppercase text-slate-600 tracking-widest">
                                         ...
@@ -260,6 +298,37 @@ const handleExamAction = (exam) => {
                             <span class="text-[10px] font-black uppercase tracking-widest text-slate-200">Voir tous mes cours</span>
                             <ArrowRightIcon class="h-4 w-4 text-slate-400 group-hover:translate-x-1 transition-transform" />
                         </Link>
+                    </div>
+
+                    <!-- Recent Exams -->
+                    <div class="bg-slate-900 p-8 rounded-[2.5rem] shadow-xl text-white relative overflow-hidden transition-all hover:shadow-2xl">
+                        <div class="absolute top-0 right-0 -mt-10 -mr-10 w-48 h-48 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none"></div>
+                        
+                        <div class="flex items-center justify-between mb-8">
+                            <div>
+                                <h3 class="text-xl font-black tracking-tight">Résultats d'Examens</h3>
+                                <p class="text-xs text-slate-400 font-medium">Dernières notes officielles</p>
+                            </div>
+                            <div class="h-10 w-10 bg-white/10 text-emerald-400 rounded-xl flex items-center justify-center border border-white/5">
+                                <AcademicCapIcon class="h-5 w-5" />
+                            </div>
+                        </div>
+                        <div class="space-y-4">
+                            <div v-for="res in recentExams" :key="res.id" class="flex items-center justify-between border-b border-white/5 pb-3.5 last:border-0 last:pb-0">
+                                <div class="min-w-0 flex-1 pr-4">
+                                    <p class="font-bold text-sm text-slate-100 truncate">{{ res.exam.titre }}</p>
+                                    <p class="text-[8px] font-black uppercase tracking-widest text-slate-500 mt-0.5">Évalué</p>
+                                </div>
+                                <div class="text-right shrink-0">
+                                    <div class="text-lg font-black text-emerald-400">
+                                        {{ res.score }}<span class="text-[10px] text-slate-600">/{{ res.exam.total_points }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div v-if="recentExams.length === 0" class="py-8 text-center text-slate-500 font-bold italic text-xs">
+                                Aucun examen passé.
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
