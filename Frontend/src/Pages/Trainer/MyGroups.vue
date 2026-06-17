@@ -66,7 +66,7 @@ function toggleGroup(groupId) {
     <Head title="Mes Groupes d'Apprenants" />
 
     <AuthenticatedLayout>
-        <div class="max-w-5xl mx-auto py-4 px-4 -mt-6 sm:-mt-8 lg:-mt-10">
+        <div class="max-w-7xl mx-auto py-4 px-4 -mt-6 sm:-mt-8 lg:-mt-10 font-sans">
             <!-- Hero Header with Premium Gradient & Glassmorphism -->
             <header class="relative overflow-hidden bg-white p-8 sm:p-10 rounded-[2.5rem] border border-gray-100 shadow-sm flex flex-col md:flex-row items-center gap-8 mb-8">
                 <div class="absolute top-0 right-0 -mt-16 -mr-16 w-80 h-80 bg-blue-50/50 rounded-full blur-3xl opacity-60"></div>
@@ -147,7 +147,7 @@ function toggleGroup(groupId) {
                             <p class="text-gray-500 italic text-sm">Ce groupe ne contient aucun apprenant pour le moment.</p>
                         </div>
                         
-                        <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                             <div 
                                 v-for="student in group.students" 
                                 :key="student.id"
@@ -230,17 +230,25 @@ function toggleGroup(groupId) {
                                         </span>
                                     </div>
 
-                                    <!-- Progression Level -->
-                                    <div class="space-y-1">
-                                        <div class="flex items-center justify-between text-[10px] font-bold text-gray-500 uppercase tracking-tighter">
-                                            <span>Progression</span>
-                                            <span class="text-blue-600 font-black">{{ student.progression_percentage }}%</span>
+                                    <!-- Progression Levels -->
+                                    <div class="space-y-2">
+                                        <div class="space-y-1">
+                                            <div class="flex items-center justify-between text-[9px] font-bold text-gray-500 uppercase tracking-tighter">
+                                                <span>Prog. Individuelle</span>
+                                                <span class="text-indigo-600 font-black">{{ student.progression_percentage }}%</span>
+                                            </div>
+                                            <div class="h-1 w-full bg-slate-100 rounded-full overflow-hidden">
+                                                <div class="h-full bg-gradient-to-r from-indigo-400 to-indigo-600 rounded-full transition-all duration-1000" :style="{ width: `${student.progression_percentage}%` }"></div>
+                                            </div>
                                         </div>
-                                        <div class="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
-                                            <div 
-                                                class="h-full bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full transition-all duration-1000"
-                                                :style="{ width: `${student.progression_percentage}%` }"
-                                            ></div>
+                                        <div class="space-y-1">
+                                            <div class="flex items-center justify-between text-[9px] font-bold text-gray-500 uppercase tracking-tighter">
+                                                <span>Prog. Classe</span>
+                                                <span class="text-blue-600 font-black">{{ student.group_progression }}%</span>
+                                            </div>
+                                            <div class="h-1 w-full bg-slate-100 rounded-full overflow-hidden">
+                                                <div class="h-full bg-gradient-to-r from-blue-400 to-blue-600 rounded-full transition-all duration-1000" :style="{ width: `${student.group_progression}%` }"></div>
+                                            </div>
                                         </div>
                                     </div>
 
@@ -291,6 +299,7 @@ function toggleGroup(groupId) {
             type="info"
             confirm-text="Oui, proposer"
             cancel-text="Annuler"
+            :is-loading="nominationForm.processing"
             @confirm="handleConfirmNomination"
             @cancel="confirmNominationModal.isOpen = false"
         />

@@ -31,6 +31,10 @@ const props = defineProps({
     cancelText: {
         type: String,
         default: 'Annuler'
+    },
+    isLoading: {
+        type: Boolean,
+        default: false
     }
 })
 
@@ -76,7 +80,7 @@ const colors = {
         <div v-if="isOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-hidden">
             <!-- Backdrop -->
             <transition name="backdrop">
-                <div v-if="isOpen" class="fixed inset-0 bg-black/80 backdrop-blur-xl" @click="emit('cancel')"></div>
+                <div v-if="isOpen" class="fixed inset-0 bg-black/80 backdrop-blur-xl" @click="!isLoading && emit('cancel')"></div>
             </transition>
 
             <!-- Modal Panel -->
@@ -100,7 +104,7 @@ const colors = {
                         <!-- Content -->
                         <div class="relative p-10 sm:p-12 flex-auto">
                             <!-- Close button -->
-                            <button @click="emit('cancel')" class="absolute top-10 right-10 p-3 rounded-2xl text-slate-500 hover:text-white hover:bg-white/5 transition-all">
+                            <button :disabled="isLoading" @click="emit('cancel')" class="absolute top-10 right-10 p-3 rounded-2xl text-slate-500 hover:text-white hover:bg-white/5 transition-all disabled:opacity-50">
                                 <XMarkIcon class="h-6 w-6" />
                             </button>
 
@@ -124,18 +128,24 @@ const colors = {
                         <div class="flex items-center justify-center p-10 bg-black/40 gap-4 border-t border-white/5">
                             <button 
                                 type="button" 
-                                class="flex-1 px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 bg-white/5 border border-white/5 rounded-2xl hover:bg-white/10 hover:text-white transition active:scale-95"
+                                class="flex-1 px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 bg-white/5 border border-white/5 rounded-2xl hover:bg-white/10 hover:text-white transition active:scale-95 disabled:opacity-50 disabled:pointer-events-none"
+                                :disabled="isLoading"
                                 @click="emit('cancel')"
                             >
                                 {{ cancelText }}
                             </button>
                             <button 
                                 type="button" 
-                                class="flex-1 px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-white shadow-2xl rounded-2xl transition focus:outline-none"
+                                class="flex-1 px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-white shadow-2xl rounded-2xl transition focus:outline-none flex items-center justify-center gap-2 disabled:opacity-50 disabled:pointer-events-none"
                                 :class="colors[type].button"
+                                :disabled="isLoading"
                                 @click="emit('confirm')"
                             >
-                                {{ confirmText }}
+                                <svg v-if="isLoading" class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                <span>{{ isLoading ? 'En cours...' : confirmText }}</span>
                             </button>
                         </div>
                     </div>

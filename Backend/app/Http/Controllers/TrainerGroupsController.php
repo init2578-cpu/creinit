@@ -42,9 +42,20 @@ class TrainerGroupsController extends Controller
                 ->where('status', 'approved')
                 ->count();
             
-            $progression = $totalChapters > 0 
+            $groupProgression = $totalChapters > 0 
                 ? (int) round(($completedChapters / $totalChapters) * 100) 
                 : 0;
+
+            $totalExercises = $group->module->chapters()->whereNotNull('exercise_type')->count();
+            $studentIds = $group->students->pluck('id')->toArray();
+            
+            $submissionsCounts = \App\Models\ExerciseSubmission::whereIn('user_id', $studentIds)
+                ->whereHas('chapter', function($q) use ($group) {
+                    $q->where('module_id', $group->module_id);
+                })
+                ->selectRaw('user_id, count(distinct chapter_id) as count')
+                ->groupBy('user_id')
+                ->pluck('count', 'user_id');
 
             foreach ($group->students as $student) {
                 $student->absences_count = $student->attendances
@@ -52,7 +63,12 @@ class TrainerGroupsController extends Controller
                     ->whereIn('status', ['absent_non_justifie', 'justifie'])
                     ->count();
                 
-                $student->progression_percentage = $progression;
+                $submittedCount = $submissionsCounts[$student->id] ?? 0;
+                $student->progression_percentage = $totalExercises > 0 
+                    ? (int) round(($submittedCount / $totalExercises) * 100) 
+                    : 0;
+                
+                $student->group_progression = $groupProgression;
                 
                 // Attach nomination status for this specific group
                 $student->active_nomination = $student->nominations
