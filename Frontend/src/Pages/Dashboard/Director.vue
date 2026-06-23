@@ -596,7 +596,7 @@ onUnmounted(() => {
                         <div class="h-px flex-1 bg-gray-100"></div>
                     </div>
 
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                         <!-- Top Learners Leaderboard -->
                         <div class="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm flex flex-col justify-between transition-all hover:shadow-xl">
                             <div>
@@ -658,6 +658,46 @@ onUnmounted(() => {
                                     </div>
                                     <div v-if="!dashboardKpis.trainers_performance || dashboardKpis.trainers_performance.length === 0" class="py-8 flex flex-col items-center text-gray-400 gap-2">
                                         <p class="text-xs font-bold italic">Aucune donnée de performance enregistrée.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Trainers Availability -->
+                        <div class="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm flex flex-col justify-between transition-all hover:shadow-xl">
+                            <div>
+                                <div class="flex items-center justify-between mb-8">
+                                    <div>
+                                        <h3 class="text-xl font-black text-gray-900 tracking-tight leading-none mb-1">Disponibilité</h3>
+                                        <p class="text-xs text-gray-500 font-medium">Charges horaires des formateurs</p>
+                                    </div>
+                                    <div class="h-10 w-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center border border-emerald-100">
+                                        <ClockIcon class="h-5 w-5" />
+                                    </div>
+                                </div>
+
+                                <div class="space-y-3">
+                                    <div v-for="(trainer, index) in dashboardKpis.trainers_availability" :key="index" class="flex items-center justify-between p-3.5 bg-slate-50/50 border border-slate-100/50 rounded-2xl hover:bg-white hover:border-slate-200 hover:shadow-md transition-all group">
+                                        <div class="flex items-center gap-3 overflow-hidden">
+                                            <div class="h-9 w-9 bg-emerald-50 text-emerald-600 rounded-lg flex items-center justify-center font-black text-xs border border-emerald-100/50 shrink-0">
+                                                {{ trainer.name.charAt(0) }}
+                                            </div>
+                                            <div class="min-w-0">
+                                                <p class="text-xs font-black text-gray-900 truncate" :title="trainer.name">{{ trainer.name }}</p>
+                                                <div v-if="trainer.active_groups && trainer.active_groups.length > 0" class="flex flex-wrap gap-1 mt-1">
+                                                    <span v-for="group in trainer.active_groups.slice(0, 2)" :key="group" class="text-[8px] font-black text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-100/50 truncate max-w-[80px]" :title="group">{{ group }}</span>
+                                                    <span v-if="trainer.active_groups.length > 2" class="text-[8px] font-black text-gray-400 mt-0.5">+{{ trainer.active_groups.length - 2 }}</span>
+                                                </div>
+                                                <span v-else class="text-[8px] font-black text-emerald-500 uppercase tracking-widest mt-1 inline-block">100% Disponible</span>
+                                            </div>
+                                        </div>
+                                        <div class="text-right shrink-0 ml-2">
+                                            <span class="text-sm font-black" :class="trainer.total_minutes > 0 ? 'text-slate-800' : 'text-emerald-500'">{{ trainer.total_hours }}</span>
+                                            <p class="text-[8px] font-black text-slate-400 uppercase tracking-widest">/ sem</p>
+                                        </div>
+                                    </div>
+                                    <div v-if="!dashboardKpis.trainers_availability || dashboardKpis.trainers_availability.length === 0" class="py-8 flex flex-col items-center text-gray-400 gap-2">
+                                        <p class="text-xs font-bold italic">Aucune donnée de disponibilité.</p>
                                     </div>
                                 </div>
                             </div>

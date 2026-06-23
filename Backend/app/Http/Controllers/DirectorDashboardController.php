@@ -80,6 +80,7 @@ class DirectorDashboardController extends Controller
         });
 
         $kpis['online_users_count'] = $this->getOnlineUsersCount();
+        $kpis['trainers_availability'] = $this->getTrainersAvailability();
 
         return $kpis;
     }
@@ -383,5 +384,39 @@ class DirectorDashboardController extends Controller
     public function apiStats()
     {
         return response()->json($this->getKpis());
+    }
+
+    /**
+     * KPI: Trainers availability and schedules.
+     */
+    private function getTrainersAvailability(): array
+    {
+        return User::role('Formateur')->with(['schedules' => function($q) {
+            $q->whereHas('group', function($groupQ) {
+                $groupQ->where('status', 'active');
+            })->with('group:id,nom_groupe');
+        }])->get(['id', 'name'])->map(function($trainer) {
+            $totalMinutes = 0;
+            foreach ($trainer->schedules as $schedule) {
+                if ($schedule->start_time && $schedule->end_time) {
+                    $start = \Carbon\Carbon::parse($schedule->start_time);
+                    $end = \Carbon\Carbon::parse($schedule->end_time);
+                    if ($end->gt($start)) {
+                        $totalMinutes += $end->diffInMinutes($start);
+                    }
+                }
+            }
+            $hours = floor($totalMinutes / 60);
+            $minutes = $totalMinutes % 60;
+            $totalHoursFormatted = $minutes > 0 ? "{$hours}h" . str_pad((string)$minutes, 2, '0', STR_PAD_LEFT) : "{$hours}h";
+            
+            return [
+                'id' => $trainer->id,
+                'name' => $trainer->name,
+                'total_hours' => $totalHoursFormatted,
+                'total_minutes' => $totalMinutes,
+                'active_groups' => $trainer->schedules->pluck('group.nom_groupe')->filter()->unique()->values()
+            ];
+        })->sortByDesc('total_minutes')->values()->toArray();
     }
 }
