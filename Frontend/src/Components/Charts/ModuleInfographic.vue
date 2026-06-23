@@ -112,17 +112,19 @@ function angleToPoint(targetY, side) {
 
                 <!-- ══ LEFT SIDE ══ -->
                 <g v-for="(mod, i) in leftPositioned" :key="'lc-' + i">
-                    <!-- Connector line: from circle edge to pill right edge -->
+                    <!-- Connector line with unique ID -->
                     <path
+                        :id="`lpath${i}`"
                         :d="`M ${cx - cr * 0.85} ${cy + (mod.y - cy) * 0.5}
                              C ${cx - cr - 20} ${cy}, ${leftPillRightEdge + 40} ${mod.y}, ${leftPillRightEdge} ${mod.y}`"
                         :stroke="mod.color.bg"
                         stroke-width="2"
                         fill="none"
                         stroke-dasharray="5 4"
-                        :opacity="animated ? 0.85 : 0"
+                        :opacity="animated ? 0.7 : 0"
                         style="transition: opacity 0.7s ease;"
                     />
+                    <!-- Junction dot -->
                     <circle
                         :cx="leftPillRightEdge"
                         :cy="mod.y"
@@ -131,6 +133,30 @@ function angleToPoint(targetY, side) {
                         :opacity="animated ? 1 : 0"
                         style="transition: opacity 0.6s ease;"
                     />
+                    <!-- Pulse 1 -->
+                    <circle r="5" :fill="mod.color.light" opacity="0.95" filter="url(#glow-dot)">
+                        <filter :id="`glow-l${i}`">
+                            <feGaussianBlur stdDeviation="3" result="blur"/>
+                            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+                        </filter>
+                        <animateMotion
+                            :dur="`${1.8 + i * 0.15}s`"
+                            repeatCount="indefinite"
+                            :begin="`${i * 0.3}s`"
+                        >
+                            <mpath :href="`#lpath${i}`"/>
+                        </animateMotion>
+                    </circle>
+                    <!-- Pulse 2 (offset) -->
+                    <circle r="3.5" :fill="mod.color.bg" opacity="0.6">
+                        <animateMotion
+                            :dur="`${1.8 + i * 0.15}s`"
+                            repeatCount="indefinite"
+                            :begin="`${i * 0.3 + 0.9}s`"
+                        >
+                            <mpath :href="`#lpath${i}`"/>
+                        </animateMotion>
+                    </circle>
                 </g>
 
                 <!-- Left pills (right-aligned: pill right edge = leftPillRightEdge) -->
@@ -208,15 +234,17 @@ function angleToPoint(targetY, side) {
                 <!-- ══ RIGHT SIDE ══ -->
                 <g v-for="(mod, i) in rightPositioned" :key="'rc-' + i">
                     <path
+                        :id="`rpath${i}`"
                         :d="`M ${cx + cr * 0.85} ${cy + (mod.y - cy) * 0.5}
                              C ${cx + cr + 20} ${cy}, ${rightPillLeftEdge - 40} ${mod.y}, ${rightPillLeftEdge} ${mod.y}`"
                         :stroke="mod.color.bg"
                         stroke-width="2"
                         fill="none"
                         stroke-dasharray="5 4"
-                        :opacity="animated ? 0.85 : 0"
+                        :opacity="animated ? 0.7 : 0"
                         style="transition: opacity 0.7s ease;"
                     />
+                    <!-- Junction dot -->
                     <circle
                         :cx="rightPillLeftEdge"
                         :cy="mod.y"
@@ -225,6 +253,26 @@ function angleToPoint(targetY, side) {
                         :opacity="animated ? 1 : 0"
                         style="transition: opacity 0.6s ease;"
                     />
+                    <!-- Pulse 1 -->
+                    <circle r="5" :fill="mod.color.light" opacity="0.95" filter="url(#glow-dot)">
+                        <animateMotion
+                            :dur="`${1.8 + i * 0.15}s`"
+                            repeatCount="indefinite"
+                            :begin="`${i * 0.3 + 0.15}s`"
+                        >
+                            <mpath :href="`#rpath${i}`"/>
+                        </animateMotion>
+                    </circle>
+                    <!-- Pulse 2 (offset) -->
+                    <circle r="3.5" :fill="mod.color.bg" opacity="0.6">
+                        <animateMotion
+                            :dur="`${1.8 + i * 0.15}s`"
+                            repeatCount="indefinite"
+                            :begin="`${i * 0.3 + 1.05}s`"
+                        >
+                            <mpath :href="`#rpath${i}`"/>
+                        </animateMotion>
+                    </circle>
                 </g>
 
                 <!-- Right pills -->
@@ -300,7 +348,39 @@ function angleToPoint(targetY, side) {
                 </g>
 
                 <!-- ══ CENTRAL CIRCLE ══ -->
-                <!-- Outer glow ring -->
+                <defs>
+                    <filter id="glow-dot" x="-80%" y="-80%" width="260%" height="260%">
+                        <feGaussianBlur stdDeviation="4" result="blur"/>
+                        <feMerge>
+                            <feMergeNode in="blur"/>
+                            <feMergeNode in="blur"/>
+                            <feMergeNode in="SourceGraphic"/>
+                        </feMerge>
+                    </filter>
+                    <filter id="glow-center" x="-40%" y="-40%" width="180%" height="180%">
+                        <feGaussianBlur stdDeviation="8" result="blur"/>
+                        <feMerge>
+                            <feMergeNode in="blur"/>
+                            <feMergeNode in="SourceGraphic"/>
+                        </feMerge>
+                    </filter>
+                </defs>
+
+                <!-- Animated expanding rings (pulse from center) -->
+                <circle :cx="cx" :cy="cy" :r="cr + 5" fill="none" stroke="#818cf8" stroke-width="2" opacity="0">
+                    <animate attributeName="r" :from="cr + 5" :to="cr + 45" dur="2.4s" repeatCount="indefinite" begin="0s"/>
+                    <animate attributeName="opacity" from="0.6" to="0" dur="2.4s" repeatCount="indefinite" begin="0s"/>
+                </circle>
+                <circle :cx="cx" :cy="cy" :r="cr + 5" fill="none" stroke="#818cf8" stroke-width="1.5" opacity="0">
+                    <animate attributeName="r" :from="cr + 5" :to="cr + 45" dur="2.4s" repeatCount="indefinite" begin="0.8s"/>
+                    <animate attributeName="opacity" from="0.4" to="0" dur="2.4s" repeatCount="indefinite" begin="0.8s"/>
+                </circle>
+                <circle :cx="cx" :cy="cy" :r="cr + 5" fill="none" stroke="#818cf8" stroke-width="1" opacity="0">
+                    <animate attributeName="r" :from="cr + 5" :to="cr + 45" dur="2.4s" repeatCount="indefinite" begin="1.6s"/>
+                    <animate attributeName="opacity" from="0.3" to="0" dur="2.4s" repeatCount="indefinite" begin="1.6s"/>
+                </circle>
+
+                <!-- Soft glow ring -->
                 <circle :cx="cx" :cy="cy" :r="cr + 14" fill="rgba(99,102,241,0.07)" />
                 <!-- Dashed accent ring -->
                 <circle
@@ -321,6 +401,7 @@ function angleToPoint(targetY, side) {
                 <text :x="cx" :y="cy + 24" text-anchor="middle" fill="#4f46e5" font-size="40" font-weight="900" font-family="system-ui, sans-serif">{{ total }}</text>
                 <text :x="cx" :y="cy + 44" text-anchor="middle" fill="#94a3b8" font-size="10" font-weight="700" font-family="system-ui, sans-serif">apprenants</text>
             </svg>
+
         </div>
     </div>
 </template>
