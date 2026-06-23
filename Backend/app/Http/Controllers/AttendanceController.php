@@ -39,10 +39,10 @@ class AttendanceController extends Controller
         ]);
     }
 
-    /**
+     /**
      * Show the attendance form for a specific group.
      */
-    public function takeAttendance(Group $group): Response
+    public function takeAttendance(Group $group): Response|\Illuminate\Http\RedirectResponse
     {
         $user = auth()->user();
         $trainerIds = [$user->id];
@@ -57,6 +57,61 @@ class AttendanceController extends Controller
 
         if (!$hasSchedule) {
             abort(403, "Vous n'avez pas de créneau d'emploi du temps pour ce groupe.");
+        }
+
+        // Enforce same timeframe and validation rules for trainers (Directeur/Secrétaire bypass this)
+        if (!$user->hasRole('Directeur') && !$user->hasRole('Secrétaire')) {
+            $now = \Carbon\Carbon::now();
+            $today = $now->toDateString();
+            $dayOfWeek = $now->dayOfWeekIso;
+
+            $schedule = \App\Models\Schedule::where('group_id', $group->id)
+                ->where('day_of_week', $dayOfWeek)
+                ->whereIn('formateur_id', $trainerIds)
+                ->first();
+
+            if (!$schedule) {
+                $schedule = \App\Models\Schedule::where('group_id', $group->id)
+                    ->where('day_of_week', $dayOfWeek)
+                    ->first();
+            }
+
+            if (!$schedule) {
+                return redirect()
+                    ->route('attendances.trainer-groups')
+                    ->with('error', "Aucun cours planifié aujourd'hui pour ce groupe.");
+            }
+
+            // Check if attendance was already taken/validated
+            $alreadyTaken = Attendance::where('schedule_id', $schedule->id)
+                ->where('date', $today)
+                ->exists();
+
+            if ($alreadyTaken) {
+                return redirect()
+                    ->route('attendances.trainer-groups')
+                    ->with('error', "L'émargement a déjà été validé pour aujourd'hui et ne peut plus être modifié.");
+            }
+
+            // Check timeframe with buffer
+            $bufferBefore = (int) \App\Models\Setting::getValue('attendance_buffer_before', 10);
+            $bufferAfter = (int) \App\Models\Setting::getValue('attendance_buffer_after', 15);
+
+            $startTime = \Carbon\Carbon::createFromFormat('H:i:s', $schedule->start_time)->setDateFrom($now)->subMinutes($bufferBefore);
+            $endTime = \Carbon\Carbon::createFromFormat('H:i:s', $schedule->end_time)->setDateFrom($now)->addMinutes($bufferAfter);
+
+            if (!$now->between($startTime, $endTime)) {
+                $msg = sprintf(
+                    "L'émargement n'est autorisé que durant le créneau du cours (%s à %s, avec une tolérance de %d min avant et %d min après).",
+                    substr($schedule->start_time, 0, 5),
+                    substr($schedule->end_time, 0, 5),
+                    $bufferBefore,
+                    $bufferAfter
+                );
+                return redirect()
+                    ->route('attendances.trainer-groups')
+                    ->with('error', $msg);
+            }
         }
 
         $group->load('students');
@@ -122,6 +177,49 @@ class AttendanceController extends Controller
 
         if (!$hasSchedule) {
             abort(403, "Vous n'avez pas de créneau d'emploi du temps pour ce groupe.");
+        }
+
+        // Timeframe and status restrictions for trainers (Directeur and Secrétaire bypass this check)
+        if (!$user->hasRole('Directeur') && !$user->hasRole('Secrétaire')) {
+            if (!$schedule) {
+                return redirect()->back()->with('error', "Aucun créneau d'emploi du temps trouvé pour cette date.");
+            }
+
+            // 1. Restriction: only present or absent_non_justifie is allowed for trainers
+            foreach ($request->validated('attendances') as $data) {
+                if (!in_array($data['status'], ['present', 'absent_non_justifie'])) {
+                    return redirect()->back()->with('error', "Les formateurs ne peuvent émarger qu'en tant que 'Présent' ou 'Absent'.");
+                }
+            }
+
+            $now = \Carbon\Carbon::now();
+            $courseDate = \Carbon\Carbon::parse($date);
+
+            // 2. Restriction: only allowed to take attendance for today
+            if (!$courseDate->isToday()) {
+                return redirect()->back()->with('error', "Les formateurs ne peuvent faire l'appel que pour la date du jour.");
+            }
+
+            // 3. Restriction: check if already validated/taken
+            $alreadyTaken = Attendance::where('schedule_id', $schedule->id)
+                ->where('date', $date)
+                ->exists();
+
+            if ($alreadyTaken) {
+                return redirect()->back()->with('error', "L'émargement a déjà été validé pour cette séance et ne peut plus être modifié.");
+            }
+
+            // 4. Restriction: check timeframe with buffer
+            $bufferBefore = (int) \App\Models\Setting::getValue('attendance_buffer_before', 10);
+            $bufferAfter = (int) \App\Models\Setting::getValue('attendance_buffer_after', 15);
+
+            $startTime = \Carbon\Carbon::createFromFormat('H:i:s', $schedule->start_time)->setDateFrom($now)->subMinutes($bufferBefore);
+            $endTime = \Carbon\Carbon::createFromFormat('H:i:s', $schedule->end_time)->setDateFrom($now)->addMinutes($bufferAfter);
+
+            if (!$now->between($startTime, $endTime)) {
+                $msg = sprintf("L'émargement n'est autorisé que durant le créneau du cours (tolérance: %dmin avant, %dmin après).", $bufferBefore, $bufferAfter);
+                return redirect()->back()->with('error', $msg);
+            }
         }
 
         foreach ($request->validated('attendances') as $data) {
