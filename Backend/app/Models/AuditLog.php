@@ -70,7 +70,7 @@ class AuditLog extends Model
                 'description'    => $description,
                 'old_values'     => $oldValues,
                 'new_values'     => $newValues,
-                'ip_address'     => $request?->ip(),
+                'ip_address'     => static::resolveClientIp($request),
                 'user_agent'     => $request?->userAgent(),
                 'url'            => $request?->fullUrl(),
                 'method'         => $request?->method(),
@@ -80,6 +80,35 @@ class AuditLog extends Model
             // Never let audit failures crash the app
             logger()->error('AuditLog::write failed: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Resolve the real client IP address, handling reverse proxies (nginx).
+     * Priority: X-Forwarded-For → X-Real-IP → REMOTE_ADDR → $request->ip()
+     */
+    private static function resolveClientIp($request): ?string
+    {
+        if (!$request) return null;
+
+        // X-Forwarded-For can contain a chain: "client_ip, proxy1, proxy2"
+        // The leftmost IP is the original client
+        $forwarded = $request->header('X-Forwarded-For');
+        if ($forwarded) {
+            $ips = array_map('trim', explode(',', $forwarded));
+            $clientIp = $ips[0] ?? null;
+            if ($clientIp && filter_var($clientIp, FILTER_VALIDATE_IP)) {
+                return $clientIp;
+            }
+        }
+
+        // X-Real-IP header (set by some nginx configurations)
+        $realIp = $request->header('X-Real-IP');
+        if ($realIp && filter_var($realIp, FILTER_VALIDATE_IP)) {
+            return $realIp;
+        }
+
+        // Standard Laravel resolution (works correctly when TrustProxies is configured)
+        return $request->ip();
     }
 
     // -----------------------------------------------------------------------
