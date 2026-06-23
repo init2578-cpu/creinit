@@ -14,6 +14,7 @@ use App\Http\Controllers\ExamController;
 use App\Http\Controllers\Scolarite\AdminExamController;
 use App\Http\Controllers\Scolarite\AdminExerciseController;
 use App\Http\Controllers\Scolarite\ReportController;
+use App\Http\Controllers\AuditController;
 use App\Http\Middleware\EnsureWithinPremises;
 use Illuminate\Support\Facades\Route;
 
@@ -394,4 +395,9 @@ Route::middleware(['auth'])->group(function (): void {
 
     // AI Agent Assane
     Route::post('/assane/chat', [\App\Http\Controllers\Scolarite\AssaneChatController::class, 'chat'])->name('assane.chat');
+
+    // Audit Log (Directeur only)
+    Route::middleware(['role:Directeur'])->group(function () {
+        Route::get('/audit', [AuditController::class, 'index'])->name('audit.index');
+    });
 });

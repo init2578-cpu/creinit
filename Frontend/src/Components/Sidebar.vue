@@ -22,7 +22,8 @@ import {
     UserIcon,
     ChatBubbleLeftRightIcon,
     EnvelopeIcon,
-    NewspaperIcon
+    NewspaperIcon,
+    ShieldCheckIcon
 } from '@heroicons/vue/24/outline'
 
 const props = defineProps({
@@ -66,6 +67,7 @@ const navigation = computed(() => {
             { name: 'Statistiques', href: route('stats.index'), icon: ChartBarIcon },
             { name: 'Rapports', href: route('reports.index'), icon: DocumentChartBarIcon },
             { name: 'Paramètres', href: route('settings.index'), icon: Cog6ToothIcon },
+            { name: 'Audit', href: route('audit.index'), icon: ShieldCheckIcon },
         )
     } else if (roles.value.includes('Formateur') || page.props.auth.user?.is_trainer) {
         menu.push(

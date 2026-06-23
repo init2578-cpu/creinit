@@ -17,6 +17,7 @@ return Application::configure(basePath: dirname(__DIR__))
             \App\Http\Middleware\HandleInertiaRequests::class,
             \App\Http\Middleware\EnsurePasswordIsChanged::class,
             \App\Http\Middleware\TrackTimeSpent::class,
+            \App\Http\Middleware\LogActivity::class,
         ]);
 
         $middleware->alias([

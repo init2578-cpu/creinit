@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\AuditLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
@@ -90,6 +91,13 @@ class AuthenticatedSessionController extends Controller
             $route = 'student.dashboard';
         }
 
+        // Audit login
+        AuditLog::write(
+            event: 'login',
+            description: "{$user->name} s'est connecté(e)",
+            userId: $user->id,
+        );
+
         return redirect()->route($route);
     }
 
@@ -98,11 +106,21 @@ class AuthenticatedSessionController extends Controller
      */
     public function destroy(Request $request)
     {
+        // Audit logout before destroying session
+        $userId = Auth::user()?->id;
+        $userName = Auth::user()?->name ?? 'Utilisateur';
+
         Auth::guard('web')->logout();
 
         $request->session()->invalidate();
 
         $request->session()->regenerateToken();
+
+        AuditLog::write(
+            event: 'logout',
+            description: "{$userName} s'est déconnecté(e)",
+            userId: $userId,
+        );
 
         return redirect('/');
     }
