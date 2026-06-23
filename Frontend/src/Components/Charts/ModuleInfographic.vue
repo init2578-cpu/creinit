@@ -66,13 +66,32 @@ const rightPositioned = computed(() => getPositions(rightModules.value))
 const leftPillRightEdge = cx - cr - 130   // pills go to the left
 const rightPillLeftEdge = cx + cr + 130   // pills start here on the right
 
-
-// The angle from center to pill junction (horizontal ±)
-function angleToPoint(targetY, side) {
-    const dy = targetY - cy.value
-    const dx = side === 'left' ? -(leftPillRightEdge + 30) : (rightPillLeftEdge - 30)
-    return Math.atan2(dy, Math.abs(dx))
+// Helper: build SVG arc path on a circle of given radius, centered at (ocx, ocy)
+function svgArc(ocx, ocy, r, startAngle, endAngle) {
+    const x1 = ocx + r * Math.cos(startAngle)
+    const y1 = ocy + r * Math.sin(startAngle)
+    const x2 = ocx + r * Math.cos(endAngle)
+    const y2 = ocy + r * Math.sin(endAngle)
+    const large = Math.abs(endAngle - startAngle) > Math.PI ? 1 : 0
+    return `M ${x1} ${y1} A ${r} ${r} 0 ${large} 1 ${x2} ${y2}`
 }
+
+// Small colored arcs drawn on the circle border at each connector's departure angle
+const departureArcs = computed(() => {
+    const delta = 0.13 // ~7.5° in radians — arc half-span
+    const r = cr + 6   // slightly outside the white circle
+    const result = []
+
+    for (const mod of leftPositioned.value) {
+        const angle = Math.atan2(mod.y - cy.value, leftPillRightEdge - cx)
+        result.push({ path: svgArc(cx, cy.value, r, angle - delta, angle + delta), color: mod.color.bg, light: mod.color.light })
+    }
+    for (const mod of rightPositioned.value) {
+        const angle = Math.atan2(mod.y - cy.value, rightPillLeftEdge - cx)
+        result.push({ path: svgArc(cx, cy.value, r, angle - delta, angle + delta), color: mod.color.bg, light: mod.color.light })
+    }
+    return result
+})
 </script>
 
 <template>
@@ -392,6 +411,30 @@ function angleToPoint(targetY, side) {
                     stroke-dasharray="7 6"
                     opacity="0.35"
                 />
+
+                <!-- Departure arcs: colored arc on circle edge for each connector -->
+                <path
+                    v-for="(arc, i) in departureArcs"
+                    :key="'darc-' + i"
+                    :d="arc.path"
+                    :stroke="arc.color"
+                    stroke-width="5"
+                    fill="none"
+                    stroke-linecap="round"
+                    opacity="0.95"
+                />
+                <!-- Thin bright highlight on each departure arc -->
+                <path
+                    v-for="(arc, i) in departureArcs"
+                    :key="'darc-h-' + i"
+                    :d="arc.path"
+                    :stroke="arc.light"
+                    stroke-width="2"
+                    fill="none"
+                    stroke-linecap="round"
+                    opacity="0.6"
+                />
+
                 <!-- Main white circle -->
                 <circle :cx="cx" :cy="cy" :r="cr" fill="url(#cg)" filter="url(#cs)" />
 
