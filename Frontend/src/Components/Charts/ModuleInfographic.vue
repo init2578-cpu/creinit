@@ -76,10 +76,10 @@ function svgArc(ocx, ocy, r, startAngle, endAngle) {
     return `M ${x1} ${y1} A ${r} ${r} 0 ${large} 1 ${x2} ${y2}`
 }
 
-// Small colored arcs drawn on the circle border at each connector's departure angle
+// Small colored arcs drawn inside the circle border at each connector's departure angle
 const departureArcs = computed(() => {
     const delta = 0.13 // ~7.5° in radians — arc half-span
-    const r = cr + 6   // slightly outside the white circle
+    const r = cr - 10  // inside the white circle near the edge
     const result = []
 
     for (const mod of leftPositioned.value) {
@@ -412,13 +412,16 @@ const departureArcs = computed(() => {
                     opacity="0.35"
                 />
 
-                <!-- Departure arcs: colored arc on circle edge for each connector -->
+                <!-- Main white circle -->
+                <circle :cx="cx" :cy="cy" :r="cr" fill="url(#cg)" filter="url(#cs)" />
+
+                <!-- Departure arcs: colored arc INSIDE the circle for each connector -->
                 <path
                     v-for="(arc, i) in departureArcs"
                     :key="'darc-' + i"
                     :d="arc.path"
                     :stroke="arc.color"
-                    stroke-width="5"
+                    stroke-width="6"
                     fill="none"
                     stroke-linecap="round"
                     opacity="0.95"
@@ -432,11 +435,8 @@ const departureArcs = computed(() => {
                     stroke-width="2"
                     fill="none"
                     stroke-linecap="round"
-                    opacity="0.6"
+                    opacity="0.75"
                 />
-
-                <!-- Main white circle -->
-                <circle :cx="cx" :cy="cy" :r="cr" fill="url(#cg)" filter="url(#cs)" />
 
                 <!-- Center text -->
                 <text :x="cx" :y="cy - 32" text-anchor="middle" fill="#475569" font-size="10" font-weight="900" font-family="system-ui, sans-serif" letter-spacing="2">RÉPARTITION</text>
