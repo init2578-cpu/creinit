@@ -24,7 +24,7 @@ const palette = [
 const getColor = (i) => palette[i % palette.length]
 
 // Layout constants — circle in center
-const svgW = 820
+const svgW = 960
 const pillW = 270
 const pillH = 60
 const pillR = pillH / 2
@@ -62,9 +62,10 @@ function getPositions(list) {
 const leftPositioned = computed(() => getPositions(leftModules.value))
 const rightPositioned = computed(() => getPositions(rightModules.value))
 
-// Pill positions
-const leftPillRightEdge = cx - cr - 50   // pills go to the left, rightEdge = leftPillRightEdge
-const rightPillLeftEdge = cx + cr + 50   // pills start here on the right
+// Pill positions — increased gap so pulse paths are longer and more visible
+const leftPillRightEdge = cx - cr - 130   // pills go to the left
+const rightPillLeftEdge = cx + cr + 130   // pills start here on the right
+
 
 // The angle from center to pill junction (horizontal ±)
 function angleToPoint(targetY, side) {
