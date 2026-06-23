@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { Head, Link, router } from '@inertiajs/vue3'
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
 import {
@@ -10,9 +10,7 @@ import {
     UserIcon,
     ChevronLeftIcon,
     ChevronRightIcon,
-    ArrowDownTrayIcon,
     EyeIcon,
-    ChevronDownIcon,
 } from '@heroicons/vue/24/outline'
 
 const props = defineProps({
@@ -25,30 +23,43 @@ const props = defineProps({
 // -----------------------------------------------------------------------
 // Filters
 // -----------------------------------------------------------------------
-const search   = ref(props.filters?.search   ?? '')
-const userId   = ref(props.filters?.user_id  ?? '')
-const event    = ref(props.filters?.event    ?? '')
+const search   = ref(props.filters?.search    ?? '')
+const userId   = ref(props.filters?.user_id   ?? '')
+const event    = ref(props.filters?.event     ?? '')
 const dateFrom = ref(props.filters?.date_from ?? '')
 const dateTo   = ref(props.filters?.date_to   ?? '')
 
 const applyFilters = () => {
     router.get(route('audit.index'), {
-        search:    search.value   || undefined,
-        user_id:   userId.value   || undefined,
-        event:     event.value    || undefined,
-        date_from: dateFrom.value || undefined,
-        date_to:   dateTo.value   || undefined,
+        search:    search.value    || undefined,
+        user_id:   userId.value    || undefined,
+        event:     event.value     || undefined,
+        date_from: dateFrom.value  || undefined,
+        date_to:   dateTo.value    || undefined,
     }, { preserveScroll: true, preserveState: true })
 }
 
 const resetFilters = () => {
-    search.value = ''
-    userId.value = ''
-    event.value = ''
+    search.value   = ''
+    userId.value   = ''
+    event.value    = ''
     dateFrom.value = ''
-    dateTo.value = ''
+    dateTo.value   = ''
     applyFilters()
 }
+
+// Auto-apply immediately on select changes (user, event type, dates)
+watch(userId,   () => applyFilters())
+watch(event,    () => applyFilters())
+watch(dateFrom, () => { if (dateFrom.value) applyFilters() })
+watch(dateTo,   () => { if (dateTo.value)   applyFilters() })
+
+// Debounce search input (trigger only after 450ms of inactivity)
+let searchTimer = null
+watch(search, () => {
+    clearTimeout(searchTimer)
+    searchTimer = setTimeout(() => applyFilters(), 450)
+})
 
 // -----------------------------------------------------------------------
 // Event styling
