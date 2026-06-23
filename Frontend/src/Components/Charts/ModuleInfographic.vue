@@ -114,6 +114,9 @@ const departureArcs = computed(() => {
                     <filter id="ps" x="-10%" y="-30%" width="120%" height="160%">
                         <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="rgba(0,0,0,0.18)" />
                     </filter>
+                    <filter id="circle-shadow" x="-50%" y="-50%" width="200%" height="200%">
+                        <feDropShadow dx="0" dy="3" stdDeviation="5" flood-color="rgba(0,0,0,0.32)" />
+                    </filter>
                     <radialGradient id="cg" cx="35%" cy="30%" r="65%">
                         <stop offset="0%" stop-color="#ffffff"/>
                         <stop offset="100%" stop-color="#e8edf5"/>
@@ -203,7 +206,7 @@ const departureArcs = computed(() => {
                         :fill="mod.color.dark"
                         stroke="white"
                         stroke-width="2.5"
-                        filter="url(#ps)"
+                        filter="url(#circle-shadow)"
                     />
                     <text
                         :x="leftPillRightEdge - pillW - pillR + pillR"
@@ -225,6 +228,7 @@ const departureArcs = computed(() => {
                         stroke="white"
                         stroke-width="1.5"
                         stroke-opacity="0.4"
+                        filter="url(#circle-shadow)"
                     />
                     <text
                         :x="leftPillRightEdge - pillR"
@@ -324,7 +328,7 @@ const departureArcs = computed(() => {
                         :fill="mod.color.dark"
                         stroke="white"
                         stroke-width="2.5"
-                        filter="url(#ps)"
+                        filter="url(#circle-shadow)"
                     />
                     <text
                         :x="rightPillLeftEdge + pillR"
@@ -346,6 +350,7 @@ const departureArcs = computed(() => {
                         stroke="white"
                         stroke-width="1.5"
                         stroke-opacity="0.4"
+                        filter="url(#circle-shadow)"
                     />
                     <text
                         :x="rightPillLeftEdge + pillR + pillW - pillR"
