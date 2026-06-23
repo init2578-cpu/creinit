@@ -6,7 +6,6 @@ import {
     ShieldCheckIcon,
     ArrowPathIcon,
     MagnifyingGlassIcon,
-    FunnelIcon,
     UserIcon,
     ChevronLeftIcon,
     ChevronRightIcon,
@@ -197,11 +196,7 @@ const eventTypes = ['login', 'logout', 'created', 'updated', 'deleted', 'exporte
                         </div>
 
                         <!-- Actions -->
-                        <div class="flex gap-2">
-                            <button @click="applyFilters" class="flex items-center gap-2 px-4 py-2.5 bg-slate-900 text-white text-sm font-bold rounded-xl hover:bg-slate-800 transition-colors">
-                                <FunnelIcon class="h-4 w-4" />
-                                Filtrer
-                            </button>
+                        <div class="flex gap-2 self-end">
                             <button @click="resetFilters" class="flex items-center gap-2 px-4 py-2.5 bg-white text-slate-600 text-sm font-bold rounded-xl border border-slate-200 hover:bg-slate-50 transition-colors">
                                 <ArrowPathIcon class="h-4 w-4" />
                                 Réinitialiser
