@@ -21,6 +21,8 @@ class Module extends Model
         'titre',
         'description',
         'quota_heures',
+        'start_date',
+        'end_date',
     ];
 
     /**
@@ -30,7 +32,27 @@ class Module extends Model
     {
         return [
             'quota_heures' => 'integer',
+            'start_date' => 'date',
+            'end_date' => 'date',
         ];
+    }
+
+    // -----------------------------------------------------------------------
+    // Scopes
+    // -----------------------------------------------------------------------
+
+    /**
+     * Scope a query to only include modules that are currently open for enrollment.
+     */
+    public function scopeActiveForEnrollment($query)
+    {
+        $today = now()->startOfDay();
+
+        return $query->where(function ($q) use ($today) {
+            $q->whereNull('start_date')->orWhere('start_date', '<=', $today);
+        })->where(function ($q) use ($today) {
+            $q->whereNull('end_date')->orWhere('end_date', '>=', $today);
+        });
     }
 
     // -----------------------------------------------------------------------

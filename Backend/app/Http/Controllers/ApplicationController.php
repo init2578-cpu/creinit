@@ -62,7 +62,7 @@ class ApplicationController extends Controller
     public function create(): Response
     {
         return Inertia::render('Scolarite/Apply', [
-            'modules' => \App\Models\Module::all(['id', 'titre']),
+            'modules' => \App\Models\Module::activeForEnrollment()->get(['id', 'titre']),
         ]);
     }
 
@@ -70,17 +70,28 @@ class ApplicationController extends Controller
     {
         return Inertia::render('Scolarite/ApplicationsIndex', [
             'applications' => Application::with(['user', 'module'])->orderByDesc('created_at')->get(),
-            'modules' => \App\Models\Module::all(['id', 'titre']),
+            'modules' => \App\Models\Module::activeForEnrollment()->get(['id', 'titre']),
         ]);
     }
 
     public function enrollManual(Request $request)
     {
+        $today = now()->startOfDay()->toDateString();
+        
         $validated = $request->validate([
             'nom_complet' => 'required|string|max:255',
             'email'       => 'nullable|email|max:255|unique:users,email',
             'telephone'   => 'required|string|max:20|unique:users,telephone',
-            'module_id'   => 'required|exists:modules,id',
+            'module_id'   => [
+                'required',
+                \Illuminate\Validation\Rule::exists('modules', 'id')->where(function ($query) use ($today) {
+                    $query->where(function ($q) use ($today) {
+                        $q->whereNull('start_date')->orWhere('start_date', '<=', $today);
+                    })->where(function ($q) use ($today) {
+                        $q->whereNull('end_date')->orWhere('end_date', '>=', $today);
+                    });
+                })
+            ],
             'adresse_reelle' => 'required|string|max:255',
             'date_naissance' => 'required|date',
             'lieu_naissance' => 'required|string|max:255',

@@ -6,6 +6,8 @@ namespace App\Http\Requests\Scolarite;
 
 use Illuminate\Foundation\Http\FormRequest;
 
+use Illuminate\Validation\Rule;
+
 class StoreApplicationRequest extends FormRequest
 {
     public function authorize(): bool
@@ -15,8 +17,19 @@ class StoreApplicationRequest extends FormRequest
 
     public function rules(): array
     {
+        $today = now()->startOfDay()->toDateString();
+
         return [
-            'module_id' => ['required', 'exists:modules,id'],
+            'module_id' => [
+                'required', 
+                Rule::exists('modules', 'id')->where(function ($query) use ($today) {
+                    $query->where(function ($q) use ($today) {
+                        $q->whereNull('start_date')->orWhere('start_date', '<=', $today);
+                    })->where(function ($q) use ($today) {
+                        $q->whereNull('end_date')->orWhere('end_date', '>=', $today);
+                    });
+                })
+            ],
             'cni' => ['required', 'file', 'mimes:pdf,jpg,png', 'max:2048'], // 2MB as per current server limit
             'diploma' => ['required', 'file', 'mimes:pdf,jpg,png', 'max:2048'],
             'commentaires' => ['nullable', 'string'],

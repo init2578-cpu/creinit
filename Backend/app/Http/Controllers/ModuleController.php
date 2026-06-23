@@ -37,6 +37,8 @@ class ModuleController extends Controller
             'code_module' => 'required|string|max:50|unique:modules,code_module',
             'description' => 'nullable|string',
             'quota_heures' => 'required|integer|min:1',
+            'start_date' => 'nullable|date',
+            'end_date' => 'nullable|date|after_or_equal:start_date',
         ]);
 
         Module::create($validated);
@@ -54,6 +56,8 @@ class ModuleController extends Controller
             'code_module' => 'required|string|max:50|unique:modules,code_module,' . $module->id,
             'description' => 'nullable|string',
             'quota_heures' => 'required|integer|min:1',
+            'start_date' => 'nullable|date',
+            'end_date' => 'nullable|date|after_or_equal:start_date',
         ]);
 
         $module->update($validated);

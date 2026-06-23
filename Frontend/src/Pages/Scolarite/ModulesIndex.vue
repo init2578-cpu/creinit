@@ -33,7 +33,9 @@ const moduleForm = useForm({
     titre: '',
     code_module: '',
     description: '',
-    quota_heures: ''
+    quota_heures: '',
+    start_date: '',
+    end_date: ''
 })
 
 function openModuleModal(module = null) {
@@ -43,6 +45,8 @@ function openModuleModal(module = null) {
         moduleForm.code_module = module.code_module
         moduleForm.description = module.description
         moduleForm.quota_heures = module.quota_heures
+        moduleForm.start_date = module.start_date || ''
+        moduleForm.end_date = module.end_date || ''
     } else {
         moduleForm.reset()
     }
@@ -242,6 +246,17 @@ function handleReorder() {
                         <div>
                             <span class="text-[10px] font-black text-blue-500 uppercase tracking-widest">{{ module.code_module }}</span>
                             <h3 class="text-xl font-black text-gray-900 leading-tight mt-1">{{ module.titre }}</h3>
+                            <div class="mt-2 flex flex-wrap items-center gap-2">
+                                <span v-if="module.start_date && module.end_date" class="px-2.5 py-1 bg-amber-50 text-amber-600 rounded-lg text-[9px] font-black uppercase tracking-widest border border-amber-100">
+                                    Du {{ new Date(module.start_date).toLocaleDateString('fr-FR') }} au {{ new Date(module.end_date).toLocaleDateString('fr-FR') }}
+                                </span>
+                                <span v-else-if="module.start_date" class="px-2.5 py-1 bg-emerald-50 text-emerald-600 rounded-lg text-[9px] font-black uppercase tracking-widest border border-emerald-100">
+                                    Permanent (depuis {{ new Date(module.start_date).toLocaleDateString('fr-FR') }})
+                                </span>
+                                <span v-else class="px-2.5 py-1 bg-emerald-50 text-emerald-600 rounded-lg text-[9px] font-black uppercase tracking-widest border border-emerald-100">
+                                    Formation Permanente
+                                </span>
+                            </div>
                         </div>
                     </div>
 
@@ -292,12 +307,22 @@ function handleReorder() {
                         <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Description</label>
                         <textarea v-model="moduleForm.description" rows="4" class="w-full bg-gray-50 border-0 rounded-2xl focus:ring-2 focus:ring-blue-500 font-bold px-5 py-4" placeholder="Objectifs pédagogiques..."></textarea>
                     </div>
-                    <div>
-                        <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Quota Horaire (Heures)</label>
-                        <div class="relative">
-                            <input v-model="moduleForm.quota_heures" type="number" required class="w-full bg-gray-50 border-0 rounded-2xl focus:ring-2 focus:ring-blue-500 font-bold px-5 py-4">
-                            <ClockIcon class="h-6 w-6 absolute right-5 top-1/2 -translate-y-1/2 text-gray-300" />
+                    <div class="grid grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Quota Horaire (Heures)</label>
+                            <div class="relative">
+                                <input v-model="moduleForm.quota_heures" type="number" required class="w-full bg-gray-50 border-0 rounded-2xl focus:ring-2 focus:ring-blue-500 font-bold px-5 py-4">
+                                <ClockIcon class="h-6 w-6 absolute right-5 top-1/2 -translate-y-1/2 text-gray-300" />
+                            </div>
                         </div>
+                        <div>
+                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Date d'ouverture</label>
+                            <input v-model="moduleForm.start_date" type="date" class="w-full bg-gray-50 border-0 rounded-2xl focus:ring-2 focus:ring-blue-500 font-bold px-5 py-4 text-sm text-gray-700">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Date de fermeture <span class="text-blue-400/80 font-bold">(Optionnel si permanent)</span></label>
+                        <input v-model="moduleForm.end_date" type="date" class="w-full bg-gray-50 border-0 rounded-2xl focus:ring-2 focus:ring-blue-500 font-bold px-5 py-4 text-sm text-gray-700">
                     </div>
                     <div class="pt-6 flex gap-4">
                         <button type="button" @click="isModuleModalOpen = false" class="flex-1 py-5 bg-gray-100 text-gray-600 rounded-[1.5rem] font-black transition">Annuler</button>
