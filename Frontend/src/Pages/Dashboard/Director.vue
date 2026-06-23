@@ -79,14 +79,27 @@ const moduleData = computed(() => {
     return Object.values(dashboardKpis.value.module_validation_rates)
 })
 
-const dailyTrendsLabels = computed(() => {
+const selectedPeriod = ref('15J')
+
+const filteredDailyTrends = computed(() => {
     if (!dashboardKpis.value || !dashboardKpis.value.daily_trends) return []
-    return dashboardKpis.value.daily_trends.map(w => w.label)
+    const trends = dashboardKpis.value.daily_trends
+    if (selectedPeriod.value === '7J') {
+        return trends.slice(-7)
+    } else if (selectedPeriod.value === '15J') {
+        return trends.slice(-15)
+    } else if (selectedPeriod.value === '30J') {
+        return trends.slice(-30)
+    }
+    return trends
+})
+
+const dailyTrendsLabels = computed(() => {
+    return filteredDailyTrends.value.map(w => w.label)
 })
 
 const dailyTrendsData = computed(() => {
-    if (!dashboardKpis.value || !dashboardKpis.value.daily_trends) return []
-    return dashboardKpis.value.daily_trends.map(w => w.rate)
+    return filteredDailyTrends.value.map(w => w.rate)
 })
 
 let statsInterval = null
@@ -307,9 +320,29 @@ onUnmounted(() => {
                         <div class="flex items-center justify-between mb-6">
                             <div>
                                 <h3 class="text-xl font-black text-gray-900 tracking-tight">Tendance de Présentation</h3>
-                                <p class="text-xs text-gray-500 font-medium">Évolution du taux global sur les 10 derniers jours d'activité</p>
+                                <p class="text-xs text-gray-500 font-medium">
+                                    Évolution du taux global 
+                                    <span v-if="selectedPeriod === '7J'">sur les 7 derniers jours d'activité</span>
+                                    <span v-else-if="selectedPeriod === '15J'">sur les 15 derniers jours d'activité</span>
+                                    <span v-else-if="selectedPeriod === '30J'">sur les 30 derniers jours d'activité</span>
+                                    <span v-else>sur l'ensemble des jours d'activité</span>
+                                </p>
                             </div>
-                            <div class="flex items-center gap-2">
+                            <div class="flex items-center gap-4">
+                                <!-- Period Selector (Stock Chart Style) -->
+                                <div class="flex items-center bg-slate-50 p-1 rounded-xl border border-slate-100/80">
+                                    <button 
+                                        v-for="period in ['7J', '15J', '30J', 'Tout']" 
+                                        :key="period"
+                                        @click="selectedPeriod = period"
+                                        class="px-2.5 py-1 text-[10px] font-black rounded-lg transition-all duration-200"
+                                        :class="selectedPeriod === period 
+                                            ? 'bg-white text-blue-600 shadow-sm border border-slate-100/50' 
+                                            : 'text-slate-400 hover:text-slate-600'"
+                                    >
+                                        {{ period }}
+                                    </button>
+                                </div>
                                 <span class="text-xs font-black text-blue-600 bg-blue-50 border border-blue-100 px-3 py-1 rounded-full uppercase tracking-wider">
                                     {{ dashboardKpis.attendance_rate || 0 }}% global
                                 </span>
