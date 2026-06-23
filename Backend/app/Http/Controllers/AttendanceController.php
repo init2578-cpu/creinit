@@ -65,24 +65,43 @@ class AttendanceController extends Controller
             $today = $now->toDateString();
             $dayOfWeek = $now->dayOfWeekIso;
 
-            $schedule = \App\Models\Schedule::where('group_id', $group->id)
+            $schedules = \App\Models\Schedule::where('group_id', $group->id)
                 ->where('day_of_week', $dayOfWeek)
                 ->whereIn('formateur_id', $trainerIds)
-                ->first();
+                ->get();
 
-            if (!$schedule) {
-                $schedule = \App\Models\Schedule::where('group_id', $group->id)
+            if ($schedules->isEmpty()) {
+                $schedules = \App\Models\Schedule::where('group_id', $group->id)
                     ->where('day_of_week', $dayOfWeek)
-                    ->first();
+                    ->get();
             }
 
-            if (!$schedule) {
+            if ($schedules->isEmpty()) {
                 return redirect()
                     ->route('attendances.trainer-groups')
                     ->with('error', "Aucun cours planifié aujourd'hui pour ce groupe.");
             }
 
-            // Check if attendance was already taken/validated
+            // Find matching schedule based on current time (including buffers)
+            $bufferBefore = (int) \App\Models\Setting::getValue('attendance_buffer_before', 10);
+            $bufferAfter = (int) \App\Models\Setting::getValue('attendance_buffer_after', 15);
+
+            $schedule = null;
+            foreach ($schedules as $s) {
+                $startTime = \Carbon\Carbon::createFromFormat('H:i:s', $s->start_time)->setDateFrom($now)->subMinutes($bufferBefore);
+                $endTime = \Carbon\Carbon::createFromFormat('H:i:s', $s->end_time)->setDateFrom($now)->addMinutes($bufferAfter);
+                if ($now->between($startTime, $endTime)) {
+                    $schedule = $s;
+                    break;
+                }
+            }
+
+            // If outside all schedule slots, pick the first one to show correct timeframe error
+            if (!$schedule) {
+                $schedule = $schedules->first();
+            }
+
+            // Check if attendance was already taken/validated for this specific schedule
             $alreadyTaken = Attendance::where('schedule_id', $schedule->id)
                 ->where('date', $today)
                 ->exists();
@@ -90,13 +109,10 @@ class AttendanceController extends Controller
             if ($alreadyTaken) {
                 return redirect()
                     ->route('attendances.trainer-groups')
-                    ->with('error', "L'émargement a déjà été validé pour aujourd'hui et ne peut plus être modifié.");
+                    ->with('error', "L'émargement pour le créneau " . substr($schedule->start_time, 0, 5) . " - " . substr($schedule->end_time, 0, 5) . " a déjà été validé aujourd'hui et ne peut plus être modifié.");
             }
 
             // Check timeframe with buffer
-            $bufferBefore = (int) \App\Models\Setting::getValue('attendance_buffer_before', 10);
-            $bufferAfter = (int) \App\Models\Setting::getValue('attendance_buffer_after', 15);
-
             $startTime = \Carbon\Carbon::createFromFormat('H:i:s', $schedule->start_time)->setDateFrom($now)->subMinutes($bufferBefore);
             $endTime = \Carbon\Carbon::createFromFormat('H:i:s', $schedule->end_time)->setDateFrom($now)->addMinutes($bufferAfter);
 
@@ -153,19 +169,39 @@ class AttendanceController extends Controller
         $groupId = $request->validated('group_id');
         $date = $request->validated('date');
         
-        // Resolve schedule_id based on the day of the week
+        // Resolve schedule based on day of week and current time
         $carbonDate = \Carbon\Carbon::parse($date);
         $dayOfWeek = $carbonDate->dayOfWeekIso; // 1 (Mon) to 7 (Sun)
         
-        $schedule = \App\Models\Schedule::where('group_id', $groupId)
+        $schedules = \App\Models\Schedule::where('group_id', $groupId)
             ->where('day_of_week', $dayOfWeek)
             ->whereIn('formateur_id', $trainerIds)
-            ->first();
+            ->get();
 
-        if (!$schedule) {
-            $schedule = \App\Models\Schedule::where('group_id', $groupId)
+        if ($schedules->isEmpty()) {
+            $schedules = \App\Models\Schedule::where('group_id', $groupId)
                 ->where('day_of_week', $dayOfWeek)
-                ->first();
+                ->get();
+        }
+
+        $now = \Carbon\Carbon::now();
+        $bufferBefore = (int) \App\Models\Setting::getValue('attendance_buffer_before', 10);
+        $bufferAfter = (int) \App\Models\Setting::getValue('attendance_buffer_after', 15);
+
+        // Find active schedule based on current time
+        $schedule = null;
+        foreach ($schedules as $s) {
+            $startTime = \Carbon\Carbon::createFromFormat('H:i:s', $s->start_time)->setDateFrom($now)->subMinutes($bufferBefore);
+            $endTime = \Carbon\Carbon::createFromFormat('H:i:s', $s->end_time)->setDateFrom($now)->addMinutes($bufferAfter);
+            if ($now->between($startTime, $endTime)) {
+                $schedule = $s;
+                break;
+            }
+        }
+
+        // Fallback to first schedule of the day if none matches the active slot
+        if (!$schedule) {
+            $schedule = $schedules->first();
         }
 
         $scheduleId = $schedule ? $schedule->id : null;
@@ -192,7 +228,6 @@ class AttendanceController extends Controller
                 }
             }
 
-            $now = \Carbon\Carbon::now();
             $courseDate = \Carbon\Carbon::parse($date);
 
             // 2. Restriction: only allowed to take attendance for today
@@ -200,19 +235,16 @@ class AttendanceController extends Controller
                 return redirect()->back()->with('error', "Les formateurs ne peuvent faire l'appel que pour la date du jour.");
             }
 
-            // 3. Restriction: check if already validated/taken
+            // 3. Restriction: check if already validated/taken for this specific schedule
             $alreadyTaken = Attendance::where('schedule_id', $schedule->id)
                 ->where('date', $date)
                 ->exists();
 
             if ($alreadyTaken) {
-                return redirect()->back()->with('error', "L'émargement a déjà été validé pour cette séance et ne peut plus être modifié.");
+                return redirect()->back()->with('error', "L'émargement pour le créneau " . substr($schedule->start_time, 0, 5) . " - " . substr($schedule->end_time, 0, 5) . " a déjà été validé aujourd'hui et ne peut plus être modifié.");
             }
 
             // 4. Restriction: check timeframe with buffer
-            $bufferBefore = (int) \App\Models\Setting::getValue('attendance_buffer_before', 10);
-            $bufferAfter = (int) \App\Models\Setting::getValue('attendance_buffer_after', 15);
-
             $startTime = \Carbon\Carbon::createFromFormat('H:i:s', $schedule->start_time)->setDateFrom($now)->subMinutes($bufferBefore);
             $endTime = \Carbon\Carbon::createFromFormat('H:i:s', $schedule->end_time)->setDateFrom($now)->addMinutes($bufferAfter);
 
