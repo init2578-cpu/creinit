@@ -386,41 +386,62 @@ onUnmounted(() => {
                     </div>
 
                     <!-- Gender & Demographics -->
-                    <div class="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm flex flex-col justify-between lg:flex-row gap-8 transition-all hover:shadow-xl">
-                        <div class="flex-1 flex flex-col justify-between">
-                            <div>
-                                <h2 class="text-2xl font-black text-gray-900 tracking-tight mb-1">Démographie</h2>
-                                <p class="text-xs text-gray-500 font-medium mb-8">Distribution de genre et inclusion au sein du centre</p>
-                                
-                                <div class="space-y-4">
-                                    <div class="p-5 bg-pink-50/50 rounded-2xl border border-pink-100/30">
-                                        <div class="flex justify-between items-center mb-2">
-                                            <p class="text-[10px] font-black text-pink-700 uppercase tracking-widest">Femmes</p>
-                                            <span class="text-lg font-black text-pink-600">{{ dashboardKpis.gender_parity?.female || 0 }}</span>
-                                        </div>
-                                        <div class="w-full bg-pink-100/50 h-2 rounded-full">
-                                            <div class="bg-pink-500 h-full rounded-full transition-all duration-1000" :style="{ width: (dashboardKpis.gender_parity?.ratio || 0) + '%' }"></div>
-                                        </div>
-                                    </div>
+                    <div class="relative bg-gradient-to-br from-slate-900 via-slate-900 to-indigo-950 p-8 rounded-[2.5rem] border border-white/10 shadow-2xl overflow-hidden group">
+                        <!-- Background glow effects -->
+                        <div class="absolute -top-16 -right-16 w-48 h-48 bg-blue-500/20 rounded-full blur-[60px] pointer-events-none"></div>
+                        <div class="absolute -bottom-12 -left-12 w-40 h-40 bg-pink-500/20 rounded-full blur-[60px] pointer-events-none"></div>
+                        <div class="absolute inset-0 bg-[radial-gradient(circle_at_2px_2px,rgba(255,255,255,0.03)_1px,transparent_0)] bg-[size:32px_32px] pointer-events-none"></div>
 
-                                    <div class="p-5 bg-blue-50/50 rounded-2xl border border-blue-100/30">
-                                        <div class="flex justify-between items-center mb-2">
-                                            <p class="text-[10px] font-black text-blue-700 uppercase tracking-widest">Hommes</p>
-                                            <span class="text-lg font-black text-blue-600">{{ dashboardKpis.gender_parity?.male || 0 }}</span>
-                                        </div>
-                                        <div class="w-full bg-blue-100/50 h-2 rounded-full">
-                                            <div class="bg-blue-500 h-full rounded-full transition-all duration-1000" :style="{ width: (100 - (dashboardKpis.gender_parity?.ratio || 0)) + '%' }"></div>
-                                        </div>
+                        <div class="relative z-10 flex flex-col lg:flex-row gap-8 items-center">
+                            <!-- Left: Stats -->
+                            <div class="flex-1 flex flex-col justify-between w-full">
+                                <!-- Header -->
+                                <div class="mb-7">
+                                    <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 mb-4">
+                                        <span class="h-1.5 w-1.5 rounded-full bg-pink-400 animate-pulse"></span>
+                                        <span class="text-[9px] font-black text-slate-400 uppercase tracking-[0.25em]">Parité Cible: 50 / 50</span>
                                     </div>
+                                    <h2 class="text-2xl font-black text-white tracking-tight mb-1">Démographie</h2>
+                                    <p class="text-xs text-slate-500 font-medium">Distribution de genre au sein du centre</p>
+                                </div>
+
+                                <!-- Female stat -->
+                                <div class="group/card p-5 rounded-2xl bg-white/[0.04] border border-white/10 hover:border-pink-500/30 transition-all duration-300 hover:bg-pink-500/5 mb-3">
+                                    <div class="flex items-center gap-3 mb-3">
+                                        <div class="h-8 w-8 rounded-xl bg-gradient-to-br from-pink-500/30 to-pink-600/10 border border-pink-500/20 flex items-center justify-center">
+                                            <span class="text-[10px] font-black text-pink-400">F</span>
+                                        </div>
+                                        <div class="flex-1">
+                                            <p class="text-[9px] font-black text-pink-400 uppercase tracking-widest">Femmes</p>
+                                        </div>
+                                        <span class="text-2xl font-black text-white tabular-nums">{{ dashboardKpis.gender_parity?.female || 0 }}</span>
+                                    </div>
+                                    <div class="w-full bg-white/10 h-1.5 rounded-full overflow-hidden">
+                                        <div class="h-full rounded-full bg-gradient-to-r from-pink-400 to-pink-600 transition-all duration-1000" :style="{ width: (dashboardKpis.gender_parity?.ratio || 0) + '%' }"></div>
+                                    </div>
+                                    <p class="text-[9px] font-bold text-slate-500 mt-1.5">{{ Math.round(dashboardKpis.gender_parity?.ratio || 0) }}% des apprenants</p>
+                                </div>
+
+                                <!-- Male stat -->
+                                <div class="group/card p-5 rounded-2xl bg-white/[0.04] border border-white/10 hover:border-blue-500/30 transition-all duration-300 hover:bg-blue-500/5">
+                                    <div class="flex items-center gap-3 mb-3">
+                                        <div class="h-8 w-8 rounded-xl bg-gradient-to-br from-blue-500/30 to-blue-600/10 border border-blue-500/20 flex items-center justify-center">
+                                            <span class="text-[10px] font-black text-blue-400">H</span>
+                                        </div>
+                                        <div class="flex-1">
+                                            <p class="text-[9px] font-black text-blue-400 uppercase tracking-widest">Hommes</p>
+                                        </div>
+                                        <span class="text-2xl font-black text-white tabular-nums">{{ dashboardKpis.gender_parity?.male || 0 }}</span>
+                                    </div>
+                                    <div class="w-full bg-white/10 h-1.5 rounded-full overflow-hidden">
+                                        <div class="h-full rounded-full bg-gradient-to-r from-blue-400 to-blue-600 transition-all duration-1000" :style="{ width: (100 - (dashboardKpis.gender_parity?.ratio || 0)) + '%' }"></div>
+                                    </div>
+                                    <p class="text-[9px] font-bold text-slate-500 mt-1.5">{{ Math.round(100 - (dashboardKpis.gender_parity?.ratio || 0)) }}% des apprenants</p>
                                 </div>
                             </div>
 
-                            <div class="mt-6 pt-4 border-t border-gray-50 text-[10px] font-bold text-gray-400">
-                                Parité cible: 50% / 50%
-                            </div>
-                        </div>
-                        <div class="lg:w-1/2 flex items-center justify-center">
-                            <div class="w-full max-w-[200px]">
+                            <!-- Right: Donut -->
+                            <div class="shrink-0 flex flex-col items-center justify-center">
                                 <DoughnutChart :male="dashboardKpis.gender_parity?.male || 0" :female="dashboardKpis.gender_parity?.female || 0" />
                             </div>
                         </div>
