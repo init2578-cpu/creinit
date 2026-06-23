@@ -41,11 +41,19 @@ class AuditController extends Controller
 
         // Map to safe DTO
         $logs->getCollection()->transform(function ($log) {
+            // Derive a clean short label from auditable_type FQCN
+            $auditableName = $log->auditable_name; // e.g. "Attendance"
+
+            // If auditable_type is null but description contains ":" we can extract from description
+            if ($auditableName === '—' && str_contains($log->description ?? '', ' : ')) {
+                $auditableName = trim(explode(' : ', $log->description)[1] ?? '—');
+            }
+
             return [
                 'id'             => $log->id,
                 'event'          => $log->event,
                 'description'    => $log->description,
-                'auditable_name' => $log->auditable_name,
+                'auditable_name' => $auditableName,
                 'auditable_id'   => $log->auditable_id,
                 'ip_address'     => $log->ip_address,
                 'url'            => $log->url,
