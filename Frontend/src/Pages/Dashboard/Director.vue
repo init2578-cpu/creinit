@@ -528,67 +528,6 @@ onUnmounted(() => {
                     </div>
                 </div>
 
-                <!-- Section 4: Focus Alerts (Student Risks) -->
-                <section v-if="dashboardKpis.alerts?.learners_at_risk?.length > 0" class="animate-in">
-                    <div class="flex items-center justify-between mb-6">
-                        <div class="flex items-center gap-4">
-                            <div class="h-9 w-9 bg-red-50 text-red-600 rounded-xl flex items-center justify-center border border-red-100">
-                                <ExclamationCircleIcon class="h-5 w-5" />
-                            </div>
-                            <div>
-                                <h2 class="text-xl font-black text-gray-900 tracking-tight leading-none">Alertes de Vigilance Apprenants</h2>
-                                <p class="text-xs text-gray-500 font-medium mt-1">Élèves sous vigilance d'absence prolongée</p>
-                            </div>
-                            <span class="px-2.5 py-0.5 rounded-full bg-red-50 text-red-600 text-xs font-black border border-red-100/50">{{ dashboardKpis.alerts.learners_at_risk.length }}</span>
-                        </div>
-                        
-                        <div class="flex-1 hidden sm:block h-px bg-red-50 mx-4"></div>
-                    </div>
-
-                    <div class="space-y-6">
-                        <div v-for="(groups, trainerName) in alertsGroupedByTrainer" :key="trainerName" class="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm transition-all hover:shadow-md">
-                            <div class="flex items-center gap-3 mb-6 border-b border-slate-50 pb-4">
-                                <div class="h-10 w-10 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center border border-indigo-100/50">
-                                    <AcademicCapIcon class="h-5 w-5" />
-                                </div>
-                                <div>
-                                    <h3 class="text-base font-black text-gray-900">{{ trainerName }}</h3>
-                                    <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest">Formateur Principal / Tuteur</p>
-                                </div>
-                            </div>
-
-                            <div class="space-y-6">
-                                <div v-for="(students, groupName) in groups" :key="groupName">
-                                    <div class="flex items-center gap-2 mb-4 pl-2 border-l-2 border-indigo-500">
-                                        <UsersIcon class="h-4 w-4 text-slate-400" />
-                                        <h4 class="text-xs font-bold text-slate-700 uppercase tracking-wider">{{ groupName }}</h4>
-                                        <span class="px-2 py-0.5 bg-red-50 text-red-600 text-[9px] font-black rounded-full border border-red-100/50">{{ students.length }} alertes</span>
-                                    </div>
-                                    
-                                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                        <div v-for="risk in students" :key="risk.user_id + '_' + risk.group_id" class="relative group bg-slate-50 border border-slate-100/50 p-4 rounded-2xl hover:shadow-lg hover:border-red-200 hover:bg-white transition-all flex items-center gap-4">
-                                            <div class="h-10 w-10 bg-gradient-to-br from-red-50 to-orange-50 rounded-xl flex items-center justify-center text-red-600 border border-red-100 shrink-0 font-black">
-                                                {{ risk.user?.name?.charAt(0) || '?' }}
-                                            </div>
-                                            <div class="flex-1 min-w-0">
-                                                <h3 class="font-bold text-sm text-gray-900 truncate" :title="risk.user?.name">{{ risk.user?.name }}</h3>
-                                                <p class="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-2 truncate" :title="risk.user?.email">{{ risk.user?.email }}</p>
-                                                <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-red-50 text-red-600 rounded-full border border-red-100">
-                                                    <span class="relative flex h-1.5 w-1.5">
-                                                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                                                        <span class="relative inline-flex rounded-full h-1.5 w-1.5 bg-red-500"></span>
-                                                    </span>
-                                                    <span class="text-[9px] font-black uppercase tracking-wider">{{ risk.total_absences }} Absences</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
                 <!-- Section 5: Elite & Performance (Leaderboards) -->
                 <section class="animate-in">
                     <div class="flex items-center gap-2 mb-6">
@@ -676,7 +615,7 @@ onUnmounted(() => {
                                     </div>
                                 </div>
 
-                                <div class="space-y-3">
+                                <div class="space-y-3 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
                                     <div v-for="(trainer, index) in dashboardKpis.trainers_availability" :key="index" class="flex items-center justify-between p-3.5 bg-slate-50/50 border border-slate-100/50 rounded-2xl hover:bg-white hover:border-slate-200 hover:shadow-md transition-all group">
                                         <div class="flex items-center gap-3 overflow-hidden">
                                             <div class="h-9 w-9 bg-emerald-50 text-emerald-600 rounded-lg flex items-center justify-center font-black text-xs border border-emerald-100/50 shrink-0">
@@ -698,6 +637,67 @@ onUnmounted(() => {
                                     </div>
                                     <div v-if="!dashboardKpis.trainers_availability || dashboardKpis.trainers_availability.length === 0" class="py-8 flex flex-col items-center text-gray-400 gap-2">
                                         <p class="text-xs font-bold italic">Aucune donnée de disponibilité.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section 4: Focus Alerts (Student Risks) -->
+                <section v-if="dashboardKpis.alerts?.learners_at_risk?.length > 0" class="animate-in">
+                    <div class="flex items-center justify-between mb-6">
+                        <div class="flex items-center gap-4">
+                            <div class="h-9 w-9 bg-red-50 text-red-600 rounded-xl flex items-center justify-center border border-red-100">
+                                <ExclamationCircleIcon class="h-5 w-5" />
+                            </div>
+                            <div>
+                                <h2 class="text-xl font-black text-gray-900 tracking-tight leading-none">Alertes de Vigilance Apprenants</h2>
+                                <p class="text-xs text-gray-500 font-medium mt-1">Élèves sous vigilance d'absence prolongée</p>
+                            </div>
+                            <span class="px-2.5 py-0.5 rounded-full bg-red-50 text-red-600 text-xs font-black border border-red-100/50">{{ dashboardKpis.alerts.learners_at_risk.length }}</span>
+                        </div>
+                        
+                        <div class="flex-1 hidden sm:block h-px bg-red-50 mx-4"></div>
+                    </div>
+
+                    <div class="space-y-6">
+                        <div v-for="(groups, trainerName) in alertsGroupedByTrainer" :key="trainerName" class="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm transition-all hover:shadow-md">
+                            <div class="flex items-center gap-3 mb-6 border-b border-slate-50 pb-4">
+                                <div class="h-10 w-10 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center border border-indigo-100/50">
+                                    <AcademicCapIcon class="h-5 w-5" />
+                                </div>
+                                <div>
+                                    <h3 class="text-base font-black text-gray-900">{{ trainerName }}</h3>
+                                    <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest">Formateur Principal / Tuteur</p>
+                                </div>
+                            </div>
+
+                            <div class="space-y-6">
+                                <div v-for="(students, groupName) in groups" :key="groupName">
+                                    <div class="flex items-center gap-2 mb-4 pl-2 border-l-2 border-indigo-500">
+                                        <UsersIcon class="h-4 w-4 text-slate-400" />
+                                        <h4 class="text-xs font-bold text-slate-700 uppercase tracking-wider">{{ groupName }}</h4>
+                                        <span class="px-2 py-0.5 bg-red-50 text-red-600 text-[9px] font-black rounded-full border border-red-100/50">{{ students.length }} alertes</span>
+                                    </div>
+                                    
+                                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                        <div v-for="risk in students" :key="risk.user_id + '_' + risk.group_id" class="relative group bg-slate-50 border border-slate-100/50 p-4 rounded-2xl hover:shadow-lg hover:border-red-200 hover:bg-white transition-all flex items-center gap-4">
+                                            <div class="h-10 w-10 bg-gradient-to-br from-red-50 to-orange-50 rounded-xl flex items-center justify-center text-red-600 border border-red-100 shrink-0 font-black">
+                                                {{ risk.user?.name?.charAt(0) || '?' }}
+                                            </div>
+                                            <div class="flex-1 min-w-0">
+                                                <h3 class="font-bold text-sm text-gray-900 truncate" :title="risk.user?.name">{{ risk.user?.name }}</h3>
+                                                <p class="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-2 truncate" :title="risk.user?.email">{{ risk.user?.email }}</p>
+                                                <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-red-50 text-red-600 rounded-full border border-red-100">
+                                                    <span class="relative flex h-1.5 w-1.5">
+                                                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                                        <span class="relative inline-flex rounded-full h-1.5 w-1.5 bg-red-500"></span>
+                                                    </span>
+                                                    <span class="text-[9px] font-black uppercase tracking-wider">{{ risk.total_absences }} Absences</span>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -734,5 +734,17 @@ onUnmounted(() => {
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }
+}
+
+/* Custom scrollbar for small areas */
+.custom-scrollbar::-webkit-scrollbar {
+    width: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background-color: #cbd5e1;
+    border-radius: 20px;
 }
 </style>
