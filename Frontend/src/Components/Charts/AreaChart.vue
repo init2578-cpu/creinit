@@ -194,13 +194,13 @@ const chartData = computed(() => ({
         borderColor: props.color,
         backgroundColor: props.color + '20', // Add transparency for area fill
         fill: true,
-        tension: 0.4,
-        borderWidth: 3,
+        tension: 0,
+        borderWidth: 2.5,
         pointBackgroundColor: props.color,
         pointBorderColor: '#fff',
-        pointBorderWidth: 2,
-        pointRadius: 4,
-        pointHoverRadius: 6,
+        pointBorderWidth: 1.5,
+        pointRadius: 0,
+        pointHoverRadius: 4,
     }]
 }))
 
