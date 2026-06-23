@@ -201,6 +201,8 @@ const departureArcs = computed(() => {
                         :cy="mod.y"
                         r="28"
                         :fill="mod.color.dark"
+                        stroke="white"
+                        stroke-width="2.5"
                         filter="url(#ps)"
                     />
                     <text
@@ -219,7 +221,10 @@ const departureArcs = computed(() => {
                         :cx="leftPillRightEdge - pillR"
                         :cy="mod.y"
                         r="22"
-                        fill="rgba(0,0,0,0.25)"
+                        fill="rgba(0,0,0,0.3)"
+                        stroke="white"
+                        stroke-width="1.5"
+                        stroke-opacity="0.4"
                     />
                     <text
                         :x="leftPillRightEdge - pillR"
@@ -317,6 +322,8 @@ const departureArcs = computed(() => {
                         :cy="mod.y"
                         r="28"
                         :fill="mod.color.dark"
+                        stroke="white"
+                        stroke-width="2.5"
                         filter="url(#ps)"
                     />
                     <text
@@ -335,7 +342,10 @@ const departureArcs = computed(() => {
                         :cx="rightPillLeftEdge + pillR + pillW - pillR"
                         :cy="mod.y"
                         r="22"
-                        fill="rgba(0,0,0,0.25)"
+                        fill="rgba(0,0,0,0.3)"
+                        stroke="white"
+                        stroke-width="1.5"
+                        stroke-opacity="0.4"
                     />
                     <text
                         :x="rightPillLeftEdge + pillR + pillW - pillR"
