@@ -89,6 +89,14 @@ class User extends Authenticatable implements PasskeyUser
     }
 
     /**
+     * Schedules assigned to this trainer.
+     */
+    public function schedules(): HasMany
+    {
+        return $this->hasMany(Schedule::class, 'formateur_id');
+    }
+
+    /**
      * Groups where this user is the group supervisor (responsable).
      */
     public function groupsAsResponsable(): HasMany

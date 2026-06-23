@@ -303,6 +303,7 @@ function deleteUser(id) {
                                 <PhoneIcon class="h-5 w-5 absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
                                 <input v-model="form.telephone" type="text" placeholder="77 000 00 00" class="w-full pl-12 pr-6 py-4 bg-gray-50 border-0 rounded-[1.25rem] font-bold focus:ring-2 focus:ring-indigo-600 transition-all text-sm">
                             </div>
+                            <p v-if="form.errors.telephone" class="text-xs text-red-500 mt-1.5 font-bold ml-1">{{ form.errors.telephone }}</p>
                         </div>
                         <div>
                             <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Adresse</label>
@@ -310,6 +311,7 @@ function deleteUser(id) {
                                 <MapPinIcon class="h-5 w-5 absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
                                 <input v-model="form.adresse" type="text" placeholder="Kolda, Dahra" class="w-full pl-12 pr-6 py-4 bg-gray-50 border-0 rounded-[1.25rem] font-bold focus:ring-2 focus:ring-indigo-600 transition-all text-sm">
                             </div>
+                            <p v-if="form.errors.adresse" class="text-xs text-red-500 mt-1.5 font-bold ml-1">{{ form.errors.adresse }}</p>
                         </div>
                     </div>
 

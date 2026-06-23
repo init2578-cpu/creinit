@@ -68,7 +68,7 @@ class UserController extends Controller
             'email'    => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8',
             'role'     => 'required|string|exists:roles,name',
-            'telephone'=> 'nullable|string|max:20',
+            'telephone'=> 'nullable|string|max:20|unique:users,telephone',
             'adresse'  => 'nullable|string|max:255',
         ]);
 
@@ -96,7 +96,7 @@ class UserController extends Controller
             'password' => 'nullable|string|min:8',
             'role'     => 'required|string|exists:roles,name',
             'is_active'=> 'required|boolean',
-            'telephone'=> 'nullable|string|max:20',
+            'telephone'=> ['nullable', 'string', 'max:20', Rule::unique('users')->ignore($user->id)],
             'adresse'  => 'nullable|string|max:255',
         ]);
 

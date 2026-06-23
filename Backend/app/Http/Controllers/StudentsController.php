@@ -69,7 +69,7 @@ class StudentsController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'nullable|string|min:8',
-            'telephone' => 'nullable|string|max:20',
+            'telephone' => 'nullable|string|max:20|unique:users,telephone',
             'adresse' => 'nullable|string|max:255',
             // Profile fields
             'date_naissance' => 'nullable|date',
@@ -118,7 +118,7 @@ class StudentsController extends Controller
             'name' => 'required|string|max:255',
             'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users')->ignore($student->id)],
             'password' => 'nullable|string|min:8',
-            'telephone' => 'nullable|string|max:20',
+            'telephone' => ['nullable', 'string', 'max:20', Rule::unique('users')->ignore($student->id)],
             'adresse' => 'nullable|string|max:255',
             'is_active' => 'required|boolean',
             // Profile fields

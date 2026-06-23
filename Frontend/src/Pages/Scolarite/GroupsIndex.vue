@@ -107,6 +107,53 @@ const reopenGroup = (group) => {
         router.patch(route('groups.reopen', group.id))
     }
 }
+
+// Trainer Schedules Logic
+const getDayName = (dayNumber) => {
+    const map = {1: 'Lundi', 2: 'Mardi', 3: 'Mercredi', 4: 'Jeudi', 5: 'Vendredi', 6: 'Samedi', 7: 'Dimanche'}
+    return map[dayNumber] || 'Jour inconnu'
+}
+
+const formatTime = (timeStr) => {
+    if (!timeStr) return ''
+    return timeStr.substring(0, 5)
+}
+
+const sortSchedules = (schedules) => {
+    if (!schedules) return []
+    return [...schedules].sort((a, b) => {
+        if (a.day_of_week !== b.day_of_week) return a.day_of_week - b.day_of_week
+        return a.start_time.localeCompare(b.start_time)
+    })
+}
+
+const selectedCreateTrainerSchedules = computed(() => {
+    if (!form.formateur_id) return null
+    const trainer = props.formateurs.find(f => f.id === form.formateur_id)
+    return trainer ? sortSchedules(trainer.schedules) : []
+})
+
+const selectedEditTrainerSchedules = computed(() => {
+    if (!editForm.formateur_id) return null
+    const trainer = props.formateurs.find(f => f.id === editForm.formateur_id)
+    return trainer ? sortSchedules(trainer.schedules) : []
+})
+
+const calculateTotalHours = (schedules) => {
+    if (!schedules || schedules.length === 0) return '0h'
+    let totalMinutes = 0
+    schedules.forEach(schedule => {
+        if (!schedule.start_time || !schedule.end_time) return
+        const [startH, startM] = schedule.start_time.split(':').map(Number)
+        const [endH, endM] = schedule.end_time.split(':').map(Number)
+        const start = startH * 60 + startM
+        const end = endH * 60 + endM
+        if (end > start) totalMinutes += (end - start)
+    })
+    const hours = Math.floor(totalMinutes / 60)
+    const minutes = totalMinutes % 60
+    return minutes > 0 ? `${hours}h${minutes.toString().padStart(2, '0')}` : `${hours}h`
+}
 </script>
 
 <template>
@@ -279,6 +326,30 @@ const reopenGroup = (group) => {
                         </div>
                     </div>
 
+                    <!-- CREATE SCHEDULE DISPLAY -->
+                    <div v-if="selectedCreateTrainerSchedules !== null">
+                        <div v-if="selectedCreateTrainerSchedules.length > 0" class="p-4 bg-gray-50 border border-gray-100 rounded-2xl">
+                            <h4 class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 flex items-center justify-between">
+                                <div class="flex items-center gap-2">
+                                    <CalendarIcon class="w-4 h-4 text-blue-500"/>
+                                    Disponibilités du formateur
+                                </div>
+                                <span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-[10px] font-bold">Total : {{ calculateTotalHours(selectedCreateTrainerSchedules) }} / sem.</span>
+                            </h4>
+                            <div class="space-y-2 max-h-40 overflow-y-auto pr-2 custom-scrollbar">
+                                <div v-for="schedule in selectedCreateTrainerSchedules" :key="schedule.id" class="flex items-center justify-between bg-white px-3 py-2 rounded-xl border border-gray-50 shadow-sm">
+                                    <span class="text-sm font-bold text-gray-800">{{ getDayName(schedule.day_of_week) }}</span>
+                                    <span class="text-xs font-bold text-blue-600 truncate max-w-[100px] text-right" :title="schedule.group?.nom_groupe">{{ schedule.group?.nom_groupe }}</span>
+                                    <span class="text-sm font-medium text-gray-600 bg-gray-50 px-2 py-1 rounded-lg">{{ formatTime(schedule.start_time) }} - {{ formatTime(schedule.end_time) }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div v-else class="p-4 bg-emerald-50 border border-emerald-100 rounded-2xl flex items-center gap-3">
+                            <CheckCircleIcon class="w-5 h-5 text-emerald-500" />
+                            <span class="text-xs font-bold text-emerald-700">Ce formateur est 100% disponible (aucun créneau actif).</span>
+                        </div>
+                    </div>
+
                     <div>
                         <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Année Académique</label>
                         <input 
@@ -345,6 +416,30 @@ const reopenGroup = (group) => {
                                 <option v-for="f in formateurs" :key="f.id" :value="f.id">{{ f.name }}</option>
                             </select>
                             <p v-if="editForm.errors.formateur_id" class="text-red-500 text-xs mt-1 font-bold">{{ editForm.errors.formateur_id }}</p>
+                        </div>
+                    </div>
+
+                    <!-- EDIT SCHEDULE DISPLAY -->
+                    <div v-if="selectedEditTrainerSchedules !== null">
+                        <div v-if="selectedEditTrainerSchedules.length > 0" class="p-4 bg-gray-50 border border-gray-100 rounded-2xl">
+                            <h4 class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 flex items-center justify-between">
+                                <div class="flex items-center gap-2">
+                                    <CalendarIcon class="w-4 h-4 text-blue-500"/>
+                                    Disponibilités du formateur
+                                </div>
+                                <span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-[10px] font-bold">Total : {{ calculateTotalHours(selectedEditTrainerSchedules) }} / sem.</span>
+                            </h4>
+                            <div class="space-y-2 max-h-40 overflow-y-auto pr-2 custom-scrollbar">
+                                <div v-for="schedule in selectedEditTrainerSchedules" :key="schedule.id" class="flex items-center justify-between bg-white px-3 py-2 rounded-xl border border-gray-50 shadow-sm">
+                                    <span class="text-sm font-bold text-gray-800">{{ getDayName(schedule.day_of_week) }}</span>
+                                    <span class="text-xs font-bold text-blue-600 truncate max-w-[100px] text-right" :title="schedule.group?.nom_groupe">{{ schedule.group?.nom_groupe }}</span>
+                                    <span class="text-sm font-medium text-gray-600 bg-gray-50 px-2 py-1 rounded-lg">{{ formatTime(schedule.start_time) }} - {{ formatTime(schedule.end_time) }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div v-else class="p-4 bg-emerald-50 border border-emerald-100 rounded-2xl flex items-center gap-3">
+                            <CheckCircleIcon class="w-5 h-5 text-emerald-500" />
+                            <span class="text-xs font-bold text-emerald-700">Ce formateur est 100% disponible (aucun créneau actif).</span>
                         </div>
                     </div>
 

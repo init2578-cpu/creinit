@@ -78,8 +78,8 @@ class ApplicationController extends Controller
     {
         $validated = $request->validate([
             'nom_complet' => 'required|string|max:255',
-            'email'       => 'nullable|email|max:255',
-            'telephone'   => 'required|string|max:20',
+            'email'       => 'nullable|email|max:255|unique:users,email',
+            'telephone'   => 'required|string|max:20|unique:users,telephone',
             'module_id'   => 'required|exists:modules,id',
             'adresse_reelle' => 'required|string|max:255',
             'date_naissance' => 'required|date',

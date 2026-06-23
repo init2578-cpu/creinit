@@ -21,11 +21,12 @@ class UpdateApplicationRequest extends FormRequest
      */
     public function rules(): array
     {
+        $application = $this->route('application');
         return [
             'module_id' => ['required', 'exists:modules,id'],
             'nom_complet' => ['required', 'string', 'max:255'],
-            'email' => ['nullable', 'email', 'max:255'],
-            'telephone' => ['required', 'string', 'max:20'],
+            'email' => ['nullable', 'email', 'max:255', \Illuminate\Validation\Rule::unique('users')->ignore($application->user_id)],
+            'telephone' => ['required', 'string', 'max:20', \Illuminate\Validation\Rule::unique('users')->ignore($application->user_id)],
             'adresse_reelle' => ['required', 'string', 'max:255'],
             'date_naissance' => ['required', 'date'],
             'lieu_naissance' => ['required', 'string', 'max:255'],
