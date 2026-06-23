@@ -79,14 +79,14 @@ const moduleData = computed(() => {
     return Object.values(dashboardKpis.value.module_validation_rates)
 })
 
-const weeklyTrendsLabels = computed(() => {
-    if (!dashboardKpis.value || !dashboardKpis.value.weekly_trends) return []
-    return dashboardKpis.value.weekly_trends.map(w => w.label)
+const dailyTrendsLabels = computed(() => {
+    if (!dashboardKpis.value || !dashboardKpis.value.daily_trends) return []
+    return dashboardKpis.value.daily_trends.map(w => w.label)
 })
 
-const weeklyTrendsData = computed(() => {
-    if (!dashboardKpis.value || !dashboardKpis.value.weekly_trends) return []
-    return dashboardKpis.value.weekly_trends.map(w => w.rate)
+const dailyTrendsData = computed(() => {
+    if (!dashboardKpis.value || !dashboardKpis.value.daily_trends) return []
+    return dashboardKpis.value.daily_trends.map(w => w.rate)
 })
 
 let statsInterval = null
@@ -307,7 +307,7 @@ onUnmounted(() => {
                         <div class="flex items-center justify-between mb-6">
                             <div>
                                 <h3 class="text-xl font-black text-gray-900 tracking-tight">Tendance de Présentation</h3>
-                                <p class="text-xs text-gray-500 font-medium">Évolution du taux global sur les 8 dernières semaines</p>
+                                <p class="text-xs text-gray-500 font-medium">Évolution du taux global sur les 10 derniers jours d'activité</p>
                             </div>
                             <div class="flex items-center gap-2">
                                 <span class="text-xs font-black text-blue-600 bg-blue-50 border border-blue-100 px-3 py-1 rounded-full uppercase tracking-wider">
@@ -318,8 +318,8 @@ onUnmounted(() => {
 
                         <div class="flex-1 min-h-[200px] mt-2">
                             <AreaChart 
-                                :labels="weeklyTrendsLabels" 
-                                :data="weeklyTrendsData" 
+                                :labels="dailyTrendsLabels" 
+                                :data="dailyTrendsData" 
                                 label="Taux global (%)" 
                                 color="#2563eb"
                             />

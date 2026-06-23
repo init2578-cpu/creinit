@@ -56,7 +56,7 @@ class DirectorDashboardController extends Controller
      */
     public function getKpis(): array
     {
-        $kpis = \Illuminate\Support\Facades\Cache::remember('director_dashboard_kpis_v2', 600, function () {
+        $kpis = \Illuminate\Support\Facades\Cache::remember('director_dashboard_kpis_v3', 600, function () {
             return [
                 'attendance_rate'          => $this->getAttendanceRate(),
                 'gender_parity'            => $this->getGenderParity(),
@@ -75,7 +75,7 @@ class DirectorDashboardController extends Controller
                 'top_learners'            => $this->getTopLearners(),
                 'attendance_stats'         => $this->getAttendanceStats(),
                 'alerts'                   => $this->getAlerts(),
-                'weekly_trends'            => $this->getWeeklyTrends(),
+                'daily_trends'             => $this->getDailyTrends(),
                 'module_distribution'      => $this->getModuleDistribution(),
             ];
         });
@@ -387,28 +387,26 @@ class DirectorDashboardController extends Controller
     }
 
     /**
-     * Get weekly attendance trends for the last 8 weeks.
+     * Get daily attendance trends for the last 10 active days.
      */
-    private function getWeeklyTrends(): array
+    private function getDailyTrends(): array
     {
-        $weeklyRaw = DB::select("
+        $dailyRaw = DB::select("
             SELECT
-                to_char(date, 'IYYY-IW') AS iso_week,
-                MIN(date) AS week_start,
+                date,
                 COUNT(*) AS total,
                 SUM(CASE WHEN status IN ('present','late') THEN 1 ELSE 0 END) AS present_count
             FROM attendances
-            WHERE date >= CURRENT_DATE - INTERVAL '8 weeks'
-            GROUP BY iso_week
-            ORDER BY iso_week
+            GROUP BY date
+            ORDER BY date DESC
+            LIMIT 10
         ");
 
-        return collect($weeklyRaw)->map(function ($row, $i) {
+        return collect($dailyRaw)->reverse()->map(function ($row) {
             $rate = $row->total > 0 ? round(($row->present_count / $row->total) * 100, 1) : 0;
-            $weekStart = \Carbon\Carbon::parse($row->week_start);
+            $date = \Carbon\Carbon::parse($row->date);
             return [
-                'week'      => 'S' . ($i + 1),
-                'label'     => $weekStart->format('d M'),
+                'label'     => $date->translatedFormat('d M'),
                 'rate'      => $rate,
             ];
         })->values()->toArray();
