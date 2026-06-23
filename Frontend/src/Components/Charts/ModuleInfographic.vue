@@ -205,7 +205,7 @@ const departureArcs = computed(() => {
                         r="28"
                         :fill="mod.color.dark"
                         stroke="white"
-                        stroke-width="2.5"
+                        stroke-width="1.2"
                         filter="url(#circle-shadow)"
                     />
                     <text
@@ -226,7 +226,7 @@ const departureArcs = computed(() => {
                         r="22"
                         fill="rgba(0,0,0,0.3)"
                         stroke="white"
-                        stroke-width="1.5"
+                        stroke-width="1.0"
                         stroke-opacity="0.4"
                         filter="url(#circle-shadow)"
                     />
@@ -327,7 +327,7 @@ const departureArcs = computed(() => {
                         r="28"
                         :fill="mod.color.dark"
                         stroke="white"
-                        stroke-width="2.5"
+                        stroke-width="1.2"
                         filter="url(#circle-shadow)"
                     />
                     <text
@@ -348,7 +348,7 @@ const departureArcs = computed(() => {
                         r="22"
                         fill="rgba(0,0,0,0.3)"
                         stroke="white"
-                        stroke-width="1.5"
+                        stroke-width="1.0"
                         stroke-opacity="0.4"
                         filter="url(#circle-shadow)"
                     />
