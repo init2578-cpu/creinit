@@ -76,6 +76,7 @@ class DirectorDashboardController extends Controller
                 'attendance_stats'         => $this->getAttendanceStats(),
                 'alerts'                   => $this->getAlerts(),
                 'weekly_trends'            => $this->getWeeklyTrends(),
+                'module_distribution'      => $this->getModuleDistribution(),
             ];
         });
 
@@ -260,6 +261,41 @@ class DirectorDashboardController extends Controller
      *
      * @return array<string, float>
      */
+    /**
+     * KPI: Distribution of active learners per module.
+     */
+    private function getModuleDistribution(): array
+    {
+        $total = User::role(['Apprenant', 'Stagiaire'])->where('is_active', true)->count();
+
+        $modules = Module::with('groups')->get();
+
+        return $modules->map(function ($module) use ($total) {
+            $count = DB::table('group_user')
+                ->join('groups', 'group_user.group_id', '=', 'groups.id')
+                ->join('users', 'group_user.user_id', '=', 'users.id')
+                ->join('model_has_roles', 'users.id', '=', 'model_has_roles.model_id')
+                ->join('roles', 'model_has_roles.role_id', '=', 'roles.id')
+                ->where('groups.module_id', $module->id)
+                ->where('users.is_active', true)
+                ->whereIn('roles.name', ['Apprenant', 'Stagiaire'])
+                ->distinct('users.id')
+                ->count('users.id');
+
+            return [
+                'id'        => $module->id,
+                'titre'     => $module->titre,
+                'code'      => $module->code_module,
+                'count'     => $count,
+                'percent'   => $total > 0 ? round($count / $total * 100, 1) : 0,
+                'is_active' => (bool) $module->is_active,
+            ];
+        })
+        ->sortByDesc('count')
+        ->values()
+        ->toArray();
+    }
+
     private function getModuleValidationRates(): array
     {
         return Module::withCount(['certificates'])
