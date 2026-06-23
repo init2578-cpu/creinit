@@ -62,13 +62,13 @@ class NominationController extends Controller
         $nomination->load(['group', 'user', 'nominator']);
 
         // Notify all administration staff (Secrétaire and Directeur)
-        try {
-            $staff = User::role(['Secrétaire', 'Directeur'])->get();
-            foreach ($staff as $userToNotify) {
+        $staff = User::role(['Secrétaire', 'Directeur'])->get();
+        foreach ($staff as $userToNotify) {
+            try {
                 $userToNotify->notify(new NominationProposedNotification($nomination));
+            } catch (\Throwable $e) {
+                logger()->error('Erreur lors de l\'envoi de la notification de nomination à ' . $userToNotify->name . ' : ' . $e->getMessage());
             }
-        } catch (\Throwable $e) {
-            logger()->error('Erreur lors de l\'envoi de la notification de nomination : ' . $e->getMessage());
         }
 
         return redirect()

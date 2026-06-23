@@ -50,6 +50,7 @@ class HandleInertiaRequests extends Middleware
                     'unread_notifications' => $request->user()->unreadNotifications()->latest()->limit(10)->get(),
                     'unread_notifications_count' => $request->user()->unreadNotifications()->count(),
                     'unread_messages_count' => \App\Models\ContactMessage::where('is_read', false)->count(),
+                    'pending_nominations_count' => ($request->user()->hasRole('Directeur') || $request->user()->hasRole('Secrétaire')) ? \App\Models\Nomination::where('status', 'pending')->count() : 0,
                     'unread_exams_count' => $request->user()->unreadNotifications()->where('type', \App\Notifications\ExamResultGradedNotification::class)->count(),
                     'unread_exercises_count' => $request->user()->unreadNotifications()->where('type', \App\Notifications\ExerciseGradedNotification::class)->count(),
                     'unread_progressions_count' => $request->user()->unreadNotifications()->where('type', \App\Notifications\ChapterSubmittedNotification::class)->count(),
