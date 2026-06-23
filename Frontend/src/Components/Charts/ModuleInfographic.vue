@@ -115,7 +115,7 @@ const departureArcs = computed(() => {
                         <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="rgba(0,0,0,0.18)" />
                     </filter>
                     <filter id="circle-shadow" x="-50%" y="-50%" width="200%" height="200%">
-                        <feDropShadow dx="0" dy="3" stdDeviation="5" flood-color="rgba(0,0,0,0.32)" />
+                        <feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="rgba(0,0,0,0.55)" />
                     </filter>
                     <radialGradient id="cg" cx="35%" cy="30%" r="65%">
                         <stop offset="0%" stop-color="#ffffff"/>
