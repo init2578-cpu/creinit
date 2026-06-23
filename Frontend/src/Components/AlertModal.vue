@@ -15,7 +15,11 @@ const props = defineProps({
         default: 'success' // success, error, warning, info
     },
     title: String,
-    message: String
+    message: String,
+    buttonText: {
+        type: String,
+        default: 'Fermer'
+    }
 })
 
 const emit = defineEmits(['close'])
@@ -108,7 +112,7 @@ watch(() => props.isOpen, (newVal) => {
                             @click="emit('close')"
                             :class="['w-full py-5 rounded-2xl text-white font-black text-xs uppercase tracking-[0.2em] transition-all active:scale-[0.95] shadow-2xl hover:brightness-110', buttonColor]"
                         >
-                            ACCÉDER AU TERMINAL
+                            {{ buttonText }}
                         </button>
                     </div>
                 </div>
