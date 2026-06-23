@@ -1,50 +1,77 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
-import { AcademicCapIcon } from '@heroicons/vue/24/outline'
 
 const props = defineProps({
     modules: { type: Array, default: () => [] }
 })
 
 const animated = ref(false)
-onMounted(() => setTimeout(() => (animated.value = true), 200))
+onMounted(() => setTimeout(() => (animated.value = true), 150))
 
 const total = computed(() => props.modules.reduce((s, m) => s + m.count, 0))
 
-// Color palette for each module pill
+// Color palette
 const palette = [
-    { pill: '#7c3aed', pillLight: '#8b5cf6', icon: '#6d28d9', line: '#7c3aed', text: '#ede9fe' },
-    { pill: '#be123c', pillLight: '#e11d48', icon: '#9f1239', line: '#be123c', text: '#ffe4e6' },
-    { pill: '#0e7490', pillLight: '#0891b2', icon: '#155e75', line: '#0e7490', text: '#cffafe' },
-    { pill: '#c2410c', pillLight: '#ea580c', icon: '#9a3412', line: '#c2410c', text: '#ffedd5' },
-    { pill: '#1d4ed8', pillLight: '#2563eb', icon: '#1e40af', line: '#1d4ed8', text: '#dbeafe' },
+    { bg: '#7c3aed', light: '#8b5cf6', dark: '#6d28d9' },
+    { bg: '#be123c', light: '#e11d48', dark: '#9f1239' },
+    { bg: '#0e7490', light: '#0891b2', dark: '#155e75' },
+    { bg: '#c2410c', light: '#ea580c', dark: '#9a3412' },
+    { bg: '#1d4ed8', light: '#2563eb', dark: '#1e40af' },
+    { bg: '#065f46', light: '#059669', dark: '#064e3b' },
+    { bg: '#7e22ce', light: '#9333ea', dark: '#6b21a8' },
+    { bg: '#9f1239', light: '#e11d48', dark: '#881337' },
 ]
+const getColor = (i) => palette[i % palette.length]
 
-const getColor = (index) => palette[index % palette.length]
-
-// SVG layout constants
-const svgW = 680
-const svgH = computed(() => Math.max(380, props.modules.length * 80 + 80))
-const cx = 170           // center circle X
-const cy = computed(() => svgH.value / 2)
-const cr = 100           // center circle radius
-const lineEndX = cx + cr + 30  // where connector exits circle
-const pillX = lineEndX + 80    // pill left edge X
-const pillW = 340
-const pillH = 58
+// Layout constants — circle in center
+const svgW = 820
+const pillW = 270
+const pillH = 60
 const pillR = pillH / 2
+const cx = svgW / 2  // center X
 
-const modulePositions = computed(() => {
+// Split into left/right halves
+const leftModules = computed(() => {
     const n = props.modules.length
+    const leftCount = Math.ceil(n / 2)
+    return props.modules.slice(0, leftCount).map((m, i) => ({ ...m, color: getColor(i) }))
+})
+
+const rightModules = computed(() => {
+    const n = props.modules.length
+    const leftCount = Math.ceil(n / 2)
+    return props.modules.slice(leftCount).map((m, i) => ({ ...m, color: getColor(leftCount + i) }))
+})
+
+const cr = 95  // circle radius
+
+// Vertical spacing
+const maxSide = computed(() => Math.max(leftModules.value.length, rightModules.value.length))
+const svgH = computed(() => Math.max(340, maxSide.value * 80 + 80))
+const cy = computed(() => svgH.value / 2)
+
+// Compute Y position for a list, centered vertically
+function getPositions(list) {
+    const n = list.length
     if (n === 0) return []
     const spacing = Math.max(72, (svgH.value - 80) / n)
     const startY = (svgH.value - spacing * (n - 1)) / 2
-    return props.modules.map((mod, i) => ({
-        ...mod,
-        y: startY + i * spacing,
-        color: getColor(i),
-    }))
-})
+    return list.map((m, i) => ({ ...m, y: startY + i * spacing }))
+}
+
+const leftPositioned = computed(() => getPositions(leftModules.value))
+const rightPositioned = computed(() => getPositions(rightModules.value))
+
+// Pill positions
+const leftPillRightEdge = cx - cr - 50   // pills go to the left, rightEdge = leftPillRightEdge
+const rightPillLeftEdge = cx + cr + 50   // pills start here on the right
+
+// The angle from center to pill junction (horizontal ±)
+function angleToPoint(targetY, side) {
+    const dy = targetY - cy.value
+    const dx = side === 'left' ? -(leftPillRightEdge + 30) : (rightPillLeftEdge - 30)
+    return Math.atan2(dy, Math.abs(dx))
+}
 </script>
 
 <template>
@@ -52,93 +79,93 @@ const modulePositions = computed(() => {
         <div v-if="!modules.length" class="flex items-center justify-center h-48 text-gray-400 font-bold text-sm">
             Aucun module disponible
         </div>
-        <div v-else class="relative" :style="{ minWidth: '640px' }">
+
+        <div v-else :style="{ minWidth: '700px' }">
             <svg
                 :viewBox="`0 0 ${svgW} ${svgH}`"
                 :height="svgH"
                 class="w-full"
                 xmlns="http://www.w3.org/2000/svg"
             >
-                <!-- Defs: filters and gradients -->
                 <defs>
-                    <filter id="shadow-center" x="-30%" y="-30%" width="160%" height="160%">
-                        <feDropShadow dx="0" dy="6" stdDeviation="14" flood-color="rgba(0,0,0,0.18)" />
+                    <filter id="cs" x="-30%" y="-30%" width="160%" height="160%">
+                        <feDropShadow dx="0" dy="6" stdDeviation="14" flood-color="rgba(0,0,0,0.15)" />
                     </filter>
-                    <filter id="shadow-pill" x="-10%" y="-30%" width="120%" height="160%">
-                        <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="rgba(0,0,0,0.15)" />
+                    <filter id="ps" x="-10%" y="-30%" width="120%" height="160%">
+                        <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="rgba(0,0,0,0.18)" />
                     </filter>
-                    <radialGradient id="center-grad" cx="35%" cy="30%" r="65%">
-                        <stop offset="0%" stop-color="#ffffff" />
-                        <stop offset="100%" stop-color="#e8edf5" />
+                    <radialGradient id="cg" cx="35%" cy="30%" r="65%">
+                        <stop offset="0%" stop-color="#ffffff"/>
+                        <stop offset="100%" stop-color="#e8edf5"/>
                     </radialGradient>
-                    <!-- Per-module pill gradients -->
+                    <!-- Per-module gradients -->
                     <linearGradient
-                        v-for="(mod, i) in modulePositions"
-                        :key="'grad-' + i"
-                        :id="'pill-grad-' + i"
+                        v-for="(m, i) in [...leftPositioned, ...rightPositioned]"
+                        :key="'g' + i"
+                        :id="'pg' + i"
                         x1="0%" y1="0%" x2="100%" y2="0%"
                     >
-                        <stop offset="0%" :stop-color="mod.color.pill" />
-                        <stop offset="100%" :stop-color="mod.color.pillLight" />
+                        <stop offset="0%" :stop-color="m.color.dark"/>
+                        <stop offset="100%" :stop-color="m.color.light"/>
                     </linearGradient>
                 </defs>
 
-                <!-- === Connector lines === -->
-                <g v-for="(mod, i) in modulePositions" :key="'line-' + i">
-                    <!-- Line from circle edge to pill -->
+                <!-- ══ LEFT SIDE ══ -->
+                <g v-for="(mod, i) in leftPositioned" :key="'lc-' + i">
+                    <!-- Connector line: from circle edge to pill right edge -->
                     <path
-                        :d="`M ${cx + cr * Math.cos(Math.atan2(mod.y - cy, lineEndX - cx))} ${cy + cr * Math.sin(Math.atan2(mod.y - cy, lineEndX - cx))}
-                             C ${lineEndX + 20} ${cy}, ${pillX - 40} ${mod.y}, ${pillX} ${mod.y}`"
-                        :stroke="mod.color.line"
+                        :d="`M ${cx - cr * 0.85} ${cy + (mod.y - cy) * 0.5}
+                             C ${cx - cr - 20} ${cy}, ${leftPillRightEdge + 40} ${mod.y}, ${leftPillRightEdge} ${mod.y}`"
+                        :stroke="mod.color.bg"
                         stroke-width="2"
                         fill="none"
-                        stroke-dasharray="5 3"
-                        :opacity="animated ? 1 : 0"
-                        style="transition: opacity 0.8s ease;"
+                        stroke-dasharray="5 4"
+                        :opacity="animated ? 0.85 : 0"
+                        style="transition: opacity 0.7s ease;"
                     />
-                    <!-- Small dot on circle edge -->
                     <circle
-                        :cx="cx + cr * Math.cos(Math.atan2(mod.y - cy, lineEndX - cx))"
-                        :cy="cy + cr * Math.sin(Math.atan2(mod.y - cy, lineEndX - cx))"
+                        :cx="leftPillRightEdge"
+                        :cy="mod.y"
                         r="4"
-                        :fill="mod.color.line"
+                        :fill="mod.color.bg"
                         :opacity="animated ? 1 : 0"
                         style="transition: opacity 0.6s ease;"
                     />
                 </g>
 
-                <!-- === Module pills === -->
-                <g v-for="(mod, i) in modulePositions" :key="'pill-' + i"
-                    :transform="`translate(0, ${animated ? 0 : 20})`"
-                    :style="`transition: transform 0.7s cubic-bezier(.4,2,.6,1) ${i * 80}ms, opacity 0.7s ease ${i * 80}ms; opacity: ${animated ? 1 : 0}`"
+                <!-- Left pills (right-aligned: pill right edge = leftPillRightEdge) -->
+                <g
+                    v-for="(mod, i) in leftPositioned"
+                    :key="'lp-' + i"
+                    :style="`transition: transform 0.7s cubic-bezier(.4,2,.6,1) ${i * 90}ms, opacity 0.7s ease ${i * 90}ms; opacity: ${animated ? 1 : 0}; transform: translateX(${animated ? 0 : -24}px);`"
                 >
-                    <!-- Icon circle -->
-                    <circle
-                        :cx="pillX + 28"
-                        :cy="mod.y"
-                        r="28"
-                        :fill="mod.color.icon"
-                        filter="url(#shadow-pill)"
-                    />
-                    <!-- Pill body (starts where icon circle center is, so icon overlaps left edge) -->
+                    <!-- Pill body -->
                     <rect
-                        :x="pillX + 28"
+                        :x="leftPillRightEdge - pillW - pillR"
                         :y="mod.y - pillH / 2"
                         :width="pillW"
                         :height="pillH"
                         :rx="pillR"
-                        :fill="`url(#pill-grad-${i})`"
-                        filter="url(#shadow-pill)"
+                        :fill="`url(#pg${i})`"
+                        filter="url(#ps)"
                     />
-                    <!-- Count badge at far right of pill -->
+                    <!-- Left icon circle -->
                     <circle
-                        :cx="pillX + 28 + pillW - 28"
+                        :cx="leftPillRightEdge - pillW - pillR + pillR"
+                        :cy="mod.y"
+                        r="28"
+                        :fill="mod.color.dark"
+                        filter="url(#ps)"
+                    />
+                    <!-- Count badge on right of pill -->
+                    <circle
+                        :cx="leftPillRightEdge - pillR"
                         :cy="mod.y"
                         r="22"
-                        fill="rgba(0,0,0,0.2)"
+                        fill="rgba(0,0,0,0.25)"
                     />
                     <text
-                        :x="pillX + 28 + pillW - 28"
+                        :x="leftPillRightEdge - pillR"
                         :y="mod.y + 1"
                         text-anchor="middle"
                         dominant-baseline="middle"
@@ -148,69 +175,147 @@ const modulePositions = computed(() => {
                         font-family="system-ui, sans-serif"
                     >{{ mod.count }}</text>
 
-                    <!-- Module code label -->
+                    <!-- Text inside pill -->
                     <text
-                        :x="pillX + 68"
+                        :x="leftPillRightEdge - pillW - pillR + pillR * 2 + 10"
                         :y="mod.y - 10"
-                        fill="rgba(255,255,255,0.65)"
+                        fill="rgba(255,255,255,0.6)"
                         font-size="9"
                         font-weight="800"
                         font-family="system-ui, sans-serif"
-                        letter-spacing="2"
-                        text-transform="uppercase"
+                        letter-spacing="1.5"
                     >{{ mod.code }}</text>
-                    <!-- Module title -->
                     <text
-                        :x="pillX + 68"
-                        :y="mod.y + 10"
-                        :fill="mod.color.text"
-                        font-size="14"
+                        :x="leftPillRightEdge - pillW - pillR + pillR * 2 + 10"
+                        :y="mod.y + 8"
+                        fill="white"
+                        font-size="13"
                         font-weight="900"
                         font-family="system-ui, sans-serif"
-                    >{{ mod.titre.length > 24 ? mod.titre.substring(0, 23) + '…' : mod.titre }}</text>
-                    <!-- Percent small -->
+                    >{{ mod.titre.length > 20 ? mod.titre.substring(0, 19) + '…' : mod.titre }}</text>
                     <text
-                        :x="pillX + 68"
-                        :y="mod.y + 26"
+                        :x="leftPillRightEdge - pillW - pillR + pillR * 2 + 10"
+                        :y="mod.y + 25"
                         fill="rgba(255,255,255,0.45)"
                         font-size="9"
                         font-weight="700"
                         font-family="system-ui, sans-serif"
                     >{{ mod.percent }}% des apprenants{{ !mod.is_active ? ' · Suspendu' : '' }}</text>
-
-                    <!-- Suspended badge -->
-                    <g v-if="!mod.is_active">
-                        <rect :x="pillX + 28 + pillW - 90" :y="mod.y - 30" width="55" height="16" rx="8" fill="#ef4444" opacity="0.85"/>
-                        <text :x="pillX + 28 + pillW - 62" :y="mod.y - 22" text-anchor="middle" dominant-baseline="middle" fill="white" font-size="8" font-weight="900" font-family="system-ui, sans-serif">SUSPENDU</text>
-                    </g>
                 </g>
 
-                <!-- === Central circle === -->
-                <circle :cx="cx" :cy="cy" r="cr + 12" fill="rgba(99,102,241,0.08)" />
+                <!-- ══ RIGHT SIDE ══ -->
+                <g v-for="(mod, i) in rightPositioned" :key="'rc-' + i">
+                    <path
+                        :d="`M ${cx + cr * 0.85} ${cy + (mod.y - cy) * 0.5}
+                             C ${cx + cr + 20} ${cy}, ${rightPillLeftEdge - 40} ${mod.y}, ${rightPillLeftEdge} ${mod.y}`"
+                        :stroke="mod.color.bg"
+                        stroke-width="2"
+                        fill="none"
+                        stroke-dasharray="5 4"
+                        :opacity="animated ? 0.85 : 0"
+                        style="transition: opacity 0.7s ease;"
+                    />
+                    <circle
+                        :cx="rightPillLeftEdge"
+                        :cy="mod.y"
+                        r="4"
+                        :fill="mod.color.bg"
+                        :opacity="animated ? 1 : 0"
+                        style="transition: opacity 0.6s ease;"
+                    />
+                </g>
+
+                <!-- Right pills -->
+                <g
+                    v-for="(mod, i) in rightPositioned"
+                    :key="'rp-' + i"
+                    :style="`transition: transform 0.7s cubic-bezier(.4,2,.6,1) ${i * 90}ms, opacity 0.7s ease ${i * 90}ms; opacity: ${animated ? 1 : 0}; transform: translateX(${animated ? 0 : 24}px);`"
+                >
+                    <!-- Pill body -->
+                    <rect
+                        :x="rightPillLeftEdge + pillR"
+                        :y="mod.y - pillH / 2"
+                        :width="pillW"
+                        :height="pillH"
+                        :rx="pillR"
+                        :fill="`url(#pg${leftPositioned.length + i})`"
+                        filter="url(#ps)"
+                    />
+                    <!-- Right icon circle -->
+                    <circle
+                        :cx="rightPillLeftEdge + pillR"
+                        :cy="mod.y"
+                        r="28"
+                        :fill="mod.color.dark"
+                        filter="url(#ps)"
+                    />
+                    <!-- Count badge on right -->
+                    <circle
+                        :cx="rightPillLeftEdge + pillR + pillW - pillR"
+                        :cy="mod.y"
+                        r="22"
+                        fill="rgba(0,0,0,0.25)"
+                    />
+                    <text
+                        :x="rightPillLeftEdge + pillR + pillW - pillR"
+                        :y="mod.y + 1"
+                        text-anchor="middle"
+                        dominant-baseline="middle"
+                        fill="white"
+                        font-size="13"
+                        font-weight="900"
+                        font-family="system-ui, sans-serif"
+                    >{{ mod.count }}</text>
+
+                    <!-- Text inside pill -->
+                    <text
+                        :x="rightPillLeftEdge + pillR * 2 + 14"
+                        :y="mod.y - 10"
+                        fill="rgba(255,255,255,0.6)"
+                        font-size="9"
+                        font-weight="800"
+                        font-family="system-ui, sans-serif"
+                        letter-spacing="1.5"
+                    >{{ mod.code }}</text>
+                    <text
+                        :x="rightPillLeftEdge + pillR * 2 + 14"
+                        :y="mod.y + 8"
+                        fill="white"
+                        font-size="13"
+                        font-weight="900"
+                        font-family="system-ui, sans-serif"
+                    >{{ mod.titre.length > 20 ? mod.titre.substring(0, 19) + '…' : mod.titre }}</text>
+                    <text
+                        :x="rightPillLeftEdge + pillR * 2 + 14"
+                        :y="mod.y + 25"
+                        fill="rgba(255,255,255,0.45)"
+                        font-size="9"
+                        font-weight="700"
+                        font-family="system-ui, sans-serif"
+                    >{{ mod.percent }}% des apprenants{{ !mod.is_active ? ' · Suspendu' : '' }}</text>
+                </g>
+
+                <!-- ══ CENTRAL CIRCLE ══ -->
+                <!-- Outer glow ring -->
+                <circle :cx="cx" :cy="cy" :r="cr + 14" fill="rgba(99,102,241,0.07)" />
+                <!-- Dashed accent ring -->
                 <circle
-                    :cx="cx" :cy="cy" :r="cr"
-                    fill="url(#center-grad)"
-                    filter="url(#shadow-center)"
-                />
-                <!-- Dashed outer ring accent -->
-                <circle
-                    :cx="cx" :cy="cy" :r="cr + 16"
+                    :cx="cx" :cy="cy" :r="cr + 18"
                     fill="none"
-                    stroke="#6366f1"
-                    stroke-width="2"
-                    stroke-dasharray="8 6"
-                    opacity="0.3"
+                    stroke="#818cf8"
+                    stroke-width="1.5"
+                    stroke-dasharray="7 6"
+                    opacity="0.35"
                 />
+                <!-- Main white circle -->
+                <circle :cx="cx" :cy="cy" :r="cr" fill="url(#cg)" filter="url(#cs)" />
 
                 <!-- Center text -->
-                <text :x="cx" :y="cy - 28" text-anchor="middle" fill="#1e293b" font-size="11" font-weight="900" font-family="system-ui, sans-serif" letter-spacing="1">RÉPARTITION</text>
-                <text :x="cx" :y="cy - 10" text-anchor="middle" fill="#1e293b" font-size="11" font-weight="900" font-family="system-ui, sans-serif" letter-spacing="1">PAR MODULE</text>
-                <!-- Big total number -->
-                <text :x="cx" :y="cy + 22" text-anchor="middle" fill="#4f46e5" font-size="36" font-weight="900" font-family="system-ui, sans-serif">{{ total }}</text>
-                <text :x="cx" :y="cy + 42" text-anchor="middle" fill="#64748b" font-size="10" font-weight="700" font-family="system-ui, sans-serif">apprenants</text>
-
-                <!-- Small chart icon below text -->
-                <text :x="cx" :y="cy + 62" text-anchor="middle" fill="#a5b4fc" font-size="18">📊</text>
+                <text :x="cx" :y="cy - 32" text-anchor="middle" fill="#475569" font-size="10" font-weight="900" font-family="system-ui, sans-serif" letter-spacing="2">RÉPARTITION</text>
+                <text :x="cx" :y="cy - 14" text-anchor="middle" fill="#475569" font-size="10" font-weight="900" font-family="system-ui, sans-serif" letter-spacing="2">PAR MODULE</text>
+                <!-- Big total -->
+                <text :x="cx" :y="cy + 24" text-anchor="middle" fill="#4f46e5" font-size="40" font-weight="900" font-family="system-ui, sans-serif">{{ total }}</text>
+                <text :x="cx" :y="cy + 44" text-anchor="middle" fill="#94a3b8" font-size="10" font-weight="700" font-family="system-ui, sans-serif">apprenants</text>
             </svg>
         </div>
     </div>
