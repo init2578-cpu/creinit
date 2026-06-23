@@ -123,13 +123,23 @@ const departureArcs = computed(() => {
                     </radialGradient>
                     <!-- Per-module gradients -->
                     <linearGradient
-                        v-for="(m, i) in [...leftPositioned, ...rightPositioned]"
-                        :key="'g' + i"
-                        :id="'pg' + i"
+                        v-for="(m, i) in leftPositioned"
+                        :key="'lg-' + i"
+                        :id="'pg-l' + i"
                         x1="0%" y1="0%" x2="100%" y2="0%"
                     >
                         <stop offset="0%" :stop-color="m.color.dark"/>
                         <stop offset="100%" :stop-color="m.color.light"/>
+                    </linearGradient>
+                    <linearGradient
+                        v-for="(m, i) in rightPositioned"
+                        :key="'rg-' + i"
+                        :id="'pg-r' + i"
+                        x1="0%" y1="0%" x2="100%" y2="0%"
+                    >
+                        <!-- Reverted for right side to mirror left side -->
+                        <stop offset="0%" :stop-color="m.color.light"/>
+                        <stop offset="100%" :stop-color="m.color.dark"/>
                     </linearGradient>
                 </defs>
 
@@ -195,7 +205,7 @@ const departureArcs = computed(() => {
                         :width="pillW"
                         :height="pillH"
                         :rx="pillR"
-                        :fill="`url(#pg${i})`"
+                        :fill="`url(#pg-l${i})`"
                         filter="url(#ps)"
                     />
                     <!-- Left icon circle with code -->
