@@ -149,7 +149,7 @@ function angleToPoint(targetY, side) {
                         :fill="`url(#pg${i})`"
                         filter="url(#ps)"
                     />
-                    <!-- Left icon circle -->
+                    <!-- Left icon circle with code -->
                     <circle
                         :cx="leftPillRightEdge - pillW - pillR + pillR"
                         :cy="mod.y"
@@ -157,6 +157,17 @@ function angleToPoint(targetY, side) {
                         :fill="mod.color.dark"
                         filter="url(#ps)"
                     />
+                    <text
+                        :x="leftPillRightEdge - pillW - pillR + pillR"
+                        :y="mod.y + 1"
+                        text-anchor="middle"
+                        dominant-baseline="middle"
+                        fill="white"
+                        font-size="9"
+                        font-weight="900"
+                        font-family="system-ui, sans-serif"
+                        letter-spacing="0.5"
+                    >{{ mod.code.length > 5 ? mod.code.substring(0,5) : mod.code }}</text>
                     <!-- Count badge on right of pill -->
                     <circle
                         :cx="leftPillRightEdge - pillR"
@@ -175,28 +186,19 @@ function angleToPoint(targetY, side) {
                         font-family="system-ui, sans-serif"
                     >{{ mod.count }}</text>
 
-                    <!-- Text inside pill -->
+                    <!-- Title & percent inside pill (no code here anymore) -->
                     <text
                         :x="leftPillRightEdge - pillW - pillR + pillR * 2 + 10"
-                        :y="mod.y - 10"
-                        fill="rgba(255,255,255,0.6)"
-                        font-size="9"
-                        font-weight="800"
-                        font-family="system-ui, sans-serif"
-                        letter-spacing="1.5"
-                    >{{ mod.code }}</text>
-                    <text
-                        :x="leftPillRightEdge - pillW - pillR + pillR * 2 + 10"
-                        :y="mod.y + 8"
+                        :y="mod.y - 3"
                         fill="white"
                         font-size="13"
                         font-weight="900"
                         font-family="system-ui, sans-serif"
-                    >{{ mod.titre.length > 20 ? mod.titre.substring(0, 19) + '…' : mod.titre }}</text>
+                    >{{ mod.titre.length > 22 ? mod.titre.substring(0, 21) + '…' : mod.titre }}</text>
                     <text
                         :x="leftPillRightEdge - pillW - pillR + pillR * 2 + 10"
-                        :y="mod.y + 25"
-                        fill="rgba(255,255,255,0.45)"
+                        :y="mod.y + 18"
+                        fill="rgba(255,255,255,0.5)"
                         font-size="9"
                         font-weight="700"
                         font-family="system-ui, sans-serif"
@@ -241,7 +243,7 @@ function angleToPoint(targetY, side) {
                         :fill="`url(#pg${leftPositioned.length + i})`"
                         filter="url(#ps)"
                     />
-                    <!-- Right icon circle -->
+                    <!-- Right icon circle with code -->
                     <circle
                         :cx="rightPillLeftEdge + pillR"
                         :cy="mod.y"
@@ -249,6 +251,17 @@ function angleToPoint(targetY, side) {
                         :fill="mod.color.dark"
                         filter="url(#ps)"
                     />
+                    <text
+                        :x="rightPillLeftEdge + pillR"
+                        :y="mod.y + 1"
+                        text-anchor="middle"
+                        dominant-baseline="middle"
+                        fill="white"
+                        font-size="9"
+                        font-weight="900"
+                        font-family="system-ui, sans-serif"
+                        letter-spacing="0.5"
+                    >{{ mod.code.length > 5 ? mod.code.substring(0,5) : mod.code }}</text>
                     <!-- Count badge on right -->
                     <circle
                         :cx="rightPillLeftEdge + pillR + pillW - pillR"
@@ -267,28 +280,19 @@ function angleToPoint(targetY, side) {
                         font-family="system-ui, sans-serif"
                     >{{ mod.count }}</text>
 
-                    <!-- Text inside pill -->
+                    <!-- Title & percent inside pill (no code here anymore) -->
                     <text
                         :x="rightPillLeftEdge + pillR * 2 + 14"
-                        :y="mod.y - 10"
-                        fill="rgba(255,255,255,0.6)"
-                        font-size="9"
-                        font-weight="800"
-                        font-family="system-ui, sans-serif"
-                        letter-spacing="1.5"
-                    >{{ mod.code }}</text>
-                    <text
-                        :x="rightPillLeftEdge + pillR * 2 + 14"
-                        :y="mod.y + 8"
+                        :y="mod.y - 3"
                         fill="white"
                         font-size="13"
                         font-weight="900"
                         font-family="system-ui, sans-serif"
-                    >{{ mod.titre.length > 20 ? mod.titre.substring(0, 19) + '…' : mod.titre }}</text>
+                    >{{ mod.titre.length > 22 ? mod.titre.substring(0, 21) + '…' : mod.titre }}</text>
                     <text
                         :x="rightPillLeftEdge + pillR * 2 + 14"
-                        :y="mod.y + 25"
-                        fill="rgba(255,255,255,0.45)"
+                        :y="mod.y + 18"
+                        fill="rgba(255,255,255,0.5)"
                         font-size="9"
                         font-weight="700"
                         font-family="system-ui, sans-serif"
