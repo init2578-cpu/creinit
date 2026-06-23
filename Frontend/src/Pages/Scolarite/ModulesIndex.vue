@@ -35,7 +35,8 @@ const moduleForm = useForm({
     description: '',
     quota_heures: '',
     start_date: '',
-    end_date: ''
+    end_date: '',
+    is_active: true
 })
 
 function openModuleModal(module = null) {
@@ -47,6 +48,7 @@ function openModuleModal(module = null) {
         moduleForm.quota_heures = module.quota_heures
         moduleForm.start_date = module.start_date || ''
         moduleForm.end_date = module.end_date || ''
+        moduleForm.is_active = module.is_active !== undefined ? module.is_active : true
     } else {
         moduleForm.reset()
     }
@@ -247,7 +249,10 @@ function handleReorder() {
                             <span class="text-[10px] font-black text-blue-500 uppercase tracking-widest">{{ module.code_module }}</span>
                             <h3 class="text-xl font-black text-gray-900 leading-tight mt-1">{{ module.titre }}</h3>
                             <div class="mt-2 flex flex-wrap items-center gap-2">
-                                <span v-if="module.start_date && module.end_date" class="px-2.5 py-1 bg-amber-50 text-amber-600 rounded-lg text-[9px] font-black uppercase tracking-widest border border-amber-100">
+                                <span v-if="!module.is_active" class="px-2.5 py-1 bg-red-50 text-red-600 rounded-lg text-[9px] font-black uppercase tracking-widest border border-red-100">
+                                    Suspendu
+                                </span>
+                                <span v-else-if="module.start_date && module.end_date" class="px-2.5 py-1 bg-amber-50 text-amber-600 rounded-lg text-[9px] font-black uppercase tracking-widest border border-amber-100">
                                     Du {{ new Date(module.start_date).toLocaleDateString('fr-FR') }} au {{ new Date(module.end_date).toLocaleDateString('fr-FR') }}
                                 </span>
                                 <span v-else-if="module.start_date" class="px-2.5 py-1 bg-emerald-50 text-emerald-600 rounded-lg text-[9px] font-black uppercase tracking-widest border border-emerald-100">
@@ -323,6 +328,17 @@ function handleReorder() {
                     <div>
                         <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Date de fermeture <span class="text-blue-400/80 font-bold">(Optionnel si permanent)</span></label>
                         <input v-model="moduleForm.end_date" type="date" class="w-full bg-gray-50 border-0 rounded-2xl focus:ring-2 focus:ring-blue-500 font-bold px-5 py-4 text-sm text-gray-700">
+                    </div>
+                    <div class="flex items-center gap-3 pt-2">
+                        <div class="relative flex items-center">
+                            <input type="checkbox" v-model="moduleForm.is_active" id="is_active_module" class="peer sr-only">
+                            <label for="is_active_module" class="relative block w-14 h-8 bg-gray-200 peer-checked:bg-emerald-500 rounded-full cursor-pointer transition-colors duration-300"></label>
+                            <span class="absolute left-1 top-1 w-6 h-6 bg-white rounded-full transition-all duration-300 pointer-events-none peer-checked:translate-x-6 shadow-sm"></span>
+                        </div>
+                        <div>
+                            <p class="text-sm font-black text-gray-900 leading-none">Module actif</p>
+                            <p class="text-[10px] text-gray-400 font-bold mt-1">Désactivez pour suspendre la formation (masquée aux inscriptions)</p>
+                        </div>
                     </div>
                     <div class="pt-6 flex gap-4">
                         <button type="button" @click="isModuleModalOpen = false" class="flex-1 py-5 bg-gray-100 text-gray-600 rounded-[1.5rem] font-black transition">Annuler</button>

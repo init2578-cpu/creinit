@@ -85,11 +85,12 @@ class ApplicationController extends Controller
             'module_id'   => [
                 'required',
                 \Illuminate\Validation\Rule::exists('modules', 'id')->where(function ($query) use ($today) {
-                    $query->where(function ($q) use ($today) {
-                        $q->whereNull('start_date')->orWhere('start_date', '<=', $today);
-                    })->where(function ($q) use ($today) {
-                        $q->whereNull('end_date')->orWhere('end_date', '>=', $today);
-                    });
+                    $query->where('is_active', true)
+                          ->where(function ($q) use ($today) {
+                              $q->whereNull('start_date')->orWhere('start_date', '<=', $today);
+                          })->where(function ($q) use ($today) {
+                              $q->whereNull('end_date')->orWhere('end_date', '>=', $today);
+                          });
                 })
             ],
             'adresse_reelle' => 'required|string|max:255',

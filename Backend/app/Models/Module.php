@@ -23,6 +23,7 @@ class Module extends Model
         'quota_heures',
         'start_date',
         'end_date',
+        'is_active',
     ];
 
     /**
@@ -34,6 +35,7 @@ class Module extends Model
             'quota_heures' => 'integer',
             'start_date' => 'date',
             'end_date' => 'date',
+            'is_active' => 'boolean',
         ];
     }
 
@@ -48,11 +50,12 @@ class Module extends Model
     {
         $today = now()->startOfDay();
 
-        return $query->where(function ($q) use ($today) {
-            $q->whereNull('start_date')->orWhere('start_date', '<=', $today);
-        })->where(function ($q) use ($today) {
-            $q->whereNull('end_date')->orWhere('end_date', '>=', $today);
-        });
+        return $query->where('is_active', true)
+            ->where(function ($q) use ($today) {
+                $q->whereNull('start_date')->orWhere('start_date', '<=', $today);
+            })->where(function ($q) use ($today) {
+                $q->whereNull('end_date')->orWhere('end_date', '>=', $today);
+            });
     }
 
     // -----------------------------------------------------------------------

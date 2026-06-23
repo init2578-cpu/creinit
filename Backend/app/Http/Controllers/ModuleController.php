@@ -39,6 +39,7 @@ class ModuleController extends Controller
             'quota_heures' => 'required|integer|min:1',
             'start_date' => 'nullable|date',
             'end_date' => 'nullable|date|after_or_equal:start_date',
+            'is_active' => 'boolean',
         ]);
 
         Module::create($validated);
@@ -58,6 +59,7 @@ class ModuleController extends Controller
             'quota_heures' => 'required|integer|min:1',
             'start_date' => 'nullable|date',
             'end_date' => 'nullable|date|after_or_equal:start_date',
+            'is_active' => 'boolean',
         ]);
 
         $module->update($validated);

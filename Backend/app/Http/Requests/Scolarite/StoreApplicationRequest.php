@@ -23,11 +23,12 @@ class StoreApplicationRequest extends FormRequest
             'module_id' => [
                 'required', 
                 Rule::exists('modules', 'id')->where(function ($query) use ($today) {
-                    $query->where(function ($q) use ($today) {
-                        $q->whereNull('start_date')->orWhere('start_date', '<=', $today);
-                    })->where(function ($q) use ($today) {
-                        $q->whereNull('end_date')->orWhere('end_date', '>=', $today);
-                    });
+                    $query->where('is_active', true)
+                          ->where(function ($q) use ($today) {
+                              $q->whereNull('start_date')->orWhere('start_date', '<=', $today);
+                          })->where(function ($q) use ($today) {
+                              $q->whereNull('end_date')->orWhere('end_date', '>=', $today);
+                          });
                 })
             ],
             'cni' => ['required', 'file', 'mimes:pdf,jpg,png', 'max:2048'], // 2MB as per current server limit
