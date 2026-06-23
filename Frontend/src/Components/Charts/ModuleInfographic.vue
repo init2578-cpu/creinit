@@ -78,7 +78,7 @@ function svgArc(ocx, ocy, r, startAngle, endAngle) {
 
 // Small colored arcs drawn inside the circle border at each connector's departure angle
 const departureArcs = computed(() => {
-    const delta = 0.06 // ~3.5° in radians — smaller arc half-span to prevent overlapping/touching
+    const delta = 0.09 // set to 0.09 as requested
     const r = cr - 10  // inside the white circle near the edge
     const result = []
 
