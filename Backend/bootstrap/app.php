@@ -12,8 +12,9 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        // Trust the nginx reverse proxy so $request->ip() returns the real client IP
-        $middleware->trustProxies(at: '*', headers: \Illuminate\Http\Request::HEADER_X_FORWARDED_FOR |
+        // Trust the local nginx reverse proxy so $request->ip() returns the real client IP.
+        // We limit this to localhost (127.0.0.1 and ::1) to prevent header spoofing from the outside.
+        $middleware->trustProxies(at: ['127.0.0.1', '::1'], headers: \Illuminate\Http\Request::HEADER_X_FORWARDED_FOR |
             \Illuminate\Http\Request::HEADER_X_FORWARDED_HOST |
             \Illuminate\Http\Request::HEADER_X_FORWARDED_PORT |
             \Illuminate\Http\Request::HEADER_X_FORWARDED_PROTO);
