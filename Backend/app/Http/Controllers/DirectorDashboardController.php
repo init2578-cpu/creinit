@@ -399,15 +399,17 @@ class DirectorDashboardController extends Controller
             FROM attendances
             GROUP BY date
             ORDER BY date DESC
-            LIMIT 10
+            LIMIT 100
         ");
 
         return collect($dailyRaw)->reverse()->map(function ($row) {
             $rate = $row->total > 0 ? round(($row->present_count / $row->total) * 100, 1) : 0;
             $date = \Carbon\Carbon::parse($row->date);
             return [
-                'label'     => $date->translatedFormat('d M'),
-                'rate'      => $rate,
+                'label'          => $date->translatedFormat('d M'),
+                'rate'           => $rate,
+                'absences_count' => (int)($row->total - $row->present_count),
+                'total_count'    => (int)$row->total,
             ];
         })->values()->toArray();
     }

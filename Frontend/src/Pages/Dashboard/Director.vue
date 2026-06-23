@@ -102,6 +102,41 @@ const dailyTrendsData = computed(() => {
     return filteredDailyTrends.value.map(w => w.rate)
 })
 
+const periodStats = computed(() => {
+    const trends = filteredDailyTrends.value
+    if (trends.length === 0) {
+        return {
+            totalAbsences: 0,
+            averageRate: '0.0',
+            initialRate: '0.0',
+            finalRate: '0.0',
+            highestRate: '0.0',
+            lowestRate: '0.0',
+            variation: '0.0%'
+        }
+    }
+
+    const rates = trends.map(t => t.rate)
+    const totalAbs = trends.reduce((sum, t) => sum + (t.absences_count || 0), 0)
+    const avgRate = (rates.reduce((sum, r) => sum + r, 0) / rates.length).toFixed(1)
+    const initRate = trends[0].rate.toFixed(1)
+    const finRate = trends[trends.length - 1].rate.toFixed(1)
+    const highRate = Math.max(...rates).toFixed(1)
+    const lowRate = Math.min(...rates).toFixed(1)
+    const varValue = (trends[trends.length - 1].rate - trends[0].rate).toFixed(1)
+    const varFormatted = (parseFloat(varValue) >= 0 ? '+' : '') + varValue + '%'
+
+    return {
+        totalAbsences: totalAbs,
+        averageRate: avgRate,
+        initialRate: initRate,
+        finalRate: finRate,
+        highestRate: highRate,
+        lowestRate: lowRate,
+        variation: varFormatted
+    }
+})
+
 let statsInterval = null
 
 onMounted(() => {
@@ -349,13 +384,54 @@ onUnmounted(() => {
                             </div>
                         </div>
 
-                        <div class="flex-1 min-h-[200px] mt-2">
-                            <AreaChart 
-                                :labels="dailyTrendsLabels" 
-                                :data="dailyTrendsData" 
-                                label="Taux global (%)" 
-                                color="#2563eb"
-                            />
+                        <!-- Inner Grid splitting Chart and Statistics table (Stock Style) -->
+                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-2 flex-1 items-stretch">
+                            <!-- Left: The Line Chart -->
+                            <div class="lg:col-span-2 flex flex-col justify-center min-h-[220px]">
+                                <AreaChart 
+                                    :labels="dailyTrendsLabels" 
+                                    :data="dailyTrendsData" 
+                                    label="Taux global (%)" 
+                                    color="#2563eb"
+                                />
+                            </div>
+
+                            <!-- Right: The Stats Panel (Stock Table Style) -->
+                            <div class="lg:col-span-1 border-t lg:border-t-0 lg:border-l border-slate-100 lg:pl-6 pt-6 lg:pt-0 flex flex-col justify-between">
+                                <div class="space-y-3">
+                                    <div class="flex items-center justify-between py-1.5 border-b border-slate-50">
+                                        <span class="text-xs font-bold text-slate-400">Total Absences</span>
+                                        <span class="text-xs font-extrabold text-slate-800">{{ periodStats.totalAbsences }}</span>
+                                    </div>
+                                    <div class="flex items-center justify-between py-1.5 border-b border-slate-50">
+                                        <span class="text-xs font-bold text-slate-400">Taux Moyen</span>
+                                        <span class="text-xs font-extrabold text-blue-600 bg-blue-50 px-2 py-0.5 rounded">{{ periodStats.averageRate }}%</span>
+                                    </div>
+                                    <div class="flex items-center justify-between py-1.5 border-b border-slate-50">
+                                        <span class="text-xs font-bold text-slate-400">Plus Haut</span>
+                                        <span class="text-xs font-extrabold text-emerald-600">{{ periodStats.highestRate }}%</span>
+                                    </div>
+                                    <div class="flex items-center justify-between py-1.5 border-b border-slate-50">
+                                        <span class="text-xs font-bold text-slate-400">Plus Bas</span>
+                                        <span class="text-xs font-extrabold text-rose-600">{{ periodStats.lowestRate }}%</span>
+                                    </div>
+                                    <div class="flex items-center justify-between py-1.5 border-b border-slate-50">
+                                        <span class="text-xs font-bold text-slate-400">Dernier Taux</span>
+                                        <span class="text-xs font-extrabold text-slate-800">{{ periodStats.finalRate }}%</span>
+                                    </div>
+                                    <div class="flex items-center justify-between py-1.5">
+                                        <span class="text-xs font-bold text-slate-400">Variation</span>
+                                        <span class="text-xs font-black" :class="parseFloat(periodStats.variation) >= 0 ? 'text-emerald-500' : 'text-rose-500'">
+                                            {{ periodStats.variation }}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="mt-4 bg-slate-50 p-3 rounded-2xl border border-slate-100/50">
+                                    <p class="text-[9px] font-bold text-slate-400 leading-normal font-sans">
+                                        * Les calculs sont effectués dynamiquement sur la base des données de présence pour la période sélectionnée.
+                                    </p>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </section>
