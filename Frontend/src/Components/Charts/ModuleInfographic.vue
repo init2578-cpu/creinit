@@ -317,12 +317,12 @@ const departureArcs = computed(() => {
                         :width="pillW"
                         :height="pillH"
                         :rx="pillR"
-                        :fill="`url(#pg${leftPositioned.length + i})`"
+                        :fill="`url(#pg-r${i})`"
                         filter="url(#ps)"
                     />
                     <!-- Right icon circle with code -->
                     <circle
-                        :cx="rightPillLeftEdge + pillR"
+                        :cx="rightPillLeftEdge + pillR + pillW - pillR"
                         :cy="mod.y"
                         r="28"
                         :fill="mod.color.dark"
@@ -331,7 +331,7 @@ const departureArcs = computed(() => {
                         filter="url(#circle-shadow)"
                     />
                     <text
-                        :x="rightPillLeftEdge + pillR"
+                        :x="rightPillLeftEdge + pillR + pillW - pillR"
                         :y="mod.y + 1"
                         text-anchor="middle"
                         dominant-baseline="middle"
@@ -341,9 +341,9 @@ const departureArcs = computed(() => {
                         font-family="system-ui, sans-serif"
                         letter-spacing="0.5"
                     >{{ mod.code.length > 5 ? mod.code.substring(0,5) : mod.code }}</text>
-                    <!-- Count badge on right -->
+                    <!-- Count badge on left -->
                     <circle
-                        :cx="rightPillLeftEdge + pillR + pillW - pillR"
+                        :cx="rightPillLeftEdge + pillR"
                         :cy="mod.y"
                         r="22"
                         fill="rgba(0,0,0,0.3)"
@@ -353,7 +353,7 @@ const departureArcs = computed(() => {
                         filter="url(#circle-shadow)"
                     />
                     <text
-                        :x="rightPillLeftEdge + pillR + pillW - pillR"
+                        :x="rightPillLeftEdge + pillR"
                         :y="mod.y + 1"
                         text-anchor="middle"
                         dominant-baseline="middle"
