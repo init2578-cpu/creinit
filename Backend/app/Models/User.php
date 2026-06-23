@@ -13,6 +13,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
+use App\Traits\Auditable;
 
 use App\Notifications\ResetPasswordNotification;
 
@@ -22,7 +23,7 @@ use Laravel\Passkeys\PasskeyAuthenticatable;
 class User extends Authenticatable implements PasskeyUser
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasApiTokens, HasFactory, Notifiable, HasRoles, PasskeyAuthenticatable;
+    use HasApiTokens, HasFactory, Notifiable, HasRoles, PasskeyAuthenticatable, Auditable;
 
     /**
      * Send the password reset notification.
