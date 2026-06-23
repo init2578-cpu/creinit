@@ -3,6 +3,7 @@ import { ref, onMounted, onUnmounted, computed } from 'vue'
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
 import { Head } from '@inertiajs/vue3'
 import DoughnutChart from '@/Components/Charts/DoughnutChart.vue'
+import ModuleInfographic from '@/Components/Charts/ModuleInfographic.vue'
 import BarChart from '@/Components/Charts/BarChart.vue'
 import AreaChart from '@/Components/Charts/AreaChart.vue'
 import RadialGauge from '@/Components/Charts/RadialGauge.vue'
@@ -456,85 +457,16 @@ onUnmounted(() => {
                         <span class="text-[9px] font-black text-gray-300 uppercase tracking-widest">{{ dashboardKpis.module_distribution?.length || 0 }} modules</span>
                     </div>
 
-                    <div class="relative bg-gradient-to-br from-slate-900 via-slate-900 to-slate-800 rounded-[2.5rem] border border-white/10 shadow-2xl overflow-hidden p-8">
-                        <!-- Ambient glows -->
-                        <div class="absolute -top-20 -right-20 w-64 h-64 bg-violet-500/10 rounded-full blur-[80px] pointer-events-none"></div>
-                        <div class="absolute -bottom-16 -left-16 w-48 h-48 bg-emerald-500/10 rounded-full blur-[60px] pointer-events-none"></div>
-                        <div class="absolute inset-0 bg-[radial-gradient(circle_at_2px_2px,rgba(255,255,255,0.025)_1px,transparent_0)] bg-[size:28px_28px] pointer-events-none"></div>
-
-                        <div class="relative z-10">
-                            <!-- Header -->
-                            <div class="flex items-center justify-between mb-8">
-                                <div>
-                                    <h2 class="text-2xl font-black text-white tracking-tight">Distribution des Apprenants</h2>
-                                    <p class="text-xs text-slate-500 font-medium mt-1">Effectif actif réparti par module de formation</p>
-                                </div>
-                                <div class="h-11 w-11 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center">
-                                    <ChartBarIcon class="h-5 w-5 text-violet-400" />
-                                </div>
-                            </div>
-
-                            <!-- No data -->
-                            <div v-if="!dashboardKpis.module_distribution?.length" class="text-center py-12">
-                                <p class="text-slate-500 font-bold text-sm">Aucun module trouvé</p>
-                            </div>
-
-                            <!-- Modules List -->
-                            <div v-else class="space-y-4">
-                                <div
-                                    v-for="(mod, index) in dashboardKpis.module_distribution"
-                                    :key="mod.id"
-                                    class="group relative flex items-center gap-5 p-5 rounded-2xl bg-white/[0.03] border border-white/[0.07] hover:border-white/20 hover:bg-white/[0.06] transition-all duration-300"
-                                >
-                                    <!-- Rank badge -->
-                                    <div class="shrink-0 h-10 w-10 rounded-xl flex items-center justify-center font-black text-sm border"
-                                        :class="index === 0 ? 'bg-amber-500/20 border-amber-500/30 text-amber-400' :
-                                                index === 1 ? 'bg-slate-400/20 border-slate-400/30 text-slate-300' :
-                                                index === 2 ? 'bg-orange-500/20 border-orange-500/30 text-orange-400' :
-                                                'bg-white/5 border-white/10 text-slate-500'">
-                                        {{ index + 1 }}
-                                    </div>
-
-                                    <!-- Module info -->
-                                    <div class="flex-1 min-w-0">
-                                        <div class="flex items-center gap-2 mb-2">
-                                            <span class="text-[9px] font-black text-violet-400 uppercase tracking-widest">{{ mod.code }}</span>
-                                            <span v-if="!mod.is_active" class="px-2 py-0.5 bg-red-500/20 border border-red-500/30 rounded text-[8px] font-black text-red-400 uppercase">Suspendu</span>
-                                        </div>
-                                        <p class="font-black text-white text-sm truncate leading-none mb-2.5">{{ mod.titre }}</p>
-                                        <!-- Progress bar -->
-                                        <div class="w-full bg-white/10 h-1.5 rounded-full overflow-hidden">
-                                            <div
-                                                class="h-full rounded-full transition-all duration-1000"
-                                                :class="index === 0 ? 'bg-gradient-to-r from-violet-400 to-purple-500' :
-                                                        index === 1 ? 'bg-gradient-to-r from-blue-400 to-blue-600' :
-                                                        index === 2 ? 'bg-gradient-to-r from-emerald-400 to-emerald-600' :
-                                                        'bg-gradient-to-r from-slate-400 to-slate-500'"
-                                                :style="{ width: (mod.percent || 0) + '%' }"
-                                            ></div>
-                                        </div>
-                                    </div>
-
-                                    <!-- Count & percent -->
-                                    <div class="shrink-0 text-right">
-                                        <p class="text-xl font-black text-white tabular-nums leading-none">{{ mod.count }}</p>
-                                        <p class="text-[10px] font-bold text-slate-500 mt-1">{{ mod.percent }}%</p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Total footer -->
-                            <div class="mt-6 pt-5 border-t border-white/[0.07] flex items-center justify-between">
-                                <span class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Total apprenants actifs</span>
-                                <span class="text-lg font-black text-white tabular-nums">
-                                    {{ dashboardKpis.module_distribution?.reduce((s, m) => s + m.count, 0) || 0 }}
-                                </span>
-                            </div>
+                    <div class="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm p-8 overflow-hidden">
+                        <div class="mb-6">
+                            <h2 class="text-2xl font-black text-gray-900 tracking-tight">Distribution des Apprenants</h2>
+                            <p class="text-xs text-gray-500 font-medium mt-1">Effectif actif réparti par module de formation</p>
                         </div>
+                        <ModuleInfographic :modules="dashboardKpis.module_distribution || []" />
                     </div>
                 </div>
 
-                <!-- Section 3: Operational Control & Ecosystem -->
+
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     <!-- Logistics & Inventory -->
                     <div class="lg:col-span-2 bg-slate-900 p-8 rounded-[2.5rem] border border-slate-800 shadow-2xl relative overflow-hidden group">
