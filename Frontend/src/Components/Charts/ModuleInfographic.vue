@@ -375,16 +375,18 @@ const departureArcs = computed(() => {
 
                     <!-- Title & percent inside pill (no code here anymore) -->
                     <text
-                        :x="rightPillLeftEdge + pillR * 2 + 14"
+                        :x="rightPillLeftEdge + pillW - 40"
                         :y="mod.y - 3"
+                        text-anchor="end"
                         fill="white"
                         font-size="13"
                         font-weight="900"
                         font-family="system-ui, sans-serif"
                     >{{ mod.titre.length > 22 ? mod.titre.substring(0, 21) + '…' : mod.titre }}</text>
                     <text
-                        :x="rightPillLeftEdge + pillR * 2 + 14"
+                        :x="rightPillLeftEdge + pillW - 40"
                         :y="mod.y + 18"
+                        text-anchor="end"
                         fill="rgba(255,255,255,0.5)"
                         font-size="9"
                         font-weight="700"
