@@ -391,16 +391,18 @@ class DirectorDashboardController extends Controller
      */
     private function getTrainersAvailability(): array
     {
-        return User::whereHas('roles', function($q) {
-            $q->where('name', 'Formateur');
-        })->orWhereHas('groupsAsFormateur')
-          ->orWhere(function($q) {
-              $q->whereHas('roles', function($r) {
-                  $r->where('name', 'Stagiaire');
-              })->whereHas('internshipRecord', function($i) {
-                  $i->whereIn('internship_type', ['course_assistant', 'course_substitute']);
+        return User::where('is_active', true)->where(function($query) {
+            $query->whereHas('roles', function($q) {
+                $q->where('name', 'Formateur');
+            })->orWhereHas('groupsAsFormateur')
+              ->orWhere(function($q) {
+                  $q->whereHas('roles', function($r) {
+                      $r->where('name', 'Stagiaire');
+                  })->whereHas('internshipRecord', function($i) {
+                      $i->whereIn('internship_type', ['course_assistant', 'course_substitute']);
+                  });
               });
-          })->with(['schedules' => function($q) {
+        })->with(['schedules' => function($q) {
             $q->whereHas('group', function($groupQ) {
                 $groupQ->where('status', 'active');
             })->with('group:id,nom_groupe');
