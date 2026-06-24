@@ -3,6 +3,9 @@ require __DIR__.'/vendor/autoload.php';
 $app = require_once __DIR__.'/bootstrap/app.php';
 $kernel = $app->make(Illuminate\Contracts\Http\Kernel::class);
 
+$request = Illuminate\Http\Request::create('/modules', 'GET');
+$app->instance('request', $request);
+
 $kernel->bootstrap();
 
 $user = App\Models\User::where('email', 'youssouphbadji2013@gmail.com')->first();
@@ -15,8 +18,6 @@ echo "User: " . $user->name . " (ID: " . $user->id . ")\n";
 echo "Roles: " . implode(', ', $user->roles->pluck('name')->toArray()) . "\n";
 echo "Permissions: " . implode(', ', $user->getAllPermissions()->pluck('name')->toArray()) . "\n";
 
-$request = Illuminate\Http\Request::create('/modules', 'GET');
-$app->instance('request', $request);
 $user->must_change_password = false;
 Auth::login($user);
 
