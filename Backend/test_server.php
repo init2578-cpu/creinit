@@ -8,9 +8,9 @@ $app->instance('request', $request);
 
 $kernel->bootstrap();
 
-$user = App\Models\User::where('email', 'youssouphbadji2013@gmail.com')->first();
+$user = App\Models\User::role('Formateur')->first();
 if (!$user) {
-    echo "User not found!\n";
+    echo "No user with Formateur role found!\n";
     exit;
 }
 
