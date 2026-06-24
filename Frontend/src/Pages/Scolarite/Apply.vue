@@ -192,12 +192,21 @@ function handleFile(e, field) {
                                 <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Niveau d'étude</label>
                                 <select v-model="form.niveau_etude" required class="w-full bg-slate-900/50 border border-white/5 rounded-2xl p-4 text-white focus:border-cyan-500 focus:ring-0 transition-all appearance-none">
                                     <option value="" class="bg-slate-950 text-slate-400">Choisir...</option>
+                                    <option value="CM2" class="bg-slate-950 text-white">CM2</option>
+                                    <option value="6ème" class="bg-slate-950 text-white">6ème</option>
+                                    <option value="5ème" class="bg-slate-950 text-white">5ème</option>
+                                    <option value="4ème" class="bg-slate-950 text-white">4ème</option>
+                                    <option value="3ème" class="bg-slate-950 text-white">3ème</option>
+                                    <option value="2nd" class="bg-slate-950 text-white">2nd</option>
+                                    <option value="Première" class="bg-slate-950 text-white">Première</option>
+                                    <option value="Terminal (sans Bac)" class="bg-slate-950 text-white">Terminal (sans Bac)</option>
                                     <option value="Bac" class="bg-slate-950 text-white">Bac</option>
                                     <option value="Bac+1" class="bg-slate-950 text-white">Bac+1</option>
                                     <option value="Bac+2" class="bg-slate-950 text-white">Bac+2</option>
                                     <option value="Licence" class="bg-slate-950 text-white">Licence (Bac+3)</option>
                                     <option value="Master" class="bg-slate-950 text-white">Master</option>
                                     <option value="Doctorat" class="bg-slate-950 text-white">Doctorat</option>
+                                    <option value="Daara" class="bg-slate-950 text-white">Daara</option>
                                     <option value="Autre" class="bg-slate-950 text-white">Autre</option>
                                 </select>
                             </div>
