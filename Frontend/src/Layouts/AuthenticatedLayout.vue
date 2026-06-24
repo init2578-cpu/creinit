@@ -9,6 +9,13 @@ import ConfirmModal from '@/Components/ConfirmModal.vue'
 import CelebrationOverlay from '@/Components/CelebrationOverlay.vue'
 import AssaneChat from '@/Components/AssaneChat.vue'
 
+const props = defineProps({
+    noPadding: {
+        type: Boolean,
+        default: false
+    }
+})
+
 const isSidebarOpen = ref(false)
 const page = usePage()
 
@@ -207,7 +214,7 @@ watch(() => page.props.flash, (flash) => {
             />
 
             <!-- Page Management -->
-            <main class="flex-1 p-4 sm:p-6 lg:p-8 pt-20 sm:pt-24 lg:pt-28">
+            <main :class="['flex-1 min-h-0', noPadding ? '' : 'p-4 sm:p-6 lg:p-8 pt-20 sm:pt-24 lg:pt-28']">
                 <slot />
             </main>
 

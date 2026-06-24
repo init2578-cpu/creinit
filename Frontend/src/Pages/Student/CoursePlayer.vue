@@ -56,8 +56,8 @@ const submitExercise = () => {
 <template>
     <Head :title="currentChapter.titre" />
 
-    <AuthenticatedLayout>
-        <div class="flex h-[calc(100vh-64px)] overflow-hidden bg-white">
+    <AuthenticatedLayout no-padding>
+        <div class="flex h-full overflow-hidden bg-white">
             <!-- Sidebar Navigation -->
             <transition name="slide">
                 <aside v-if="isSidebarOpen" class="w-80 border-r border-gray-100 flex flex-col bg-gray-50/50 backdrop-blur-sm">
@@ -101,7 +101,7 @@ const submitExercise = () => {
                 </button>
 
                 <!-- Hero / Video Section -->
-                <div v-if="formattedVideoUrl" class="aspect-video bg-gray-900 w-full shadow-2xl">
+                <div v-if="formattedVideoUrl" class="aspect-video bg-gray-900 w-full shadow-2xl flex-shrink-0">
                     <!-- Simple iframe for YouTube/Vimeo embedding -->
                     <iframe 
                         :src="formattedVideoUrl" 
@@ -110,7 +110,7 @@ const submitExercise = () => {
                         allowfullscreen
                     ></iframe>
                 </div>
-                <div v-else class="h-64 bg-gradient-to-br from-blue-600 to-indigo-700 w-full flex items-center justify-center text-white relative overflow-hidden">
+                <div v-else class="h-64 bg-gradient-to-br from-blue-600 to-indigo-700 w-full flex items-center justify-center text-white relative overflow-hidden flex-shrink-0">
                     <div class="relative z-10 text-center">
                         <span class="text-xs font-black uppercase tracking-[0.3em] opacity-60 mb-2 block">Chapitre {{ currentChapter.ordre }}</span>
                         <h1 class="text-4xl md:text-5xl font-black tracking-tighter">{{ currentChapter.titre }}</h1>
