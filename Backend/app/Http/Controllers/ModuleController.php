@@ -113,7 +113,14 @@ class ModuleController extends Controller
         $validated['exercise_type'] = 'none';
         $validated['is_approved'] = $request->user()->hasRole('Directeur');
 
-        $module->chapters()->create($validated);
+        $chapter = $module->chapters()->create($validated);
+
+        if (!$validated['is_approved']) {
+            $directeurs = \App\Models\User::role('Directeur')->get();
+            foreach ($directeurs as $directeur) {
+                $directeur->notify(new \App\Notifications\ChapterProposedNotification($chapter, $request->user()));
+            }
+        }
 
         return back()->with('success', 'Le chapitre a été ajouté.');
     }
@@ -179,6 +186,13 @@ class ModuleController extends Controller
         }
 
         $chapter->update($validated);
+
+        if (!$request->user()->hasRole('Directeur')) {
+            $directeurs = \App\Models\User::role('Directeur')->get();
+            foreach ($directeurs as $directeur) {
+                $directeur->notify(new \App\Notifications\ChapterProposedNotification($chapter, $request->user()));
+            }
+        }
 
         return back()->with('success', 'Le chapitre a été mis à jour avec succès.');
     }

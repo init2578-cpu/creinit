@@ -147,4 +147,52 @@ class TrainerModuleRestrictionsTest extends TestCase
         $response = $this->actingAs($assistant)->delete(route('modules.destroy', $module->id));
         $response->assertStatus(403);
     }
+
+    public function test_trainer_proposing_chapter_sends_notification_to_director()
+    {
+        \Illuminate\Support\Facades\Notification::fake();
+
+        $director = User::factory()->create();
+        $director->assignRole('Directeur');
+
+        $trainer = User::factory()->create();
+        $trainer->assignRole('Formateur');
+
+        $module = \App\Models\Module::create([
+            'code_module' => 'DEV-99',
+            'titre' => 'Module Ancien',
+            'quota_heures' => 10,
+        ]);
+
+        // 1. Trainer stores a chapter -> should notify Director
+        $response = $this->actingAs($trainer)->post(route('modules.chapters.store', $module->id), [
+            'titre' => 'Chapitre Propose 1',
+            'content' => 'Description du cours 1',
+        ]);
+        $response->assertStatus(302);
+
+        \Illuminate\Support\Facades\Notification::assertSentTo(
+            $director,
+            \App\Notifications\ChapterProposedNotification::class,
+            function ($notification) use ($module) {
+                return $notification->chapter->titre === 'Chapitre Propose 1' && $notification->chapter->module_id === $module->id;
+            }
+        );
+
+        // 2. Trainer updates a chapter -> should notify Director
+        $chapter = \App\Models\Chapter::where('titre', 'Chapitre Propose 1')->first();
+        $response = $this->actingAs($trainer)->post(route('modules.chapters.update', $chapter->id), [
+            'titre' => 'Chapitre Modifie',
+            'content' => 'Description modifiee',
+        ]);
+        $response->assertStatus(302);
+
+        \Illuminate\Support\Facades\Notification::assertSentTo(
+            $director,
+            \App\Notifications\ChapterProposedNotification::class,
+            function ($notification) use ($module) {
+                return $notification->chapter->titre === 'Chapitre Modifie' && $notification->chapter->module_id === $module->id;
+            }
+        );
+    }
 }
