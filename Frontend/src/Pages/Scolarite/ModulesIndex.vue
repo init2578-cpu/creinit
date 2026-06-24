@@ -1,7 +1,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
 import { ref, computed, nextTick } from 'vue'
-import { router, useForm } from '@inertiajs/vue3'
+import { router, useForm, usePage } from '@inertiajs/vue3'
 import RichTextEditor from '@/Components/RichTextEditor.vue'
 import draggable from 'vuedraggable'
 import { 
@@ -23,8 +23,32 @@ import {
 
 const props = defineProps({
     modules: Array,
-    modules_detailed: Array
+    modules_detailed: Array,
+    predefined_formations: Array
 })
+
+const page = usePage()
+const isFormateur = computed(() => {
+    return page.props.auth?.user?.roles?.includes('Formateur')
+})
+
+const selectFormations = computed(() => {
+    const list = [...(props.predefined_formations || [])]
+    if (moduleForm.code_module && !list.some(f => f.code === moduleForm.code_module)) {
+        list.push({
+            code: moduleForm.code_module,
+            titre: moduleForm.titre
+        })
+    }
+    return list
+})
+
+function onCodeChange() {
+    const selected = props.predefined_formations?.find(f => f.code === moduleForm.code_module)
+    if (selected) {
+        moduleForm.titre = selected.titre
+    }
+}
 
 // Module Form
 const isModuleModalOpen = ref(false)
@@ -231,7 +255,7 @@ function handleReorder() {
                     <h1 class="text-4xl font-black text-gray-900 tracking-tight">Gestion des Formations</h1>
                     <p class="text-gray-500 mt-2 font-medium">Définissez vos modules et structurez vos programmes d'apprentissage.</p>
                 </div>
-                <button @click="openModuleModal()" class="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-2xl font-black text-sm hover:bg-blue-700 transition shadow-xl shadow-blue-100 uppercase tracking-widest">
+                <button v-if="!isFormateur" @click="openModuleModal()" class="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-2xl font-black text-sm hover:bg-blue-700 transition shadow-xl shadow-blue-100 uppercase tracking-widest">
                     <PlusIcon class="h-5 w-5" />
                     Nouveau Module
                 </button>
@@ -242,7 +266,7 @@ function handleReorder() {
                 <div v-for="module in modules" :key="module.id" 
                     class="group bg-white rounded-[2.5rem] border border-gray-100 p-8 hover:shadow-2xl hover:shadow-gray-200/50 transition duration-500 relative flex flex-col h-full overflow-hidden">
                     
-                    <div class="absolute top-0 right-0 p-8 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div v-if="!isFormateur" class="absolute top-0 right-0 p-8 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button @click="openModuleModal(module)" class="p-2 bg-gray-50 text-gray-400 hover:text-blue-600 rounded-xl transition">
                             <PencilSquareIcon class="h-5 w-5" />
                         </button>
@@ -311,7 +335,12 @@ function handleReorder() {
                     <div class="grid grid-cols-3 gap-6">
                         <div class="col-span-1">
                             <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Code</label>
-                            <input v-model="moduleForm.code_module" type="text" required placeholder="EX: DEV-01" class="w-full bg-gray-50 border-0 rounded-2xl focus:ring-2 focus:ring-blue-500 font-bold px-5 py-4">
+                            <select v-model="moduleForm.code_module" @change="onCodeChange" required class="w-full bg-gray-50 border-0 rounded-2xl focus:ring-2 focus:ring-blue-500 font-bold px-5 py-4 text-sm text-gray-700">
+                                <option value="" disabled>Sélectionner</option>
+                                <option v-for="formation in selectFormations" :key="formation.code" :value="formation.code">
+                                    {{ formation.code }}
+                                </option>
+                            </select>
                         </div>
                         <div class="col-span-2">
                             <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Titre de la formation</label>

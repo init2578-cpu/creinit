@@ -6,6 +6,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Module;
 use App\Models\Chapter;
+use App\Models\Formation;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -24,6 +25,7 @@ class ModuleController extends Controller
         return Inertia::render('Scolarite/ModulesIndex', [
             'modules' => Module::withCount('chapters')->get(),
             'modules_detailed' => Module::with('chapters')->get(),
+            'predefined_formations' => Formation::all(['code', 'titre']),
         ]);
     }
 
@@ -32,6 +34,10 @@ class ModuleController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
+        if ($request->user()->hasRole('Formateur')) {
+            abort(403, "Vous n'êtes pas autorisé à créer une formation.");
+        }
+
         $validated = $request->validate([
             'titre' => 'required|string|max:255',
             'code_module' => 'required|string|max:50|unique:modules,code_module',
@@ -52,6 +58,10 @@ class ModuleController extends Controller
      */
     public function update(Request $request, Module $module): RedirectResponse
     {
+        if ($request->user()->hasRole('Formateur')) {
+            abort(403, "Vous n'êtes pas autorisé à modifier une formation.");
+        }
+
         $validated = $request->validate([
             'titre' => 'required|string|max:255',
             'code_module' => 'required|string|max:50|unique:modules,code_module,' . $module->id,
@@ -72,6 +82,10 @@ class ModuleController extends Controller
      */
     public function destroy(Module $module): RedirectResponse
     {
+        if (request()->user()->hasRole('Formateur')) {
+            abort(403, "Vous n'êtes pas autorisé à supprimer une formation.");
+        }
+
         $module->delete();
 
         return back()->with('success', 'Le module a été supprimé.');
