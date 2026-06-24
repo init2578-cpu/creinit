@@ -118,6 +118,13 @@ const chapterForm = useForm({
 })
 const localChapters = ref([])
 
+const paragraphCount = computed(() => {
+    if (!chapterForm.content) return 0
+    const parser = new DOMParser()
+    const doc = parser.parseFromString(chapterForm.content, 'text/html')
+    return doc.querySelectorAll('p').length
+})
+
 function openChapterModal(module) {
     selectedModule.value = props.modules_detailed.find(m => m.id === module.id)
     localChapters.value = [...selectedModule.value.chapters]
@@ -555,8 +562,11 @@ function handleReorder() {
                                         <div>
                                             <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Position de la Vidéo</label>
                                             <select v-model="chapterForm.video_position" class="w-full bg-gray-50 border-0 rounded-xl focus:ring-2 focus:ring-blue-500 font-bold px-4 py-3 text-sm">
-                                                <option value="before">Avant le paragraphe</option>
-                                                <option value="after">Après le paragraphe</option>
+                                                <option value="before">Au tout début (Avant le texte)</option>
+                                                <option v-for="i in paragraphCount" :key="i" :value="`after_p_${i}`">
+                                                    Après le paragraphe {{ i }}
+                                                </option>
+                                                <option value="after">À la toute fin (Après le texte)</option>
                                             </select>
                                         </div>
                                     </div>

@@ -101,7 +101,7 @@ class ModuleController extends Controller
             'ordre' => 'nullable|integer',
             'content' => 'nullable|string',
             'video_url' => 'nullable|string|url',
-            'video_position' => 'nullable|string|in:before,after',
+            'video_position' => 'nullable|string|regex:/^(before|after|after_p_\d+)$/',
             'is_published' => 'nullable|boolean',
         ]);
 
@@ -149,7 +149,7 @@ class ModuleController extends Controller
             'ordre' => 'nullable|integer',
             'content' => 'nullable|string',
             'video_url' => 'nullable|string',
-            'video_position' => 'nullable|string|in:before,after',
+            'video_position' => 'nullable|string|regex:/^(before|after|after_p_\d+)$/',
             'is_published' => 'nullable|boolean',
             'attachments' => 'nullable|array',
         ]);

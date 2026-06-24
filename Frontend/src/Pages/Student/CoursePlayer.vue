@@ -37,6 +37,50 @@ const formattedVideoUrl = computed(() => {
     return url; // Return as is if not YouTube or already embed
 })
 
+const renderedContent = computed(() => {
+    const content = props.currentChapter.content || ''
+    const videoUrl = formattedVideoUrl.value
+    const position = props.currentChapter.video_position || 'before'
+
+    if (!videoUrl) {
+        return content || '<p class="text-gray-400 italic">Aucun contenu textuel pour ce chapitre.</p>'
+    }
+
+    // Only inject inside content if the position starts with 'after_p_'
+    if (position.startsWith('after_p_')) {
+        const pIndex = parseInt(position.replace('after_p_', ''), 10)
+        if (!isNaN(pIndex)) {
+            const parser = new DOMParser()
+            const doc = parser.parseFromString(content, 'text/html')
+            const pElements = doc.querySelectorAll('p')
+
+            if (pElements.length > 0) {
+                // Determine target paragraph element
+                const targetP = pElements[Math.min(pIndex - 1, pElements.length - 1)]
+                if (targetP) {
+                    // Create video iframe and wrapper
+                    const wrapper = doc.createElement('div')
+                    wrapper.className = 'aspect-video bg-gray-900 w-full shadow-2xl rounded-[2.5rem] overflow-hidden my-8 flex-shrink-0'
+                    
+                    const iframe = doc.createElement('iframe')
+                    iframe.src = videoUrl
+                    iframe.className = 'w-full h-full'
+                    iframe.setAttribute('allow', 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture')
+                    iframe.setAttribute('allowfullscreen', 'true')
+                    
+                    wrapper.appendChild(iframe)
+                    
+                    // Insert video after target paragraph
+                    targetP.parentNode.insertBefore(wrapper, targetP.nextSibling)
+                    return doc.body.innerHTML
+                }
+            }
+        }
+    }
+
+    return content || '<p class="text-gray-400 italic">Aucun contenu textuel pour ce chapitre.</p>'
+})
+
 const isSidebarOpen = ref(true)
 
 const exerciseForm = useForm({
@@ -127,7 +171,7 @@ const submitExercise = () => {
 
                     <!-- Lesson Body -->
                     <article class="prose prose-blue prose-xl max-w-none prose-headings:font-black prose-headings:tracking-tight prose-p:text-gray-600 prose-p:leading-relaxed">
-                        <div v-html="currentChapter.content || '<p class=\'text-gray-400 italic\'>Aucun contenu textuel pour ce chapitre.</p>'"></div>
+                        <div v-html="renderedContent"></div>
                     </article>
 
                     <!-- Video player AFTER text content -->
