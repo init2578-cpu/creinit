@@ -93,8 +93,8 @@ const startNewSession = () => {
                         </div>
                     </div>
 
-                    <!-- Action Panel: Start a new session -->
-                    <div class="w-full md:w-auto bg-gray-50 p-6 rounded-3xl border border-gray-100/50 flex flex-col sm:flex-row items-center gap-4">
+                    <!-- Action Panel: Start a new session — visible uniquement pour les administratifs -->
+                    <div v-if="$page.props.auth.user.roles.some(r => ['Directeur', 'Secrétaire'].includes(r))" class="w-full md:w-auto bg-gray-50 p-6 rounded-3xl border border-gray-100/50 flex flex-col sm:flex-row items-center gap-4">
                         <div class="w-full sm:w-auto">
                             <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Nouvelle session le</label>
                             <input 
@@ -176,8 +176,9 @@ const startNewSession = () => {
                             </div>
                         </div>
 
-                        <!-- Actions -->
-                        <div class="flex items-center gap-3 lg:self-center">
+
+                        <!-- Actions — visible uniquement pour les administratifs -->
+                        <div v-if="$page.props.auth.user.roles.some(r => ['Directeur', 'Secrétaire'].includes(r))" class="flex items-center gap-3 lg:self-center">
                             <Link 
                                 :href="route('attendance.take', { schedule: schedule.id, date: item.date })"
                                 class="w-full lg:w-auto px-6 py-4 bg-gray-100 text-gray-700 hover:bg-gray-200 rounded-2xl font-black text-xs uppercase tracking-widest transition flex items-center justify-center gap-2"

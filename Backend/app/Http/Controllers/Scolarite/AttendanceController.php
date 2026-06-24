@@ -52,8 +52,23 @@ class AttendanceController extends Controller
     /**
      * Show the attendance take page for a specific session.
      */
-    public function take(Schedule $schedule, string $date): Response
+    public function take(Schedule $schedule, string $date): Response|RedirectResponse
     {
+        $user = auth()->user();
+        $isTrainer = !$user->hasRole('Directeur') && !$user->hasRole('Secrétaire');
+
+        // Trainers cannot access a session that has already been validated
+        if ($isTrainer) {
+            $alreadyTaken = Attendance::where('schedule_id', $schedule->id)
+                ->where('date', $date)
+                ->exists();
+
+            if ($alreadyTaken) {
+                return redirect()->route('attendances.trainer-groups')
+                    ->with('error', "L'émargement pour ce créneau a déjà été validé et ne peut plus être modifié.");
+            }
+        }
+
         $group = $schedule->group;
         
         // Students in the group
@@ -122,6 +137,9 @@ class AttendanceController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
+        $user = auth()->user();
+        $isTrainer = !$user->hasRole('Directeur') && !$user->hasRole('Secrétaire');
+
         $scheduleId = $request->input('schedule_id');
         $gpsRequired = true;
         if ($scheduleId) {
@@ -142,6 +160,18 @@ class AttendanceController extends Controller
         ]);
 
         $schedule = Schedule::findOrFail($validated['schedule_id']);
+
+        // Block trainers from modifying an already validated attendance sheet
+        if ($isTrainer) {
+            $alreadyTaken = Attendance::where('schedule_id', $schedule->id)
+                ->where('date', $validated['date'])
+                ->exists();
+
+            if ($alreadyTaken) {
+                return back()->withErrors(['schedule_id' => "L'émargement pour ce créneau a déjà été validé et ne peut plus être modifié."]);
+            }
+        }
+
         $now = Carbon::now();
         $courseDate = Carbon::parse($validated['date']);
 
