@@ -27,12 +27,13 @@ class AttendanceController extends Controller
         $carbonDate = Carbon::parse($date);
         $dayOfWeek = $carbonDate->dayOfWeekIso; // 1 (Mon) to 7 (Sun)
 
-        // Get schedules for this day of week
+        // Get schedules for this day of week (only active groups)
         $schedules = Schedule::query()
             ->with(['group.module', 'room', 'formateur'])
             ->where(function($query) use ($dayOfWeek) {
                 $query->where('day_of_week', (int) $dayOfWeek);
             })
+            ->whereHas('group', fn($q) => $q->where('status', 'active'))
             ->get();
 
         // For each schedule, check if attendance is already taken

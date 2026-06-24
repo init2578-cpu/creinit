@@ -41,12 +41,15 @@ class ScheduleController extends Controller
         $formateurs = $trainers->concat($assistants);
 
         $today = \Carbon\Carbon::today()->toDateString();
-        $schedules = $query->get()->map(function ($schedule) use ($today) {
-            $schedule->attendance_taken_today = \App\Models\Attendance::where('schedule_id', $schedule->id)
-                ->where('date', $today)
-                ->exists();
-            return $schedule;
-        });
+        $schedules = $query
+            ->whereHas('group', fn($q) => $q->where('status', 'active'))
+            ->get()
+            ->map(function ($schedule) use ($today) {
+                $schedule->attendance_taken_today = \App\Models\Attendance::where('schedule_id', $schedule->id)
+                    ->where('date', $today)
+                    ->exists();
+                return $schedule;
+            });
 
         return Inertia::render('Scolarite/Schedules', [
             'schedules'  => $schedules,

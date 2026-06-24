@@ -164,16 +164,13 @@ class GroupController extends Controller
 
     /**
      * Close (archive) a group when the training is done.
-     * Sets status to 'closed' and removes all schedules.
+     * Sets status to 'closed'. Schedules are kept to preserve attendance history.
      */
     public function close(Group $group): RedirectResponse
     {
-        // Delete all associated schedules
-        $group->schedules()->delete();
-
         $group->update(['status' => 'closed']);
 
-        return back()->with('success', "Le groupe « {$group->nom_groupe} » a été clôturé. Tous ses créneaux ont été supprimés.");
+        return back()->with('success', "Le groupe « {$group->nom_groupe} » a été clôturé.");
     }
 
     /**

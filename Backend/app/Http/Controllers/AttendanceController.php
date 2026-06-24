@@ -26,8 +26,9 @@ class AttendanceController extends Controller
             $trainerIds[] = $user->internshipRecord->tuteur_id;
         }
 
-        // Only show groups assigned to the trainer which HAVE a schedule for this trainer
+        // Only show active groups assigned to the trainer which HAVE a schedule for this trainer
         $groups = Group::with('module')
+            ->where('status', 'active')
             ->whereIn('formateur_id', $trainerIds)
             ->whereHas('schedules', function ($query) use ($trainerIds) {
                 $query->whereIn('formateur_id', $trainerIds);
