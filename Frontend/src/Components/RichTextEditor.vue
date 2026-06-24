@@ -56,7 +56,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-    <div v-if="editor" class="border border-gray-100 rounded-2xl overflow-hidden shadow-sm bg-gray-50 flex flex-col">
+    <div v-if="editor" class="border border-gray-100 rounded-2xl overflow-hidden shadow-sm bg-gray-50 flex flex-col h-[550px]">
         <!-- Toolbar -->
         <div class="flex flex-wrap items-center gap-1 p-2 border-b border-gray-100 bg-white/80 backdrop-blur-md sticky top-0 z-10">
             <button 
@@ -163,7 +163,7 @@ onBeforeUnmount(() => {
         </div>
 
         <!-- Editor Area -->
-        <editor-content :editor="editor" class="bg-white flex-1 min-h-[400px]" />
+        <editor-content :editor="editor" class="bg-white flex-1 overflow-y-auto custom-scrollbar" />
     </div>
 </template>
 

@@ -509,7 +509,7 @@
     ]
   },
   "src/Pages/Dashboard/Director.vue": {
-    "file": "assets/Director-CVY0L63L.js",
+    "file": "assets/Director-B0-FhIyZ.js",
     "name": "Director",
     "src": "src/Pages/Dashboard/Director.vue",
     "isDynamicEntry": true,
@@ -526,7 +526,7 @@
     ],
     "css": [
       "assets/Director-BYIJR4nZ.css",
-      "assets/app-ofn3t84g.css"
+      "assets/app-B6fNtzf5.css"
     ]
   },
   "src/Pages/Ecosystem/EventsIndex.vue": {
@@ -964,7 +964,7 @@
     ]
   },
   "src/Pages/Scolarite/ModulesIndex.vue": {
-    "file": "assets/ModulesIndex-pI6cu0xF.js",
+    "file": "assets/ModulesIndex-N_3mEDuN.js",
     "name": "ModulesIndex",
     "src": "src/Pages/Scolarite/ModulesIndex.vue",
     "isDynamicEntry": true,
@@ -1325,12 +1325,12 @@
     ]
   },
   "src/app.css": {
-    "file": "assets/app-ofn3t84g.css",
+    "file": "assets/app-B6fNtzf5.css",
     "src": "src/app.css",
     "isEntry": true
   },
   "src/app.js": {
-    "file": "assets/app-7KaRjyvt.js",
+    "file": "assets/app-CsVjxSev.js",
     "name": "app",
     "src": "src/app.js",
     "isEntry": true,
@@ -1414,7 +1414,7 @@
       "src/Pages/Welcome.vue"
     ],
     "css": [
-      "assets/app-ofn3t84g.css"
+      "assets/app-B6fNtzf5.css"
     ]
   }
 }
