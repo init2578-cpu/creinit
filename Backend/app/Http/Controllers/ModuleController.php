@@ -101,6 +101,7 @@ class ModuleController extends Controller
             'ordre' => 'nullable|integer',
             'content' => 'nullable|string',
             'video_url' => 'nullable|string|url',
+            'video_position' => 'nullable|string|in:before,after',
             'is_published' => 'nullable|boolean',
         ]);
 
@@ -148,6 +149,7 @@ class ModuleController extends Controller
             'ordre' => 'nullable|integer',
             'content' => 'nullable|string',
             'video_url' => 'nullable|string',
+            'video_position' => 'nullable|string|in:before,after',
             'is_published' => 'nullable|boolean',
             'attachments' => 'nullable|array',
         ]);

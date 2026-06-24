@@ -111,6 +111,7 @@ const chapterForm = useForm({
     ordre: '',
     content: '',
     video_url: '',
+    video_position: 'before',
     is_published: false,
     attachments: [],
     new_attachments: []
@@ -132,6 +133,7 @@ function editChapter(chapter) {
     chapterForm.is_published = chapter.is_published
     chapterForm.content = chapter.content || ''
     chapterForm.video_url = chapter.video_url || ''
+    chapterForm.video_position = chapter.video_position || 'before'
     chapterForm.attachments = chapter.attachments || []
     chapterForm.new_attachments = []
 }
@@ -169,6 +171,7 @@ function togglePublish(chapter) {
         is_published: chapter.is_published,
         content: chapter.content || '',
         video_url: chapter.video_url || '',
+        video_position: chapter.video_position || 'before',
     }, {
         preserveScroll: true,
         onSuccess: () => {
@@ -541,11 +544,20 @@ function handleReorder() {
                                         </div>
                                         <RichTextEditor :key="editingChapter.id" v-model="chapterForm.content" />
                                     </div>
-                                    <div>
-                                        <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">URL Vidéo</label>
-                                        <div class="relative">
-                                            <input v-model="chapterForm.video_url" type="url" placeholder="https://youtube.com/embed/..." class="w-full bg-gray-50 border-0 rounded-xl focus:ring-2 focus:ring-blue-500 font-bold px-4 py-3 text-sm pr-10">
-                                            <VideoCameraIcon class="h-4 w-4 absolute right-3 top-1/2 -translate-y-1/2 text-gray-300" />
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">URL Vidéo</label>
+                                            <div class="relative">
+                                                <input v-model="chapterForm.video_url" type="url" placeholder="https://youtube.com/embed/..." class="w-full bg-gray-50 border-0 rounded-xl focus:ring-2 focus:ring-blue-500 font-bold px-4 py-3 text-sm pr-10">
+                                                <VideoCameraIcon class="h-4 w-4 absolute right-3 top-1/2 -translate-y-1/2 text-gray-300" />
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Position de la Vidéo</label>
+                                            <select v-model="chapterForm.video_position" class="w-full bg-gray-50 border-0 rounded-xl focus:ring-2 focus:ring-blue-500 font-bold px-4 py-3 text-sm">
+                                                <option value="before">Avant le paragraphe</option>
+                                                <option value="after">Après le paragraphe</option>
+                                            </select>
                                         </div>
                                     </div>
                                     <div class="space-y-4">

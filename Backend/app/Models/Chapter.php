@@ -23,6 +23,7 @@ class Chapter extends Model
         'ordre',
         'content',
         'video_url',
+        'video_position',
         'attachments',
         'is_published',
         'is_approved',

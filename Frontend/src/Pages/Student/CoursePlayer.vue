@@ -100,20 +100,11 @@ const submitExercise = () => {
                     <Bars3CenterLeftIcon class="h-6 w-6" />
                 </button>
 
-                <!-- Hero / Video Section -->
-                <div v-if="formattedVideoUrl" class="aspect-video bg-gray-900 w-full shadow-2xl flex-shrink-0">
-                    <!-- Simple iframe for YouTube/Vimeo embedding -->
-                    <iframe 
-                        :src="formattedVideoUrl" 
-                        class="w-full h-full" 
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                        allowfullscreen
-                    ></iframe>
-                </div>
-                <div v-else class="h-64 bg-gradient-to-br from-blue-600 to-indigo-700 w-full flex items-center justify-center text-white relative overflow-hidden flex-shrink-0">
+                <!-- Title Header Section -->
+                <div class="h-64 bg-gradient-to-br from-blue-600 to-indigo-700 w-full flex items-center justify-center text-white relative overflow-hidden flex-shrink-0">
                     <div class="relative z-10 text-center">
                         <span class="text-xs font-black uppercase tracking-[0.3em] opacity-60 mb-2 block">Chapitre {{ currentChapter.ordre }}</span>
-                        <h1 class="text-4xl md:text-5xl font-black tracking-tighter">{{ currentChapter.titre }}</h1>
+                        <h1 class="text-4xl md:text-5xl font-black tracking-tighter px-4 text-center">{{ currentChapter.titre }}</h1>
                     </div>
                     <!-- Decorative Background -->
                     <div class="absolute inset-0 opacity-10">
@@ -123,11 +114,31 @@ const submitExercise = () => {
                 </div>
 
                 <!-- Content Area -->
-                <div class="max-w-4xl mx-auto w-full p-8 md:p-16 space-y-16">
+                <div class="max-w-4xl mx-auto w-full p-8 md:p-16 space-y-12">
+                    <!-- Video player BEFORE text content -->
+                    <div v-if="formattedVideoUrl && (currentChapter.video_position === 'before' || !currentChapter.video_position)" class="aspect-video bg-gray-900 w-full shadow-2xl rounded-[2.5rem] overflow-hidden flex-shrink-0">
+                        <iframe 
+                            :src="formattedVideoUrl" 
+                            class="w-full h-full" 
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                            allowfullscreen
+                        ></iframe>
+                    </div>
+
                     <!-- Lesson Body -->
                     <article class="prose prose-blue prose-xl max-w-none prose-headings:font-black prose-headings:tracking-tight prose-p:text-gray-600 prose-p:leading-relaxed">
                         <div v-html="currentChapter.content || '<p class=\'text-gray-400 italic\'>Aucun contenu textuel pour ce chapitre.</p>'"></div>
                     </article>
+
+                    <!-- Video player AFTER text content -->
+                    <div v-if="formattedVideoUrl && currentChapter.video_position === 'after'" class="aspect-video bg-gray-900 w-full shadow-2xl rounded-[2.5rem] overflow-hidden flex-shrink-0">
+                        <iframe 
+                            :src="formattedVideoUrl" 
+                            class="w-full h-full" 
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                            allowfullscreen
+                        ></iframe>
+                    </div>
 
                     <!-- Resources Section -->
                     <section v-if="currentChapter.attachments && currentChapter.attachments.length > 0" class="border-t border-gray-100 pt-12">
