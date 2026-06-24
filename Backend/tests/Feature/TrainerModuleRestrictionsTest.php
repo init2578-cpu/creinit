@@ -106,4 +106,45 @@ class TrainerModuleRestrictionsTest extends TestCase
         $response->assertStatus(302);
         $this->assertDatabaseMissing('modules', ['id' => $module->id]);
     }
+
+    public function test_assistant_trainer_cannot_create_update_or_delete_modules()
+    {
+        $assistant = User::factory()->create();
+
+        $module = Module::create([
+            'code_module' => 'DEV-99',
+            'titre' => 'Module Ancien',
+            'quota_heures' => 10,
+        ]);
+
+        // Set the user as a trainer by linking them as a formateur of a group
+        \App\Models\Group::create([
+            'nom_groupe' => 'Groupe Test Assistant',
+            'formateur_id' => $assistant->id,
+            'module_id' => $module->id,
+            'annee_academique' => '2025-2026',
+        ]);
+
+        $this->assertTrue($assistant->isTrainer());
+
+        // 1. Create (store) should fail with 403
+        $response = $this->actingAs($assistant)->post(route('modules.store'), [
+            'code_module' => 'NEW-01',
+            'titre' => 'Nouveau',
+            'quota_heures' => 30,
+        ]);
+        $response->assertStatus(403);
+
+        // 2. Update should fail with 403
+        $response = $this->actingAs($assistant)->put(route('modules.update', $module->id), [
+            'code_module' => 'DEV-99',
+            'titre' => 'Module Modifie',
+            'quota_heures' => 12,
+        ]);
+        $response->assertStatus(403);
+
+        // 3. Delete (destroy) should fail with 403
+        $response = $this->actingAs($assistant)->delete(route('modules.destroy', $module->id));
+        $response->assertStatus(403);
+    }
 }

@@ -29,7 +29,7 @@ const props = defineProps({
 
 const page = usePage()
 const isFormateur = computed(() => {
-    return page.props.auth?.user?.roles?.includes('Formateur')
+    return page.props.auth?.user?.roles?.includes('Formateur') || page.props.auth?.user?.is_trainer
 })
 
 const selectFormations = computed(() => {

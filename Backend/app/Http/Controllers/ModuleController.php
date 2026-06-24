@@ -34,7 +34,7 @@ class ModuleController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
-        if ($request->user()->hasRole('Formateur')) {
+        if ($request->user()->hasRole('Formateur') || $request->user()->isTrainer()) {
             abort(403, "Vous n'êtes pas autorisé à créer une formation.");
         }
 
@@ -58,7 +58,7 @@ class ModuleController extends Controller
      */
     public function update(Request $request, Module $module): RedirectResponse
     {
-        if ($request->user()->hasRole('Formateur')) {
+        if ($request->user()->hasRole('Formateur') || $request->user()->isTrainer()) {
             abort(403, "Vous n'êtes pas autorisé à modifier une formation.");
         }
 
@@ -82,7 +82,7 @@ class ModuleController extends Controller
      */
     public function destroy(Module $module): RedirectResponse
     {
-        if (request()->user()->hasRole('Formateur')) {
+        if (request()->user()->hasRole('Formateur') || request()->user()->isTrainer()) {
             abort(403, "Vous n'êtes pas autorisé à supprimer une formation.");
         }
 
