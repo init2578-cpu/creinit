@@ -201,7 +201,12 @@ class ModuleController extends Controller
         if (isset($attachments[$index])) {
             Storage::disk('private')->delete($attachments[$index]['path']);
             array_splice($attachments, $index, 1);
-            $chapter->update(['attachments' => $attachments]);
+            
+            $updateData = ['attachments' => $attachments];
+            if (!\Illuminate\Support\Facades\Auth::user()->hasRole('Directeur')) {
+                $updateData['is_approved'] = false;
+            }
+            $chapter->update($updateData);
         }
 
         return back()->with('success', 'La pièce jointe a été supprimée.');

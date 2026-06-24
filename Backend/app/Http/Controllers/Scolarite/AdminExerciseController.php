@@ -94,9 +94,13 @@ class AdminExerciseController extends Controller
             abort(403, 'Action non autorisée pour les secrétaires.');
         }
 
-        $chapter->update([
+        $updateData = [
             'is_published' => !$chapter->is_published,
-        ]);
+        ];
+        if (!$request->user()->hasRole('Directeur')) {
+            $updateData['is_approved'] = false;
+        }
+        $chapter->update($updateData);
 
         if ($chapter->is_published) {
             $chapter->load('module');
@@ -199,7 +203,11 @@ class AdminExerciseController extends Controller
             'type' => $file->getClientMimeType(),
         ];
 
-        $chapter->update(['attachments' => $attachments]);
+        $updateData = ['attachments' => $attachments];
+        if (!$request->user()->hasRole('Directeur')) {
+            $updateData['is_approved'] = false;
+        }
+        $chapter->update($updateData);
 
         return redirect()->back()->with('success', 'Fichier ajouté avec succès.');
     }
@@ -214,7 +222,11 @@ class AdminExerciseController extends Controller
         if (isset($attachments[$index])) {
             \Illuminate\Support\Facades\Storage::disk('private')->delete($attachments[$index]['path']);
             array_splice($attachments, $index, 1);
-            $chapter->update(['attachments' => $attachments]);
+            $updateData = ['attachments' => $attachments];
+            if (!$request->user()->hasRole('Directeur')) {
+                $updateData['is_approved'] = false;
+            }
+            $chapter->update($updateData);
         }
 
         return redirect()->back()->with('success', 'Fichier supprimé.');
