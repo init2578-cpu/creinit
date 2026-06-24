@@ -22,6 +22,9 @@ class DirectorDashboardTest extends TestCase
         parent::setUp();
         Role::create(['name' => 'Apprenant']);
         Role::create(['name' => 'Formateur']);
+        Role::create(['name' => 'Directeur']);
+        Role::create(['name' => 'Secrétaire']);
+        Role::create(['name' => 'Stagiaire']);
     }
 
     public function test_api_stats_returns_correct_real_data()
@@ -72,19 +75,23 @@ class DirectorDashboardTest extends TestCase
         ]);
 
         $admin = User::find($femaleUser->id);
-        $admin->assignRole('Formateur');
+        $admin->assignRole('Directeur');
 
         $response = $this->actingAs($admin, 'sanctum')
             ->get(route('api.stats.director'));
 
         $response->assertStatus(200);
         $response->assertJson([
-            'total_trained' => 2,
-            'attendance_rate' => 50.0,
-            'operational_assets' => 66.7, // 2/3
-            'parity_rate' => 50.0,
-            'gender_distribution' => [1, 1], // [male, female]
-            'validation_by_module' => [1], // 1 certificate for INF01
+            'total_learners' => 2,
+            'attendance_rate' => 50,
+            'operational_hardware' => 66.7,
+            'gender_parity' => [
+                'male' => 1,
+                'female' => 1,
+                'total' => 2,
+                'ratio' => 50
+            ],
+            'total_certificates' => 1,
         ]);
     }
 }

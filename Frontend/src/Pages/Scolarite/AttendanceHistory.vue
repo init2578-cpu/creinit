@@ -187,6 +187,15 @@ const startNewSession = () => {
                                 <ArrowRightIcon class="h-4 w-4" />
                             </Link>
                         </div>
+                        <div v-else class="flex items-center gap-3 lg:self-center">
+                            <Link 
+                                :href="route('attendance.take', { schedule: schedule.id, date: item.date })"
+                                class="w-full lg:w-auto px-6 py-4 bg-gray-100 text-gray-700 hover:bg-gray-200 rounded-2xl font-black text-xs uppercase tracking-widest transition flex items-center justify-center gap-2"
+                            >
+                                Voir la liste
+                                <ArrowRightIcon class="h-4 w-4" />
+                            </Link>
+                        </div>
                     </div>
                 </div>
             </div>

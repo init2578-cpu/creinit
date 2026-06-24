@@ -57,17 +57,12 @@ class AttendanceController extends Controller
         $user = auth()->user();
         $isTrainer = !$user->hasRole('Directeur') && !$user->hasRole('Secrétaire');
 
-        // Trainers cannot access a session that has already been validated
-        if ($isTrainer) {
-            $alreadyTaken = Attendance::where('schedule_id', $schedule->id)
-                ->where('date', $date)
-                ->exists();
+        $alreadyTaken = Attendance::where('schedule_id', $schedule->id)
+            ->where('date', $date)
+            ->exists();
 
-            if ($alreadyTaken) {
-                return redirect()->route('attendances.trainer-groups')
-                    ->with('error', "L'émargement pour ce créneau a déjà été validé et ne peut plus être modifié.");
-            }
-        }
+        // Trainers cannot edit a validated session — show in readonly mode
+        $readonly = $isTrainer && $alreadyTaken;
 
         $group = $schedule->group;
         
@@ -124,6 +119,7 @@ class AttendanceController extends Controller
             'schedule' => $schedule->load(['group.module', 'formateur', 'room']),
             'date' => $date,
             'students' => $participants,
+            'readonly' => $readonly,
             'settings' => [
                 'latitude' => Setting::getValue('cre_latitude'),
                 'longitude' => Setting::getValue('cre_longitude'),

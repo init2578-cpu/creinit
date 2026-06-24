@@ -43,7 +43,8 @@ class AssetNotificationTest extends TestCase
             'nom' => 'PC Test',
             'serie' => 'SN123',
             'etat' => 'bon',
-            'status' => 'disponible'
+            'status' => 'disponible',
+            'emplacement' => 'Salle 1'
         ]);
 
         $response = $this->actingAs($director)
@@ -51,7 +52,8 @@ class AssetNotificationTest extends TestCase
                 'nom' => 'PC Test',
                 'serie' => 'SN123',
                 'etat' => 'hors_service',
-                'status' => 'maintenance'
+                'status' => 'maintenance',
+                'emplacement' => 'Salle 1'
             ]);
 
         $response->assertStatus(302);
