@@ -296,8 +296,8 @@ class AdminExerciseController extends Controller
         if ($question->exam_id) {
             $exam = $question->exam;
             
-            if ($exam->scheduled_at && $exam->scheduled_at->isPast() && !request()->user()->hasRole('Directeur')) {
-                return redirect()->back()->with('error', 'Impossible de modifier la question car cet examen a déjà commencé.');
+            if ($exam->scheduled_at && $exam->scheduled_at->isPast() && !request()->user()->hasRole('Directeur') && $exam->examResults()->exists()) {
+                return redirect()->back()->with('error', 'Impossible de modifier la question car cet examen a déjà commencé et contient des participations.');
             }
             
             $otherPoints = $exam->questions()->where('id', '!=', $question->id)->sum('points');
@@ -348,8 +348,8 @@ class AdminExerciseController extends Controller
 
         if ($question->exam_id) {
             $exam = $question->exam;
-            if ($exam->scheduled_at && $exam->scheduled_at->isPast() && !request()->user()->hasRole('Directeur')) {
-                return redirect()->back()->with('error', 'Impossible de supprimer la question car cet examen a déjà commencé.');
+            if ($exam->scheduled_at && $exam->scheduled_at->isPast() && !request()->user()->hasRole('Directeur') && $exam->examResults()->exists()) {
+                return redirect()->back()->with('error', 'Impossible de supprimer la question car cet examen a déjà commencé et contient des participations.');
             }
         }
 

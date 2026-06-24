@@ -122,8 +122,8 @@ class AdminExamController extends Controller
             abort(403, 'Action non autorisée pour les secrétaires.');
         }
 
-        if ($exam->scheduled_at && $exam->scheduled_at->isPast() && !$request->user()->hasRole('Directeur')) {
-            return redirect()->back()->with('error', 'Impossible de modifier cet examen car il a déjà commencé.');
+        if ($exam->scheduled_at && $exam->scheduled_at->isPast() && !$request->user()->hasRole('Directeur') && $exam->examResults()->exists()) {
+            return redirect()->back()->with('error', 'Impossible de modifier cet examen car il a déjà commencé et contient des participations.');
         }
 
         $validated = $request->validate([
@@ -174,8 +174,8 @@ class AdminExamController extends Controller
             abort(403, 'Action non autorisée pour les secrétaires.');
         }
 
-        if ($exam->scheduled_at && $exam->scheduled_at->isPast() && !$request->user()->hasRole('Directeur')) {
-            return redirect()->back()->with('error', 'Impossible de supprimer cet examen car il a déjà commencé.');
+        if ($exam->scheduled_at && $exam->scheduled_at->isPast() && !$request->user()->hasRole('Directeur') && $exam->examResults()->exists()) {
+            return redirect()->back()->with('error', 'Impossible de supprimer cet examen car il a déjà commencé et contient des participations.');
         }
 
         if ($exam->document_path) {
@@ -377,8 +377,8 @@ class AdminExamController extends Controller
             abort(403, 'Action non autorisée pour les secrétaires.');
         }
 
-        if ($exam->scheduled_at && $exam->scheduled_at->isPast() && !$request->user()->hasRole('Directeur')) {
-            return redirect()->back()->with('error', 'Impossible de modifier la banque de questions car cet examen a déjà commencé.');
+        if ($exam->scheduled_at && $exam->scheduled_at->isPast() && !$request->user()->hasRole('Directeur') && $exam->examResults()->exists()) {
+            return redirect()->back()->with('error', 'Impossible de modifier la banque de questions car cet examen a déjà commencé et contient des participations.');
         }
 
         $validated = $request->validate([

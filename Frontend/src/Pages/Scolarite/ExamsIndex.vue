@@ -424,6 +424,13 @@ const isExamStarted = (exam) => {
     return new Date(exam.scheduled_at) <= new Date();
 };
 
+const canModifyExam = (exam) => {
+    if (!exam) return false;
+    if (isSecretaire.value) return false;
+    if (isDirecteur.value) return true;
+    return !isExamStarted(exam) || !exam.exam_results || exam.exam_results.length === 0;
+};
+
 // Removed handleTimeInput since we now use dropdowns
 
 // Reactive duration calculation and time constraints enforcement
@@ -674,13 +681,13 @@ function approveExam(examId) {
                                         >
                                             <ClipboardDocumentCheckIcon class="h-6 w-6" />
                                         </button>
-                                        <button v-if="!isSecretaire && (isDirecteur || !isExamStarted(exam))" @click="openModal(exam)" class="p-2 text-blue-600 hover:bg-blue-50 rounded-xl transition" title="Modifier">
+                                        <button v-if="canModifyExam(exam)" @click="openModal(exam)" class="p-2 text-blue-600 hover:bg-blue-50 rounded-xl transition" title="Modifier">
                                             <PencilIcon class="h-6 w-6" />
                                         </button>
                                         <button v-if="!isSecretaire" @click="duplicateExam(exam.id)" class="p-2 text-indigo-600 hover:bg-indigo-50 rounded-xl transition" title="Dupliquer pour un autre groupe">
                                             <DocumentDuplicateIcon class="h-6 w-6" />
                                         </button>
-                                        <button v-if="!isSecretaire && (isDirecteur || !isExamStarted(exam))" @click="deleteExam(exam.id)" class="p-2 text-red-600 hover:bg-red-50 rounded-xl transition" title="Supprimer">
+                                        <button v-if="canModifyExam(exam)" @click="deleteExam(exam.id)" class="p-2 text-red-600 hover:bg-red-50 rounded-xl transition" title="Supprimer">
                                             <TrashIcon class="h-6 w-6" />
                                         </button>
                                     </div>
@@ -1112,7 +1119,7 @@ function approveExam(examId) {
 
                 <div class="grid grid-cols-1 lg:grid-cols-5 flex-1 overflow-hidden divide-x divide-gray-50">
                     <!-- Questions List (Left) -->
-                    <div :class="(isSecretaire || (!isDirecteur && isExamStarted(selectedExamForQuestion))) ? 'lg:col-span-5' : 'lg:col-span-2'" class="p-8 space-y-6 overflow-y-auto custom-scrollbar bg-gray-50/20">
+                    <div :class="!canModifyExam(selectedExamForQuestion) ? 'lg:col-span-5' : 'lg:col-span-2'" class="p-8 space-y-6 overflow-y-auto custom-scrollbar bg-gray-50/20">
                         <div class="flex items-center justify-between mb-4">
                             <h4 class="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
                                 Questions existantes
@@ -1139,7 +1146,7 @@ function approveExam(examId) {
                                         </span>
                                         <div class="flex items-center gap-1.5 bg-gray-50 px-2 py-0.5 rounded-lg border border-gray-100">
                                             <input
-                                                v-if="!isSecretaire && (isDirecteur || !isExamStarted(selectedExamForQuestion))"
+                                                v-if="canModifyExam(selectedExamForQuestion)"
                                                 type="number"
                                                 v-model.number="q.points"
                                                 @change="updateQuestionPoints(q)"
@@ -1161,10 +1168,10 @@ function approveExam(examId) {
                                     </div>
                                 </div>
                                 <div class="flex flex-col gap-1">
-                                    <button v-if="!isSecretaire && (isDirecteur || !isExamStarted(selectedExamForQuestion))" @click="openQuestionModal(selectedExamForQuestion, q)" class="opacity-0 group-hover:opacity-100 p-2 text-gray-300 hover:text-blue-500 hover:bg-blue-50 rounded-xl transition-all duration-300" title="Modifier la question">
+                                    <button v-if="canModifyExam(selectedExamForQuestion)" @click="openQuestionModal(selectedExamForQuestion, q)" class="opacity-0 group-hover:opacity-100 p-2 text-gray-300 hover:text-blue-500 hover:bg-blue-50 rounded-xl transition-all duration-300" title="Modifier la question">
                                         <PencilSquareIcon class="h-5 w-5" />
                                     </button>
-                                    <button v-if="!isSecretaire && (isDirecteur || !isExamStarted(selectedExamForQuestion))" @click="deleteQuestion(q.id)" class="opacity-0 group-hover:opacity-100 p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all duration-300" title="Supprimer la question">
+                                    <button v-if="canModifyExam(selectedExamForQuestion)" @click="deleteQuestion(q.id)" class="opacity-0 group-hover:opacity-100 p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all duration-300" title="Supprimer la question">
                                         <TrashIcon class="h-5 w-5" />
                                     </button>
                                 </div>
@@ -1180,7 +1187,7 @@ function approveExam(examId) {
                     </div>
 
                     <!-- Add Question Form (Right) -->
-                    <div v-if="!isSecretaire && (isDirecteur || !isExamStarted(selectedExamForQuestion))" class="lg:col-span-3 p-10 space-y-8 overflow-y-auto custom-scrollbar bg-white">
+                    <div v-if="canModifyExam(selectedExamForQuestion)" class="lg:col-span-3 p-10 space-y-8 overflow-y-auto custom-scrollbar bg-white">
                         <div>
                             <h4 class="text-[10px] font-black text-blue-600 uppercase tracking-[0.2em] flex items-center gap-2 mb-6">
                                 <PlusIcon v-if="!editingQuestion" class="h-4 w-4" />
