@@ -30,6 +30,7 @@ class ExerciseController extends Controller
         $chapters = Chapter::whereIn('module_id', $moduleIds)
             ->whereIn('exercise_type', ['online', 'file'])
             ->where('is_published', true)
+            ->where('is_approved', true)
             ->with(['module', 'questions'])
             ->get()
             ->map(function ($chapter) use ($user) {
@@ -50,8 +51,8 @@ class ExerciseController extends Controller
      */
     public function showOnline(Request $request, Chapter $chapter): Response
     {
-        if (!$chapter->is_published) {
-            abort(403, 'Cet exercice n\'est pas encore publié.');
+        if (!$chapter->is_published || (!$chapter->is_approved && !$request->user()->hasRole('Directeur') && !$request->user()->isTrainer())) {
+            abort(403, 'Cet exercice n\'est pas encore publié ou validé.');
         }
 
         $chapter->load(['module', 'questions.options']);
@@ -67,8 +68,8 @@ class ExerciseController extends Controller
      */
     public function submit(Request $request, Chapter $chapter): RedirectResponse
     {
-        if (!$chapter->is_published) {
-            abort(403, 'Cet exercice n\'est pas encore publié.');
+        if (!$chapter->is_published || (!$chapter->is_approved && !Auth::user()->hasRole('Directeur') && !Auth::user()->isTrainer())) {
+            abort(403, 'Cet exercice n\'est pas encore publié ou validé.');
         }
 
         $user = Auth::user();

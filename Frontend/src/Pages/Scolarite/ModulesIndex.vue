@@ -157,6 +157,16 @@ function togglePublish(chapter) {
     })
 }
 
+function toggleApprove(chapter) {
+    router.patch(route('modules.chapters.toggle-approve', chapter.id), {}, {
+        preserveScroll: true,
+        onSuccess: () => {
+            selectedModule.value = props.modules_detailed.find(m => m.id === selectedModule.value.id)
+            localChapters.value = [...selectedModule.value.chapters]
+        }
+    })
+}
+
 function deleteChapter(chapterId) {
     if (confirm('Supprimer ce chapitre ?')) {
         router.delete(route('modules.chapters.destroy', chapterId), {
@@ -424,6 +434,31 @@ function handleReorder() {
                                     
                                     <!-- Actions -->
                                     <div class="flex items-center gap-1.5 flex-shrink-0" @click.stop>
+                                        <!-- Approval Status Badge (Directeur can toggle, others see static) -->
+                                        <button 
+                                            v-if="$page.props.auth.user?.roles.includes('Directeur')"
+                                            type="button" 
+                                            @click="toggleApprove(element)" 
+                                            class="flex items-center gap-1 px-2 py-1 rounded-lg border text-[8px] font-black uppercase tracking-wider transition-all"
+                                            :class="element.is_approved 
+                                                ? 'bg-emerald-50 text-emerald-700 border-emerald-100 hover:bg-emerald-100 hover:border-emerald-200' 
+                                                : 'bg-amber-50 text-amber-700 border-amber-100 hover:bg-amber-100 hover:border-amber-200'"
+                                            title="Cliquer pour modifier l'approbation"
+                                        >
+                                            <span class="h-1.5 w-1.5 rounded-full" :class="element.is_approved ? 'bg-emerald-500' : 'bg-amber-500'"></span>
+                                            {{ element.is_approved ? 'Validé' : 'En attente' }}
+                                        </button>
+                                        <span 
+                                            v-else
+                                            class="flex items-center gap-1 px-2 py-1 rounded-lg border text-[8px] font-black uppercase tracking-wider"
+                                            :class="element.is_approved 
+                                                ? 'bg-emerald-50 text-emerald-700 border-emerald-100' 
+                                                : 'bg-amber-50 text-amber-700 border-amber-100'"
+                                        >
+                                            <span class="h-1.5 w-1.5 rounded-full" :class="element.is_approved ? 'bg-emerald-500' : 'bg-amber-500'"></span>
+                                            {{ element.is_approved ? 'Validé' : 'En attente' }}
+                                        </span>
+
                                         <!-- Status Badge Button -->
                                         <button 
                                             type="button" 

@@ -82,6 +82,7 @@ class AdminExerciseController extends Controller
             'exercise_title' => $validated['exercise_title'],
             'exercise_instructions' => $validated['exercise_instructions'],
             'is_published' => false,
+            'is_approved' => $request->user()->hasRole('Directeur'),
         ]);
 
         return redirect()->back()->with('success', 'Exercice créé et sauvegardé en brouillon.');
@@ -132,6 +133,10 @@ class AdminExerciseController extends Controller
         $currentPoints = $chapter->questions()->sum('points');
         if ($request->exercise_points < $currentPoints) {
             return redirect()->back()->with('error', "Impossible de réduire le barème : le total des points des questions existantes ({$currentPoints}) dépasse le nouveau barème ({$request->exercise_points}).");
+        }
+
+        if (!$request->user()->hasRole('Directeur')) {
+            $validated['is_approved'] = false;
         }
 
         $chapter->update($validated);
@@ -259,6 +264,10 @@ class AdminExerciseController extends Controller
             return redirect()->back()->with('error', "Le total des points des questions (" . ($currentPoints + $validated['points']) . ") ne peut pas dépasser le barème de l'exercice ({$chapter->exercise_points}).");
         }
 
+        if (!$request->user()->hasRole('Directeur')) {
+            $chapter->update(['is_approved' => false]);
+        }
+
         $question = $chapter->questions()->create([
             'enonce' => $validated['enonce'],
             'points' => $validated['points'],
@@ -314,6 +323,10 @@ class AdminExerciseController extends Controller
             }
         }
 
+        if ($question->chapter_id && !request()->user()->hasRole('Directeur')) {
+            $question->chapter->update(['is_approved' => false]);
+        }
+
         $question->update($validated);
 
         if (isset($validated['type'])) {
@@ -351,6 +364,10 @@ class AdminExerciseController extends Controller
             if ($exam->scheduled_at && $exam->scheduled_at->isPast() && !request()->user()->hasRole('Directeur') && $exam->examResults()->exists()) {
                 return redirect()->back()->with('error', 'Impossible de supprimer la question car cet examen a déjà commencé et contient des participations.');
             }
+        }
+
+        if ($question->chapter_id && !request()->user()->hasRole('Directeur')) {
+            $question->chapter->update(['is_approved' => false]);
         }
 
         $question->delete();

@@ -97,6 +97,7 @@ class ModuleController extends Controller
         // Add default values for required exercise fields
         $validated['exercise_points'] = 20.00;
         $validated['exercise_type'] = 'none';
+        $validated['is_approved'] = $request->user()->hasRole('Directeur');
 
         $module->chapters()->create($validated);
 
@@ -159,6 +160,10 @@ class ModuleController extends Controller
              $chapter->content = $validated['content'];
         }
 
+        if (!$request->user()->hasRole('Directeur')) {
+            $validated['is_approved'] = false;
+        }
+
         $chapter->update($validated);
 
         return back()->with('success', 'Le chapitre a été mis à jour avec succès.');
@@ -217,5 +222,12 @@ class ModuleController extends Controller
         }
 
         return back()->with('success', 'L\'ordre des chapitres a été mis à jour.');
+    }
+
+    public function toggleApproveChapter(Chapter $chapter): RedirectResponse
+    {
+        $chapter->update(['is_approved' => !$chapter->is_approved]);
+        $status = $chapter->is_approved ? 'validé' : 'remis en attente';
+        return back()->with('success', "Le chapitre a été {$status} avec succès.");
     }
 }

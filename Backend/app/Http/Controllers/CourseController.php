@@ -35,7 +35,7 @@ class CourseController extends Controller
         }
 
         $groups = $user->studentGroups()->with(['module.chapters' => function($query) {
-            $query->where('is_published', true)->orderBy('ordre');
+            $query->where('is_published', true)->where('is_approved', true)->orderBy('ordre');
         }])->get();
 
         return Inertia::render('Student/Courses', [
@@ -59,14 +59,21 @@ class CourseController extends Controller
             abort(403);
         }
 
+        if (!$user->hasRole('Directeur') && !$user->isTrainer() && !$chapter->is_approved) {
+            abort(403, 'Ce chapitre n\'a pas encore été validé par la direction.');
+        }
+
         $chapter->load('module.chapters');
+
+        $allChaptersQuery = $module->chapters()->where('is_published', true);
+        if (!$user->hasRole('Directeur') && !$user->isTrainer()) {
+            $allChaptersQuery->where('is_approved', true);
+        }
 
         return Inertia::render('Student/CoursePlayer', [
             'module' => $module,
             'currentChapter' => $chapter,
-            'allChapters' => $module->chapters()->where(function($query) {
-                $query->where('is_published', true);
-            })->orderBy('ordre')->get(),
+            'allChapters' => $allChaptersQuery->orderBy('ordre')->get(),
         ]);
     }
 }

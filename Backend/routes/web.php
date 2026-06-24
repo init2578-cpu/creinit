@@ -227,6 +227,8 @@ Route::middleware(['auth'])->group(function (): void {
                 ->name('settings.update');
             Route::post('/settings/initialize', [\App\Http\Controllers\SettingController::class, 'initialize'])
                 ->name('settings.initialize');
+            Route::patch('/chapters/{chapter}/toggle-approve', [\App\Http\Controllers\ModuleController::class, 'toggleApproveChapter'])
+                ->name('modules.chapters.toggle-approve');
         });
 
         // Nominations Approval

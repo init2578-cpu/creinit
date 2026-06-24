@@ -25,6 +25,7 @@ class Chapter extends Model
         'video_url',
         'attachments',
         'is_published',
+        'is_approved',
         'exercise_type',
         'exercise_title',
         'exercise_instructions',
@@ -41,6 +42,7 @@ class Chapter extends Model
             'module_id'    => 'integer',
             'attachments'  => 'json',
             'is_published' => 'boolean',
+            'is_approved'  => 'boolean',
             'exercise_points' => 'float',
         ];
     }
