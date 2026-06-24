@@ -214,20 +214,6 @@ Route::middleware(['auth'])->group(function (): void {
                 ->name('rooms.destroy');
         });
 
-        // Curriculum Management
-        Route::resource('modules', \App\Http\Controllers\ModuleController::class)->except(['index', 'show']);
-        Route::post('/modules/{module}/chapters', [\App\Http\Controllers\ModuleController::class, 'storeChapter'])
-            ->name('modules.chapters.store');
-        Route::post('/modules/{module}/chapters/reorder', [\App\Http\Controllers\ModuleController::class, 'reorderChapters'])
-            ->name('modules.chapters.reorder');
-        Route::post('/chapters/{chapter}/update', [\App\Http\Controllers\ModuleController::class, 'updateChapter'])
-            ->name('modules.chapters.update');
-        Route::delete('/chapters/{chapter}', [\App\Http\Controllers\ModuleController::class, 'destroyChapter'])
-            ->name('modules.chapters.destroy');
-        Route::delete('/chapters/{chapter}/attachments/{index}', [\App\Http\Controllers\ModuleController::class, 'destroyAttachment'])
-            ->name('modules.chapters.attachments.destroy');
-        Route::get('/chapters/{chapter}/attachments/{index}', [\App\Http\Controllers\ModuleController::class, 'downloadAttachment'])
-            ->name('modules.chapters.attachments.download');
 
         // Student & Trainee Management
         Route::resource('students', \App\Http\Controllers\StudentsController::class)->except(['index']);
@@ -304,6 +290,21 @@ Route::middleware(['auth'])->group(function (): void {
         Route::post('/schedules', [\App\Http\Controllers\ScheduleController::class, 'store'])->name('schedules.store');
         Route::put('/schedules/{schedule}', [\App\Http\Controllers\ScheduleController::class, 'update'])->name('schedules.update');
         Route::delete('/schedules/{schedule}', [\App\Http\Controllers\ScheduleController::class, 'destroy'])->name('schedules.destroy');
+
+        // Curriculum Management (Directeur, Secrétaire & Formateur)
+        Route::resource('modules', \App\Http\Controllers\ModuleController::class)->except(['index', 'show']);
+        Route::post('/modules/{module}/chapters', [\App\Http\Controllers\ModuleController::class, 'storeChapter'])
+            ->name('modules.chapters.store');
+        Route::post('/modules/{module}/chapters/reorder', [\App\Http\Controllers\ModuleController::class, 'reorderChapters'])
+            ->name('modules.chapters.reorder');
+        Route::post('/chapters/{chapter}/update', [\App\Http\Controllers\ModuleController::class, 'updateChapter'])
+            ->name('modules.chapters.update');
+        Route::delete('/chapters/{chapter}', [\App\Http\Controllers\ModuleController::class, 'destroyChapter'])
+            ->name('modules.chapters.destroy');
+        Route::delete('/chapters/{chapter}/attachments/{index}', [\App\Http\Controllers\ModuleController::class, 'destroyAttachment'])
+            ->name('modules.chapters.attachments.destroy');
+        Route::get('/chapters/{chapter}/attachments/{index}', [\App\Http\Controllers\ModuleController::class, 'downloadAttachment'])
+            ->name('modules.chapters.attachments.download');
     });
 
     // -----------------------------------------------------------------------
