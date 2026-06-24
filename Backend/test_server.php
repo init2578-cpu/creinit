@@ -8,6 +8,11 @@ $app->instance('request', $request);
 
 $kernel->bootstrap();
 
+// Mock CSRF middleware
+$app->instance(\Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class, new class {
+    public function handle($request, $next) { return $next($request); }
+});
+
 $user = App\Models\User::role('Formateur')->first();
 if (!$user) {
     echo "No Formateur user found!\n";
