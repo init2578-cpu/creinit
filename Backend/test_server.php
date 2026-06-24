@@ -8,22 +8,16 @@ $app->instance('request', $request);
 
 $kernel->bootstrap();
 
-$user = App\Models\User::role('Formateur')->first();
-if (!$user) {
-    echo "No user with Formateur role found!\n";
+$users = App\Models\User::role('Formateur')->get();
+if ($users->isEmpty()) {
+    echo "No users with Formateur role found!\n";
     exit;
 }
 
-echo "User: " . $user->name . " (ID: " . $user->id . ")\n";
-echo "Roles: " . implode(', ', $user->roles->pluck('name')->toArray()) . "\n";
-echo "Permissions: " . implode(', ', $user->getAllPermissions()->pluck('name')->toArray()) . "\n";
-
-$user->must_change_password = false;
-Auth::login($user);
-
-$response = $kernel->handle($request);
-echo "Status: " . $response->getStatusCode() . "\n";
-if ($response->getStatusCode() !== 200) {
-    echo "Headers:\n" . var_export($response->headers->all(), true) . "\n";
-    echo "Content:\n" . substr($response->getContent(), 0, 1000) . "\n";
+foreach ($users as $user) {
+    echo "User: " . $user->name . " (ID: " . $user->id . ")\n";
+    $user->must_change_password = false;
+    Auth::login($user);
+    $response = $kernel->handle($request);
+    echo "  Status: " . $response->getStatusCode() . "\n";
 }
