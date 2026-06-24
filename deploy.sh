@@ -10,6 +10,7 @@ echo "🚀 Démarrage du déploiement E-CRE - $(date)"
 
 # 1. Mise à jour du code
 echo "📥 Récupération des derniers changements (Git)..."
+cd "$PROJECT_ROOT"
 git fetch origin main
 git reset --hard origin/main
 git clean -fd
