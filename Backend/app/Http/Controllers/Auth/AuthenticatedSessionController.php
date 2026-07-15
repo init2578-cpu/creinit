@@ -54,7 +54,7 @@ class AuthenticatedSessionController extends Controller
             ->orWhere(\Illuminate\Support\Facades\DB::raw("REPLACE(telephone, ' ', '')"), $cleanPhone)
             ->first();
 
-        if (!$user || !Auth::attempt(['email' => $user->email, 'password' => $request->password], $request->boolean('remember'))) {
+        if (!$user || !Auth::attempt(['id' => $user->id, 'password' => $request->password], $request->boolean('remember'))) {
             throw ValidationException::withMessages([
                 'login' => "Ces identifiants ne correspondent pas à nos enregistrements.",
             ]);
