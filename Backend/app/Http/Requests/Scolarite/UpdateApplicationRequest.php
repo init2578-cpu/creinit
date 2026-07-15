@@ -36,6 +36,8 @@ class UpdateApplicationRequest extends FormRequest
             'etablissement' => ['nullable', 'string', 'max:255'],
             'commentaires' => ['nullable', 'string'],
             'sexe' => ['required', 'string', 'in:M,F'],
+            'cni' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:5120'],
+            'diploma' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:5120'],
         ];
     }
 }

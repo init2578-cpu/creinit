@@ -241,6 +241,20 @@ class ApplicationController extends Controller
             }
         }
 
+        if ($request->hasFile('cni')) {
+            if ($application->cni_path && $application->cni_path !== 'manual_enrollment') {
+                Storage::disk('private')->delete($application->cni_path);
+            }
+            $data['cni_path'] = $request->file('cni')->store('applications/cni', 'private');
+        }
+
+        if ($request->hasFile('diploma')) {
+            if ($application->diploma_path && $application->diploma_path !== 'manual_enrollment') {
+                Storage::disk('private')->delete($application->diploma_path);
+            }
+            $data['diploma_path'] = $request->file('diploma')->store('applications/diplomas', 'private');
+        }
+
         // Update application details
         $application->update($data);
 

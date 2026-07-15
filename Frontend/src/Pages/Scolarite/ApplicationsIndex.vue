@@ -73,6 +73,8 @@ const editForm = useForm({
     etablissement: '',
     commentaires: '',
     sexe: '',
+    cni: null,
+    diploma: null,
 })
 
 // Manual Enrollment
@@ -187,11 +189,16 @@ function openEdit(app) {
     editForm.etablissement = app.etablissement || ''
     editForm.commentaires = app.commentaires || ''
     editForm.sexe = app.sexe || ''
+    editForm.cni = null
+    editForm.diploma = null
     isEditOpen.value = true
 }
 
 function submitEdit() {
-    editForm.put(route('applications.update', editForm.id), {
+    editForm.transform((data) => ({
+        ...data,
+        _method: 'put',
+    })).post(route('applications.update', editForm.id), {
         onSuccess: () => {
             isEditOpen.value = false
             editForm.reset()
@@ -773,6 +780,28 @@ const getStatusClass = (status) => {
                                 <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Établissement (Optionnel)</label>
                                 <input v-model="editForm.etablissement" type="text" class="w-full bg-gray-50 border-0 rounded-2xl focus:ring-2 focus:ring-blue-500 font-bold px-5 py-3.5">
                                 <p v-if="editForm.errors.etablissement" class="text-red-500 text-[10px] mt-1 font-bold">{{ editForm.errors.etablissement }}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SECTION: Documents -->
+                    <div class="space-y-4 pt-4 border-t border-gray-100">
+                        <h4 class="text-[10px] font-black text-blue-600 uppercase tracking-[0.2em] flex items-center gap-2">
+                             <DocumentIcon class="h-4 w-4" /> 
+                             Documents Associés
+                        </h4>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div class="p-4 bg-gray-50 rounded-2xl border border-dashed border-gray-200 hover:border-blue-300 transition">
+                                <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Mettre à jour CNI <span class="text-gray-300 text-[9px]">(Optionnel)</span></label>
+                                <input @input="editForm.cni = $event.target.files[0]" type="file" accept=".pdf,.jpg,.jpeg,.png" class="w-full text-xs font-bold text-gray-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-black file:bg-blue-600 file:text-white hover:file:bg-blue-700 file:cursor-pointer file:transition cursor-pointer">
+                                <p class="text-[9px] text-gray-400 mt-1.5">PDF, JPG ou PNG · max 5 Mo. Laissez vide pour conserver l'actuel.</p>
+                                <p v-if="editForm.errors.cni" class="text-red-500 text-[10px] mt-1 font-bold">{{ editForm.errors.cni }}</p>
+                            </div>
+                            <div class="p-4 bg-gray-50 rounded-2xl border border-dashed border-gray-200 hover:border-blue-300 transition">
+                                <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Mettre à jour Diplôme <span class="text-gray-300 text-[9px]">(Optionnel)</span></label>
+                                <input @input="editForm.diploma = $event.target.files[0]" type="file" accept=".pdf,.jpg,.jpeg,.png" class="w-full text-xs font-bold text-gray-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-black file:bg-blue-600 file:text-white hover:file:bg-blue-700 file:cursor-pointer file:transition cursor-pointer">
+                                <p class="text-[9px] text-gray-400 mt-1.5">PDF, JPG ou PNG · max 5 Mo. Laissez vide pour conserver l'actuel.</p>
+                                <p v-if="editForm.errors.diploma" class="text-red-500 text-[10px] mt-1 font-bold">{{ editForm.errors.diploma }}</p>
                             </div>
                         </div>
                     </div>
