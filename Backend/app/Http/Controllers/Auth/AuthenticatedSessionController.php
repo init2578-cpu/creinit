@@ -46,9 +46,15 @@ class AuthenticatedSessionController extends Controller
             'password' => ['required', 'string'],
         ]);
 
-        $loginField = filter_var($request->login, FILTER_VALIDATE_EMAIL) ? 'email' : 'telephone';
+        $loginInput = $request->login;
+        $cleanPhone = str_replace(' ', '', $loginInput);
 
-        if (! Auth::attempt([$loginField => $request->login, 'password' => $request->password], $request->boolean('remember'))) {
+        $user = \App\Models\User::where('email', $loginInput)
+            ->orWhere('telephone', $loginInput)
+            ->orWhere(\Illuminate\Support\Facades\DB::raw("REPLACE(telephone, ' ', '')"), $cleanPhone)
+            ->first();
+
+        if (!$user || !Auth::attempt(['email' => $user->email, 'password' => $request->password], $request->boolean('remember'))) {
             throw ValidationException::withMessages([
                 'login' => "Ces identifiants ne correspondent pas à nos enregistrements.",
             ]);
