@@ -233,4 +233,30 @@ class ExamController extends Controller
 
         return response()->download($filePath);
     }
+
+    /**
+     * Display the detailed correction for an exam after grades are published.
+     */
+    public function result(Request $request, Exam $exam): Response|RedirectResponse
+    {
+        if (!$exam->are_grades_published) {
+            return redirect()->route('student.dashboard')->with('error', "La correction de cet examen n'est pas encore disponible.");
+        }
+
+        $exam->load(['module', 'questions.options']);
+
+        $user = $request->user();
+        $result = ExamResult::where('exam_id', $exam->id)
+            ->where('user_id', $user->id)
+            ->first();
+
+        if (!$result) {
+            return redirect()->route('student.dashboard')->with('error', "Vous n'avez pas de résultat pour cet examen.");
+        }
+
+        return Inertia::render('Student/ExamResult', [
+            'exam' => $exam,
+            'result' => $result,
+        ]);
+    }
 }

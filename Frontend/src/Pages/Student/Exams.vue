@@ -192,6 +192,14 @@ const formatTime = (dateString) => {
                             {{ statusLabel(exam) }}
                         </span>
 
+                        <Link
+                            v-if="exam.are_grades_published"
+                            :href="route('student.exams.result', exam.id)"
+                            class="px-5 py-2.5 bg-emerald-50 text-emerald-600 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-100 transition border border-emerald-200 shadow-sm flex items-center justify-center gap-2"
+                        >
+                            Voir la correction &rarr;
+                        </Link>
+
                         <button
                             v-if="exam.is_online && exam.can_start && (!exam.my_result || exam.is_practice) && exam.my_result?.status !== 'blocked' && exam.my_result?.status !== 'started'"
                             @click="handleExamAction(exam, 'start')"

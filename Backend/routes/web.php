@@ -116,6 +116,7 @@ Route::middleware(['auth'])->group(function (): void {
             Route::get('/exams/{exam}', [ExamController::class, 'show'])->name('exams.show');
             Route::get('/exams/{exam}/download', [ExamController::class, 'download'])->name('exams.download');
         });
+        Route::get('/exams/{exam}/result', [ExamController::class, 'result'])->name('exams.result');
     });
 
     // Profile Management
