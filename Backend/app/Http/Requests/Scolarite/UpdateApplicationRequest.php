@@ -38,6 +38,8 @@ class UpdateApplicationRequest extends FormRequest
             'sexe' => ['required', 'string', 'in:M,F'],
             'cni' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:5120'],
             'diploma' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:5120'],
+            'remove_cni' => ['nullable', 'boolean'],
+            'remove_diploma' => ['nullable', 'boolean'],
         ];
     }
 }

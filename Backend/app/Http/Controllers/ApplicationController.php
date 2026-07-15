@@ -241,15 +241,25 @@ class ApplicationController extends Controller
             }
         }
 
+        if ($request->boolean('remove_cni') && $application->cni_path && $application->cni_path !== 'manual_enrollment') {
+            Storage::disk('private')->delete($application->cni_path);
+            $data['cni_path'] = 'manual_enrollment';
+        }
+
+        if ($request->boolean('remove_diploma') && $application->diploma_path && $application->diploma_path !== 'manual_enrollment') {
+            Storage::disk('private')->delete($application->diploma_path);
+            $data['diploma_path'] = 'manual_enrollment';
+        }
+
         if ($request->hasFile('cni')) {
-            if ($application->cni_path && $application->cni_path !== 'manual_enrollment') {
+            if ($application->cni_path && $application->cni_path !== 'manual_enrollment' && !$request->boolean('remove_cni')) {
                 Storage::disk('private')->delete($application->cni_path);
             }
             $data['cni_path'] = $request->file('cni')->store('applications/cni', 'private');
         }
 
         if ($request->hasFile('diploma')) {
-            if ($application->diploma_path && $application->diploma_path !== 'manual_enrollment') {
+            if ($application->diploma_path && $application->diploma_path !== 'manual_enrollment' && !$request->boolean('remove_diploma')) {
                 Storage::disk('private')->delete($application->diploma_path);
             }
             $data['diploma_path'] = $request->file('diploma')->store('applications/diplomas', 'private');

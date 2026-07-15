@@ -75,6 +75,10 @@ const editForm = useForm({
     sexe: '',
     cni: null,
     diploma: null,
+    remove_cni: false,
+    remove_diploma: false,
+    has_cni: false,
+    has_diploma: false,
 })
 
 // Manual Enrollment
@@ -191,6 +195,10 @@ function openEdit(app) {
     editForm.sexe = app.sexe || ''
     editForm.cni = null
     editForm.diploma = null
+    editForm.remove_cni = false
+    editForm.remove_diploma = false
+    editForm.has_cni = !!(app.cni_path && app.cni_path !== 'manual_enrollment')
+    editForm.has_diploma = !!(app.diploma_path && app.diploma_path !== 'manual_enrollment')
     isEditOpen.value = true
 }
 
@@ -793,15 +801,23 @@ const getStatusClass = (status) => {
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div class="p-4 bg-gray-50 rounded-2xl border border-dashed border-gray-200 hover:border-blue-300 transition">
                                 <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Mettre à jour CNI <span class="text-gray-300 text-[9px]">(Optionnel)</span></label>
-                                <input @input="editForm.cni = $event.target.files[0]" type="file" accept=".pdf,.jpg,.jpeg,.png" class="w-full text-xs font-bold text-gray-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-black file:bg-blue-600 file:text-white hover:file:bg-blue-700 file:cursor-pointer file:transition cursor-pointer">
+                                <input @input="editForm.cni = $event.target.files[0]" type="file" accept=".pdf,.jpg,.jpeg,.png" class="w-full text-xs font-bold text-gray-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-black file:bg-blue-600 file:text-white hover:file:bg-blue-700 file:cursor-pointer file:transition cursor-pointer" :disabled="editForm.remove_cni">
                                 <p class="text-[9px] text-gray-400 mt-1.5">PDF, JPG ou PNG · max 5 Mo. Laissez vide pour conserver l'actuel.</p>
                                 <p v-if="editForm.errors.cni" class="text-red-500 text-[10px] mt-1 font-bold">{{ editForm.errors.cni }}</p>
+                                <div v-if="editForm.has_cni" class="mt-3 flex items-center gap-2 bg-white p-2 rounded-xl border border-gray-200">
+                                    <input type="checkbox" id="remove_cni" v-model="editForm.remove_cni" class="rounded border-gray-300 text-red-600 focus:ring-red-500 cursor-pointer">
+                                    <label for="remove_cni" class="text-xs font-bold text-red-600 cursor-pointer select-none">Supprimer le document actuel</label>
+                                </div>
                             </div>
                             <div class="p-4 bg-gray-50 rounded-2xl border border-dashed border-gray-200 hover:border-blue-300 transition">
                                 <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Mettre à jour Diplôme <span class="text-gray-300 text-[9px]">(Optionnel)</span></label>
-                                <input @input="editForm.diploma = $event.target.files[0]" type="file" accept=".pdf,.jpg,.jpeg,.png" class="w-full text-xs font-bold text-gray-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-black file:bg-blue-600 file:text-white hover:file:bg-blue-700 file:cursor-pointer file:transition cursor-pointer">
+                                <input @input="editForm.diploma = $event.target.files[0]" type="file" accept=".pdf,.jpg,.jpeg,.png" class="w-full text-xs font-bold text-gray-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-black file:bg-blue-600 file:text-white hover:file:bg-blue-700 file:cursor-pointer file:transition cursor-pointer" :disabled="editForm.remove_diploma">
                                 <p class="text-[9px] text-gray-400 mt-1.5">PDF, JPG ou PNG · max 5 Mo. Laissez vide pour conserver l'actuel.</p>
                                 <p v-if="editForm.errors.diploma" class="text-red-500 text-[10px] mt-1 font-bold">{{ editForm.errors.diploma }}</p>
+                                <div v-if="editForm.has_diploma" class="mt-3 flex items-center gap-2 bg-white p-2 rounded-xl border border-gray-200">
+                                    <input type="checkbox" id="remove_diploma" v-model="editForm.remove_diploma" class="rounded border-gray-300 text-red-600 focus:ring-red-500 cursor-pointer">
+                                    <label for="remove_diploma" class="text-xs font-bold text-red-600 cursor-pointer select-none">Supprimer le document actuel</label>
+                                </div>
                             </div>
                         </div>
                     </div>
