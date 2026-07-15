@@ -80,8 +80,13 @@ class GroupController extends Controller
 
         $oldResponsableId = $group->responsable_groupe_id;
         $oldAdjointId = $group->adjoint_groupe_id;
+        $oldFormateurId = $group->formateur_id;
 
         $group->update($validated);
+
+        if ($oldFormateurId !== $group->formateur_id) {
+            \App\Models\Schedule::where('group_id', $group->id)->update(['formateur_id' => $group->formateur_id]);
+        }
 
         // Handle Responsable change
         if ($oldResponsableId !== $group->responsable_groupe_id) {
