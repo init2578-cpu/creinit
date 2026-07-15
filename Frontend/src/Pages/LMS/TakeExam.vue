@@ -218,8 +218,8 @@ function jumpToQuestion(index) {
                     </p>
                 </div>
 
-                <!-- Options -->
-                <div class="grid grid-cols-1 gap-4">
+                <!-- Options / Inputs -->
+                <div v-if="currentQuestion.type === 'qcm'" class="grid grid-cols-1 gap-4">
                     <label 
                         v-for="(option, idx) in currentQuestion.options" 
                         :key="option.id"
@@ -249,6 +249,13 @@ function jumpToQuestion(index) {
                             <CheckCircleIcon class="h-6 w-6 text-blue-500" />
                         </div>
                     </label>
+                </div>
+                <div v-else-if="currentQuestion.type === 'open'" class="mt-4">
+                    <textarea 
+                        v-model="form.answers[currentQuestion.id]"
+                        class="w-full h-48 bg-white/5 border border-white/10 rounded-[2rem] p-8 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all resize-none placeholder-slate-500 text-lg"
+                        placeholder="Saisissez votre réponse ici..."
+                    ></textarea>
                 </div>
             </div>
             

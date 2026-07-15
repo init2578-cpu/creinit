@@ -74,7 +74,7 @@ function submitExam() {
                         {{ currentQuestion.enonce }}
                     </h2>
 
-                    <div class="grid grid-cols-1 gap-4">
+                    <div v-if="currentQuestion.type === 'qcm'" class="grid grid-cols-1 gap-4">
                         <button 
                             v-for="opt in currentQuestion.options" 
                             :key="opt.id"
@@ -87,6 +87,14 @@ function submitExam() {
                             </div>
                             <span class="font-bold text-gray-700">{{ opt.texte }}</span>
                         </button>
+                    </div>
+
+                    <div v-else-if="currentQuestion.type === 'open'" class="mt-4">
+                        <textarea 
+                            v-model="answers[currentQuestion.id]"
+                            class="w-full h-48 bg-gray-50 border border-gray-200 rounded-[2rem] p-8 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all resize-none placeholder-gray-400 text-lg"
+                            placeholder="Saisissez votre réponse ici..."
+                        ></textarea>
                     </div>
                 </div>
 

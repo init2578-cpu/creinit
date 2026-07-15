@@ -20,6 +20,7 @@ class Question extends Model
         'points',
         'ordre',
         'type',
+        'expected_answer',
     ];
 
     protected function casts(): array

@@ -145,21 +145,33 @@ class ExamController extends Controller
             $totalPoints += $question->points;
             $userAnswerId = $validated['answers'][$question->id] ?? null;
 
-            $correctOption = $question->options()->where('is_correct', true)->first();
-            $isCorrect = ($userAnswerId == $correctOption?->id);
+            if ($question->type === 'qcm') {
+                $correctOption = $question->options()->where('is_correct', true)->first();
+                $isCorrect = ($userAnswerId == $correctOption?->id);
 
-            if ($isCorrect) {
-                $score += $question->points;
-            }
+                if ($isCorrect) {
+                    $score += $question->points;
+                }
 
-            // Correction immédiate pour le mode practice
-            if ($exam->is_practice) {
-                $feedback[] = [
-                    'question_id' => $question->id,
-                    'is_correct' => $isCorrect,
-                    'correct_option_id' => $correctOption?->id,
-                    'explanation' => $isCorrect ? 'Correct !' : 'Incorrect.',
-                ];
+                // Correction immédiate pour le mode practice
+                if ($exam->is_practice) {
+                    $feedback[] = [
+                        'question_id' => $question->id,
+                        'is_correct' => $isCorrect,
+                        'correct_option_id' => $correctOption?->id,
+                        'explanation' => $isCorrect ? 'Correct !' : 'Incorrect.',
+                    ];
+                }
+            } else {
+                // Pour les questions ouvertes, la correction n'est pas automatique.
+                if ($exam->is_practice) {
+                    $feedback[] = [
+                        'question_id' => $question->id,
+                        'is_correct' => null, // Pas de verdict automatique
+                        'correct_option_id' => null,
+                        'explanation' => 'Réponse attendue : ' . ($question->expected_answer ?? 'Non spécifiée'),
+                    ];
+                }
             }
         }
 
