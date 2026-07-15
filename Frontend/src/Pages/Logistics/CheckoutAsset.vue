@@ -299,8 +299,8 @@ const canCheckout = computed(() => {
                 </button>
             </form>
 
-            <!-- 4. Flux des Emprunts — visible uniquement pour Directeur & Secrétaire -->
-            <div v-if="$page.props.auth.user.roles.some(r => ['Directeur', 'Secrétaire'].includes(r))" class="mt-16">
+            <!-- 4. Flux des Emprunts -->
+            <div class="mt-16">
                 <h2 class="text-xl font-black text-gray-900 mb-6 flex items-center gap-2">
                     <ClipboardDocumentCheckIcon class="h-6 w-6 text-blue-600" />
                     Flux des Emprunts

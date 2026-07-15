@@ -79,6 +79,7 @@ const navigation = computed(() => {
             { name: 'Exercices (Correction)', href: route('exercises.index'), icon: ClipboardDocumentCheckIcon },
             { name: 'Aperçu Plateforme', href: route('student.courses'), icon: AcademicCapIcon },
             { name: 'Inventaire Matériel', href: route('assets.index'), icon: ArchiveBoxIcon },
+            { name: 'Prêts & Retours', href: route('loans.index'), icon: BriefcaseIcon },
             { name: 'Congés', href: route('leaves.index'), icon: CalendarIcon },
             { name: 'Progression', href: route('chapter-progress.groups'), icon: ChartBarIcon, badge: page.props.auth.user?.unread_rejections_count },
             { name: 'Emploi du Temps', href: route('schedules.index'), icon: CalendarIcon },

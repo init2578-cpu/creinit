@@ -24,7 +24,9 @@ class LoanController extends Controller
      */
     public function index(): Response
     {
-        if (!auth()->user()->hasRole(['Directeur', 'Secrétaire'])) {
+        /** @var \App\Models\User $user */
+        $user = auth()->user();
+        if (!$user->hasRole(['Directeur', 'Secrétaire']) && !$user->isTrainer()) {
             abort(403, 'Accès non autorisé.');
         }
 
@@ -57,6 +59,10 @@ class LoanController extends Controller
         // Secrétaire can only view the flux, not create loans
         if ($user->hasRole('Secrétaire') && !$user->hasRole('Directeur')) {
             abort(403, 'Le Secrétaire ne peut pas effectuer d\'emprunts.');
+        }
+
+        if (!$user->hasRole('Directeur') && !$user->isTrainer()) {
+            abort(403, 'Vous n\'êtes pas autorisé à créer un emprunt.');
         }
 
         DB::transaction(function () use ($request, $user): void {
