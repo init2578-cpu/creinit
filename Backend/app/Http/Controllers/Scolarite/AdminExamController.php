@@ -300,9 +300,10 @@ class AdminExamController extends Controller
 
         $user = $request->user();
 
-        // Get students enrolled in the module, but restrict to formateur's groups if necessary
-        $studentsQuery = User::whereHas('studentGroups', function ($query) use ($exam) {
-            $query->where('module_id', $exam->module_id);
+        // Get students enrolled in the groups assigned to this exam
+        $examGroupIds = $exam->groups()->pluck('groups.id');
+        $studentsQuery = User::whereHas('studentGroups', function ($query) use ($examGroupIds) {
+            $query->whereIn('groups.id', $examGroupIds);
         });
 
         if (!$user->hasRole('Directeur') && $user->isTrainer()) {
