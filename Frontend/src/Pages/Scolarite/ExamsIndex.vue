@@ -1037,7 +1037,7 @@ function approveExam(examId) {
                                               :class="student.status === 'blocked' ? 'bg-red-100 text-red-600' : 'bg-amber-100 text-amber-600'">
                                             {{ student.status === 'blocked' ? 'Bloqué' : 'En cours / Déconnecté' }}
                                         </span>
-                                        <button type="button" @click="unlockExam(student.user_id)" class="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded-lg text-[10px] font-bold uppercase transition-colors shadow-sm">
+                                        <button v-if="!isExamEnded(selectedExamForGrades)" type="button" @click="unlockExam(student.user_id)" class="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded-lg text-[10px] font-bold uppercase transition-colors shadow-sm">
                                             {{ student.status === 'blocked' ? 'Débloquer' : 'Réinitialiser' }}
                                         </button>
                                     </template>
@@ -1088,7 +1088,7 @@ function approveExam(examId) {
                                         </div>
                                         
                                         <!-- Reset / Unlock for completed exams if needed -->
-                                        <button v-if="student.status === 'completed'" type="button" @click="unlockExam(student.user_id)" class="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors" title="Réinitialiser la tentative de l'étudiant">
+                                        <button v-if="student.status === 'completed' && !isExamEnded(selectedExamForGrades)" type="button" @click="unlockExam(student.user_id)" class="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors" title="Réinitialiser la tentative de l'étudiant">
                                             <ArrowPathIcon class="h-5 w-5" />
                                         </button>
                                     </template>
