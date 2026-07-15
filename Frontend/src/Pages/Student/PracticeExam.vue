@@ -1,7 +1,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
 import { Head, useForm } from '@inertiajs/vue3'
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { 
     QuestionMarkCircleIcon, 
     ArrowRightIcon, 
@@ -19,10 +19,35 @@ const form = useForm({
     answers: {}
 })
 
+onMounted(() => {
+    if (props.exam && props.exam.questions) {
+        props.exam.questions.forEach(q => {
+            if (q.type === 'qcm') {
+                answers.value[q.id] = []
+            } else {
+                answers.value[q.id] = ''
+            }
+        })
+    }
+})
+
 const currentQuestion = computed(() => props.exam.questions[currentQuestionIndex.value])
 
 function selectOption(optionId) {
-    answers.value[currentQuestion.value.id] = optionId
+    const qId = currentQuestion.value.id
+    if (currentQuestion.value.type === 'qcm') {
+        if (!Array.isArray(answers.value[qId])) {
+            answers.value[qId] = []
+        }
+        const idx = answers.value[qId].indexOf(optionId)
+        if (idx === -1) {
+            answers.value[qId].push(optionId)
+        } else {
+            answers.value[qId].splice(idx, 1)
+        }
+    } else {
+        answers.value[qId] = optionId
+    }
 }
 
 function nextQuestion() {
@@ -80,10 +105,10 @@ function submitExam() {
                             :key="opt.id"
                             @click="selectOption(opt.id)"
                             class="p-6 rounded-2xl border-2 text-left transition-all flex items-center gap-4 group"
-                            :class="answers[currentQuestion.id] === opt.id ? 'border-blue-600 bg-blue-50/50' : 'border-gray-50 bg-gray-50 hover:border-gray-200'"
+                            :class="answers[currentQuestion.id]?.includes(opt.id) ? 'border-blue-600 bg-blue-50/50' : 'border-gray-50 bg-gray-50 hover:border-gray-200'"
                         >
-                            <div class="h-6 w-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors" :class="answers[currentQuestion.id] === opt.id ? 'bg-blue-600 border-blue-600' : 'bg-white border-gray-200 group-hover:border-blue-400'">
-                                <div class="h-2 w-2 bg-white rounded-full" v-if="answers[currentQuestion.id] === opt.id"></div>
+                            <div class="h-6 w-6 rounded-md border-2 flex items-center justify-center shrink-0 transition-colors" :class="answers[currentQuestion.id]?.includes(opt.id) ? 'bg-blue-600 border-blue-600' : 'bg-white border-gray-200 group-hover:border-blue-400'">
+                                <div class="h-3 w-3 bg-white rounded-sm" v-if="answers[currentQuestion.id]?.includes(opt.id)"></div>
                             </div>
                             <span class="font-bold text-gray-700">{{ opt.texte }}</span>
                         </button>

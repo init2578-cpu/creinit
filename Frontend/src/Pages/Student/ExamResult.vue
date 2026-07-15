@@ -17,6 +17,12 @@ const props = defineProps({
 
 const finalScore = (parseFloat(props.result.score) || 0) + (parseFloat(props.result.bonus) || 0)
 const percentage = props.exam.total_points > 0 ? Math.round((finalScore / props.exam.total_points) * 100) : 0
+
+const isOptionSelected = (answers, questionId, optionId) => {
+    if (!answers || !answers[questionId]) return false;
+    const ans = answers[questionId];
+    return Array.isArray(ans) ? ans.includes(optionId) : ans == optionId;
+};
 </script>
 
 <template>
@@ -73,11 +79,11 @@ const percentage = props.exam.total_points > 0 ? Math.round((finalScore / props.
                         <!-- QCM -->
                         <div v-if="question.type === 'qcm'" class="space-y-3">
                             <div v-for="opt in question.options" :key="opt.id" class="flex items-center justify-between p-4 rounded-2xl border text-sm transition-all" :class="[
-                                result.answers && result.answers[question.id] == opt.id ? (opt.is_correct ? 'bg-green-50 border-green-200 text-green-800 shadow-sm' : 'bg-red-50 border-red-200 text-red-800 shadow-sm') : (opt.is_correct ? 'bg-green-50/50 border-green-100 text-green-700' : 'bg-gray-50 border-gray-100 text-gray-500')
+                                isOptionSelected(result.answers, question.id, opt.id) ? (opt.is_correct ? 'bg-green-50 border-green-200 text-green-800 shadow-sm' : 'bg-red-50 border-red-200 text-red-800 shadow-sm') : (opt.is_correct ? 'bg-green-50/50 border-green-100 text-green-700' : 'bg-gray-50 border-gray-100 text-gray-500')
                             ]">
                                 <div class="flex items-center gap-4">
-                                    <div class="h-5 w-5 rounded-full border-2 flex items-center justify-center shrink-0" :class="result.answers && result.answers[question.id] == opt.id ? (opt.is_correct ? 'border-green-500 bg-green-500' : 'border-red-500 bg-red-500') : 'border-gray-300'">
-                                        <div v-if="result.answers && result.answers[question.id] == opt.id" class="h-2 w-2 bg-white rounded-full"></div>
+                                    <div class="h-5 w-5 rounded-md border-2 flex items-center justify-center shrink-0" :class="isOptionSelected(result.answers, question.id, opt.id) ? (opt.is_correct ? 'border-green-500 bg-green-500' : 'border-red-500 bg-red-500') : 'border-gray-300'">
+                                        <div v-if="isOptionSelected(result.answers, question.id, opt.id)" class="h-2 w-2 bg-white rounded-sm"></div>
                                     </div>
                                     <span class="font-bold">{{ opt.texte }}</span>
                                 </div>
@@ -86,13 +92,13 @@ const percentage = props.exam.total_points > 0 ? Math.round((finalScore / props.
                                         <CheckCircleIcon class="h-5 w-5" />
                                         <span class="hidden sm:inline">Bonne réponse</span>
                                     </div>
-                                    <div v-if="result.answers && result.answers[question.id] == opt.id && !opt.is_correct" class="flex items-center gap-1.5 text-red-600 text-[10px] font-black uppercase tracking-widest">
+                                    <div v-if="isOptionSelected(result.answers, question.id, opt.id) && !opt.is_correct" class="flex items-center gap-1.5 text-red-600 text-[10px] font-black uppercase tracking-widest">
                                         <XCircleIcon class="h-5 w-5" />
                                         <span class="hidden sm:inline">Votre choix</span>
                                     </div>
                                 </div>
                             </div>
-                            <div v-if="!result.answers || !result.answers[question.id]" class="text-sm text-red-500 font-bold italic mt-4 flex items-center gap-2 p-4 bg-red-50 rounded-2xl border border-red-100">
+                            <div v-if="!result.answers || !result.answers[question.id] || (Array.isArray(result.answers[question.id]) && result.answers[question.id].length === 0)" class="text-sm text-red-500 font-bold italic mt-4 flex items-center gap-2 p-4 bg-red-50 rounded-2xl border border-red-100">
                                 <XCircleIcon class="h-5 w-5" />
                                 Vous n'avez pas répondu à cette question.
                             </div>

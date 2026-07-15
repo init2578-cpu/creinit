@@ -146,8 +146,18 @@ class ExamController extends Controller
             $userAnswerId = $validated['answers'][$question->id] ?? null;
 
             if ($question->type === 'qcm') {
-                $correctOption = $question->options()->where('is_correct', true)->first();
-                $isCorrect = ($userAnswerId == $correctOption?->id);
+                $correctOptions = $question->options()->where('is_correct', true)->get();
+                $correctOptionIds = $correctOptions->pluck('id')->toArray();
+
+                $userAnswers = $validated['answers'][$question->id] ?? [];
+                if (!is_array($userAnswers)) {
+                    $userAnswers = !empty($userAnswers) ? [$userAnswers] : [];
+                }
+
+                sort($correctOptionIds);
+                sort($userAnswers);
+
+                $isCorrect = ($correctOptionIds === $userAnswers);
 
                 if ($isCorrect) {
                     $score += $question->points;
@@ -158,7 +168,7 @@ class ExamController extends Controller
                     $feedback[] = [
                         'question_id' => $question->id,
                         'is_correct' => $isCorrect,
-                        'correct_option_id' => $correctOption?->id,
+                        'correct_options' => $correctOptions->toArray(),
                         'explanation' => $isCorrect ? 'Correct !' : 'Incorrect.',
                     ];
                 }

@@ -293,6 +293,12 @@ const openAnswersModal = (student) => {
     isAnswersModalOpen.value = true;
 };
 
+const isOptionSelected = (answers, questionId, optionId) => {
+    if (!answers || !answers[questionId]) return false;
+    const ans = answers[questionId];
+    return Array.isArray(ans) ? ans.includes(optionId) : ans == optionId;
+};
+
 const submitGrades = () => {
     gradeForm.post(route('exams.enter-grades', selectedExamForGrades.value.id), {
         onSuccess: () => {
@@ -1385,11 +1391,11 @@ function approveExam(examId) {
                             <div v-if="question.type === 'qcm'" class="mt-4 pt-4 border-t border-gray-50">
                                 <div class="space-y-2">
                                     <div v-for="opt in question.options" :key="opt.id" class="flex items-center justify-between p-3 rounded-xl border text-sm" :class="[
-                                        selectedStudentForAnswers.answers && selectedStudentForAnswers.answers[question.id] == opt.id ? (opt.is_correct ? 'bg-green-50 border-green-200 text-green-800' : 'bg-red-50 border-red-200 text-red-800') : (opt.is_correct ? 'bg-green-50/30 border-green-100 text-green-700 opacity-60' : 'bg-gray-50 border-gray-100 text-gray-500 opacity-60')
+                                        isOptionSelected(selectedStudentForAnswers.answers, question.id, opt.id) ? (opt.is_correct ? 'bg-green-50 border-green-200 text-green-800' : 'bg-red-50 border-red-200 text-red-800') : (opt.is_correct ? 'bg-green-50/30 border-green-100 text-green-700 opacity-60' : 'bg-gray-50 border-gray-100 text-gray-500 opacity-60')
                                     ]">
                                         <div class="flex items-center gap-3">
-                                            <div class="h-4 w-4 rounded-full border flex items-center justify-center" :class="selectedStudentForAnswers.answers && selectedStudentForAnswers.answers[question.id] == opt.id ? (opt.is_correct ? 'border-green-500 bg-green-500' : 'border-red-500 bg-red-500') : 'border-gray-300'">
-                                                <div v-if="selectedStudentForAnswers.answers && selectedStudentForAnswers.answers[question.id] == opt.id" class="h-1.5 w-1.5 bg-white rounded-full"></div>
+                                            <div class="h-4 w-4 rounded-md border flex items-center justify-center" :class="isOptionSelected(selectedStudentForAnswers.answers, question.id, opt.id) ? (opt.is_correct ? 'border-green-500 bg-green-500' : 'border-red-500 bg-red-500') : 'border-gray-300'">
+                                                <div v-if="isOptionSelected(selectedStudentForAnswers.answers, question.id, opt.id)" class="h-2 w-2 bg-white rounded-sm"></div>
                                             </div>
                                             <span class="font-bold">{{ opt.texte }}</span>
                                         </div>
@@ -1397,12 +1403,12 @@ function approveExam(examId) {
                                             <CheckCircleIcon class="h-4 w-4" />
                                             <span>Correcte</span>
                                         </div>
-                                        <div v-if="selectedStudentForAnswers.answers && selectedStudentForAnswers.answers[question.id] == opt.id && !opt.is_correct" class="flex items-center gap-1 text-red-600 text-[10px] font-black uppercase tracking-widest">
+                                        <div v-if="isOptionSelected(selectedStudentForAnswers.answers, question.id, opt.id) && !opt.is_correct" class="flex items-center gap-1 text-red-600 text-[10px] font-black uppercase tracking-widest">
                                             <XCircleIcon class="h-4 w-4" />
                                             <span>Choix apprenant</span>
                                         </div>
                                     </div>
-                                    <div v-if="!selectedStudentForAnswers.answers || !selectedStudentForAnswers.answers[question.id]" class="text-xs text-red-500 font-bold italic mt-2 flex items-center gap-1">
+                                    <div v-if="!selectedStudentForAnswers.answers || !selectedStudentForAnswers.answers[question.id] || (Array.isArray(selectedStudentForAnswers.answers[question.id]) && selectedStudentForAnswers.answers[question.id].length === 0)" class="text-xs text-red-500 font-bold italic mt-2 flex items-center gap-1">
                                         <XCircleIcon class="h-4 w-4" />
                                         Aucune réponse fournie.
                                     </div>

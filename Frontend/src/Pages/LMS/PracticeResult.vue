@@ -73,11 +73,13 @@ const percentage = Math.round((props.score / props.total) * 100)
                                     {{ exam.questions.find(q => q.id === item.question_id).enonce }}
                                 </p>
                                 
-                                <div v-if="!item.is_correct" class="mt-4 p-4 bg-white rounded-2xl border border-red-100">
-                                    <div class="text-[10px] font-black text-red-400 uppercase tracking-widest mb-1">La bonne réponse était :</div>
-                                    <div class="font-bold text-gray-900">
-                                        {{ exam.questions.find(q => q.id === item.question_id).options.find(o => o.id === item.correct_option_id).texte }}
-                                    </div>
+                                <div v-if="!item.is_correct && item.correct_options" class="mt-4 p-4 bg-white rounded-2xl border border-red-100">
+                                    <div class="text-[10px] font-black text-red-400 uppercase tracking-widest mb-2">Les bonnes réponses étaient :</div>
+                                    <ul class="list-disc list-inside space-y-1">
+                                        <li v-for="opt in item.correct_options" :key="opt.id" class="font-bold text-gray-900 text-sm">
+                                            {{ opt.texte }}
+                                        </li>
+                                    </ul>
                                 </div>
                             </div>
                         </div>

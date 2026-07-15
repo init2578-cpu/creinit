@@ -121,6 +121,16 @@ function handleConfirmSubmit() {
 }
 
 onMounted(() => {
+    if (props.exam && props.exam.questions) {
+        props.exam.questions.forEach(q => {
+            if (q.type === 'qcm') {
+                form.answers[q.id] = []
+            } else {
+                form.answers[q.id] = ''
+            }
+        })
+    }
+
     if (!props.exam.is_practice) {
         document.addEventListener('visibilitychange', handleVisibilityChange)
         document.addEventListener('fullscreenchange', handleFullscreenChange)
@@ -224,12 +234,12 @@ function jumpToQuestion(index) {
                         v-for="(option, idx) in currentQuestion.options" 
                         :key="option.id"
                         class="relative group flex items-center p-6 cursor-pointer rounded-3xl border-2 transition-all"
-                        :class="form.answers[currentQuestion.id] == option.id 
+                        :class="form.answers[currentQuestion.id]?.includes(option.id) 
                             ? 'border-blue-600 bg-blue-600/10' 
                             : 'border-white/5 bg-white/5 hover:bg-white/10 hover:border-white/10'"
                     >
                         <input 
-                            type="radio" 
+                            type="checkbox" 
                             :name="'q-' + currentQuestion.id" 
                             v-model="form.answers[currentQuestion.id]" 
                             :value="option.id"
@@ -237,7 +247,7 @@ function jumpToQuestion(index) {
                         />
                         <div 
                             class="h-8 w-8 rounded-xl border-2 flex items-center justify-center mr-6 transition-all font-black text-xs"
-                            :class="form.answers[currentQuestion.id] == option.id 
+                            :class="form.answers[currentQuestion.id]?.includes(option.id) 
                                 ? 'border-blue-500 bg-blue-500 text-white' 
                                 : 'border-white/20 bg-transparent text-slate-500 group-hover:border-white/40'"
                         >
@@ -245,7 +255,7 @@ function jumpToQuestion(index) {
                         </div>
                         <span class="text-lg text-slate-200 font-medium group-hover:text-white transition-colors">{{ option.texte }}</span>
                         
-                        <div v-if="form.answers[currentQuestion.id] == option.id" class="ml-auto">
+                        <div v-if="form.answers[currentQuestion.id]?.includes(option.id)" class="ml-auto">
                             <CheckCircleIcon class="h-6 w-6 text-blue-500" />
                         </div>
                     </label>
