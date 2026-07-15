@@ -23,7 +23,7 @@ class GroupController extends Controller
 
         $assistants = User::role('Stagiaire')
             ->whereHas('internshipRecord', function($q) {
-                $q->where('internship_type', 'course_assistant');
+                $q->whereIn('internship_type', ['course_assistant', 'course_substitute']);
             })
             ->with(['schedules' => function($q) {
                 $q->whereHas('group', function($groupQ) {
