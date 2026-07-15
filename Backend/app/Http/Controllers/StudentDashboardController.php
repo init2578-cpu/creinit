@@ -133,7 +133,8 @@ class StudentDashboardController extends Controller
         $gradedExams = \App\Models\ExamResult::with('exam')
             ->where('user_id', $user->id)
             ->whereHas('exam', function($q) {
-                $q->where('is_practice', false);
+                $q->where('is_practice', false)
+                  ->where('are_grades_published', true);
             })
             ->get();
             

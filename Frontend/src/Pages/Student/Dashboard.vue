@@ -317,11 +317,14 @@ const handleExamAction = (exam) => {
                             <div v-for="res in recentExams" :key="res.id" class="flex items-center justify-between border-b border-white/5 pb-3.5 last:border-0 last:pb-0">
                                 <div class="min-w-0 flex-1 pr-4">
                                     <p class="font-bold text-sm text-slate-100 truncate">{{ res.exam.titre }}</p>
-                                    <p class="text-[8px] font-black uppercase tracking-widest text-slate-500 mt-0.5">Évalué</p>
+                                    <p class="text-[8px] font-black uppercase tracking-widest text-slate-500 mt-0.5">{{ res.exam.are_grades_published ? 'Évalué' : 'En attente' }}</p>
                                 </div>
                                 <div class="text-right shrink-0">
-                                    <div class="text-lg font-black text-emerald-400">
+                                    <div v-if="res.exam.are_grades_published" class="text-lg font-black text-emerald-400">
                                         {{ res.score }}<span class="text-[10px] text-slate-600">/{{ res.exam.total_points }}</span>
+                                    </div>
+                                    <div v-else class="text-[10px] font-black uppercase text-slate-600 tracking-widest">
+                                        ...
                                     </div>
                                 </div>
                             </div>
