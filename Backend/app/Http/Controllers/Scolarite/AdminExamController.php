@@ -337,6 +337,7 @@ class AdminExamController extends Controller
                 'score'   => $res ? $res->score : null,
                 'bonus'   => $res ? $res->bonus : 0.00,
                 'status'  => $res ? $res->status : null,
+                'answers' => $res ? $res->answers : null,
             ];
         });
 

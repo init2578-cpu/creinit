@@ -40,8 +40,10 @@ const isTrainer = computed(() => page.props.auth.user.is_trainer);
 
 const isModalOpen = ref(false);
 const isGradeModalOpen = ref(false);
+const isAnswersModalOpen = ref(false);
 const editingExam = ref(null);
 const selectedExamForGrades = ref(null);
+const selectedStudentForAnswers = ref(null);
 const isQuestionModalOpen = ref(false);
 const editingQuestion = ref(null);
 const selectedExamForQuestionId = ref(null);
@@ -284,6 +286,11 @@ const openGradeModal = async (exam) => {
         console.error(error);
         window.platformAlert("Erreur lors du chargement des étudiants.", 'error');
     }
+};
+
+const openAnswersModal = (student) => {
+    selectedStudentForAnswers.value = student;
+    isAnswersModalOpen.value = true;
 };
 
 const submitGrades = () => {
@@ -1029,6 +1036,18 @@ function approveExam(examId) {
                                         </button>
                                     </template>
                                     <template v-else>
+                                        <!-- Voir la copie -->
+                                        <button 
+                                            v-if="student.status === 'completed' && selectedExamForGrades?.type === 'online'" 
+                                            type="button" 
+                                            @click="openAnswersModal(student)" 
+                                            class="p-2 text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded-xl transition-colors shadow-sm border border-blue-100 flex items-center gap-1.5"
+                                            title="Voir la copie"
+                                        >
+                                            <EyeIcon class="h-5 w-5" />
+                                            <span class="text-[10px] font-black uppercase tracking-widest hidden sm:inline">Copie</span>
+                                        </button>
+
                                         <!-- Note de Base -->
                                         <div class="relative w-28 group-focus-within:scale-105 transition-transform duration-300">
                                             <input 
@@ -1322,6 +1341,100 @@ function approveExam(examId) {
             </div>
         </div>
 
+        <!-- Answers / Copy Modal -->
+        <div v-if="isAnswersModalOpen && selectedStudentForAnswers" class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-gray-900/80 backdrop-blur-sm transition-all duration-300">
+            <div class="bg-white w-full max-w-4xl rounded-[3rem] overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.2)] border border-gray-100 flex flex-col max-h-[90vh]">
+                <!-- Header -->
+                <div class="p-8 border-b border-gray-100 flex items-center justify-between bg-white relative z-10 shadow-sm">
+                    <div class="flex items-center gap-4">
+                        <div class="h-14 w-14 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center shadow-inner">
+                            <EyeIcon class="h-8 w-8" />
+                        </div>
+                        <div>
+                            <h3 class="text-2xl font-black text-gray-900 tracking-tight">Copie de {{ selectedStudentForAnswers.name }}</h3>
+                            <div class="flex items-center gap-2 mt-1">
+                                <span class="px-2 py-0.5 bg-blue-50 text-blue-600 border border-blue-100 text-[10px] font-black uppercase rounded tracking-wider">
+                                    {{ selectedExamForGrades?.titre }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <button @click="isAnswersModalOpen = false" class="p-3 hover:bg-gray-100 rounded-2xl transition-all duration-300 transform hover:rotate-90">
+                        <XMarkIcon class="h-6 w-6 text-gray-400" />
+                    </button>
+                </div>
+                
+                <div class="flex-1 overflow-y-auto custom-scrollbar p-8 bg-gray-50/30">
+                    <div class="space-y-6">
+                        <div v-for="(question, qIndex) in selectedExamForGrades?.questions" :key="question.id" class="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
+                            <div class="flex items-start justify-between gap-4 mb-4">
+                                <div class="flex-1">
+                                    <div class="flex items-center gap-2 mb-2">
+                                        <span class="px-2.5 py-1 bg-gray-100 text-gray-600 text-[9px] font-black uppercase tracking-widest rounded-lg">
+                                            Question {{ qIndex + 1 }}
+                                        </span>
+                                        <span class="px-2.5 py-1 text-[9px] font-black uppercase tracking-widest rounded-lg border" :class="question.type === 'qcm' ? 'bg-indigo-50 text-indigo-600 border-indigo-100' : 'bg-purple-50 text-purple-600 border-purple-100'">
+                                            {{ question.type === 'qcm' ? 'QCM' : 'Question Ouverte' }}
+                                        </span>
+                                        <span class="text-[10px] font-bold text-gray-400 ml-auto">{{ question.points }} pts</span>
+                                    </div>
+                                    <p class="text-base font-bold text-gray-800">{{ question.enonce }}</p>
+                                </div>
+                            </div>
+
+                            <div v-if="question.type === 'qcm'" class="mt-4 pt-4 border-t border-gray-50">
+                                <div class="space-y-2">
+                                    <div v-for="opt in question.options" :key="opt.id" class="flex items-center justify-between p-3 rounded-xl border text-sm" :class="[
+                                        selectedStudentForAnswers.answers && selectedStudentForAnswers.answers[question.id] == opt.id ? (opt.is_correct ? 'bg-green-50 border-green-200 text-green-800' : 'bg-red-50 border-red-200 text-red-800') : (opt.is_correct ? 'bg-green-50/30 border-green-100 text-green-700 opacity-60' : 'bg-gray-50 border-gray-100 text-gray-500 opacity-60')
+                                    ]">
+                                        <div class="flex items-center gap-3">
+                                            <div class="h-4 w-4 rounded-full border flex items-center justify-center" :class="selectedStudentForAnswers.answers && selectedStudentForAnswers.answers[question.id] == opt.id ? (opt.is_correct ? 'border-green-500 bg-green-500' : 'border-red-500 bg-red-500') : 'border-gray-300'">
+                                                <div v-if="selectedStudentForAnswers.answers && selectedStudentForAnswers.answers[question.id] == opt.id" class="h-1.5 w-1.5 bg-white rounded-full"></div>
+                                            </div>
+                                            <span class="font-bold">{{ opt.texte }}</span>
+                                        </div>
+                                        <div v-if="opt.is_correct" class="flex items-center gap-1 text-green-600 text-[10px] font-black uppercase tracking-widest">
+                                            <CheckCircleIcon class="h-4 w-4" />
+                                            <span>Correcte</span>
+                                        </div>
+                                        <div v-if="selectedStudentForAnswers.answers && selectedStudentForAnswers.answers[question.id] == opt.id && !opt.is_correct" class="flex items-center gap-1 text-red-600 text-[10px] font-black uppercase tracking-widest">
+                                            <XCircleIcon class="h-4 w-4" />
+                                            <span>Choix apprenant</span>
+                                        </div>
+                                    </div>
+                                    <div v-if="!selectedStudentForAnswers.answers || !selectedStudentForAnswers.answers[question.id]" class="text-xs text-red-500 font-bold italic mt-2 flex items-center gap-1">
+                                        <XCircleIcon class="h-4 w-4" />
+                                        Aucune réponse fournie.
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div v-else class="mt-4 pt-4 border-t border-gray-50 grid gap-4">
+                                <div class="bg-gray-50 p-4 rounded-2xl border border-gray-100">
+                                    <p class="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                                        <DocumentTextIcon class="h-4 w-4" /> Réponse de l'apprenant
+                                    </p>
+                                    <p v-if="selectedStudentForAnswers.answers && selectedStudentForAnswers.answers[question.id]" class="text-sm font-medium text-gray-800 whitespace-pre-wrap">{{ selectedStudentForAnswers.answers[question.id] }}</p>
+                                    <p v-else class="text-sm text-red-500 font-bold italic flex items-center gap-1">
+                                        <XCircleIcon class="h-4 w-4" />
+                                        Aucune réponse fournie.
+                                    </p>
+                                </div>
+                                <div v-if="question.expected_answer" class="bg-blue-50/50 p-4 rounded-2xl border border-blue-100/50">
+                                    <p class="text-[10px] text-blue-500 font-black uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                                        <ClipboardDocumentCheckIcon class="h-4 w-4" /> Corrigé attendu
+                                    </p>
+                                    <p class="text-sm font-medium text-blue-900 whitespace-pre-wrap">{{ question.expected_answer }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div v-if="!selectedExamForGrades?.questions || selectedExamForGrades.questions.length === 0" class="text-center py-10 text-gray-400 font-bold">
+                            Aucune question trouvée.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
     </AuthenticatedLayout>
 </template>
