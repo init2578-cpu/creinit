@@ -154,22 +154,37 @@ class ExamController extends Controller
                     $userAnswers = !empty($userAnswers) ? [$userAnswers] : [];
                 }
 
-                sort($correctOptionIds);
-                sort($userAnswers);
-
-                $isCorrect = ($correctOptionIds === $userAnswers);
-
-                if ($isCorrect) {
-                    $score += $question->points;
+                $totalCorrectExpected = count($correctOptionIds);
+                $questionPoints = $question->points;
+                
+                $pointsPerCorrectOption = $totalCorrectExpected > 0 ? $questionPoints / $totalCorrectExpected : 0;
+                
+                $questionScore = 0;
+                foreach ($userAnswers as $ansId) {
+                    if (in_array($ansId, $correctOptionIds)) {
+                        $questionScore += $pointsPerCorrectOption;
+                    } else {
+                        $questionScore -= $pointsPerCorrectOption;
+                    }
                 }
+                
+                if ($questionScore < 0) {
+                    $questionScore = 0;
+                }
+                if ($questionScore > $questionPoints) {
+                    $questionScore = $questionPoints;
+                }
+                
+                $score += $questionScore;
 
                 // Correction immédiate pour le mode practice
                 if ($exam->is_practice) {
+                    $isCorrect = ($questionScore == $questionPoints && $questionPoints > 0);
                     $feedback[] = [
                         'question_id' => $question->id,
                         'is_correct' => $isCorrect,
                         'correct_options' => $correctOptions->toArray(),
-                        'explanation' => $isCorrect ? 'Correct !' : 'Incorrect.',
+                        'explanation' => $isCorrect ? 'Correct !' : ($questionScore > 0 ? 'Partiellement correct.' : 'Incorrect.'),
                     ];
                 }
             } else {

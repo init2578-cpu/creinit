@@ -56,17 +56,17 @@ const percentage = Math.round((props.score / props.total) * 100)
                     <h3 class="text-2xl font-black text-gray-900 tracking-tight mb-10 border-b border-gray-100 pb-6 text-center">Correction Détaillée</h3>
                     
                     <div v-for="(item, index) in feedback" :key="index" class="p-8 rounded-3xl border-2 transition-all"
-                        :class="item.is_correct ? 'border-green-100 bg-green-50/30' : 'border-red-100 bg-red-50/30'"
+                        :class="item.is_correct ? 'border-green-100 bg-green-50/30' : (item.explanation && item.explanation.includes('Partiellement') ? 'border-orange-100 bg-orange-50/30' : 'border-red-100 bg-red-50/30')"
                     >
                         <div class="flex items-start gap-4">
                             <div class="mt-1">
                                 <CheckCircleIcon v-if="item.is_correct" class="h-8 w-8 text-green-500" />
-                                <XCircleIcon v-else class="h-8 w-8 text-red-500" />
+                                <XCircleIcon v-else :class="item.explanation && item.explanation.includes('Partiellement') ? 'h-8 w-8 text-orange-500' : 'h-8 w-8 text-red-500'" />
                             </div>
                             <div class="flex-1">
                                 <div class="flex items-center justify-between mb-2">
-                                    <span class="text-[10px] font-black uppercase tracking-widest" :class="item.is_correct ? 'text-green-600' : 'text-red-600'">
-                                        Question {{ index + 1 }}
+                                    <span class="text-[10px] font-black uppercase tracking-widest" :class="item.is_correct ? 'text-green-600' : (item.explanation && item.explanation.includes('Partiellement') ? 'text-orange-500' : 'text-red-600')">
+                                        Question {{ index + 1 }} - {{ item.explanation || (item.is_correct ? 'Correct !' : 'Incorrect') }}
                                     </span>
                                 </div>
                                 <p class="text-lg font-bold text-gray-800 leading-tight mb-4">
