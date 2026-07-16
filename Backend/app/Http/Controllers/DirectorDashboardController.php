@@ -474,7 +474,7 @@ class DirectorDashboardController extends Controller
     {
         $absences = Attendance::where('user_id', $user->id)
             ->where('group_id', $group->id)
-            ->whereIn('status', ['absent_non_justifie', 'absent_justifie'])
+            ->whereIn('status', ['absent_non_justifie', 'justifie'])
             ->with(['schedule'])
             ->orderBy('date', 'desc')
             ->get();

@@ -133,7 +133,7 @@ class DirectorDashboardTest extends TestCase
             'user_id' => $learner->id,
             'group_id' => $group->id,
             'schedule_id' => $schedule->id,
-            'status' => 'absent_justifie',
+            'status' => 'justifie',
             'date' => '2026-07-13',
         ]);
         Attendance::create([
@@ -166,7 +166,7 @@ class DirectorDashboardTest extends TestCase
         $data = $response->json();
         $this->assertCount(2, $data['absences']);
         $this->assertEquals('2026-07-13', $data['absences'][0]['date']);
-        $this->assertEquals('absent_justifie', $data['absences'][0]['status']);
+        $this->assertEquals('justifie', $data['absences'][0]['status']);
         $this->assertEquals('2026-07-10', $data['absences'][1]['date']);
         $this->assertEquals('absent_non_justifie', $data['absences'][1]['status']);
     }
