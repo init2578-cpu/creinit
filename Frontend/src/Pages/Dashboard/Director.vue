@@ -137,6 +137,61 @@ const periodStats = computed(() => {
     }
 })
 
+const showAbsenceModal = ref(false)
+const selectedLearner = ref(null)
+const learnerAbsences = ref([])
+const isLoadingAbsences = ref(false)
+
+const getFrenchDayName = (dayNumber) => {
+    const days = {
+        1: 'Lundi',
+        2: 'Mardi',
+        3: 'Mercredi',
+        4: 'Jeudi',
+        5: 'Vendredi',
+        6: 'Samedi',
+        7: 'Dimanche'
+    }
+    return days[dayNumber] || 'Inconnu'
+}
+
+const formatTime = (timeString) => {
+    if (!timeString) return ''
+    const parts = timeString.split(':')
+    if (parts.length >= 2) {
+        return `${parts[0]}:${parts[1]}`
+    }
+    return timeString
+}
+
+const formatDateFrench = (dateString) => {
+    if (!dateString) return ''
+    try {
+        const date = new Date(dateString)
+        const formatted = date.toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+        return formatted.charAt(0).toUpperCase() + formatted.slice(1)
+    } catch (e) {
+        return dateString
+    }
+}
+
+const fetchLearnerAbsences = async (userId, groupId) => {
+    isLoadingAbsences.value = true
+    showAbsenceModal.value = true
+    selectedLearner.value = null
+    learnerAbsences.value = []
+    try {
+        const response = await api.get(`/stats/director/learner-absences/${userId}/${groupId}`)
+        selectedLearner.value = response.data.user
+        selectedLearner.value.group = response.data.group
+        learnerAbsences.value = response.data.absences
+    } catch (error) {
+        console.error("Erreur lors de la récupération des absences :", error)
+    } finally {
+        isLoadingAbsences.value = false
+    }
+}
+
 let statsInterval = null
 
 onMounted(() => {
@@ -830,7 +885,7 @@ onUnmounted(() => {
                                     </div>
                                     
                                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                        <div v-for="risk in students" :key="risk.user_id + '_' + risk.group_id" class="relative group bg-slate-50 border border-slate-100/50 p-4 rounded-2xl hover:shadow-lg hover:border-red-200 hover:bg-white transition-all flex items-center gap-4">
+                                        <div v-for="risk in students" :key="risk.user_id + '_' + risk.group_id" @click="fetchLearnerAbsences(risk.user_id, risk.group_id)" class="relative group bg-slate-50 border border-slate-100/50 p-4 rounded-2xl hover:shadow-lg hover:border-red-200 hover:bg-white transition-all flex items-center gap-4 cursor-pointer hover:scale-[1.02]">
                                             <div class="h-10 w-10 bg-gradient-to-br from-red-50 to-orange-50 rounded-xl flex items-center justify-center text-red-600 border border-red-100 shrink-0 font-black">
                                                 {{ risk.user?.name?.charAt(0) || '?' }}
                                             </div>
@@ -870,6 +925,94 @@ onUnmounted(() => {
                         <span>Dernier Audit: {{ new Date().toLocaleDateString() }}</span>
                     </div>
                 </footer>
+
+                <!-- Modal pour les Détails d'Absence -->
+                <transition name="fade">
+                    <div v-if="showAbsenceModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm transition-opacity duration-300">
+                        <div class="relative w-full max-w-2xl bg-white rounded-[2rem] border border-slate-100 shadow-2xl p-8 overflow-hidden transform transition-all max-h-[90vh] flex flex-col animate-in">
+                            <!-- Décorations d'arrière-plan -->
+                            <div class="absolute top-0 right-0 w-48 h-48 -mr-16 -mt-16 bg-red-50/50 rounded-full blur-2xl pointer-events-none"></div>
+                            <div class="absolute bottom-0 left-0 w-48 h-48 -ml-16 -mb-16 bg-indigo-50/30 rounded-full blur-2xl pointer-events-none"></div>
+
+                            <!-- Header du Modal -->
+                            <div class="flex items-start justify-between pb-6 border-b border-slate-100 relative z-10 shrink-0">
+                                <div class="flex items-center gap-4">
+                                    <div class="h-14 w-14 bg-gradient-to-br from-red-50 to-orange-50 rounded-2xl flex items-center justify-center text-red-600 border border-red-100 shrink-0 font-black text-xl">
+                                        {{ selectedLearner?.name?.charAt(0) || '?' }}
+                                    </div>
+                                    <div>
+                                        <h3 class="text-xl font-black text-gray-900 tracking-tight">Détails des Absences</h3>
+                                        <p class="text-xs font-bold text-gray-500 mt-0.5">{{ selectedLearner?.name }}</p>
+                                        <p class="text-[9px] font-black text-indigo-600 uppercase tracking-wider mt-1 bg-indigo-50 border border-indigo-100/50 px-2 py-0.5 rounded-full inline-block">
+                                            Groupe: {{ selectedLearner?.group?.nom_groupe || '...' }}
+                                        </p>
+                                    </div>
+                                </div>
+                                <button @click="showAbsenceModal = false" class="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-xl transition-all">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                            </div>
+
+                            <!-- Corps du Modal -->
+                            <div class="flex-1 overflow-y-auto py-6 pr-1 custom-scrollbar relative z-10">
+                                <!-- Spinner de Chargement -->
+                                <div v-if="isLoadingAbsences" class="flex flex-col items-center justify-center py-12 gap-3">
+                                    <div class="animate-spin rounded-full h-10 w-10 border-4 border-slate-200 border-t-indigo-600"></div>
+                                    <p class="text-xs font-bold text-slate-400 uppercase tracking-widest animate-pulse">Chargement des données...</p>
+                                </div>
+
+                                <!-- Contenu des Absences -->
+                                <div v-else>
+                                    <div v-if="learnerAbsences.length === 0" class="flex flex-col items-center justify-center py-12 text-slate-400 gap-2">
+                                        <p class="text-sm font-bold italic">Aucune absence enregistrée pour cet apprenant.</p>
+                                    </div>
+                                    <div v-else class="space-y-4">
+                                        <div v-for="absence in learnerAbsences" :key="absence.id" class="flex items-center justify-between p-4 bg-slate-50/50 hover:bg-slate-50 border border-slate-100 hover:border-slate-200 rounded-2xl transition-all group">
+                                            <div class="flex items-center gap-3.5">
+                                                <div class="h-10 w-10 rounded-xl flex items-center justify-center border shrink-0"
+                                                    :class="absence.status === 'absent_non_justifie' 
+                                                        ? 'bg-red-50 text-red-600 border-red-100/50' 
+                                                        : 'bg-amber-50 text-amber-600 border-amber-100/50'">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5m-9-6h.008v.008H12v-.008ZM12 15h.008v.008H12V15Zm0 2.25h.008v.008H12v-.008ZM9.75 15h.008v.008H9.75V15Zm0 2.25h.008v.008H9.75v-.008ZM7.5 15h.008v.008H7.5V15Zm0 2.25h.008v.008H7.5v-.008Zm6.75-4.5h.008v.008h-.008v-.008Zm0 2.25h.008v.008h-.008V15Zm0 2.25h.008v.008h-.008v-.008Zm2.25-4.5h.008v.008H16.5v-.008Zm0 2.25h.008v.008H16.5V15Z" />
+                                                    </svg>
+                                                </div>
+                                                <div>
+                                                    <p class="text-sm font-black text-gray-900 leading-tight">
+                                                        {{ formatDateFrench(absence.date) }}
+                                                    </p>
+                                                    <div class="flex items-center gap-1.5 mt-1 text-[10px] font-bold text-gray-400">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-3.5 h-3.5">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                                                        </svg>
+                                                        <span>{{ getFrenchDayName(absence.day_of_week) }} ({{ formatTime(absence.start_time) }} - {{ formatTime(absence.end_time) }})</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <span class="px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wider border"
+                                                    :class="absence.status === 'absent_non_justifie' 
+                                                        ? 'bg-red-50 text-red-700 border-red-100' 
+                                                        : 'bg-amber-50 text-amber-700 border-amber-100'">
+                                                    {{ absence.status === 'absent_non_justifie' ? 'Non Justifié' : 'Justifié' }}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Footer du Modal -->
+                            <div class="pt-6 border-t border-slate-100 flex justify-end shrink-0 relative z-10">
+                                <button @click="showAbsenceModal = false" class="px-6 py-3 bg-slate-900 text-white hover:bg-black rounded-xl font-bold text-xs uppercase tracking-wider transition-all active:scale-95">
+                                    Fermer
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </transition>
             </div>
         </div>
     </AuthenticatedLayout>
@@ -894,5 +1037,14 @@ onUnmounted(() => {
 .custom-scrollbar::-webkit-scrollbar-thumb {
     background-color: #cbd5e1;
     border-radius: 20px;
+}
+
+.fade-enter-active,
+.fade-leave-active {
+    transition: opacity 0.3s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+    opacity: 0;
 }
 </style>

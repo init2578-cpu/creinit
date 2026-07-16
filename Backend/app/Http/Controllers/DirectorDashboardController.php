@@ -466,4 +466,39 @@ class DirectorDashboardController extends Controller
             ];
         })->sortByDesc('total_minutes')->values()->toArray();
     }
+
+    /**
+     * Get detailed absences for a specific learner in a specific group.
+     */
+    public function getLearnerAbsences(User $user, Group $group): \Illuminate\Http\JsonResponse
+    {
+        $absences = Attendance::where('user_id', $user->id)
+            ->where('group_id', $group->id)
+            ->whereIn('status', ['absent_non_justifie', 'absent_justifie'])
+            ->with(['schedule'])
+            ->orderBy('date', 'desc')
+            ->get();
+
+        return response()->json([
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+            ],
+            'group' => [
+                'id' => $group->id,
+                'nom_groupe' => $group->nom_groupe,
+            ],
+            'absences' => $absences->map(function ($attendance) {
+                return [
+                    'id' => $attendance->id,
+                    'date' => $attendance->date ? $attendance->date->format('Y-m-d') : null,
+                    'status' => $attendance->status,
+                    'start_time' => $attendance->schedule->start_time ?? null,
+                    'end_time' => $attendance->schedule->end_time ?? null,
+                    'day_of_week' => $attendance->schedule->day_of_week ?? null,
+                ];
+            }),
+        ]);
+    }
 }

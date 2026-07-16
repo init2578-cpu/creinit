@@ -94,4 +94,80 @@ class DirectorDashboardTest extends TestCase
             'total_certificates' => 1,
         ]);
     }
+
+    public function test_director_can_fetch_learner_absences_details()
+    {
+        $learner = User::factory()->create();
+        $learner->assignRole('Apprenant');
+
+        $module = Module::create(['titre' => 'Informatique', 'code_module' => 'INF01', 'quota_heures' => 40]);
+        $trainer = User::factory()->create();
+        $trainer->assignRole('Formateur');
+        $group = Group::create([
+            'nom_groupe' => 'G1', 
+            'annee_academique' => '2026', 
+            'module_id' => $module->id,
+            'formateur_id' => $trainer->id
+        ]);
+
+        $room = \App\Models\Room::create(['nom' => 'Salle A', 'capacite' => 30, 'type_salle' => 'Salle de cours']);
+
+        $schedule = \App\Models\Schedule::create([
+            'group_id' => $group->id,
+            'room_id' => $room->id,
+            'formateur_id' => $trainer->id,
+            'start_time' => '08:00:00',
+            'end_time' => '10:00:00',
+            'day_of_week' => 1,
+        ]);
+
+        // Create 2 absences and 1 presence
+        $attendance1 = Attendance::create([
+            'user_id' => $learner->id,
+            'group_id' => $group->id,
+            'schedule_id' => $schedule->id,
+            'status' => 'absent_non_justifie',
+            'date' => '2026-07-10',
+        ]);
+        $attendance2 = Attendance::create([
+            'user_id' => $learner->id,
+            'group_id' => $group->id,
+            'schedule_id' => $schedule->id,
+            'status' => 'absent_justifie',
+            'date' => '2026-07-13',
+        ]);
+        Attendance::create([
+            'user_id' => $learner->id,
+            'group_id' => $group->id,
+            'schedule_id' => $schedule->id,
+            'status' => 'present',
+            'date' => '2026-07-14',
+        ]);
+
+        $director = User::factory()->create();
+        $director->assignRole('Directeur');
+
+        $response = $this->actingAs($director, 'sanctum')
+            ->get(route('api.stats.director.learner-absences', ['user' => $learner->id, 'group' => $group->id]));
+
+        $response->assertStatus(200);
+        $response->assertJson([
+            'user' => [
+                'id' => $learner->id,
+                'name' => $learner->name,
+                'email' => $learner->email,
+            ],
+            'group' => [
+                'id' => $group->id,
+                'nom_groupe' => $group->nom_groupe,
+            ],
+        ]);
+
+        $data = $response->json();
+        $this->assertCount(2, $data['absences']);
+        $this->assertEquals('2026-07-13', $data['absences'][0]['date']);
+        $this->assertEquals('absent_justifie', $data['absences'][0]['status']);
+        $this->assertEquals('2026-07-10', $data['absences'][1]['date']);
+        $this->assertEquals('absent_non_justifie', $data['absences'][1]['status']);
+    }
 }
