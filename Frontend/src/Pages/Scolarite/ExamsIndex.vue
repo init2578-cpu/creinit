@@ -613,6 +613,11 @@ function approveExam(examId) {
                                                 <span v-else class="px-2 py-0.5 bg-green-50 text-green-700 border border-green-100 text-[9px] font-black uppercase rounded tracking-wider">
                                                     Validé
                                                 </span>
+                                                <div v-if="exam.user" class="px-2 py-0.5 rounded-md bg-gray-100 border border-gray-200 flex items-center gap-1" :title="`Proposé le ${new Date(exam.created_at).toLocaleDateString('fr-FR')} par ${exam.user.name}`">
+                                                    <span class="h-4 w-4 rounded-full bg-gray-300 text-[8px] flex items-center justify-center font-black text-white">{{ exam.user.name.charAt(0) }}</span>
+                                                    <span class="text-[9px] font-black text-gray-600 tracking-wider">{{ exam.user.name }}</span>
+                                                    <span class="text-[8px] font-bold text-gray-400 border-l border-gray-300 pl-1 ml-0.5">le {{ new Date(exam.created_at).toLocaleDateString('fr-FR') }}</span>
+                                                </div>
                                                 <div v-if="isExamEnded(exam) && (exam.exam_results?.length < exam.expected_results_count)" 
                                                       class="px-2 py-0.5 bg-amber-500 text-white text-[8px] font-black uppercase rounded shadow-lg shadow-amber-100 ring-2 ring-amber-50 flex items-center gap-1.5">
                                                     <span class="h-1 w-1 rounded-full bg-white animate-ping"></span>
@@ -675,6 +680,15 @@ function approveExam(examId) {
                                         <button v-if="isDirecteur && !exam.is_approved" @click="approveExam(exam.id)" class="p-2 text-emerald-600 hover:bg-emerald-50 rounded-xl transition" title="Valider l'examen">
                                             <CheckCircleIcon class="h-6 w-6" />
                                         </button>
+                                        <a 
+                                            v-if="exam.type === 'paper' && exam.document_path" 
+                                            :href="route('exams.download-file', exam.id)" 
+                                            target="_blank"
+                                            class="p-2 text-purple-600 hover:bg-purple-50 rounded-xl transition flex items-center justify-center" 
+                                            title="Voir l'énoncé proposé"
+                                        >
+                                            <DocumentIcon class="h-6 w-6" />
+                                        </a>
                                         <button v-if="exam.type === 'online'" @click="openQuestionModal(exam)" class="p-2 text-blue-500 hover:bg-blue-50 rounded-xl transition" :title="isSecretaire ? 'Voir les questions' : 'Gérer les questions'">
                                             <QueueListIcon class="h-6 w-6" />
                                         </button>
@@ -866,6 +880,17 @@ function approveExam(examId) {
                                             </span>
                                             <ArrowUpTrayIcon class="h-5 w-5 text-purple-400 group-hover:scale-110 transition-transform" />
                                         </div>
+                                    </div>
+                                    <div v-if="editingExam && editingExam.document_path" class="mt-2 text-xs font-medium text-gray-500 flex items-center gap-2">
+                                        <span>Fichier actuel :</span>
+                                        <a 
+                                            :href="route('exams.download-file', editingExam.id)" 
+                                            target="_blank" 
+                                            class="text-purple-600 hover:text-purple-700 underline font-bold flex items-center gap-1"
+                                        >
+                                            <DocumentIcon class="h-4 w-4 inline" />
+                                            Télécharger/Voir
+                                        </a>
                                     </div>
                                 </div>
 

@@ -308,4 +308,64 @@ class ExamGroupAssignmentTest extends TestCase
         $this->assertFalse($exam->groups->contains($groupA));
         $this->assertTrue($exam->groups->contains($groupB));
     }
+
+    public function test_staff_can_download_proposed_exam_document()
+    {
+        $director = User::factory()->create();
+        $director->assignRole('Directeur');
+
+        $module = Module::create([
+            'code_module' => 'M106',
+            'titre' => 'Module Test Download',
+            'quota_heures' => 40
+        ]);
+
+        $exam = Exam::create([
+            'module_id' => $module->id,
+            'titre' => 'Examen Test Download',
+            'type' => 'paper',
+            'duree_minutes' => 60,
+            'total_points' => 20,
+            'is_approved' => false, // Not approved yet!
+            'document_path' => 'exams/test-doc.pdf',
+        ]);
+
+        // Create a fake file to ensure file_exists passes
+        \Illuminate\Support\Facades\Storage::disk('public')->put('exams/test-doc.pdf', 'fake pdf content');
+
+        $response = $this->actingAs($director)->get(route('exams.download-file', $exam->id));
+
+        $response->assertOk();
+        $response->assertHeader('Content-Disposition', 'inline; filename="test-doc.pdf"');
+
+        // Cleanup
+        \Illuminate\Support\Facades\Storage::disk('public')->delete('exams/test-doc.pdf');
+    }
+
+    public function test_student_cannot_download_unapproved_exam_document_via_admin_route()
+    {
+        $student = User::factory()->create();
+        $student->assignRole('Apprenant');
+
+        $module = Module::create([
+            'code_module' => 'M107',
+            'titre' => 'Module Test Download Denied',
+            'quota_heures' => 40
+        ]);
+
+        $exam = Exam::create([
+            'module_id' => $module->id,
+            'titre' => 'Examen Test Download Denied',
+            'type' => 'paper',
+            'duree_minutes' => 60,
+            'total_points' => 20,
+            'is_approved' => false,
+            'document_path' => 'exams/test-doc-denied.pdf',
+        ]);
+
+        // Access via admin route should fail due to middleware (403 or redirect based on middleware setup)
+        // Usually, role middleware returns 403 Forbidden.
+        $response = $this->actingAs($student)->get(route('exams.download-file', $exam->id));
+        $response->assertStatus(403);
+    }
 }

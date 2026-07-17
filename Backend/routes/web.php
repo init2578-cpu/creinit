@@ -267,6 +267,7 @@ Route::middleware(['auth'])->group(function (): void {
         // Admin Exam/Exercise Management (Scolarité)
         Route::group(['prefix' => 'admin-scolarite'], function () {
             Route::resource('exams', AdminExamController::class);
+            Route::get('exams/{exam}/download', [AdminExamController::class, 'download'])->name('exams.download-file');
             Route::patch('exams/{exam}/approve', [AdminExamController::class, 'approve'])->name('exams.approve');
             Route::get('exams/{exam}/results', [AdminExamController::class, 'getResults'])->name('exams.results');
             Route::post('exams/{exam}/grades', [AdminExamController::class, 'enterGrades'])->name('exams.enter-grades');

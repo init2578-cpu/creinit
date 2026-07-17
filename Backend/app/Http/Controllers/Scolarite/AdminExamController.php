@@ -443,4 +443,28 @@ class AdminExamController extends Controller
 
         return redirect()->back()->with('success', 'L\'examen a été validé avec succès.');
     }
+
+    /**
+     * Download or view the exam document (énoncé).
+     */
+    public function download(Request $request, Exam $exam)
+    {
+        if ($exam->type !== 'paper' || !$exam->document_path) {
+            return redirect()->back()->with('error', "Aucun énoncé disponible pour cet examen.");
+        }
+
+        $filePath = storage_path('app/public/' . $exam->document_path);
+
+        if (!file_exists($filePath)) {
+            return redirect()->back()->with('error', "Le fichier n'existe pas sur le serveur.");
+        }
+
+        $mimeType = mime_content_type($filePath);
+        $headers = [
+            'Content-Type' => $mimeType ?: 'application/octet-stream',
+            'Content-Disposition' => 'inline; filename="' . basename($filePath) . '"',
+        ];
+
+        return response()->file($filePath, $headers);
+    }
 }
