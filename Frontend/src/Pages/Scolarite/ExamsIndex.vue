@@ -1087,10 +1087,10 @@ function approveExam(examId) {
                                                 step="0.25" 
                                                 min="0" 
                                                 :max="20"
-                                                :disabled="selectedExamForGrades?.type === 'online'"
+                                                :disabled="selectedExamForGrades?.type === 'online' || (selectedExamForGrades?.type === 'paper' && student.is_graded && !isDirecteur)"
                                                 class="w-full bg-gray-50 border-2 border-transparent focus:border-green-600 rounded-2xl font-black text-center px-3 py-3 text-xs transition-all focus:bg-white focus:ring-0 outline-none text-gray-700 shadow-inner disabled:opacity-60 disabled:cursor-not-allowed"
                                                 placeholder="0.00"
-                                                title="La note est calculée automatiquement pour les QCM en ligne"
+                                                :title="selectedExamForGrades?.type === 'online' ? 'La note est calculée automatiquement pour les QCM en ligne' : (selectedExamForGrades?.type === 'paper' && student.is_graded && !isDirecteur ? 'Note déjà saisie. Seul le directeur peut la modifier.' : 'Saisir la note')"
                                             >
                                             <div class="absolute -top-2.5 -right-1">
                                                 <span class="px-1.5 py-0.5 bg-gray-900 text-white text-[7px] font-black rounded-lg shadow-lg">Base /20</span>
@@ -1104,8 +1104,10 @@ function approveExam(examId) {
                                                 type="number" 
                                                 step="0.25" 
                                                 min="0" 
-                                                class="w-full bg-green-50/30 border-2 border-dashed border-green-200 focus:border-green-600 focus:border-solid focus:bg-white rounded-2xl font-black text-center px-3 py-3 text-xs transition-all focus:ring-0 outline-none text-green-700 shadow-sm"
+                                                :disabled="selectedExamForGrades?.type === 'paper' && student.is_graded && !isDirecteur"
+                                                class="w-full bg-green-50/30 border-2 border-dashed border-green-200 focus:border-green-600 focus:border-solid focus:bg-white rounded-2xl font-black text-center px-3 py-3 text-xs transition-all focus:ring-0 outline-none text-green-700 shadow-sm disabled:opacity-60 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:border-gray-200"
                                                 placeholder="0.00"
+                                                :title="selectedExamForGrades?.type === 'paper' && student.is_graded && !isDirecteur ? 'Note déjà saisie. Seul le directeur peut la modifier.' : 'Saisir un bonus'"
                                             >
                                             <div class="absolute -top-2.5 -right-1">
                                                 <span class="px-1.5 py-0.5 bg-green-600 text-white text-[7px] font-black rounded-lg shadow-lg">Bonus (+)</span>

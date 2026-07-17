@@ -244,6 +244,7 @@ class AdminExamController extends Controller
         ]);
 
         $directors = User::role('Directeur')->get();
+        $isDirector = $request->user()->hasRole('Directeur');
 
         foreach ($validated['grades'] as $gradeData) {
             if (!isset($gradeData['score']) || $gradeData['score'] === null) {
@@ -256,6 +257,11 @@ class AdminExamController extends Controller
             $existing = ExamResult::where('exam_id', $exam->id)
                 ->where('user_id', $gradeData['user_id'])
                 ->first();
+
+            // Prevent non-directors from modifying an already graded paper exam
+            if ($exam->type === 'paper' && $existing && $existing->score !== null && !$isDirector) {
+                continue;
+            }
 
             $oldBonus = $existing ? (float)$existing->bonus : 0.00;
 
@@ -338,6 +344,7 @@ class AdminExamController extends Controller
                 'bonus'   => $res ? $res->bonus : 0.00,
                 'status'  => $res ? $res->status : null,
                 'answers' => $res ? $res->answers : null,
+                'is_graded' => $res && $res->score !== null,
             ];
         });
 
