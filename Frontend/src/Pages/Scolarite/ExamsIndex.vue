@@ -613,10 +613,10 @@ function approveExam(examId) {
                                                 <span v-else class="px-2 py-0.5 bg-green-50 text-green-700 border border-green-100 text-[9px] font-black uppercase rounded tracking-wider">
                                                     Validé
                                                 </span>
-                                                <div v-if="exam.user" class="px-2 py-0.5 rounded-md bg-gray-100 border border-gray-200 flex items-center gap-1" :title="`Proposé le ${new Date(exam.created_at).toLocaleDateString('fr-FR')} par ${exam.user.name}`">
+                                                <div v-if="exam.user" class="px-2 py-0.5 rounded-md bg-gray-100 border border-gray-200 flex items-center gap-1" :title="`Proposé le ${new Date(exam.created_at).toLocaleDateString('fr-FR')} à ${new Date(exam.created_at).toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'})} par ${exam.user.name}`">
                                                     <span class="h-4 w-4 rounded-full bg-gray-300 text-[8px] flex items-center justify-center font-black text-white">{{ exam.user.name.charAt(0) }}</span>
                                                     <span class="text-[9px] font-black text-gray-600 tracking-wider">{{ exam.user.name }}</span>
-                                                    <span class="text-[8px] font-bold text-gray-400 border-l border-gray-300 pl-1 ml-0.5">le {{ new Date(exam.created_at).toLocaleDateString('fr-FR') }}</span>
+                                                    <span class="text-[8px] font-bold text-gray-400 border-l border-gray-300 pl-1 ml-0.5">le {{ new Date(exam.created_at).toLocaleDateString('fr-FR') }} à {{ new Date(exam.created_at).toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'}) }}</span>
                                                 </div>
                                                 <div v-if="isExamEnded(exam) && (exam.exam_results?.length < exam.expected_results_count)" 
                                                       class="px-2 py-0.5 bg-amber-500 text-white text-[8px] font-black uppercase rounded shadow-lg shadow-amber-100 ring-2 ring-amber-50 flex items-center gap-1.5">
