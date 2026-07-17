@@ -24,9 +24,9 @@ class AdminExamController extends Controller
         $user = $request->user();
 
         if ($user->hasRole('Secrétaire')) {
-            $examQuery = Exam::with(['module', 'questions.options', 'groups'])->orderBy('created_at', 'desc');
+            $examQuery = Exam::with(['module', 'user', 'questions.options', 'groups'])->orderBy('created_at', 'desc');
         } else {
-            $examQuery = Exam::with(['module', 'questions.options', 'examResults.user', 'groups'])->orderBy('created_at', 'desc');
+            $examQuery = Exam::with(['module', 'user', 'questions.options', 'examResults.user', 'groups'])->orderBy('created_at', 'desc');
         }
         $moduleQuery = Module::query();
         $groupsQuery = Group::query();
