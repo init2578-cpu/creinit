@@ -19,7 +19,10 @@ return new class extends Migration
             });
         }
 
-        // 2. Refactor phases to belong to chapters instead of modules
+        // 2. Clear existing test phases to avoid NOT NULL constraint violation on chapter_id
+        \Illuminate\Support\Facades\DB::table('phases')->truncate();
+
+        // 3. Refactor phases to belong to chapters instead of modules
         Schema::table('phases', function (Blueprint $table) {
             if (Schema::hasColumn('phases', 'module_id')) {
                 $table->dropForeign(['module_id']);
