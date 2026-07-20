@@ -22,16 +22,23 @@ class ModuleController extends Controller
      */
     public function index(): Response
     {
+        $filterCourseChapters = function ($q) {
+            $q->where(function ($sub) {
+                $sub->whereNull('exercise_type')->orWhere('exercise_type', 'none');
+            })->orderBy('ordre');
+        };
+
         return Inertia::render('Scolarite/ModulesIndex', [
             'modules' => Module::withCount(['chapters' => function ($q) {
-                $q->whereNull('exercise_type');
+                $q->where(function ($sub) {
+                    $sub->whereNull('exercise_type')->orWhere('exercise_type', 'none');
+                });
             }])->get(),
             'modules_detailed' => Module::with([
-                'phases.chapters' => function ($q) {
-                    $q->whereNull('exercise_type')->orderBy('ordre');
-                },
-                'chapters' => function ($q) {
-                    $q->whereNull('exercise_type')->with('phase')->orderBy('ordre');
+                'phases.chapters' => $filterCourseChapters,
+                'chapters' => function ($q) use ($filterCourseChapters) {
+                    $filterCourseChapters($q);
+                    $q->with('phase');
                 }
             ])->get(),
             'predefined_formations' => Formation::all(['code', 'titre']),
