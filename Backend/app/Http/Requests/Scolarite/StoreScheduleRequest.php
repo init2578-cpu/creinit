@@ -65,6 +65,9 @@ class StoreScheduleRequest extends FormRequest
             ->where('day_of_week', $day)
             ->whereRaw("start_time::time < ?::time", [$end])
             ->whereRaw("end_time::time > ?::time", [$start])
+            ->whereHas('group', function ($query) {
+                $query->where('status', 'active');
+            })
             ->when($this->route('schedule'), function ($query) {
                 $schedule = $this->route('schedule');
                 $id = is_object($schedule) ? $schedule->id : $schedule;
