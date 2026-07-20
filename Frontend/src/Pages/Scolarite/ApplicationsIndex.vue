@@ -39,6 +39,17 @@ const niveauOptions = computed(() => {
     return [...new Set(levels)].sort()
 })
 
+const hasActiveFilters = computed(() => {
+    return searchQuery.value !== '' || statusFilter.value !== 'all' || moduleFilter.value !== 'all' || niveauFilter.value !== 'all'
+})
+
+function resetFilters() {
+    searchQuery.value = ''
+    statusFilter.value = 'all'
+    moduleFilter.value = 'all'
+    niveauFilter.value = 'all'
+}
+
 const filteredApplications = computed(() => {
     if (!props.applications) return []
     return props.applications.filter(app => {
@@ -259,25 +270,27 @@ const getStatusClass = (status) => {
             </header>
 
             <!-- Filter Bar -->
-            <div class="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm mb-6 flex flex-col md:flex-row items-center justify-between gap-4">
-                <div class="relative w-full md:w-96">
-                    <span class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400">
-                        <MagnifyingGlassIcon class="h-5 w-5" />
-                    </span>
-                    <input 
-                        v-model="searchQuery" 
-                        type="text" 
-                        placeholder="Rechercher un candidat..." 
-                        class="w-full bg-gray-50 border-0 rounded-2xl pl-11 pr-5 py-3 font-bold text-sm focus:ring-2 focus:ring-blue-500 placeholder-gray-400 transition"
-                    />
-                </div>
-                
-                <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
-                    <!-- Status Filter -->
-                    <div class="flex-1 md:flex-initial min-w-[140px]">
+            <div class="bg-white p-5 rounded-[2rem] border border-gray-100 shadow-sm mb-6 space-y-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3 items-center">
+                    <!-- Search Input -->
+                    <div class="relative lg:col-span-4">
+                        <span class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400">
+                            <MagnifyingGlassIcon class="h-4 w-4" />
+                        </span>
+                        <input 
+                            v-model="searchQuery" 
+                            type="text" 
+                            placeholder="Rechercher un candidat..." 
+                            class="w-full bg-gray-50/80 border border-gray-200/80 rounded-2xl pl-10 pr-4 py-2.5 font-semibold text-sm text-gray-900 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100 placeholder-gray-400 transition"
+                        />
+                    </div>
+                    
+                    <!-- Statut Filter -->
+                    <div class="lg:col-span-2">
                         <select 
                             v-model="statusFilter" 
-                            class="w-full bg-gray-50 border-0 rounded-2xl px-5 py-3 font-bold text-sm focus:ring-2 focus:ring-blue-500 appearance-none cursor-pointer"
+                            class="w-full bg-gray-50/80 border border-gray-200/80 rounded-2xl px-4 py-2.5 font-semibold text-sm text-gray-800 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100 cursor-pointer transition"
+                            :class="{ 'border-blue-500 bg-blue-50/40 text-blue-700 font-bold': statusFilter !== 'all' }"
                         >
                             <option value="all">Tous les statuts</option>
                             <option value="pending">En attente</option>
@@ -287,10 +300,11 @@ const getStatusClass = (status) => {
                     </div>
 
                     <!-- Module Filter -->
-                    <div class="flex-1 md:flex-initial min-w-[200px]">
+                    <div class="lg:col-span-3">
                         <select 
                             v-model="moduleFilter" 
-                            class="w-full bg-gray-50 border-0 rounded-2xl px-5 py-3 font-bold text-sm focus:ring-2 focus:ring-blue-500 appearance-none cursor-pointer"
+                            class="w-full bg-gray-50/80 border border-gray-200/80 rounded-2xl px-4 py-2.5 font-semibold text-sm text-gray-800 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100 cursor-pointer transition truncate"
+                            :class="{ 'border-blue-500 bg-blue-50/40 text-blue-700 font-bold': moduleFilter !== 'all' }"
                         >
                             <option value="all">Tous les modules</option>
                             <option v-for="m in modules" :key="m.id" :value="m.id">{{ m.titre || m.nom_module }}</option>
@@ -298,23 +312,56 @@ const getStatusClass = (status) => {
                     </div>
 
                     <!-- Niveau d'étude Filter -->
-                    <div class="flex-1 md:flex-initial min-w-[160px]">
+                    <div :class="hasActiveFilters ? 'lg:col-span-2' : 'lg:col-span-3'">
                         <select 
                             v-model="niveauFilter" 
-                            class="w-full bg-gray-50 border-0 rounded-2xl px-5 py-3 font-bold text-sm focus:ring-2 focus:ring-blue-500 appearance-none cursor-pointer"
+                            class="w-full bg-gray-50/80 border border-gray-200/80 rounded-2xl px-4 py-2.5 font-semibold text-sm text-gray-800 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100 cursor-pointer transition truncate"
+                            :class="{ 'border-blue-500 bg-blue-50/40 text-blue-700 font-bold': niveauFilter !== 'all' }"
                         >
                             <option value="all">Tous les niveaux</option>
                             <option v-for="niv in niveauOptions" :key="niv" :value="niv">{{ niv }}</option>
                         </select>
                     </div>
 
-                    <!-- Reset Filters Button -->
-                    <button 
-                        v-if="searchQuery || statusFilter !== 'all' || moduleFilter !== 'all' || niveauFilter !== 'all'"
-                        @click="searchQuery = ''; statusFilter = 'all'; moduleFilter = 'all'; niveauFilter = 'all'"
-                        class="px-4 py-3 bg-red-50 text-red-600 rounded-2xl font-bold text-sm hover:bg-red-100 transition flex items-center gap-1.5"
-                    >
-                        Réinitialiser
+                    <!-- Reset Button -->
+                    <div v-if="hasActiveFilters" class="lg:col-span-1 flex justify-end">
+                        <button 
+                            @click="resetFilters"
+                            title="Réinitialiser tous les filtres"
+                            class="w-full py-2.5 bg-red-50 text-red-600 hover:bg-red-100 border border-red-200/60 rounded-2xl font-bold text-xs transition flex items-center justify-center gap-1.5 shadow-sm"
+                        >
+                            <ArrowPathIcon class="h-4 w-4" />
+                            <span>Effacer</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Active Filters Bar -->
+                <div v-if="hasActiveFilters" class="flex flex-wrap items-center gap-2 pt-3 border-t border-gray-100">
+                    <span class="text-[11px] font-black text-gray-400 uppercase tracking-wider mr-1">Filtres actifs :</span>
+                    
+                    <span v-if="searchQuery" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-blue-50 text-blue-700 text-xs font-bold border border-blue-100">
+                        Recherche: "{{ searchQuery }}"
+                        <button @click="searchQuery = ''" class="hover:text-blue-900 transition"><XMarkIcon class="h-3.5 w-3.5" /></button>
+                    </span>
+
+                    <span v-if="statusFilter !== 'all'" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-amber-50 text-amber-700 text-xs font-bold border border-amber-100">
+                        Statut: {{ statusFilter === 'pending' ? 'En attente' : statusFilter === 'admitted' ? 'Admis' : 'Rejeté' }}
+                        <button @click="statusFilter = 'all'" class="hover:text-amber-900 transition"><XMarkIcon class="h-3.5 w-3.5" /></button>
+                    </span>
+
+                    <span v-if="moduleFilter !== 'all'" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-purple-50 text-purple-700 text-xs font-bold border border-purple-100">
+                        Module: {{ modules.find(m => Number(m.id) === Number(moduleFilter))?.titre || 'Sélectionné' }}
+                        <button @click="moduleFilter = 'all'" class="hover:text-purple-900 transition"><XMarkIcon class="h-3.5 w-3.5" /></button>
+                    </span>
+
+                    <span v-if="niveauFilter !== 'all'" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-emerald-50 text-emerald-700 text-xs font-bold border border-emerald-100">
+                        Niveau: {{ niveauFilter }}
+                        <button @click="niveauFilter = 'all'" class="hover:text-emerald-900 transition"><XMarkIcon class="h-3.5 w-3.5" /></button>
+                    </span>
+
+                    <button @click="resetFilters" class="text-xs font-bold text-red-500 hover:text-red-700 underline ml-auto transition">
+                        Tout réinitialiser
                     </button>
                 </div>
             </div>
