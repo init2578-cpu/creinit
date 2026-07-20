@@ -31,6 +31,13 @@ const props = defineProps({
 const searchQuery = ref('')
 const statusFilter = ref('all')
 const moduleFilter = ref('all')
+const niveauFilter = ref('all')
+
+const niveauOptions = computed(() => {
+    if (!props.applications) return []
+    const levels = props.applications.map(a => a.niveau_etude).filter(Boolean)
+    return [...new Set(levels)].sort()
+})
 
 const filteredApplications = computed(() => {
     if (!props.applications) return []
@@ -43,8 +50,9 @@ const filteredApplications = computed(() => {
 
         const matchesStatus = statusFilter.value === 'all' || app.status === statusFilter.value
         const matchesModule = moduleFilter.value === 'all' || Number(app.module_id) === Number(moduleFilter.value)
+        const matchesNiveau = niveauFilter.value === 'all' || app.niveau_etude === niveauFilter.value
 
-        return matchesSearch && matchesStatus && matchesModule
+        return matchesSearch && matchesStatus && matchesModule && matchesNiveau
     })
 })
 
@@ -289,10 +297,21 @@ const getStatusClass = (status) => {
                         </select>
                     </div>
 
+                    <!-- Niveau d'étude Filter -->
+                    <div class="flex-1 md:flex-initial min-w-[160px]">
+                        <select 
+                            v-model="niveauFilter" 
+                            class="w-full bg-gray-50 border-0 rounded-2xl px-5 py-3 font-bold text-sm focus:ring-2 focus:ring-blue-500 appearance-none cursor-pointer"
+                        >
+                            <option value="all">Tous les niveaux</option>
+                            <option v-for="niv in niveauOptions" :key="niv" :value="niv">{{ niv }}</option>
+                        </select>
+                    </div>
+
                     <!-- Reset Filters Button -->
                     <button 
-                        v-if="searchQuery || statusFilter !== 'all' || moduleFilter !== 'all'"
-                        @click="searchQuery = ''; statusFilter = 'all'; moduleFilter = 'all'"
+                        v-if="searchQuery || statusFilter !== 'all' || moduleFilter !== 'all' || niveauFilter !== 'all'"
+                        @click="searchQuery = ''; statusFilter = 'all'; moduleFilter = 'all'; niveauFilter = 'all'"
                         class="px-4 py-3 bg-red-50 text-red-600 rounded-2xl font-bold text-sm hover:bg-red-100 transition flex items-center gap-1.5"
                     >
                         Réinitialiser
@@ -328,7 +347,12 @@ const getStatusClass = (status) => {
                                         </div>
                                         <div>
                                             <p class="font-bold text-gray-900">{{ app.nom_complet || (app.user ? app.user.name : 'N/A') }}</p>
-                                            <p class="text-[10px] text-gray-400 font-black uppercase tracking-wider">{{ app.user ? app.user.email : 'Candidat public' }}</p>
+                                            <div class="flex items-center gap-2 mt-0.5">
+                                                <span class="text-[10px] text-gray-400 font-black uppercase tracking-wider">{{ app.user ? app.user.email : 'Candidat public' }}</span>
+                                                <span v-if="app.niveau_etude" class="text-[9px] font-extrabold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100">
+                                                    {{ app.niveau_etude }}
+                                                </span>
+                                            </div>
                                         </div>
                                     </div>
                                 </td>
