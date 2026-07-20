@@ -48,7 +48,7 @@ class Module extends Model
      */
     public function scopeActiveForEnrollment($query)
     {
-        $today = now()->startOfDay();
+        $today = now()->toDateString();
 
         return $query->where('is_active', true)
             ->where(function ($q) use ($today) {
