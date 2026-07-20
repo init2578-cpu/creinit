@@ -108,6 +108,7 @@ const selectedModule = ref(null)
 const isChapterModalOpen = ref(false)
 const chapterForm = useForm({
     titre: '',
+    phase_id: '',
     objectif_pedagogique: '',
     materiels_necessaires: '',
     ordre: '',
@@ -138,6 +139,7 @@ const editingChapter = ref(null)
 function editChapter(chapter) {
     editingChapter.value = chapter
     chapterForm.titre = chapter.titre
+    chapterForm.phase_id = chapter.phase_id || ''
     chapterForm.objectif_pedagogique = chapter.objectif_pedagogique || ''
     chapterForm.materiels_necessaires = chapter.materiels_necessaires || ''
     chapterForm.ordre = chapter.ordre
@@ -269,6 +271,68 @@ function handleReorder() {
     })
 }
 
+// Phase Management
+const isPhaseModalOpen = ref(false)
+const editingPhase = ref(null)
+const phaseForm = useForm({
+    titre: '',
+    description: '',
+    quota_heures: '',
+    start_date: '',
+    end_date: '',
+    ordre: ''
+})
+
+function openPhaseModal(phase = null) {
+    editingPhase.value = phase
+    if (phase) {
+        phaseForm.titre = phase.titre
+        phaseForm.description = phase.description || ''
+        phaseForm.quota_heures = phase.quota_heures || ''
+        phaseForm.start_date = phase.start_date || ''
+        phaseForm.end_date = phase.end_date || ''
+        phaseForm.ordre = phase.ordre || ''
+    } else {
+        phaseForm.reset()
+    }
+    isPhaseModalOpen.value = true
+}
+
+function submitPhase() {
+    if (editingPhase.value) {
+        phaseForm.put(route('modules.phases.update', editingPhase.value.id), {
+            onSuccess: () => {
+                isPhaseModalOpen.value = false
+                phaseForm.reset()
+                if (selectedModule.value) {
+                    selectedModule.value = props.modules_detailed.find(m => m.id === selectedModule.value.id)
+                }
+            }
+        })
+    } else {
+        phaseForm.post(route('modules.phases.store', selectedModule.value.id), {
+            onSuccess: () => {
+                isPhaseModalOpen.value = false
+                phaseForm.reset()
+                if (selectedModule.value) {
+                    selectedModule.value = props.modules_detailed.find(m => m.id === selectedModule.value.id)
+                }
+            }
+        })
+    }
+}
+
+function deletePhase(phaseId) {
+    if (confirm('Supprimer cette phase ?')) {
+        router.delete(route('modules.phases.destroy', phaseId), {
+            onSuccess: () => {
+                if (selectedModule.value) {
+                    selectedModule.value = props.modules_detailed.find(m => m.id === selectedModule.value.id)
+                }
+            }
+        })
+    }
+}
 </script>
 
 <template>
@@ -422,9 +486,15 @@ function handleReorder() {
                         <h3 class="text-3xl font-black text-gray-900 tracking-tight">{{ selectedModule.titre }}</h3>
                         <p class="text-gray-400 font-bold text-xs uppercase mt-1 tracking-widest">Plan de cours & Chapitres</p>
                     </div>
-                    <button @click="isChapterModalOpen = false" class="p-3 hover:bg-gray-100 rounded-2xl transition text-gray-400">
-                        <XMarkIcon class="h-7 w-7" />
-                    </button>
+                    <div class="flex items-center gap-3">
+                        <button @click="openPhaseModal()" type="button" class="px-4 py-2.5 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 rounded-2xl transition font-black text-xs uppercase tracking-wider flex items-center gap-2">
+                            <PlusIcon class="h-4 w-4" />
+                            Phases ({{ selectedModule.phases?.length || 0 }})
+                        </button>
+                        <button @click="isChapterModalOpen = false" class="p-3 hover:bg-gray-100 rounded-2xl transition text-gray-400">
+                            <XMarkIcon class="h-7 w-7" />
+                        </button>
+                    </div>
                 </div>
                 
                 <div class="flex-1 flex flex-col md:flex-row gap-10 p-10 overflow-hidden min-h-0">
@@ -483,6 +553,9 @@ function handleReorder() {
                                     <!-- Title -->
                                     <div class="flex-grow min-w-0">
                                         <h4 class="font-black text-gray-900 leading-tight truncate" :title="element.titre">{{ element.titre }}</h4>
+                                        <span v-if="element.phase" class="inline-block text-[8px] font-black text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md uppercase tracking-wider mt-1">
+                                            {{ element.phase.titre }}
+                                        </span>
                                     </div>
                                     
                                     <!-- Actions -->
@@ -558,9 +631,20 @@ function handleReorder() {
                                 {{ editingChapter ? 'Modifier le chapitre' : 'Ajouter un chapitre' }}
                             </h4>
                             <form @submit.prevent="submitChapter" class="space-y-4">
-                                <div>
-                                    <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Titre du chapitre</label>
-                                    <input v-model="chapterForm.titre" type="text" required placeholder="Ex: Introduction au DOM" class="w-full bg-gray-50 border-0 rounded-xl focus:ring-2 focus:ring-blue-500 font-bold px-4 py-3 text-sm">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Titre du chapitre</label>
+                                        <input v-model="chapterForm.titre" type="text" required placeholder="Ex: Introduction au DOM" class="w-full bg-gray-50 border-0 rounded-xl focus:ring-2 focus:ring-blue-500 font-bold px-4 py-3 text-sm">
+                                    </div>
+                                    <div>
+                                        <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Phase du module (Optionnel)</label>
+                                        <select v-model="chapterForm.phase_id" class="w-full bg-gray-50 border-0 rounded-xl focus:ring-2 focus:ring-blue-500 font-bold px-4 py-3 text-sm">
+                                            <option value="">Aucune (Chapitre général)</option>
+                                            <option v-for="phase in selectedModule?.phases" :key="phase.id" :value="phase.id">
+                                                Phase {{ phase.ordre }} : {{ phase.titre }}
+                                            </option>
+                                        </select>
+                                    </div>
                                 </div>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
@@ -685,6 +769,74 @@ function handleReorder() {
                 <div class="bg-white p-8 border-t border-gray-100 flex justify-end flex-shrink-0">
                     <button @click="isChapterModalOpen = false" class="px-8 py-3 bg-gray-900 text-white rounded-xl font-black text-xs uppercase tracking-widest">Terminer</button>
                 </div>
+            </div>
+        </div>
+
+        <!-- Phase Modal -->
+        <div v-if="isPhaseModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/80 backdrop-blur-sm">
+            <div class="bg-white w-full max-w-2xl rounded-[3rem] overflow-hidden shadow-2xl">
+                <div class="p-8 border-b border-gray-100 flex items-center justify-between">
+                    <div>
+                        <h3 class="text-2xl font-black text-gray-900 tracking-tight">{{ editingPhase ? 'Modifier la Phase' : 'Gestion des Phases' }}</h3>
+                        <p class="text-xs text-gray-400 font-bold uppercase tracking-wider mt-1">Structurez les étapes d'apprentissage de ce module</p>
+                    </div>
+                    <button @click="isPhaseModalOpen = false" class="p-3 hover:bg-gray-100 rounded-2xl transition text-gray-400">
+                        <XMarkIcon class="h-6 w-6" />
+                    </button>
+                </div>
+
+                <!-- List of existing phases if not editing single -->
+                <div v-if="selectedModule?.phases?.length > 0 && !editingPhase" class="p-8 border-b border-gray-100 space-y-3">
+                    <h4 class="text-xs font-black text-gray-400 uppercase tracking-widest mb-3">Phases existantes ({{ selectedModule.phases.length }})</h4>
+                    <div v-for="phase in selectedModule.phases" :key="phase.id" class="flex items-center justify-between p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                        <div>
+                            <span class="text-[10px] font-black text-indigo-600 bg-indigo-100/60 px-2 py-0.5 rounded-md uppercase tracking-wider">Phase {{ phase.ordre }}</span>
+                            <h5 class="font-black text-gray-900 text-sm mt-1">{{ phase.titre }}</h5>
+                            <p v-if="phase.description" class="text-xs font-medium text-gray-500 line-clamp-1 mt-0.5">{{ phase.description }}</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button @click="openPhaseModal(phase)" class="p-2 text-gray-400 hover:text-blue-600 hover:bg-white rounded-xl transition">
+                                <PencilSquareIcon class="h-4 w-4" />
+                            </button>
+                            <button @click="deletePhase(phase.id)" class="p-2 text-gray-400 hover:text-red-600 hover:bg-white rounded-xl transition">
+                                <TrashIcon class="h-4 w-4" />
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Form to Add/Edit Phase -->
+                <form @submit.prevent="submitPhase" class="p-8 space-y-4">
+                    <h4 class="text-xs font-black text-gray-400 uppercase tracking-widest mb-4">{{ editingPhase ? 'Modifier les détails de la phase' : 'Ajouter une nouvelle phase' }}</h4>
+                    <div>
+                        <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Titre de la Phase</label>
+                        <input v-model="phaseForm.titre" type="text" required placeholder="Ex: Phase 1 : Théorie et Fondamentaux" class="w-full bg-gray-50 border-0 rounded-xl focus:ring-2 focus:ring-indigo-500 font-bold px-4 py-3 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Description (Optionnel)</label>
+                        <textarea v-model="phaseForm.description" rows="2" placeholder="Objectifs et périmètre de cette phase..." class="w-full bg-gray-50 border-0 rounded-xl focus:ring-2 focus:ring-indigo-500 font-medium px-4 py-3 text-sm"></textarea>
+                    </div>
+                    <div class="grid grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Quota Heures</label>
+                            <input v-model="phaseForm.quota_heures" type="number" placeholder="Ex: 20" class="w-full bg-gray-50 border-0 rounded-xl focus:ring-2 focus:ring-indigo-500 font-bold px-4 py-3 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Date Début</label>
+                            <input v-model="phaseForm.start_date" type="date" class="w-full bg-gray-50 border-0 rounded-xl focus:ring-2 focus:ring-indigo-500 font-bold px-4 py-3 text-sm text-gray-700">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Date Fin</label>
+                            <input v-model="phaseForm.end_date" type="date" class="w-full bg-gray-50 border-0 rounded-xl focus:ring-2 focus:ring-indigo-500 font-bold px-4 py-3 text-sm text-gray-700">
+                        </div>
+                    </div>
+                    <div class="flex gap-3 pt-4">
+                        <button v-if="editingPhase" type="button" @click="editingPhase = null; phaseForm.reset()" class="flex-1 py-3 bg-gray-100 text-gray-600 rounded-xl font-black text-xs uppercase tracking-widest">Annuler</button>
+                        <button type="submit" :disabled="phaseForm.processing" class="flex-2 py-3 bg-indigo-600 text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-indigo-700 transition shadow-lg shadow-indigo-100 disabled:opacity-50">
+                            {{ editingPhase ? 'Enregistrer les modifications' : 'Créer la phase' }}
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     </AuthenticatedLayout>

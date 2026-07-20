@@ -63,15 +63,15 @@ class CourseController extends Controller
             abort(403, 'Ce chapitre n\'a pas encore été validé par la direction.');
         }
 
-        $chapter->load('module.chapters');
+        $chapter->load(['module.phases', 'phase']);
 
-        $allChaptersQuery = $module->chapters()->where('is_published', true);
+        $allChaptersQuery = $module->chapters()->with('phase')->where('is_published', true);
         if (!$user->hasRole('Directeur') && !$user->isTrainer()) {
             $allChaptersQuery->where('is_approved', true);
         }
 
         return Inertia::render('Student/CoursePlayer', [
-            'module' => $module,
+            'module' => $module->load('phases'),
             'currentChapter' => $chapter,
             'allChapters' => $allChaptersQuery->orderBy('ordre')->get(),
         ]);

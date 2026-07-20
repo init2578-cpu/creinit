@@ -309,6 +309,16 @@ Route::middleware(['auth'])->group(function (): void {
             ->name('modules.chapters.attachments.destroy');
         Route::get('/chapters/{chapter}/attachments/{index}', [\App\Http\Controllers\ModuleController::class, 'downloadAttachment'])
             ->name('modules.chapters.attachments.download');
+
+        // Phase Management
+        Route::post('/modules/{module}/phases', [\App\Http\Controllers\ModuleController::class, 'storePhase'])
+            ->name('modules.phases.store');
+        Route::put('/phases/{phase}', [\App\Http\Controllers\ModuleController::class, 'updatePhase'])
+            ->name('modules.phases.update');
+        Route::delete('/phases/{phase}', [\App\Http\Controllers\ModuleController::class, 'destroyPhase'])
+            ->name('modules.phases.destroy');
+        Route::post('/modules/{module}/phases/reorder', [\App\Http\Controllers\ModuleController::class, 'reorderPhases'])
+            ->name('modules.phases.reorder');
     });
 
     // -----------------------------------------------------------------------

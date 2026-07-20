@@ -130,7 +130,14 @@ const submitExercise = () => {
                             >
                                 {{ chapter.ordre }}
                             </span>
-                            <span class="text-sm font-bold flex-1 truncate">{{ chapter.titre }}</span>
+                            <div class="flex-1 min-w-0">
+                                <span v-if="chapter.phase" class="block text-[9px] font-black uppercase tracking-wider mb-0.5"
+                                    :class="chapter.id === currentChapter.id ? 'text-blue-100' : 'text-indigo-600'"
+                                >
+                                    {{ chapter.phase.titre }}
+                                </span>
+                                <span class="text-sm font-bold truncate block">{{ chapter.titre }}</span>
+                            </div>
                         </Link>
                     </nav>
                 </aside>
@@ -149,6 +156,9 @@ const submitExercise = () => {
                 <!-- Title Header Section -->
                 <div class="h-64 bg-gradient-to-br from-blue-600 to-indigo-700 w-full flex items-center justify-center text-white relative overflow-hidden flex-shrink-0">
                     <div class="relative z-10 text-center">
+                        <span v-if="currentChapter.phase" class="inline-block px-3 py-1 bg-white/20 backdrop-blur-md rounded-full text-[10px] font-black uppercase tracking-widest text-white mb-3 border border-white/20">
+                            Phase {{ currentChapter.phase.ordre }} : {{ currentChapter.phase.titre }}
+                        </span>
                         <span class="text-xs font-black uppercase tracking-[0.3em] opacity-60 mb-2 block">Chapitre {{ currentChapter.ordre }}</span>
                         <h1 class="text-4xl md:text-5xl font-black tracking-tighter px-4 text-center">{{ currentChapter.titre }}</h1>
                     </div>

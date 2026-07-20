@@ -24,7 +24,7 @@ class ModuleController extends Controller
     {
         return Inertia::render('Scolarite/ModulesIndex', [
             'modules' => Module::withCount('chapters')->get(),
-            'modules_detailed' => Module::with('chapters')->get(),
+            'modules_detailed' => Module::with(['phases.chapters', 'chapters.phase'])->get(),
             'predefined_formations' => Formation::all(['code', 'titre']),
         ]);
     }
@@ -98,6 +98,7 @@ class ModuleController extends Controller
     {
         $validated = $request->validate([
             'titre' => 'required|string|max:255',
+            'phase_id' => 'nullable|exists:phases,id',
             'objectif_pedagogique' => 'nullable|string',
             'materiels_necessaires' => 'nullable|string',
             'ordre' => 'nullable|integer',
@@ -155,6 +156,7 @@ class ModuleController extends Controller
 
         $validated = $request->validate([
             'titre' => 'required|string|max:255',
+            'phase_id' => 'nullable|exists:phases,id',
             'objectif_pedagogique' => 'nullable|string',
             'materiels_necessaires' => 'nullable|string',
             'ordre' => 'nullable|integer',
@@ -301,5 +303,77 @@ class ModuleController extends Controller
         $chapter->update($updateData);
         $status = $newApproval ? 'validé' : 'remis en attente et masqué du public';
         return back()->with('success', "Le chapitre a été {$status} avec succès.");
+    }
+
+    /**
+     * Store a new phase in a module.
+     */
+    public function storePhase(Request $request, Module $module): RedirectResponse
+    {
+        $validated = $request->validate([
+            'titre' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'quota_heures' => 'nullable|integer',
+            'start_date' => 'nullable|date',
+            'end_date' => 'nullable|date',
+            'ordre' => 'nullable|integer',
+        ]);
+
+        if (!isset($validated['ordre'])) {
+            $validated['ordre'] = $module->phases()->count() + 1;
+        }
+
+        $module->phases()->create($validated);
+
+        return back()->with('success', 'La phase a été créée.');
+    }
+
+    /**
+     * Update an existing phase.
+     */
+    public function updatePhase(Request $request, \App\Models\Phase $phase): RedirectResponse
+    {
+        $validated = $request->validate([
+            'titre' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'quota_heures' => 'nullable|integer',
+            'start_date' => 'nullable|date',
+            'end_date' => 'nullable|date',
+            'ordre' => 'nullable|integer',
+        ]);
+
+        $phase->update($validated);
+
+        return back()->with('success', 'La phase a été mise à jour.');
+    }
+
+    /**
+     * Delete a phase.
+     */
+    public function destroyPhase(\App\Models\Phase $phase): RedirectResponse
+    {
+        $phase->delete();
+
+        return back()->with('success', 'La phase a été supprimée.');
+    }
+
+    /**
+     * Reorder phases of a module.
+     */
+    public function reorderPhases(Request $request, Module $module): RedirectResponse
+    {
+        $validated = $request->validate([
+            'phases' => 'required|array',
+            'phases.*.id' => 'required|exists:phases,id',
+            'phases.*.ordre' => 'required|integer',
+        ]);
+
+        foreach ($validated['phases'] as $phaseData) {
+            \App\Models\Phase::where('id', $phaseData['id'])
+                ->where('module_id', $module->id)
+                ->update(['ordre' => $phaseData['ordre']]);
+        }
+
+        return back()->with('success', 'L\'ordre des phases a été mis à jour.');
     }
 }

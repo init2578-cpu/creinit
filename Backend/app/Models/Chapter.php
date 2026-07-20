@@ -19,6 +19,7 @@ class Chapter extends Model
      */
     protected $fillable = [
         'module_id',
+        'phase_id',
         'titre',
         'objectif_pedagogique',
         'materiels_necessaires',
@@ -43,6 +44,7 @@ class Chapter extends Model
         return [
             'ordre'        => 'integer',
             'module_id'    => 'integer',
+            'phase_id'     => 'integer',
             'attachments'  => 'json',
             'is_published' => 'boolean',
             'is_approved'  => 'boolean',
@@ -60,6 +62,14 @@ class Chapter extends Model
     public function module(): BelongsTo
     {
         return $this->belongsTo(Module::class);
+    }
+
+    /**
+     * The phase this chapter belongs to (if any).
+     */
+    public function phase(): BelongsTo
+    {
+        return $this->belongsTo(Phase::class);
     }
 
     /**

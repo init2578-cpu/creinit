@@ -509,7 +509,7 @@
     ]
   },
   "src/Pages/Dashboard/Director.vue": {
-    "file": "assets/Director-dBKsj0OA.js",
+    "file": "assets/Director-DOwnXTSD.js",
     "name": "Director",
     "src": "src/Pages/Dashboard/Director.vue",
     "isDynamicEntry": true,
@@ -526,7 +526,7 @@
     ],
     "css": [
       "assets/Director-Y48aPutR.css",
-      "assets/app-B_An34zP.css"
+      "assets/app-BaUyh1Xe.css"
     ]
   },
   "src/Pages/Ecosystem/EventsIndex.vue": {
@@ -964,7 +964,7 @@
     ]
   },
   "src/Pages/Scolarite/ModulesIndex.vue": {
-    "file": "assets/ModulesIndex-DZXyzesl.js",
+    "file": "assets/ModulesIndex-DWN-3NrT.js",
     "name": "ModulesIndex",
     "src": "src/Pages/Scolarite/ModulesIndex.vue",
     "isDynamicEntry": true,
@@ -979,7 +979,7 @@
       "_ConfirmModal-ooP7Z12Y.js"
     ],
     "css": [
-      "assets/ModulesIndex-BQxBOu-c.css"
+      "assets/ModulesIndex-CoPKeayF.css"
     ]
   },
   "src/Pages/Scolarite/Reports.vue": {
@@ -1089,7 +1089,7 @@
     ]
   },
   "src/Pages/Student/CoursePlayer.vue": {
-    "file": "assets/CoursePlayer-DK4gl5yq.js",
+    "file": "assets/CoursePlayer-DC2eN5Gz.js",
     "name": "CoursePlayer",
     "src": "src/Pages/Student/CoursePlayer.vue",
     "isDynamicEntry": true,
@@ -1104,7 +1104,7 @@
       "_ConfirmModal-ooP7Z12Y.js"
     ],
     "css": [
-      "assets/CoursePlayer-BIKPiZbX.css"
+      "assets/CoursePlayer-Cr6pK8OO.css"
     ]
   },
   "src/Pages/Student/Courses.vue": {
@@ -1341,12 +1341,12 @@
     ]
   },
   "src/app.css": {
-    "file": "assets/app-B_An34zP.css",
+    "file": "assets/app-BaUyh1Xe.css",
     "src": "src/app.css",
     "isEntry": true
   },
   "src/app.js": {
-    "file": "assets/app-BWtsew3p.js",
+    "file": "assets/app-BgFlPFif.js",
     "name": "app",
     "src": "src/app.js",
     "isEntry": true,
@@ -1431,7 +1431,7 @@
       "src/Pages/Welcome.vue"
     ],
     "css": [
-      "assets/app-B_An34zP.css"
+      "assets/app-BaUyh1Xe.css"
     ]
   }
 }
