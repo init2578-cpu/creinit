@@ -18,6 +18,8 @@ class Application extends Model
         'module_id',
         'status',
         'cni_path',
+        'cni_recto_path',
+        'cni_verso_path',
         'diploma_path',
         'commentaires',
         'adresse_reelle',

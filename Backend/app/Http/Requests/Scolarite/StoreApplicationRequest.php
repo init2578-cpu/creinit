@@ -31,8 +31,10 @@ class StoreApplicationRequest extends FormRequest
                           });
                 })
             ],
-            'cni' => ['required', 'file', 'mimes:pdf,jpg,png', 'max:2048'], // 2MB as per current server limit
-            'diploma' => ['required', 'file', 'mimes:pdf,jpg,png', 'max:2048'],
+            'cni_recto' => ['required_without:cni', 'nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'],
+            'cni_verso' => ['required_without:cni', 'nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'],
+            'cni' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'],
+            'diploma' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'],
             'commentaires' => ['nullable', 'string'],
             
             // New fields

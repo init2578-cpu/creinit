@@ -108,9 +108,12 @@ const isZoomed = ref(false)
 
 const isPreviewImage = computed(() => {
     if (!selectedApplication.value || !previewType.value) return false
-    const path = previewType.value === 'cni' 
-        ? selectedApplication.value.cni_path 
-        : selectedApplication.value.diploma_path
+    let path = null
+    if (previewType.value === 'cni_recto') path = selectedApplication.value.cni_recto_path || selectedApplication.value.cni_path
+    else if (previewType.value === 'cni_verso') path = selectedApplication.value.cni_verso_path
+    else if (previewType.value === 'cni') path = selectedApplication.value.cni_path || selectedApplication.value.cni_recto_path
+    else if (previewType.value === 'diploma') path = selectedApplication.value.diploma_path
+
     if (!path) return false
     const ext = path.split('.').pop().toLowerCase()
     return ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext)
@@ -457,24 +460,37 @@ const getStatusClass = (status) => {
                     <!-- SECTION: Documents -->
                     <div>
                         <h4 class="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4">Documents Attachés</h4>
-                        <div class="flex gap-4">
+                        <div class="flex flex-wrap gap-4">
                             <button 
-                                v-if="applicationForDetails.cni_path !== 'manual_enrollment'" 
-                                @click="openPreview(applicationForDetails, 'cni')"
-                                class="flex-1 p-4 bg-white border border-gray-200 rounded-2xl flex items-center justify-between hover:border-blue-600 transition group"
+                                v-if="applicationForDetails.cni_recto_path || (applicationForDetails.cni_path && applicationForDetails.cni_path !== 'manual_enrollment')" 
+                                @click="openPreview(applicationForDetails, applicationForDetails.cni_recto_path ? 'cni_recto' : 'cni')"
+                                class="flex-1 min-w-[140px] p-4 bg-white border border-gray-200 rounded-2xl flex items-center justify-between hover:border-blue-600 transition group"
                             >
                                 <div class="flex items-center gap-3">
                                     <div class="h-8 w-8 bg-gray-100 text-gray-500 rounded-lg flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition">
                                         <DocumentIcon class="h-5 w-5" />
                                     </div>
-                                    <span class="text-xs font-black text-gray-900 uppercase">Copie CNI</span>
+                                    <span class="text-xs font-black text-gray-900 uppercase">CNI (Recto)</span>
                                 </div>
                                 <EyeIcon class="h-4 w-4 text-gray-300 group-hover:text-blue-600" />
                             </button>
                             <button 
-                                v-if="applicationForDetails.diploma_path !== 'manual_enrollment'" 
+                                v-if="applicationForDetails.cni_verso_path" 
+                                @click="openPreview(applicationForDetails, 'cni_verso')"
+                                class="flex-1 min-w-[140px] p-4 bg-white border border-gray-200 rounded-2xl flex items-center justify-between hover:border-blue-600 transition group"
+                            >
+                                <div class="flex items-center gap-3">
+                                    <div class="h-8 w-8 bg-gray-100 text-gray-500 rounded-lg flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition">
+                                        <DocumentIcon class="h-5 w-5" />
+                                    </div>
+                                    <span class="text-xs font-black text-gray-900 uppercase">CNI (Verso)</span>
+                                </div>
+                                <EyeIcon class="h-4 w-4 text-gray-300 group-hover:text-blue-600" />
+                            </button>
+                            <button 
+                                v-if="applicationForDetails.diploma_path && applicationForDetails.diploma_path !== 'manual_enrollment'" 
                                 @click="openPreview(applicationForDetails, 'diploma')"
-                                class="flex-1 p-4 bg-white border border-gray-200 rounded-2xl flex items-center justify-between hover:border-blue-600 transition group"
+                                class="flex-1 min-w-[140px] p-4 bg-white border border-gray-200 rounded-2xl flex items-center justify-between hover:border-blue-600 transition group"
                             >
                                 <div class="flex items-center gap-3">
                                     <div class="h-8 w-8 bg-gray-100 text-gray-500 rounded-lg flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition">
@@ -484,7 +500,7 @@ const getStatusClass = (status) => {
                                 </div>
                                 <EyeIcon class="h-4 w-4 text-gray-300 group-hover:text-blue-600" />
                             </button>
-                            <div v-if="applicationForDetails.cni_path === 'manual_enrollment'" class="w-full text-center py-4 bg-gray-50 rounded-2xl border border-dashed border-gray-200 text-gray-400 text-xs font-bold italic">
+                            <div v-if="!applicationForDetails.cni_recto_path && !applicationForDetails.cni_verso_path && applicationForDetails.cni_path === 'manual_enrollment'" class="w-full text-center py-4 bg-gray-50 rounded-2xl border border-dashed border-gray-200 text-gray-400 text-xs font-bold italic">
                                 Aucun document (Inscription Manuelle)
                             </div>
                         </div>
@@ -835,7 +851,7 @@ const getStatusClass = (status) => {
             <div class="bg-white w-full max-w-5xl h-[90vh] rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col">
                 <div class="p-6 border-b border-gray-100 flex items-center justify-between">
                     <div>
-                        <h3 class="text-xl font-black text-gray-900 tracking-tight capitalize">{{ previewType === 'cni' ? 'Carte d\'Identité' : 'Diplôme' }}</h3>
+                        <h3 class="text-xl font-black text-gray-900 tracking-tight capitalize">{{ previewType === 'cni_recto' ? 'Carte d\'Identité (Recto)' : previewType === 'cni_verso' ? 'Carte d\'Identité (Verso)' : previewType === 'cni' ? 'Carte d\'Identité' : 'Diplôme' }}</h3>
                         <p class="text-xs text-gray-400 font-black uppercase tracking-widest">{{ selectedApplication.nom_complet }}</p>
                     </div>
                     <button @click="closePreview" class="p-2 bg-gray-100 text-gray-500 rounded-xl hover:bg-red-600 hover:text-white transition">

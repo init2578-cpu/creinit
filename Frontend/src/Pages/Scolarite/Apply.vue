@@ -38,6 +38,8 @@ const form = useForm({
     etablissement: '',
     module_id: '',
     sexe: '',
+    cni_recto: null,
+    cni_verso: null,
     cni: null,
     diploma: null,
     commentaires: '',
@@ -278,11 +280,21 @@ function handleFile(e, field) {
                     </h2>
                     <div class="space-y-6">
                         <div class="space-y-2">
-                            <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Copie de la CNI (PDF/Image)</label>
+                            <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Photo de la CNI (Recto)</label>
                             <div class="relative group">
-                                <input @change="e => handleFile(e, 'cni')" type="file" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
-                                <div class="p-8 border-2 border-dashed border-white/10 rounded-2xl text-center group-hover:border-cyan-500/50 transition-all bg-slate-900/30">
-                                    <p class="text-sm font-bold text-white mb-1">{{ form.cni ? form.cni.name : 'Cliquez pour choisir un fichier' }}</p>
+                                <input @change="e => handleFile(e, 'cni_recto')" type="file" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
+                                <div class="p-6 border-2 border-dashed border-white/10 rounded-2xl text-center group-hover:border-cyan-500/50 transition-all bg-slate-900/30">
+                                    <p class="text-sm font-bold text-white mb-1">{{ form.cni_recto ? form.cni_recto.name : 'Cliquez pour choisir la photo du RECTO' }}</p>
+                                    <p class="text-[10px] text-slate-500">Format supporté: PDF, JPG, PNG (Max 2Mo)</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="space-y-2">
+                            <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Photo de la CNI (Verso)</label>
+                            <div class="relative group">
+                                <input @change="e => handleFile(e, 'cni_verso')" type="file" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
+                                <div class="p-6 border-2 border-dashed border-white/10 rounded-2xl text-center group-hover:border-cyan-500/50 transition-all bg-slate-900/30">
+                                    <p class="text-sm font-bold text-white mb-1">{{ form.cni_verso ? form.cni_verso.name : 'Cliquez pour choisir la photo du VERSO' }}</p>
                                     <p class="text-[10px] text-slate-500">Format supporté: PDF, JPG, PNG (Max 2Mo)</p>
                                 </div>
                             </div>
@@ -291,7 +303,7 @@ function handleFile(e, field) {
                             <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Dernier Diplôme (Scan PDF/Image)</label>
                             <div class="relative group">
                                 <input @change="e => handleFile(e, 'diploma')" type="file" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
-                                <div class="p-8 border-2 border-dashed border-white/10 rounded-2xl text-center group-hover:border-cyan-500/50 transition-all bg-slate-900/30">
+                                <div class="p-6 border-2 border-dashed border-white/10 rounded-2xl text-center group-hover:border-cyan-500/50 transition-all bg-slate-900/30">
                                     <p class="text-sm font-bold text-white mb-1">{{ form.diploma ? form.diploma.name : 'Cliquez pour choisir un fichier' }}</p>
                                     <p class="text-[10px] text-slate-500">Format supporté: PDF, JPG, PNG (Max 2Mo)</p>
                                 </div>
@@ -303,7 +315,7 @@ function handleFile(e, field) {
                             <ArrowLeftIcon class="h-5 w-5" />
                             Retour
                         </button>
-                        <button @click="nextStep" :disabled="!form.cni || !form.diploma" class="flex-[2] py-4 bg-cyan-500 hover:bg-cyan-400 text-slate-950 rounded-2xl font-black transition-all hover:shadow-[0_0_30px_rgba(6,182,212,0.4)] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+                        <button @click="nextStep" :disabled="!form.cni_recto || !form.cni_verso || !form.diploma" class="flex-[2] py-4 bg-cyan-500 hover:bg-cyan-400 text-slate-950 rounded-2xl font-black transition-all hover:shadow-[0_0_30px_rgba(6,182,212,0.4)] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
                             Continuer
                             <ArrowRightIcon class="h-5 w-5" />
                         </button>
@@ -346,14 +358,18 @@ function handleFile(e, field) {
                             </div>
                         </div>
 
-                        <div class="grid grid-cols-2 gap-4">
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                             <div class="p-4 bg-cyan-500/10 rounded-[1.5rem] border border-cyan-500/20">
-                                <p class="text-[10px] font-black text-cyan-400/80 uppercase tracking-widest mb-1">Pièce d'identité</p>
-                                <p class="text-xs font-bold text-cyan-400 truncate">{{ form.cni.name }}</p>
+                                <p class="text-[10px] font-black text-cyan-400/80 uppercase tracking-widest mb-1">CNI Recto</p>
+                                <p class="text-xs font-bold text-cyan-400 truncate">{{ form.cni_recto ? form.cni_recto.name : 'Non fourni' }}</p>
+                            </div>
+                            <div class="p-4 bg-cyan-500/10 rounded-[1.5rem] border border-cyan-500/20">
+                                <p class="text-[10px] font-black text-cyan-400/80 uppercase tracking-widest mb-1">CNI Verso</p>
+                                <p class="text-xs font-bold text-cyan-400 truncate">{{ form.cni_verso ? form.cni_verso.name : 'Non fourni' }}</p>
                             </div>
                             <div class="p-4 bg-indigo-500/10 rounded-[1.5rem] border border-indigo-500/20">
                                 <p class="text-[10px] font-black text-indigo-400/80 uppercase tracking-widest mb-1">Dernier Diplôme</p>
-                                <p class="text-xs font-bold text-indigo-400 truncate">{{ form.diploma.name }}</p>
+                                <p class="text-xs font-bold text-indigo-400 truncate">{{ form.diploma ? form.diploma.name : 'Non fourni' }}</p>
                             </div>
                         </div>
                     </div>
