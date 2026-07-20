@@ -173,6 +173,12 @@ function submitChapter() {
 }
 
 function togglePublish(chapter) {
+    if (!chapter.is_approved && chapter.is_published) {
+        alert("Un chapitre ne peut pas être publié au public tant que sa validation reste en attente par la direction.")
+        chapter.is_published = false
+        return
+    }
+
     router.post(route('modules.chapters.update', chapter.id), {
         titre: chapter.titre,
         is_published: chapter.is_published,
@@ -187,6 +193,10 @@ function togglePublish(chapter) {
             if (editingChapter.value && editingChapter.value.id === chapter.id) {
                 chapterForm.is_published = chapter.is_published
             }
+        },
+        onError: () => {
+            selectedModule.value = props.modules_detailed.find(m => m.id === selectedModule.value.id)
+            localChapters.value = [...selectedModule.value.chapters]
         }
     })
 }
@@ -501,11 +511,16 @@ function handleReorder() {
                                         <!-- Status Badge Button -->
                                         <button 
                                             type="button" 
+                                            :disabled="!element.is_approved"
                                             @click="element.is_published = !element.is_published; togglePublish(element)" 
                                             class="flex items-center gap-1 px-2 py-1 rounded-lg border text-[8px] font-black uppercase tracking-wider transition-all"
-                                            :class="element.is_published 
-                                                ? 'bg-green-50 text-green-700 border-green-100' 
-                                                : 'bg-gray-50 text-gray-400 border-gray-100'"
+                                            :class="[
+                                                element.is_published 
+                                                    ? 'bg-green-50 text-green-700 border-green-100' 
+                                                    : 'bg-gray-50 text-gray-400 border-gray-100',
+                                                !element.is_approved ? 'opacity-50 cursor-not-allowed' : ''
+                                            ]"
+                                            :title="!element.is_approved ? 'Ce chapitre doit être validé par la direction avant de pouvoir être publié' : 'Basculer la publication'"
                                         >
                                             <span class="h-1.5 w-1.5 rounded-full" :class="element.is_published ? 'bg-green-500' : 'bg-gray-400'"></span>
                                             {{ element.is_published ? 'Public' : 'Brouillon' }}
@@ -614,8 +629,23 @@ function handleReorder() {
                                     </div>
 
                                     <div class="flex items-center gap-3">
-                                        <input type="checkbox" v-model="chapterForm.is_published" id="is_published" class="rounded text-blue-600 focus:ring-blue-500">
-                                        <label for="is_published" class="text-[10px] font-black text-gray-400 uppercase tracking-widest cursor-pointer">Publier le chapitre</label>
+                                        <input 
+                                            type="checkbox" 
+                                            v-model="chapterForm.is_published" 
+                                            id="is_published" 
+                                            :disabled="editingChapter && !editingChapter.is_approved"
+                                            class="rounded text-blue-600 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                        <label 
+                                            for="is_published" 
+                                            class="text-[10px] font-black uppercase tracking-widest cursor-pointer"
+                                            :class="editingChapter && !editingChapter.is_approved ? 'text-gray-300 cursor-not-allowed' : 'text-gray-400'"
+                                        >
+                                            Publier le chapitre
+                                        </label>
+                                        <span v-if="editingChapter && !editingChapter.is_approved" class="text-[9px] font-bold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-100">
+                                            Nécessite la validation de la direction
+                                        </span>
                                     </div>
                                 </div>
                                 <div v-else class="py-12 px-6 text-center border-2 border-dashed border-gray-100 rounded-[2rem] bg-gray-50/50">

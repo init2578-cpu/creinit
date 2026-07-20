@@ -509,7 +509,7 @@
     ]
   },
   "src/Pages/Dashboard/Director.vue": {
-    "file": "assets/Director-BSWkDcM4.js",
+    "file": "assets/Director-1hgOQRre.js",
     "name": "Director",
     "src": "src/Pages/Dashboard/Director.vue",
     "isDynamicEntry": true,
@@ -964,7 +964,7 @@
     ]
   },
   "src/Pages/Scolarite/ModulesIndex.vue": {
-    "file": "assets/ModulesIndex-C8lHXrAi.js",
+    "file": "assets/ModulesIndex-C9kOR-Ti.js",
     "name": "ModulesIndex",
     "src": "src/Pages/Scolarite/ModulesIndex.vue",
     "isDynamicEntry": true,
@@ -979,7 +979,7 @@
       "_ConfirmModal-B38idR6H.js"
     ],
     "css": [
-      "assets/ModulesIndex-tv_YQrf3.css"
+      "assets/ModulesIndex-BY615kCN.css"
     ]
   },
   "src/Pages/Scolarite/Reports.vue": {
@@ -1346,7 +1346,7 @@
     "isEntry": true
   },
   "src/app.js": {
-    "file": "assets/app-Ci_RNlE8.js",
+    "file": "assets/app-DgcAze4P.js",
     "name": "app",
     "src": "src/app.js",
     "isEntry": true,

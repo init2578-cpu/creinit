@@ -195,4 +195,38 @@ class TrainerModuleRestrictionsTest extends TestCase
             }
         );
     }
+
+    public function test_unapproved_chapter_cannot_be_published_to_public()
+    {
+        $trainer = User::factory()->create();
+        $trainer->assignRole('Formateur');
+
+        $module = \App\Models\Module::create([
+            'code_module' => 'DEV-100',
+            'titre' => 'Module Web',
+            'quota_heures' => 20,
+        ]);
+
+        // Trainer creates chapter with is_published = true
+        $this->actingAs($trainer)->post(route('modules.chapters.store', $module->id), [
+            'titre' => 'Chapitre Non Valide',
+            'content' => 'Contenu du cours',
+            'is_published' => true,
+        ]);
+
+        $chapter = \App\Models\Chapter::where('titre', 'Chapitre Non Valide')->first();
+
+        // Must be unapproved and unpublished
+        $this->assertFalse((bool)$chapter->is_approved);
+        $this->assertFalse((bool)$chapter->is_published);
+
+        // Attempting to force update is_published to true on unapproved chapter returns error
+        $response = $this->actingAs($trainer)->post(route('modules.chapters.update', $chapter->id), [
+            'titre' => 'Chapitre Non Valide',
+            'is_published' => true,
+        ]);
+
+        $response->assertSessionHas('error');
+        $this->assertFalse((bool)$chapter->fresh()->is_published);
+    }
 }

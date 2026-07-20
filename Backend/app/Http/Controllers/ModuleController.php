@@ -114,6 +114,13 @@ class ModuleController extends Controller
         $validated['exercise_type'] = 'none';
         $validated['is_approved'] = $request->user()->hasRole('Directeur');
 
+        // Un chapitre ne peut pas être publié au public tant que sa validation reste en attente
+        if (!$validated['is_approved']) {
+            $validated['is_published'] = false;
+        } else {
+            $validated['is_published'] = $request->boolean('is_published');
+        }
+
         $chapter = $module->chapters()->create($validated);
 
         if (!$validated['is_approved']) {
@@ -187,6 +194,23 @@ class ModuleController extends Controller
             $validated['is_approved'] = false;
         }
 
+        // Determine approval state: if user is not Director, force false
+        $isApproved = array_key_exists('is_approved', $validated) 
+            ? (bool) $validated['is_approved'] 
+            : (bool) $chapter->is_approved;
+
+        if (!$request->user()->hasRole('Directeur')) {
+            $isApproved = false;
+        }
+
+        // Un chapitre ne peut pas être publié si sa validation est en attente
+        if (!$isApproved) {
+            if ($request->has('is_published') && $request->boolean('is_published')) {
+                return back()->with('error', 'Un chapitre ne peut pas être publié au public tant que sa validation reste en attente par la direction.');
+            }
+            $validated['is_published'] = false;
+        }
+
         $chapter->update($validated);
 
         if (!$request->user()->hasRole('Directeur')) {
@@ -235,6 +259,7 @@ class ModuleController extends Controller
             $updateData = ['attachments' => $attachments];
             if (!\Illuminate\Support\Facades\Auth::user()->hasRole('Directeur')) {
                 $updateData['is_approved'] = false;
+                $updateData['is_published'] = false;
             }
             $chapter->update($updateData);
         }
@@ -261,8 +286,16 @@ class ModuleController extends Controller
 
     public function toggleApproveChapter(Chapter $chapter): RedirectResponse
     {
-        $chapter->update(['is_approved' => !$chapter->is_approved]);
-        $status = $chapter->is_approved ? 'validé' : 'remis en attente';
+        $newApproval = !$chapter->is_approved;
+        $updateData = ['is_approved' => $newApproval];
+
+        // Si la validation est annulée / remise en attente, dépublier automatiquement le chapitre
+        if (!$newApproval) {
+            $updateData['is_published'] = false;
+        }
+
+        $chapter->update($updateData);
+        $status = $newApproval ? 'validé' : 'remis en attente et masqué du public';
         return back()->with('success', "Le chapitre a été {$status} avec succès.");
     }
 }
