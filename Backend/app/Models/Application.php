@@ -20,6 +20,8 @@ class Application extends Model
         'cni_path',
         'cni_recto_path',
         'cni_verso_path',
+        'has_cni',
+        'other_identity_doc_path',
         'diploma_path',
         'commentaires',
         'adresse_reelle',
@@ -31,6 +33,10 @@ class Application extends Model
         'etablissement',
         'telephone',
         'sexe',
+    ];
+
+    protected $casts = [
+        'has_cni' => 'boolean',
     ];
 
     public function user(): BelongsTo

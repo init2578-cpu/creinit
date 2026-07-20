@@ -31,8 +31,19 @@ class StoreApplicationRequest extends FormRequest
                           });
                 })
             ],
-            'cni_recto' => ['required_without:cni', 'nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'],
-            'cni_verso' => ['required_without:cni', 'nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'],
+            'has_cni' => ['nullable', 'boolean'],
+            'cni_recto' => [
+                Rule::requiredIf(fn() => $this->boolean('has_cni', true) && !$this->hasFile('cni')),
+                'nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'
+            ],
+            'cni_verso' => [
+                Rule::requiredIf(fn() => $this->boolean('has_cni', true) && !$this->hasFile('cni')),
+                'nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'
+            ],
+            'other_identity_doc' => [
+                Rule::requiredIf(fn() => !$this->boolean('has_cni', true)),
+                'nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'
+            ],
             'cni' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'],
             'diploma' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'],
             'commentaires' => ['nullable', 'string'],

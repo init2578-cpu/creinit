@@ -56,4 +56,48 @@ class ApplicationCniUploadTest extends TestCase
         Storage::disk('private')->assertExists($application->cni_recto_path);
         Storage::disk('private')->assertExists($application->cni_verso_path);
     }
+
+    public function test_candidate_can_apply_without_cni_using_birth_certificate(): void
+    {
+        Storage::fake('private');
+
+        $module = Module::create([
+            'titre' => 'Gestion de Projet',
+            'code_module' => 'GESPRO',
+            'quota_heures' => 60,
+            'is_active' => true,
+        ]);
+
+        $response = $this->post(route('applications.store'), [
+            'module_id' => $module->id,
+            'nom_complet' => 'Mamadou Diallo',
+            'telephone' => '789876543',
+            'email' => 'mamadou@example.com',
+            'adresse_reelle' => 'Kolda Centre',
+            'date_naissance' => '2005-05-15',
+            'lieu_naissance' => 'Kolda',
+            'niveau_etude' => 'Baccalauréat',
+            'dernier_diplome_libelle' => 'BAC L2',
+            'fonction' => 'Élève',
+            'sexe' => 'M',
+            'has_cni' => '0',
+            'other_identity_doc' => UploadedFile::fake()->image('extrait_naissance.jpg'),
+            'diploma' => UploadedFile::fake()->create('diploma.pdf', 100, 'application/pdf'),
+        ]);
+
+        $response->assertSessionHasNoErrors();
+        $response->assertRedirect();
+
+        $this->assertDatabaseHas('applications', [
+            'nom_complet' => 'Mamadou Diallo',
+            'telephone' => '789876543',
+            'has_cni' => false,
+        ]);
+
+        $application = \App\Models\Application::where('telephone', '789876543')->first();
+        $this->assertFalse($application->has_cni);
+        $this->assertNotNull($application->other_identity_doc_path);
+
+        Storage::disk('private')->assertExists($application->other_identity_doc_path);
+    }
 }

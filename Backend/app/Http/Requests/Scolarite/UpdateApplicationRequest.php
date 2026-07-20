@@ -36,13 +36,16 @@ class UpdateApplicationRequest extends FormRequest
             'etablissement' => ['nullable', 'string', 'max:255'],
             'commentaires' => ['nullable', 'string'],
             'sexe' => ['required', 'string', 'in:M,F'],
+            'has_cni' => ['nullable', 'boolean'],
             'cni' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:5120'],
             'cni_recto' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:5120'],
             'cni_verso' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:5120'],
+            'other_identity_doc' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:5120'],
             'diploma' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:5120'],
             'remove_cni' => ['nullable', 'boolean'],
             'remove_cni_recto' => ['nullable', 'boolean'],
             'remove_cni_verso' => ['nullable', 'boolean'],
+            'remove_other_identity_doc' => ['nullable', 'boolean'],
             'remove_diploma' => ['nullable', 'boolean'],
         ];
     }

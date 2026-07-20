@@ -205,9 +205,11 @@ class ApplicationController extends Controller
            ]);
         }
         
-        $cniRectoPath = $request->hasFile('cni_recto') ? $request->file('cni_recto')->store('applications/cni_recto', 'private') : null;
-        $cniVersoPath = $request->hasFile('cni_verso') ? $request->file('cni_verso')->store('applications/cni_verso', 'private') : null;
-        $cniLegacyPath = $request->hasFile('cni') ? $request->file('cni')->store('applications/cni', 'private') : ($cniRectoPath ?? 'manual_enrollment');
+        $hasCni = $request->boolean('has_cni', true);
+        $cniRectoPath = ($hasCni && $request->hasFile('cni_recto')) ? $request->file('cni_recto')->store('applications/cni_recto', 'private') : null;
+        $cniVersoPath = ($hasCni && $request->hasFile('cni_verso')) ? $request->file('cni_verso')->store('applications/cni_verso', 'private') : null;
+        $otherIdentityDocPath = (!$hasCni && $request->hasFile('other_identity_doc')) ? $request->file('other_identity_doc')->store('applications/other_identity', 'private') : null;
+        $cniLegacyPath = $request->hasFile('cni') ? $request->file('cni')->store('applications/cni', 'private') : ($cniRectoPath ?? $otherIdentityDocPath ?? 'manual_enrollment');
         $diplomaPath = $request->file('diploma')->store('applications/diplomas', 'private');
 
         Application::updateOrCreate(
@@ -216,6 +218,8 @@ class ApplicationController extends Controller
                 'cni_path' => $cniLegacyPath,
                 'cni_recto_path' => $cniRectoPath,
                 'cni_verso_path' => $cniVersoPath,
+                'has_cni' => $hasCni,
+                'other_identity_doc_path' => $otherIdentityDocPath,
                 'diploma_path' => $diplomaPath,
                 'commentaires' => $request->commentaires,
                 'adresse_reelle' => $this->formatTitleCase($request->adresse_reelle),
@@ -266,6 +270,11 @@ class ApplicationController extends Controller
             $data['cni_verso_path'] = null;
         }
 
+        if ($request->boolean('remove_other_identity_doc') && $application->other_identity_doc_path) {
+            Storage::disk('private')->delete($application->other_identity_doc_path);
+            $data['other_identity_doc_path'] = null;
+        }
+
         if ($request->boolean('remove_diploma') && $application->diploma_path && $application->diploma_path !== 'manual_enrollment') {
             Storage::disk('private')->delete($application->diploma_path);
             $data['diploma_path'] = 'manual_enrollment';
@@ -290,6 +299,13 @@ class ApplicationController extends Controller
                 Storage::disk('private')->delete($application->cni_verso_path);
             }
             $data['cni_verso_path'] = $request->file('cni_verso')->store('applications/cni_verso', 'private');
+        }
+
+        if ($request->hasFile('other_identity_doc')) {
+            if ($application->other_identity_doc_path) {
+                Storage::disk('private')->delete($application->other_identity_doc_path);
+            }
+            $data['other_identity_doc_path'] = $request->file('other_identity_doc')->store('applications/other_identity', 'private');
         }
 
         if ($request->hasFile('diploma')) {
@@ -326,6 +342,7 @@ class ApplicationController extends Controller
             'cni_recto' => $application->cni_recto_path ?? $application->cni_path,
             'cni_verso' => $application->cni_verso_path,
             'cni' => $application->cni_path ?? $application->cni_recto_path,
+            'other_identity_doc', 'extrait' => $application->other_identity_doc_path ?? $application->cni_path,
             'diploma' => $application->diploma_path,
             default => null,
         };

@@ -38,8 +38,10 @@ const form = useForm({
     etablissement: '',
     module_id: '',
     sexe: '',
+    has_cni: true,
     cni_recto: null,
     cni_verso: null,
+    other_identity_doc: null,
     cni: null,
     diploma: null,
     commentaires: '',
@@ -279,26 +281,72 @@ function handleFile(e, field) {
                         Pièces Justificatives
                     </h2>
                     <div class="space-y-6">
-                        <div class="space-y-2">
-                            <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Photo de la CNI (Recto)</label>
-                            <div class="relative group">
-                                <input @change="e => handleFile(e, 'cni_recto')" type="file" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
-                                <div class="p-6 border-2 border-dashed border-white/10 rounded-2xl text-center group-hover:border-cyan-500/50 transition-all bg-slate-900/30">
-                                    <p class="text-sm font-bold text-white mb-1">{{ form.cni_recto ? form.cni_recto.name : 'Cliquez pour choisir la photo du RECTO' }}</p>
-                                    <p class="text-[10px] text-slate-500">Format supporté: PDF, JPG, PNG (Max 2Mo)</p>
-                                </div>
+                        <div class="space-y-3 p-4 rounded-2xl bg-slate-900/40 border border-white/5">
+                            <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Document d'identité <span class="text-red-500">*</span></label>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <button 
+                                    type="button" 
+                                    @click="form.has_cni = true"
+                                    class="p-3.5 rounded-xl border text-left text-xs font-bold transition-all flex items-center gap-3"
+                                    :class="form.has_cni ? 'bg-cyan-500/20 border-cyan-500 text-cyan-400' : 'bg-slate-900/60 border-white/10 text-slate-400 hover:border-white/20'"
+                                >
+                                    <div class="h-4 w-4 rounded-full border-2 flex items-center justify-center" :class="form.has_cni ? 'border-cyan-400 bg-cyan-400' : 'border-slate-500'">
+                                        <div v-if="form.has_cni" class="h-1.5 w-1.5 rounded-full bg-slate-950"></div>
+                                    </div>
+                                    <span>Carte Nationale d'Identité (CNI)</span>
+                                </button>
+                                <button 
+                                    type="button" 
+                                    @click="form.has_cni = false"
+                                    class="p-3.5 rounded-xl border text-left text-xs font-bold transition-all flex items-center gap-3"
+                                    :class="!form.has_cni ? 'bg-cyan-500/20 border-cyan-500 text-cyan-400' : 'bg-slate-900/60 border-white/10 text-slate-400 hover:border-white/20'"
+                                >
+                                    <div class="h-4 w-4 rounded-full border-2 flex items-center justify-center" :class="!form.has_cni ? 'border-cyan-400 bg-cyan-400' : 'border-slate-500'">
+                                        <div v-if="!form.has_cni" class="h-1.5 w-1.5 rounded-full bg-slate-950"></div>
+                                    </div>
+                                    <span>Sans CNI (Extrait / Autre pièce)</span>
+                                </button>
                             </div>
                         </div>
-                        <div class="space-y-2">
-                            <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Photo de la CNI (Verso)</label>
-                            <div class="relative group">
-                                <input @change="e => handleFile(e, 'cni_verso')" type="file" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
-                                <div class="p-6 border-2 border-dashed border-white/10 rounded-2xl text-center group-hover:border-cyan-500/50 transition-all bg-slate-900/30">
-                                    <p class="text-sm font-bold text-white mb-1">{{ form.cni_verso ? form.cni_verso.name : 'Cliquez pour choisir la photo du VERSO' }}</p>
-                                    <p class="text-[10px] text-slate-500">Format supporté: PDF, JPG, PNG (Max 2Mo)</p>
+
+                        <!-- SI AVEC CNI -->
+                        <template v-if="form.has_cni">
+                            <div class="space-y-2">
+                                <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Photo de la CNI (Recto)</label>
+                                <div class="relative group">
+                                    <input @change="e => handleFile(e, 'cni_recto')" type="file" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
+                                    <div class="p-6 border-2 border-dashed border-white/10 rounded-2xl text-center group-hover:border-cyan-500/50 transition-all bg-slate-900/30">
+                                        <p class="text-sm font-bold text-white mb-1">{{ form.cni_recto ? form.cni_recto.name : 'Cliquez pour choisir la photo du RECTO' }}</p>
+                                        <p class="text-[10px] text-slate-500">Format supporté: PDF, JPG, PNG (Max 2Mo)</p>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
+                            <div class="space-y-2">
+                                <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Photo de la CNI (Verso)</label>
+                                <div class="relative group">
+                                    <input @change="e => handleFile(e, 'cni_verso')" type="file" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
+                                    <div class="p-6 border-2 border-dashed border-white/10 rounded-2xl text-center group-hover:border-cyan-500/50 transition-all bg-slate-900/30">
+                                        <p class="text-sm font-bold text-white mb-1">{{ form.cni_verso ? form.cni_verso.name : 'Cliquez pour choisir la photo du VERSO' }}</p>
+                                        <p class="text-[10px] text-slate-500">Format supporté: PDF, JPG, PNG (Max 2Mo)</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+
+                        <!-- SI SANS CNI -->
+                        <template v-else>
+                            <div class="space-y-2">
+                                <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Extrait de naissance ou pièce disponible (Photo/Scan)</label>
+                                <div class="relative group">
+                                    <input @change="e => handleFile(e, 'other_identity_doc')" type="file" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
+                                    <div class="p-6 border-2 border-dashed border-white/10 rounded-2xl text-center group-hover:border-cyan-500/50 transition-all bg-slate-900/30">
+                                        <p class="text-sm font-bold text-white mb-1">{{ form.other_identity_doc ? form.other_identity_doc.name : 'Cliquez pour choisir la photo de l\'Extrait de naissance ou Pièce disponible' }}</p>
+                                        <p class="text-[10px] text-slate-500">Format supporté: PDF, JPG, PNG (Max 2Mo)</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+
                         <div class="space-y-2">
                             <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Dernier Diplôme (Scan PDF/Image)</label>
                             <div class="relative group">
@@ -315,7 +363,7 @@ function handleFile(e, field) {
                             <ArrowLeftIcon class="h-5 w-5" />
                             Retour
                         </button>
-                        <button @click="nextStep" :disabled="!form.cni_recto || !form.cni_verso || !form.diploma" class="flex-[2] py-4 bg-cyan-500 hover:bg-cyan-400 text-slate-950 rounded-2xl font-black transition-all hover:shadow-[0_0_30px_rgba(6,182,212,0.4)] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+                        <button @click="nextStep" :disabled="(form.has_cni && (!form.cni_recto || !form.cni_verso)) || (!form.has_cni && !form.other_identity_doc) || !form.diploma" class="flex-[2] py-4 bg-cyan-500 hover:bg-cyan-400 text-slate-950 rounded-2xl font-black transition-all hover:shadow-[0_0_30px_rgba(6,182,212,0.4)] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
                             Continuer
                             <ArrowRightIcon class="h-5 w-5" />
                         </button>
@@ -359,14 +407,22 @@ function handleFile(e, field) {
                         </div>
 
                         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                            <div class="p-4 bg-cyan-500/10 rounded-[1.5rem] border border-cyan-500/20">
-                                <p class="text-[10px] font-black text-cyan-400/80 uppercase tracking-widest mb-1">CNI Recto</p>
-                                <p class="text-xs font-bold text-cyan-400 truncate">{{ form.cni_recto ? form.cni_recto.name : 'Non fourni' }}</p>
-                            </div>
-                            <div class="p-4 bg-cyan-500/10 rounded-[1.5rem] border border-cyan-500/20">
-                                <p class="text-[10px] font-black text-cyan-400/80 uppercase tracking-widest mb-1">CNI Verso</p>
-                                <p class="text-xs font-bold text-cyan-400 truncate">{{ form.cni_verso ? form.cni_verso.name : 'Non fourni' }}</p>
-                            </div>
+                            <template v-if="form.has_cni">
+                                <div class="p-4 bg-cyan-500/10 rounded-[1.5rem] border border-cyan-500/20">
+                                    <p class="text-[10px] font-black text-cyan-400/80 uppercase tracking-widest mb-1">CNI Recto</p>
+                                    <p class="text-xs font-bold text-cyan-400 truncate">{{ form.cni_recto ? form.cni_recto.name : 'Non fourni' }}</p>
+                                </div>
+                                <div class="p-4 bg-cyan-500/10 rounded-[1.5rem] border border-cyan-500/20">
+                                    <p class="text-[10px] font-black text-cyan-400/80 uppercase tracking-widest mb-1">CNI Verso</p>
+                                    <p class="text-xs font-bold text-cyan-400 truncate">{{ form.cni_verso ? form.cni_verso.name : 'Non fourni' }}</p>
+                                </div>
+                            </template>
+                            <template v-else>
+                                <div class="p-4 bg-cyan-500/10 rounded-[1.5rem] border border-cyan-500/20 sm:col-span-2">
+                                    <p class="text-[10px] font-black text-cyan-400/80 uppercase tracking-widest mb-1">Extrait de naissance / Autre pièce</p>
+                                    <p class="text-xs font-bold text-cyan-400 truncate">{{ form.other_identity_doc ? form.other_identity_doc.name : 'Non fourni' }}</p>
+                                </div>
+                            </template>
                             <div class="p-4 bg-indigo-500/10 rounded-[1.5rem] border border-indigo-500/20">
                                 <p class="text-[10px] font-black text-indigo-400/80 uppercase tracking-widest mb-1">Dernier Diplôme</p>
                                 <p class="text-xs font-bold text-indigo-400 truncate">{{ form.diploma ? form.diploma.name : 'Non fourni' }}</p>
