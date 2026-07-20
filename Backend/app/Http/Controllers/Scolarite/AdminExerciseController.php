@@ -37,12 +37,14 @@ class AdminExerciseController extends Controller
                 ->whereIn('group_id', $myGroups->pluck('id'))
                 ->pluck('user_id');
 
-            $exerciseQuery->whereIn('module_id', $moduleIds)
-                ->with(['exerciseSubmissions' => function($q) use ($studentIds) {
-                    $q->whereIn('user_id', $studentIds)->with('user.studentGroups');
-                }]);
+            if ($moduleIds->isNotEmpty()) {
+                $exerciseQuery->whereIn('module_id', $moduleIds);
+                $moduleQuery->whereIn('id', $moduleIds);
+            }
 
-            $moduleQuery->whereIn('id', $moduleIds);
+            $exerciseQuery->with(['exerciseSubmissions' => function($q) use ($studentIds) {
+                $q->whereIn('user_id', $studentIds)->with('user.studentGroups');
+            }]);
         } else {
             $exerciseQuery->with('exerciseSubmissions.user.studentGroups');
         }

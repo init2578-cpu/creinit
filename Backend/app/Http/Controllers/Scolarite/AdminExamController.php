@@ -33,9 +33,11 @@ class AdminExamController extends Controller
 
         if (!$user->hasRole('Directeur') && !$user->hasRole('Secrétaire') && $user->isTrainer()) {
             $moduleIds = $user->groupsAsFormateur()->pluck('module_id');
-            $examQuery->whereIn('module_id', $moduleIds);
-            $moduleQuery->whereIn('id', $moduleIds);
-            $groupsQuery->where('formateur_id', $user->id);
+            if ($moduleIds->isNotEmpty()) {
+                $examQuery->whereIn('module_id', $moduleIds);
+                $moduleQuery->whereIn('id', $moduleIds);
+                $groupsQuery->where('formateur_id', $user->id);
+            }
         }
 
         return Inertia::render('Scolarite/ExamsIndex', [
