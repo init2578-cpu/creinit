@@ -204,6 +204,8 @@ const submitExercise = () => {
                                 <p class="text-sm font-medium text-gray-700 whitespace-pre-line leading-relaxed">{{ currentChapter.materiels_necessaires }}</p>
                             </div>
                         </div>
+                    </div>
+
                     <!-- Phases & Étapes du Chapitre -->
                     <div v-if="currentChapter.phases && currentChapter.phases.length > 0" class="p-6 bg-indigo-50/70 rounded-[2rem] border border-indigo-100 shadow-sm">
                         <h4 class="text-xs font-black uppercase text-indigo-900 tracking-wider mb-4 flex items-center gap-2">
