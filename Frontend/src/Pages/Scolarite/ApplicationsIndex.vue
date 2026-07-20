@@ -19,7 +19,8 @@ import {
     CalendarIcon,
     PencilIcon,
     MagnifyingGlassIcon,
-    ArrowPathIcon
+    ArrowPathIcon,
+    ChevronDownIcon
 } from '@heroicons/vue/24/outline'
 import { useForm } from '@inertiajs/vue3'
 
@@ -29,9 +30,42 @@ const props = defineProps({
 })
 
 const searchQuery = ref('')
-const statusFilter = ref('all')
-const moduleFilter = ref('all')
-const niveauFilter = ref('all')
+const statusFilter = ref([])
+const moduleFilter = ref([])
+const niveauFilter = ref([])
+const openDropdown = ref(null)
+
+function toggleDropdown(name) {
+    openDropdown.value = openDropdown.value === name ? null : name
+}
+
+function toggleStatus(val) {
+    const idx = statusFilter.value.indexOf(val)
+    if (idx > -1) {
+        statusFilter.value.splice(idx, 1)
+    } else {
+        statusFilter.value.push(val)
+    }
+}
+
+function toggleModule(id) {
+    const numId = Number(id)
+    const idx = moduleFilter.value.indexOf(numId)
+    if (idx > -1) {
+        moduleFilter.value.splice(idx, 1)
+    } else {
+        moduleFilter.value.push(numId)
+    }
+}
+
+function toggleNiveau(val) {
+    const idx = niveauFilter.value.indexOf(val)
+    if (idx > -1) {
+        niveauFilter.value.splice(idx, 1)
+    } else {
+        niveauFilter.value.push(val)
+    }
+}
 
 const niveauOptions = computed(() => {
     if (!props.applications) return []
@@ -40,15 +74,40 @@ const niveauOptions = computed(() => {
 })
 
 const hasActiveFilters = computed(() => {
-    return searchQuery.value !== '' || statusFilter.value !== 'all' || moduleFilter.value !== 'all' || niveauFilter.value !== 'all'
+    return searchQuery.value !== '' || statusFilter.value.length > 0 || moduleFilter.value.length > 0 || niveauFilter.value.length > 0
 })
 
 function resetFilters() {
     searchQuery.value = ''
-    statusFilter.value = 'all'
-    moduleFilter.value = 'all'
-    niveauFilter.value = 'all'
+    statusFilter.value = []
+    moduleFilter.value = []
+    niveauFilter.value = []
+    openDropdown.value = null
 }
+
+const statusLabel = computed(() => {
+    if (statusFilter.value.length === 0) return 'Tous les statuts'
+    if (statusFilter.value.length === 1) {
+        const map = { pending: 'En attente', admitted: 'Admis', rejected: 'Rejeté' }
+        return map[statusFilter.value[0]] || statusFilter.value[0]
+    }
+    return `Statuts (${statusFilter.value.length})`
+})
+
+const moduleLabel = computed(() => {
+    if (moduleFilter.value.length === 0) return 'Tous les modules'
+    if (moduleFilter.value.length === 1) {
+        const found = props.modules?.find(m => Number(m.id) === Number(moduleFilter.value[0]))
+        return found ? (found.titre || found.nom_module) : '1 module'
+    }
+    return `Modules (${moduleFilter.value.length})`
+})
+
+const niveauLabel = computed(() => {
+    if (niveauFilter.value.length === 0) return 'Tous les niveaux'
+    if (niveauFilter.value.length === 1) return niveauFilter.value[0]
+    return `Niveaux (${niveauFilter.value.length})`
+})
 
 const filteredApplications = computed(() => {
     if (!props.applications) return []
@@ -59,9 +118,9 @@ const filteredApplications = computed(() => {
         const query = searchQuery.value.toLowerCase()
         const matchesSearch = name.includes(query) || email.includes(query) || phone.includes(query)
 
-        const matchesStatus = statusFilter.value === 'all' || app.status === statusFilter.value
-        const matchesModule = moduleFilter.value === 'all' || Number(app.module_id) === Number(moduleFilter.value)
-        const matchesNiveau = niveauFilter.value === 'all' || app.niveau_etude === niveauFilter.value
+        const matchesStatus = statusFilter.value.length === 0 || statusFilter.value.includes(app.status)
+        const matchesModule = moduleFilter.value.length === 0 || moduleFilter.value.includes(Number(app.module_id))
+        const matchesNiveau = niveauFilter.value.length === 0 || niveauFilter.value.includes(app.niveau_etude)
 
         return matchesSearch && matchesStatus && matchesModule && matchesNiveau
     })
@@ -270,8 +329,11 @@ const getStatusClass = (status) => {
             </header>
 
             <!-- Filter Bar -->
-            <div class="bg-white p-5 rounded-[2rem] border border-gray-100 shadow-sm mb-6 space-y-4">
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3 items-center">
+            <div class="bg-white p-5 rounded-[2rem] border border-gray-100 shadow-sm mb-6 space-y-4 relative">
+                <!-- Overlay to close popovers when clicking outside -->
+                <div v-if="openDropdown" @click="openDropdown = null" class="fixed inset-0 z-10 opacity-0"></div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3 items-center relative z-20">
                     <!-- Search Input -->
                     <div class="relative lg:col-span-4">
                         <span class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400">
@@ -285,42 +347,87 @@ const getStatusClass = (status) => {
                         />
                     </div>
                     
-                    <!-- Statut Filter -->
-                    <div class="lg:col-span-2">
-                        <select 
-                            v-model="statusFilter" 
-                            class="w-full bg-gray-50/80 border border-gray-200/80 rounded-2xl px-4 py-2.5 font-semibold text-sm text-gray-800 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100 cursor-pointer transition"
-                            :class="{ 'border-blue-500 bg-blue-50/40 text-blue-700 font-bold': statusFilter !== 'all' }"
+                    <!-- Statut Filter Dropdown -->
+                    <div class="lg:col-span-2 relative">
+                        <button 
+                            @click="toggleDropdown('status')" 
+                            type="button" 
+                            class="w-full bg-gray-50/80 border border-gray-200/80 rounded-2xl px-4 py-2.5 font-semibold text-sm text-gray-800 focus:bg-white focus:border-blue-500 flex items-center justify-between transition"
+                            :class="{ 'border-blue-500 bg-blue-50/40 text-blue-700 font-bold': statusFilter.length > 0 }"
                         >
-                            <option value="all">Tous les statuts</option>
-                            <option value="pending">En attente</option>
-                            <option value="admitted">Admis</option>
-                            <option value="rejected">Rejeté</option>
-                        </select>
+                            <span class="truncate">{{ statusLabel }}</span>
+                            <ChevronDownIcon class="h-4 w-4 text-gray-400 ml-1 shrink-0 transition-transform duration-150" :class="{ 'rotate-180': openDropdown === 'status' }" />
+                        </button>
+
+                        <div v-if="openDropdown === 'status'" class="absolute left-0 mt-2 w-56 bg-white border border-gray-100 rounded-2xl shadow-xl p-2 z-30 space-y-1">
+                            <div @click="statusFilter = []" class="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-gray-50 cursor-pointer transition">
+                                <input type="checkbox" :checked="statusFilter.length === 0" readonly class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                <span class="text-xs font-bold text-gray-700">Tous les statuts</span>
+                            </div>
+                            <div class="h-px bg-gray-100 my-1"></div>
+                            <div @click="toggleStatus('pending')" class="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-amber-50/50 cursor-pointer transition">
+                                <input type="checkbox" :checked="statusFilter.includes('pending')" readonly class="rounded border-gray-300 text-amber-600 focus:ring-amber-500">
+                                <span class="text-xs font-bold text-amber-700">En attente</span>
+                            </div>
+                            <div @click="toggleStatus('admitted')" class="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-emerald-50/50 cursor-pointer transition">
+                                <input type="checkbox" :checked="statusFilter.includes('admitted')" readonly class="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500">
+                                <span class="text-xs font-bold text-emerald-700">Admis</span>
+                            </div>
+                            <div @click="toggleStatus('rejected')" class="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-red-50/50 cursor-pointer transition">
+                                <input type="checkbox" :checked="statusFilter.includes('rejected')" readonly class="rounded border-gray-300 text-red-600 focus:ring-red-500">
+                                <span class="text-xs font-bold text-red-700">Rejeté</span>
+                            </div>
+                        </div>
                     </div>
 
-                    <!-- Module Filter -->
-                    <div class="lg:col-span-3">
-                        <select 
-                            v-model="moduleFilter" 
-                            class="w-full bg-gray-50/80 border border-gray-200/80 rounded-2xl px-4 py-2.5 font-semibold text-sm text-gray-800 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100 cursor-pointer transition truncate"
-                            :class="{ 'border-blue-500 bg-blue-50/40 text-blue-700 font-bold': moduleFilter !== 'all' }"
+                    <!-- Module Filter Dropdown -->
+                    <div class="lg:col-span-3 relative">
+                        <button 
+                            @click="toggleDropdown('module')" 
+                            type="button" 
+                            class="w-full bg-gray-50/80 border border-gray-200/80 rounded-2xl px-4 py-2.5 font-semibold text-sm text-gray-800 focus:bg-white focus:border-blue-500 flex items-center justify-between transition"
+                            :class="{ 'border-blue-500 bg-blue-50/40 text-blue-700 font-bold': moduleFilter.length > 0 }"
                         >
-                            <option value="all">Tous les modules</option>
-                            <option v-for="m in modules" :key="m.id" :value="m.id">{{ m.titre || m.nom_module }}</option>
-                        </select>
+                            <span class="truncate">{{ moduleLabel }}</span>
+                            <ChevronDownIcon class="h-4 w-4 text-gray-400 ml-1 shrink-0 transition-transform duration-150" :class="{ 'rotate-180': openDropdown === 'module' }" />
+                        </button>
+
+                        <div v-if="openDropdown === 'module'" class="absolute left-0 mt-2 w-64 max-h-64 overflow-y-auto bg-white border border-gray-100 rounded-2xl shadow-xl p-2 z-30 space-y-1">
+                            <div @click="moduleFilter = []" class="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-gray-50 cursor-pointer transition">
+                                <input type="checkbox" :checked="moduleFilter.length === 0" readonly class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                <span class="text-xs font-bold text-gray-700">Tous les modules</span>
+                            </div>
+                            <div class="h-px bg-gray-100 my-1"></div>
+                            <div v-for="m in modules" :key="m.id" @click="toggleModule(m.id)" class="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-purple-50/50 cursor-pointer transition">
+                                <input type="checkbox" :checked="moduleFilter.includes(Number(m.id))" readonly class="rounded border-gray-300 text-purple-600 focus:ring-purple-500">
+                                <span class="text-xs font-bold text-gray-700 truncate">{{ m.titre || m.nom_module }}</span>
+                            </div>
+                        </div>
                     </div>
 
-                    <!-- Niveau d'étude Filter -->
-                    <div :class="hasActiveFilters ? 'lg:col-span-2' : 'lg:col-span-3'">
-                        <select 
-                            v-model="niveauFilter" 
-                            class="w-full bg-gray-50/80 border border-gray-200/80 rounded-2xl px-4 py-2.5 font-semibold text-sm text-gray-800 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100 cursor-pointer transition truncate"
-                            :class="{ 'border-blue-500 bg-blue-50/40 text-blue-700 font-bold': niveauFilter !== 'all' }"
+                    <!-- Niveau d'étude Filter Dropdown -->
+                    <div :class="hasActiveFilters ? 'lg:col-span-2' : 'lg:col-span-3'" class="relative">
+                        <button 
+                            @click="toggleDropdown('niveau')" 
+                            type="button" 
+                            class="w-full bg-gray-50/80 border border-gray-200/80 rounded-2xl px-4 py-2.5 font-semibold text-sm text-gray-800 focus:bg-white focus:border-blue-500 flex items-center justify-between transition"
+                            :class="{ 'border-blue-500 bg-blue-50/40 text-blue-700 font-bold': niveauFilter.length > 0 }"
                         >
-                            <option value="all">Tous les niveaux</option>
-                            <option v-for="niv in niveauOptions" :key="niv" :value="niv">{{ niv }}</option>
-                        </select>
+                            <span class="truncate">{{ niveauLabel }}</span>
+                            <ChevronDownIcon class="h-4 w-4 text-gray-400 ml-1 shrink-0 transition-transform duration-150" :class="{ 'rotate-180': openDropdown === 'niveau' }" />
+                        </button>
+
+                        <div v-if="openDropdown === 'niveau'" class="absolute left-0 mt-2 w-60 max-h-64 overflow-y-auto bg-white border border-gray-100 rounded-2xl shadow-xl p-2 z-30 space-y-1">
+                            <div @click="niveauFilter = []" class="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-gray-50 cursor-pointer transition">
+                                <input type="checkbox" :checked="niveauFilter.length === 0" readonly class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                <span class="text-xs font-bold text-gray-700">Tous les niveaux</span>
+                            </div>
+                            <div class="h-px bg-gray-100 my-1"></div>
+                            <div v-for="niv in niveauOptions" :key="niv" @click="toggleNiveau(niv)" class="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-emerald-50/50 cursor-pointer transition">
+                                <input type="checkbox" :checked="niveauFilter.includes(niv)" readonly class="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500">
+                                <span class="text-xs font-bold text-gray-700 truncate">{{ niv }}</span>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Reset Button -->
@@ -337,7 +444,7 @@ const getStatusClass = (status) => {
                 </div>
 
                 <!-- Active Filters Bar -->
-                <div v-if="hasActiveFilters" class="flex flex-wrap items-center gap-2 pt-3 border-t border-gray-100">
+                <div v-if="hasActiveFilters" class="flex flex-wrap items-center gap-2 pt-3 border-t border-gray-100 relative z-20">
                     <span class="text-[11px] font-black text-gray-400 uppercase tracking-wider mr-1">Filtres actifs :</span>
                     
                     <span v-if="searchQuery" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-blue-50 text-blue-700 text-xs font-bold border border-blue-100">
@@ -345,20 +452,26 @@ const getStatusClass = (status) => {
                         <button @click="searchQuery = ''" class="hover:text-blue-900 transition"><XMarkIcon class="h-3.5 w-3.5" /></button>
                     </span>
 
-                    <span v-if="statusFilter !== 'all'" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-amber-50 text-amber-700 text-xs font-bold border border-amber-100">
-                        Statut: {{ statusFilter === 'pending' ? 'En attente' : statusFilter === 'admitted' ? 'Admis' : 'Rejeté' }}
-                        <button @click="statusFilter = 'all'" class="hover:text-amber-900 transition"><XMarkIcon class="h-3.5 w-3.5" /></button>
-                    </span>
+                    <template v-if="statusFilter.length > 0">
+                        <span v-for="st in statusFilter" :key="st" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-amber-50 text-amber-700 text-xs font-bold border border-amber-100">
+                            Statut: {{ st === 'pending' ? 'En attente' : st === 'admitted' ? 'Admis' : 'Rejeté' }}
+                            <button @click="toggleStatus(st)" class="hover:text-amber-900 transition"><XMarkIcon class="h-3.5 w-3.5" /></button>
+                        </span>
+                    </template>
 
-                    <span v-if="moduleFilter !== 'all'" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-purple-50 text-purple-700 text-xs font-bold border border-purple-100">
-                        Module: {{ modules.find(m => Number(m.id) === Number(moduleFilter))?.titre || 'Sélectionné' }}
-                        <button @click="moduleFilter = 'all'" class="hover:text-purple-900 transition"><XMarkIcon class="h-3.5 w-3.5" /></button>
-                    </span>
+                    <template v-if="moduleFilter.length > 0">
+                        <span v-for="mId in moduleFilter" :key="mId" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-purple-50 text-purple-700 text-xs font-bold border border-purple-100">
+                            Module: {{ modules.find(m => Number(m.id) === Number(mId))?.titre || 'Module' }}
+                            <button @click="toggleModule(mId)" class="hover:text-purple-900 transition"><XMarkIcon class="h-3.5 w-3.5" /></button>
+                        </span>
+                    </template>
 
-                    <span v-if="niveauFilter !== 'all'" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-emerald-50 text-emerald-700 text-xs font-bold border border-emerald-100">
-                        Niveau: {{ niveauFilter }}
-                        <button @click="niveauFilter = 'all'" class="hover:text-emerald-900 transition"><XMarkIcon class="h-3.5 w-3.5" /></button>
-                    </span>
+                    <template v-if="niveauFilter.length > 0">
+                        <span v-for="niv in niveauFilter" :key="niv" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-emerald-50 text-emerald-700 text-xs font-bold border border-emerald-100">
+                            Niveau: {{ niv }}
+                            <button @click="toggleNiveau(niv)" class="hover:text-emerald-900 transition"><XMarkIcon class="h-3.5 w-3.5" /></button>
+                        </span>
+                    </template>
 
                     <button @click="resetFilters" class="text-xs font-bold text-red-500 hover:text-red-700 underline ml-auto transition">
                         Tout réinitialiser
