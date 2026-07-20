@@ -20,6 +20,7 @@ class Phase extends Model
         'chapter_id',
         'titre',
         'description',
+        'content',
         'ordre',
         'quota_heures',
         'start_date',

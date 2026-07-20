@@ -325,6 +325,7 @@ class ModuleController extends Controller
         $validated = $request->validate([
             'titre' => 'required|string|max:255',
             'description' => 'nullable|string',
+            'content' => 'nullable|string',
             'quota_heures' => 'nullable|integer',
             'start_date' => 'nullable|date',
             'end_date' => 'nullable|date',
@@ -348,6 +349,7 @@ class ModuleController extends Controller
         $validated = $request->validate([
             'titre' => 'required|string|max:255',
             'description' => 'nullable|string',
+            'content' => 'nullable|string',
             'quota_heures' => 'nullable|integer',
             'start_date' => 'nullable|date',
             'end_date' => 'nullable|date',

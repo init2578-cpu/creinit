@@ -276,6 +276,7 @@ const editingPhase = ref(null)
 const phaseForm = useForm({
     titre: '',
     description: '',
+    content: '',
     quota_heures: '',
     start_date: '',
     end_date: '',
@@ -287,6 +288,7 @@ function openPhaseModal(phase = null) {
     if (phase) {
         phaseForm.titre = phase.titre
         phaseForm.description = phase.description || ''
+        phaseForm.content = phase.content || ''
         phaseForm.quota_heures = phase.quota_heures || ''
         phaseForm.start_date = phase.start_date || ''
         phaseForm.end_date = phase.end_date || ''
@@ -800,8 +802,8 @@ function deletePhase(phaseId) {
 
         <!-- Phase Modal -->
         <div v-if="isPhaseModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/80 backdrop-blur-sm">
-            <div class="bg-white w-full max-w-2xl rounded-[3rem] overflow-hidden shadow-2xl">
-                <div class="p-8 border-b border-gray-100 flex items-center justify-between">
+            <div class="bg-white w-full max-w-3xl rounded-[3rem] overflow-hidden shadow-2xl max-h-[90vh] flex flex-col">
+                <div class="p-8 border-b border-gray-100 flex items-center justify-between flex-shrink-0">
                     <div>
                         <h3 class="text-2xl font-black text-gray-900 tracking-tight">{{ editingPhase ? 'Modifier la Phase' : 'Gestion des Phases du Chapitre' }}</h3>
                         <p class="text-xs text-gray-400 font-bold uppercase tracking-wider mt-1">{{ editingChapter ? editingChapter.titre : 'Structurez les étapes d\'apprentissage de ce chapitre' }}</p>
@@ -812,7 +814,7 @@ function deletePhase(phaseId) {
                 </div>
 
                 <!-- List of existing phases if not editing single -->
-                <div v-if="editingChapter?.phases?.length > 0 && !editingPhase" class="p-8 border-b border-gray-100 space-y-3">
+                <div v-if="editingChapter?.phases?.length > 0 && !editingPhase" class="p-8 border-b border-gray-100 space-y-3 flex-shrink-0">
                     <h4 class="text-xs font-black text-gray-400 uppercase tracking-widest mb-3">Phases existantes ({{ editingChapter.phases.length }})</h4>
                     <div v-for="phase in editingChapter.phases" :key="phase.id" class="flex items-center justify-between p-4 bg-gray-50 rounded-2xl border border-gray-100">
                         <div>
@@ -832,15 +834,19 @@ function deletePhase(phaseId) {
                 </div>
 
                 <!-- Form to Add/Edit Phase -->
-                <form @submit.prevent="submitPhase" class="p-8 space-y-4">
+                <form @submit.prevent="submitPhase" class="p-8 space-y-4 overflow-y-auto custom-scrollbar flex-1">
                     <h4 class="text-xs font-black text-gray-400 uppercase tracking-widest mb-4">{{ editingPhase ? 'Modifier les détails de la phase' : 'Ajouter une nouvelle phase' }}</h4>
                     <div>
                         <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Titre de la Phase</label>
                         <input v-model="phaseForm.titre" type="text" required placeholder="Ex: Phase 1 : Théorie et Fondamentaux" class="w-full bg-gray-50 border-0 rounded-xl focus:ring-2 focus:ring-indigo-500 font-bold px-4 py-3 text-sm">
                     </div>
                     <div>
-                        <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Description (Optionnel)</label>
+                        <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Description courter (Optionnel)</label>
                         <textarea v-model="phaseForm.description" rows="2" placeholder="Objectifs et périmètre de cette phase..." class="w-full bg-gray-50 border-0 rounded-xl focus:ring-2 focus:ring-indigo-500 font-medium px-4 py-3 text-sm"></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Contenu de la phase</label>
+                        <RichTextEditor :key="editingPhase ? editingPhase.id : 'new-phase'" v-model="phaseForm.content" />
                     </div>
                     <div class="grid grid-cols-3 gap-4">
                         <div>

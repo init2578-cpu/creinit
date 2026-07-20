@@ -207,19 +207,22 @@ const submitExercise = () => {
                     </div>
 
                     <!-- Phases & Étapes du Chapitre -->
-                    <div v-if="currentChapter.phases && currentChapter.phases.length > 0" class="p-6 bg-indigo-50/70 rounded-[2rem] border border-indigo-100 shadow-sm">
-                        <h4 class="text-xs font-black uppercase text-indigo-900 tracking-wider mb-4 flex items-center gap-2">
-                            <span class="h-2 w-2 rounded-full bg-indigo-600"></span>
-                            Phases & Étapes du Chapitre
-                        </h4>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            <div v-for="phase in currentChapter.phases" :key="phase.id" class="p-4 bg-white rounded-2xl border border-indigo-100/60 shadow-sm">
+                    <div v-if="currentChapter.phases && currentChapter.phases.length > 0" class="space-y-6">
+                        <div class="flex items-center gap-3">
+                            <span class="h-2.5 w-2.5 rounded-full bg-indigo-600"></span>
+                            <h3 class="text-xl font-black text-gray-900 tracking-tight">Phases & Étapes du Chapitre</h3>
+                        </div>
+                        <div class="space-y-6">
+                            <div v-for="phase in currentChapter.phases" :key="phase.id" class="p-8 bg-indigo-50/40 rounded-[2.5rem] border border-indigo-100/80 shadow-sm space-y-4">
                                 <div class="flex items-center justify-between">
-                                    <span class="text-[10px] font-black uppercase tracking-wider text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">Phase {{ phase.ordre }}</span>
-                                    <span v-if="phase.quota_heures" class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{{ phase.quota_heures }}h</span>
+                                    <span class="text-xs font-black uppercase tracking-wider text-indigo-600 bg-indigo-100/80 px-3 py-1 rounded-xl">Phase {{ phase.ordre }}</span>
+                                    <span v-if="phase.quota_heures" class="text-xs font-black text-indigo-400 uppercase tracking-widest">{{ phase.quota_heures }}h</span>
                                 </div>
-                                <h5 class="text-sm font-black text-gray-900 mt-2">{{ phase.titre }}</h5>
-                                <p v-if="phase.description" class="text-xs text-gray-600 font-medium mt-1 leading-relaxed line-clamp-2">{{ phase.description }}</p>
+                                <h4 class="text-2xl font-black text-gray-900 tracking-tight">{{ phase.titre }}</h4>
+                                <p v-if="phase.description" class="text-sm font-medium text-gray-600 italic bg-white/60 p-4 rounded-2xl border border-indigo-50 leading-relaxed">{{ phase.description }}</p>
+                                <article v-if="phase.content" class="prose prose-indigo max-w-none prose-headings:font-black prose-p:text-gray-700 bg-white p-6 rounded-2xl border border-indigo-100/60 shadow-sm">
+                                    <div v-html="phase.content"></div>
+                                </article>
                             </div>
                         </div>
                     </div>
