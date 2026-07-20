@@ -23,8 +23,17 @@ class ModuleController extends Controller
     public function index(): Response
     {
         return Inertia::render('Scolarite/ModulesIndex', [
-            'modules' => Module::withCount('chapters')->get(),
-            'modules_detailed' => Module::with(['phases.chapters', 'chapters.phase'])->get(),
+            'modules' => Module::withCount(['chapters' => function ($q) {
+                $q->whereNull('exercise_type');
+            }])->get(),
+            'modules_detailed' => Module::with([
+                'phases.chapters' => function ($q) {
+                    $q->whereNull('exercise_type')->orderBy('ordre');
+                },
+                'chapters' => function ($q) {
+                    $q->whereNull('exercise_type')->with('phase')->orderBy('ordre');
+                }
+            ])->get(),
             'predefined_formations' => Formation::all(['code', 'titre']),
         ]);
     }

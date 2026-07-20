@@ -57,7 +57,9 @@ class ChapterProgressController extends Controller
      */
     public function index(Group $group): Response
     {
-        $group->load(['module.chapters', 'formateur', 'responsableGroupe']);
+        $group->load(['module.chapters' => function ($q) {
+            $q->whereNull('exercise_type')->orderBy('ordre');
+        }, 'formateur', 'responsableGroupe']);
 
         $progress = ChapterGroupProgress::with(['chapter', 'submitter', 'validator'])
             ->where(fn($query) => $query->where('group_id', $group->id))

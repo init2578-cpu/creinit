@@ -23,7 +23,7 @@ class CourseController extends Controller
         
         if ($user->hasRole('Directeur') || $user->isTrainer()) {
             $modules = Module::with(['chapters' => function($query) {
-                $query->where('is_published', true)->orderBy('ordre');
+                $query->whereNull('exercise_type')->where('is_published', true)->orderBy('ordre');
             }])->get();
             
             // Format to look like the $groups->pluck('module') structure if needed
@@ -35,7 +35,7 @@ class CourseController extends Controller
         }
 
         $groups = $user->studentGroups()->with(['module.chapters' => function($query) {
-            $query->where('is_published', true)->where('is_approved', true)->orderBy('ordre');
+            $query->whereNull('exercise_type')->where('is_published', true)->where('is_approved', true)->orderBy('ordre');
         }])->get();
 
         return Inertia::render('Student/Courses', [
@@ -65,7 +65,7 @@ class CourseController extends Controller
 
         $chapter->load(['module.phases', 'phase']);
 
-        $allChaptersQuery = $module->chapters()->with('phase')->where('is_published', true);
+        $allChaptersQuery = $module->chapters()->whereNull('exercise_type')->with('phase')->where('is_published', true);
         if (!$user->hasRole('Directeur') && !$user->isTrainer()) {
             $allChaptersQuery->where('is_approved', true);
         }
