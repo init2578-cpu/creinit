@@ -19,7 +19,6 @@ class Chapter extends Model
      */
     protected $fillable = [
         'module_id',
-        'phase_id',
         'titre',
         'objectif_pedagogique',
         'materiels_necessaires',
@@ -44,7 +43,6 @@ class Chapter extends Model
         return [
             'ordre'        => 'integer',
             'module_id'    => 'integer',
-            'phase_id'     => 'integer',
             'attachments'  => 'json',
             'is_published' => 'boolean',
             'is_approved'  => 'boolean',
@@ -65,11 +63,11 @@ class Chapter extends Model
     }
 
     /**
-     * The phase this chapter belongs to (if any).
+     * Phases belonging to this chapter.
      */
-    public function phase(): BelongsTo
+    public function phases(): HasMany
     {
-        return $this->belongsTo(Phase::class);
+        return $this->hasMany(Phase::class)->orderBy('ordre');
     }
 
     /**

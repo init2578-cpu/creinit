@@ -25,7 +25,7 @@ class ModuleController extends Controller
         $filterCourseChapters = function ($q) {
             $q->where(function ($sub) {
                 $sub->whereNull('exercise_type')->orWhere('exercise_type', 'none');
-            })->orderBy('ordre');
+            })->with('phases')->orderBy('ordre');
         };
 
         return Inertia::render('Scolarite/ModulesIndex', [
@@ -35,11 +35,7 @@ class ModuleController extends Controller
                 });
             }])->get(),
             'modules_detailed' => Module::with([
-                'phases.chapters' => $filterCourseChapters,
-                'chapters' => function ($q) use ($filterCourseChapters) {
-                    $filterCourseChapters($q);
-                    $q->with('phase');
-                }
+                'chapters' => $filterCourseChapters,
             ])->get(),
             'predefined_formations' => Formation::all(['code', 'titre']),
         ]);
@@ -322,9 +318,9 @@ class ModuleController extends Controller
     }
 
     /**
-     * Store a new phase in a module.
+     * Store a new phase in a chapter.
      */
-    public function storePhase(Request $request, Module $module): RedirectResponse
+    public function storePhase(Request $request, Chapter $chapter): RedirectResponse
     {
         $validated = $request->validate([
             'titre' => 'required|string|max:255',
@@ -336,10 +332,10 @@ class ModuleController extends Controller
         ]);
 
         if (!isset($validated['ordre'])) {
-            $validated['ordre'] = $module->phases()->count() + 1;
+            $validated['ordre'] = $chapter->phases()->count() + 1;
         }
 
-        $module->phases()->create($validated);
+        $chapter->phases()->create($validated);
 
         return back()->with('success', 'La phase a été créée.');
     }
@@ -374,9 +370,9 @@ class ModuleController extends Controller
     }
 
     /**
-     * Reorder phases of a module.
+     * Reorder phases of a chapter.
      */
-    public function reorderPhases(Request $request, Module $module): RedirectResponse
+    public function reorderPhases(Request $request, Chapter $chapter): RedirectResponse
     {
         $validated = $request->validate([
             'phases' => 'required|array',
@@ -386,7 +382,7 @@ class ModuleController extends Controller
 
         foreach ($validated['phases'] as $phaseData) {
             \App\Models\Phase::where('id', $phaseData['id'])
-                ->where('module_id', $module->id)
+                ->where('chapter_id', $chapter->id)
                 ->update(['ordre' => $phaseData['ordre']]);
         }
 

@@ -17,7 +17,7 @@ class Phase extends Model
      * @var list<string>
      */
     protected $fillable = [
-        'module_id',
+        'chapter_id',
         'titre',
         'description',
         'ordre',
@@ -32,25 +32,17 @@ class Phase extends Model
     protected function casts(): array
     {
         return [
-            'module_id' => 'integer',
+            'chapter_id' => 'integer',
             'ordre' => 'integer',
             'quota_heures' => 'integer',
         ];
     }
 
     /**
-     * The module this phase belongs to.
+     * The chapter this phase belongs to.
      */
-    public function module(): BelongsTo
+    public function chapter(): BelongsTo
     {
-        return $this->belongsTo(Module::class);
-    }
-
-    /**
-     * The chapters in this phase.
-     */
-    public function chapters(): HasMany
-    {
-        return $this->hasMany(Chapter::class)->orderBy('ordre');
+        return $this->belongsTo(Chapter::class);
     }
 }

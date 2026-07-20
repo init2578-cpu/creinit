@@ -311,14 +311,14 @@ Route::middleware(['auth'])->group(function (): void {
             ->name('modules.chapters.attachments.download');
 
         // Phase Management
-        Route::post('/modules/{module}/phases', [\App\Http\Controllers\ModuleController::class, 'storePhase'])
-            ->name('modules.phases.store');
+        Route::post('/chapters/{chapter}/phases', [\App\Http\Controllers\ModuleController::class, 'storePhase'])
+            ->name('chapters.phases.store');
         Route::put('/phases/{phase}', [\App\Http\Controllers\ModuleController::class, 'updatePhase'])
             ->name('modules.phases.update');
         Route::delete('/phases/{phase}', [\App\Http\Controllers\ModuleController::class, 'destroyPhase'])
             ->name('modules.phases.destroy');
-        Route::post('/modules/{module}/phases/reorder', [\App\Http\Controllers\ModuleController::class, 'reorderPhases'])
-            ->name('modules.phases.reorder');
+        Route::post('/chapters/{chapter}/phases/reorder', [\App\Http\Controllers\ModuleController::class, 'reorderPhases'])
+            ->name('chapters.phases.reorder');
     });
 
     // -----------------------------------------------------------------------

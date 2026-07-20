@@ -131,10 +131,10 @@ const submitExercise = () => {
                                 {{ chapter.ordre }}
                             </span>
                             <div class="flex-1 min-w-0">
-                                <span v-if="chapter.phase" class="block text-[9px] font-black uppercase tracking-wider mb-0.5"
+                                <span v-if="chapter.phases && chapter.phases.length > 0" class="block text-[9px] font-black uppercase tracking-wider mb-0.5"
                                     :class="chapter.id === currentChapter.id ? 'text-blue-100' : 'text-indigo-600'"
                                 >
-                                    {{ chapter.phase.titre }}
+                                    {{ chapter.phases.length }} phase(s)
                                 </span>
                                 <span class="text-sm font-bold truncate block">{{ chapter.titre }}</span>
                             </div>
@@ -156,9 +156,11 @@ const submitExercise = () => {
                 <!-- Title Header Section -->
                 <div class="h-64 bg-gradient-to-br from-blue-600 to-indigo-700 w-full flex items-center justify-center text-white relative overflow-hidden flex-shrink-0">
                     <div class="relative z-10 text-center">
-                        <span v-if="currentChapter.phase" class="inline-block px-3 py-1 bg-white/20 backdrop-blur-md rounded-full text-[10px] font-black uppercase tracking-widest text-white mb-3 border border-white/20">
-                            Phase {{ currentChapter.phase.ordre }} : {{ currentChapter.phase.titre }}
-                        </span>
+                        <div v-if="currentChapter.phases && currentChapter.phases.length > 0" class="flex flex-wrap items-center justify-center gap-2 mb-3">
+                            <span v-for="phase in currentChapter.phases" :key="phase.id" class="px-3 py-1 bg-white/20 backdrop-blur-md rounded-full text-[10px] font-black uppercase tracking-widest text-white border border-white/20">
+                                Phase {{ phase.ordre }} : {{ phase.titre }}
+                            </span>
+                        </div>
                         <span class="text-xs font-black uppercase tracking-[0.3em] opacity-60 mb-2 block">Chapitre {{ currentChapter.ordre }}</span>
                         <h1 class="text-4xl md:text-5xl font-black tracking-tighter px-4 text-center">{{ currentChapter.titre }}</h1>
                     </div>
@@ -200,6 +202,22 @@ const submitExercise = () => {
                             <div>
                                 <h4 class="text-xs font-black uppercase text-indigo-900 tracking-wider mb-1">Matériels Nécessaires</h4>
                                 <p class="text-sm font-medium text-gray-700 whitespace-pre-line leading-relaxed">{{ currentChapter.materiels_necessaires }}</p>
+                            </div>
+                        </div>
+                    <!-- Phases & Étapes du Chapitre -->
+                    <div v-if="currentChapter.phases && currentChapter.phases.length > 0" class="p-6 bg-indigo-50/70 rounded-[2rem] border border-indigo-100 shadow-sm">
+                        <h4 class="text-xs font-black uppercase text-indigo-900 tracking-wider mb-4 flex items-center gap-2">
+                            <span class="h-2 w-2 rounded-full bg-indigo-600"></span>
+                            Phases & Étapes du Chapitre
+                        </h4>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div v-for="phase in currentChapter.phases" :key="phase.id" class="p-4 bg-white rounded-2xl border border-indigo-100/60 shadow-sm">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-[10px] font-black uppercase tracking-wider text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">Phase {{ phase.ordre }}</span>
+                                    <span v-if="phase.quota_heures" class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{{ phase.quota_heures }}h</span>
+                                </div>
+                                <h5 class="text-sm font-black text-gray-900 mt-2">{{ phase.titre }}</h5>
+                                <p v-if="phase.description" class="text-xs text-gray-600 font-medium mt-1 leading-relaxed line-clamp-2">{{ phase.description }}</p>
                             </div>
                         </div>
                     </div>

@@ -108,7 +108,6 @@ const selectedModule = ref(null)
 const isChapterModalOpen = ref(false)
 const chapterForm = useForm({
     titre: '',
-    phase_id: '',
     objectif_pedagogique: '',
     materiels_necessaires: '',
     ordre: '',
@@ -298,25 +297,36 @@ function openPhaseModal(phase = null) {
     isPhaseModalOpen.value = true
 }
 
+function refreshModuleAndChapter() {
+    if (selectedModule.value) {
+        const updatedMod = props.modules_detailed.find(m => m.id === selectedModule.value.id)
+        if (updatedMod) {
+            selectedModule.value = updatedMod
+            if (editingChapter.value) {
+                const updatedChap = updatedMod.chapters.find(c => c.id === editingChapter.value.id)
+                if (updatedChap) {
+                    editChapter(updatedChap)
+                }
+            }
+        }
+    }
+}
+
 function submitPhase() {
     if (editingPhase.value) {
         phaseForm.put(route('modules.phases.update', editingPhase.value.id), {
             onSuccess: () => {
                 isPhaseModalOpen.value = false
                 phaseForm.reset()
-                if (selectedModule.value) {
-                    selectedModule.value = props.modules_detailed.find(m => m.id === selectedModule.value.id)
-                }
+                refreshModuleAndChapter()
             }
         })
-    } else {
-        phaseForm.post(route('modules.phases.store', selectedModule.value.id), {
+    } else if (editingChapter.value) {
+        phaseForm.post(route('chapters.phases.store', editingChapter.value.id), {
             onSuccess: () => {
                 isPhaseModalOpen.value = false
                 phaseForm.reset()
-                if (selectedModule.value) {
-                    selectedModule.value = props.modules_detailed.find(m => m.id === selectedModule.value.id)
-                }
+                refreshModuleAndChapter()
             }
         })
     }
@@ -326,9 +336,7 @@ function deletePhase(phaseId) {
     if (confirm('Supprimer cette phase ?')) {
         router.delete(route('modules.phases.destroy', phaseId), {
             onSuccess: () => {
-                if (selectedModule.value) {
-                    selectedModule.value = props.modules_detailed.find(m => m.id === selectedModule.value.id)
-                }
+                refreshModuleAndChapter()
             }
         })
     }
@@ -487,10 +495,6 @@ function deletePhase(phaseId) {
                         <p class="text-gray-400 font-bold text-xs uppercase mt-1 tracking-widest">Plan de cours & Chapitres</p>
                     </div>
                     <div class="flex items-center gap-3">
-                        <button @click="openPhaseModal()" type="button" class="px-4 py-2.5 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 rounded-2xl transition font-black text-xs uppercase tracking-wider flex items-center gap-2">
-                            <PlusIcon class="h-4 w-4" />
-                            Phases ({{ selectedModule.phases?.length || 0 }})
-                        </button>
                         <button @click="isChapterModalOpen = false" class="p-3 hover:bg-gray-100 rounded-2xl transition text-gray-400">
                             <XMarkIcon class="h-7 w-7" />
                         </button>
@@ -553,8 +557,8 @@ function deletePhase(phaseId) {
                                     <!-- Title -->
                                     <div class="flex-grow min-w-0">
                                         <h4 class="font-black text-gray-900 leading-tight truncate" :title="element.titre">{{ element.titre }}</h4>
-                                        <span v-if="element.phase" class="inline-block text-[8px] font-black text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md uppercase tracking-wider mt-1">
-                                            {{ element.phase.titre }}
+                                        <span v-if="element.phases && element.phases.length > 0" class="inline-block text-[8px] font-black text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md uppercase tracking-wider mt-1">
+                                            {{ element.phases.length }} phase(s)
                                         </span>
                                     </div>
                                     
@@ -631,20 +635,9 @@ function deletePhase(phaseId) {
                                 {{ editingChapter ? 'Modifier le chapitre' : 'Ajouter un chapitre' }}
                             </h4>
                             <form @submit.prevent="submitChapter" class="space-y-4">
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                        <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Titre du chapitre</label>
-                                        <input v-model="chapterForm.titre" type="text" required placeholder="Ex: Introduction au DOM" class="w-full bg-gray-50 border-0 rounded-xl focus:ring-2 focus:ring-blue-500 font-bold px-4 py-3 text-sm">
-                                    </div>
-                                    <div>
-                                        <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Phase du module (Optionnel)</label>
-                                        <select v-model="chapterForm.phase_id" class="w-full bg-gray-50 border-0 rounded-xl focus:ring-2 focus:ring-blue-500 font-bold px-4 py-3 text-sm">
-                                            <option value="">Aucune (Chapitre général)</option>
-                                            <option v-for="phase in selectedModule?.phases" :key="phase.id" :value="phase.id">
-                                                Phase {{ phase.ordre }} : {{ phase.titre }}
-                                            </option>
-                                        </select>
-                                    </div>
+                                <div>
+                                    <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Titre du chapitre</label>
+                                    <input v-model="chapterForm.titre" type="text" required placeholder="Ex: Introduction au DOM" class="w-full bg-gray-50 border-0 rounded-xl focus:ring-2 focus:ring-blue-500 font-bold px-4 py-3 text-sm">
                                 </div>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
@@ -657,6 +650,39 @@ function deletePhase(phaseId) {
                                     </div>
                                 </div>
                                 <div v-if="editingChapter" class="space-y-4 pt-4 border-t border-gray-50 mt-4">
+                                    <!-- Phases of this Chapter -->
+                                    <div class="p-6 bg-indigo-50/50 rounded-2xl border border-indigo-100/60 mb-6">
+                                        <div class="flex items-center justify-between mb-4">
+                                            <div>
+                                                <h4 class="text-xs font-black text-indigo-900 uppercase tracking-wider">Phases du chapitre</h4>
+                                                <p class="text-[10px] font-bold text-indigo-500 uppercase tracking-widest mt-0.5">Sous-parties et étapes de ce chapitre</p>
+                                            </div>
+                                            <button type="button" @click="openPhaseModal()" class="flex items-center gap-1.5 px-3.5 py-2 bg-indigo-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-indigo-700 transition shadow-sm">
+                                                <PlusIcon class="h-4 w-4" />
+                                                Ajouter une phase
+                                            </button>
+                                        </div>
+                                        <div v-if="editingChapter.phases && editingChapter.phases.length > 0" class="space-y-2">
+                                            <div v-for="phase in editingChapter.phases" :key="phase.id" class="flex items-center justify-between p-3.5 bg-white rounded-xl border border-indigo-100 text-xs">
+                                                <div>
+                                                    <span class="font-black text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded text-[9px] uppercase tracking-wider">Phase {{ phase.ordre }}</span>
+                                                    <span class="font-black text-gray-900 ml-2 text-sm">{{ phase.titre }}</span>
+                                                    <p v-if="phase.description" class="text-[11px] text-gray-500 font-medium line-clamp-1 mt-0.5">{{ phase.description }}</p>
+                                                </div>
+                                                <div class="flex items-center gap-1">
+                                                    <button type="button" @click="openPhaseModal(phase)" class="p-1.5 text-gray-400 hover:text-blue-600 rounded-lg transition">
+                                                        <PencilSquareIcon class="h-4 w-4" />
+                                                    </button>
+                                                    <button type="button" @click="deletePhase(phase.id)" class="p-1.5 text-gray-400 hover:text-red-600 rounded-lg transition">
+                                                        <TrashIcon class="h-4 w-4" />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <p v-else class="text-[10px] font-bold text-indigo-400 uppercase tracking-wider text-center py-2">
+                                            Aucune phase définie pour ce chapitre
+                                        </p>
+                                    </div>
                                     <div class="space-y-4">
                                         <div class="flex items-center justify-between mb-1.5">
                                             <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest">Contenu du cours</label>
@@ -777,8 +803,8 @@ function deletePhase(phaseId) {
             <div class="bg-white w-full max-w-2xl rounded-[3rem] overflow-hidden shadow-2xl">
                 <div class="p-8 border-b border-gray-100 flex items-center justify-between">
                     <div>
-                        <h3 class="text-2xl font-black text-gray-900 tracking-tight">{{ editingPhase ? 'Modifier la Phase' : 'Gestion des Phases' }}</h3>
-                        <p class="text-xs text-gray-400 font-bold uppercase tracking-wider mt-1">Structurez les étapes d'apprentissage de ce module</p>
+                        <h3 class="text-2xl font-black text-gray-900 tracking-tight">{{ editingPhase ? 'Modifier la Phase' : 'Gestion des Phases du Chapitre' }}</h3>
+                        <p class="text-xs text-gray-400 font-bold uppercase tracking-wider mt-1">{{ editingChapter ? editingChapter.titre : 'Structurez les étapes d\'apprentissage de ce chapitre' }}</p>
                     </div>
                     <button @click="isPhaseModalOpen = false" class="p-3 hover:bg-gray-100 rounded-2xl transition text-gray-400">
                         <XMarkIcon class="h-6 w-6" />
@@ -786,9 +812,9 @@ function deletePhase(phaseId) {
                 </div>
 
                 <!-- List of existing phases if not editing single -->
-                <div v-if="selectedModule?.phases?.length > 0 && !editingPhase" class="p-8 border-b border-gray-100 space-y-3">
-                    <h4 class="text-xs font-black text-gray-400 uppercase tracking-widest mb-3">Phases existantes ({{ selectedModule.phases.length }})</h4>
-                    <div v-for="phase in selectedModule.phases" :key="phase.id" class="flex items-center justify-between p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                <div v-if="editingChapter?.phases?.length > 0 && !editingPhase" class="p-8 border-b border-gray-100 space-y-3">
+                    <h4 class="text-xs font-black text-gray-400 uppercase tracking-widest mb-3">Phases existantes ({{ editingChapter.phases.length }})</h4>
+                    <div v-for="phase in editingChapter.phases" :key="phase.id" class="flex items-center justify-between p-4 bg-gray-50 rounded-2xl border border-gray-100">
                         <div>
                             <span class="text-[10px] font-black text-indigo-600 bg-indigo-100/60 px-2 py-0.5 rounded-md uppercase tracking-wider">Phase {{ phase.ordre }}</span>
                             <h5 class="font-black text-gray-900 text-sm mt-1">{{ phase.titre }}</h5>

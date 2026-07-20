@@ -63,14 +63,6 @@ class Module extends Model
     // -----------------------------------------------------------------------
 
     /**
-     * Phases belonging to this module.
-     */
-    public function phases(): HasMany
-    {
-        return $this->hasMany(Phase::class)->orderBy('ordre');
-    }
-
-    /**
      * Chapters belonging to this module.
      */
     public function chapters(): HasMany
