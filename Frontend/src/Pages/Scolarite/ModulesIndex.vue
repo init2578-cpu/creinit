@@ -108,6 +108,8 @@ const selectedModule = ref(null)
 const isChapterModalOpen = ref(false)
 const chapterForm = useForm({
     titre: '',
+    objectif_pedagogique: '',
+    materiels_necessaires: '',
     ordre: '',
     content: '',
     video_url: '',
@@ -136,6 +138,8 @@ const editingChapter = ref(null)
 function editChapter(chapter) {
     editingChapter.value = chapter
     chapterForm.titre = chapter.titre
+    chapterForm.objectif_pedagogique = chapter.objectif_pedagogique || ''
+    chapterForm.materiels_necessaires = chapter.materiels_necessaires || ''
     chapterForm.ordre = chapter.ordre
     chapterForm.is_published = chapter.is_published
     chapterForm.content = chapter.content || ''
@@ -557,6 +561,16 @@ function handleReorder() {
                                 <div>
                                     <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Titre du chapitre</label>
                                     <input v-model="chapterForm.titre" type="text" required placeholder="Ex: Introduction au DOM" class="w-full bg-gray-50 border-0 rounded-xl focus:ring-2 focus:ring-blue-500 font-bold px-4 py-3 text-sm">
+                                </div>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Objectif Pédagogique</label>
+                                        <textarea v-model="chapterForm.objectif_pedagogique" rows="2" placeholder="Ex: Comprendre l'architecture logicielle..." class="w-full bg-gray-50 border-0 rounded-xl focus:ring-2 focus:ring-blue-500 font-medium px-4 py-3 text-sm"></textarea>
+                                    </div>
+                                    <div>
+                                        <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Matériels Nécessaires</label>
+                                        <textarea v-model="chapterForm.materiels_necessaires" rows="2" placeholder="Ex: Ordinateur, VS Code, Navigateur..." class="w-full bg-gray-50 border-0 rounded-xl focus:ring-2 focus:ring-blue-500 font-medium px-4 py-3 text-sm"></textarea>
+                                    </div>
                                 </div>
                                 <div v-if="editingChapter" class="space-y-4 pt-4 border-t border-gray-50 mt-4">
                                     <div class="space-y-4">

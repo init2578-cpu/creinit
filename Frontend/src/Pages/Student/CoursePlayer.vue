@@ -13,7 +13,9 @@ import {
     PaperClipIcon,
     DocumentIcon,
     CheckCircleIcon,
-    CloudArrowUpIcon
+    CloudArrowUpIcon,
+    AcademicCapIcon,
+    WrenchScrewdriverIcon
 } from '@heroicons/vue/24/outline'
 
 const props = defineProps({
@@ -167,6 +169,29 @@ const submitExercise = () => {
                             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
                             allowfullscreen
                         ></iframe>
+                    </div>
+
+                    <!-- Objectifs Pédagogiques & Matériels Nécessaires -->
+                    <div v-if="currentChapter.objectif_pedagogique || currentChapter.materiels_necessaires" class="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 bg-gradient-to-r from-blue-50/60 to-indigo-50/60 rounded-[2rem] border border-blue-100/80 shadow-sm">
+                        <div v-if="currentChapter.objectif_pedagogique" class="flex items-start gap-4">
+                            <div class="p-3 bg-blue-600 text-white rounded-2xl shadow-md flex-shrink-0">
+                                <AcademicCapIcon class="h-6 w-6" />
+                            </div>
+                            <div>
+                                <h4 class="text-xs font-black uppercase text-blue-900 tracking-wider mb-1">Objectif Pédagogique</h4>
+                                <p class="text-sm font-medium text-gray-700 whitespace-pre-line leading-relaxed">{{ currentChapter.objectif_pedagogique }}</p>
+                            </div>
+                        </div>
+
+                        <div v-if="currentChapter.materiels_necessaires" class="flex items-start gap-4">
+                            <div class="p-3 bg-indigo-600 text-white rounded-2xl shadow-md flex-shrink-0">
+                                <WrenchScrewdriverIcon class="h-6 w-6" />
+                            </div>
+                            <div>
+                                <h4 class="text-xs font-black uppercase text-indigo-900 tracking-wider mb-1">Matériels Nécessaires</h4>
+                                <p class="text-sm font-medium text-gray-700 whitespace-pre-line leading-relaxed">{{ currentChapter.materiels_necessaires }}</p>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Lesson Body -->

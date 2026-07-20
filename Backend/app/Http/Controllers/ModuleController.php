@@ -98,6 +98,8 @@ class ModuleController extends Controller
     {
         $validated = $request->validate([
             'titre' => 'required|string|max:255',
+            'objectif_pedagogique' => 'nullable|string',
+            'materiels_necessaires' => 'nullable|string',
             'ordre' => 'nullable|integer',
             'content' => 'nullable|string',
             'video_url' => 'nullable|string|url',
@@ -153,6 +155,8 @@ class ModuleController extends Controller
 
         $validated = $request->validate([
             'titre' => 'required|string|max:255',
+            'objectif_pedagogique' => 'nullable|string',
+            'materiels_necessaires' => 'nullable|string',
             'ordre' => 'nullable|integer',
             'content' => 'nullable|string',
             'video_url' => 'nullable|string',

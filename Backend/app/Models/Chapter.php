@@ -20,6 +20,8 @@ class Chapter extends Model
     protected $fillable = [
         'module_id',
         'titre',
+        'objectif_pedagogique',
+        'materiels_necessaires',
         'ordre',
         'content',
         'video_url',
