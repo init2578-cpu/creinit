@@ -313,7 +313,12 @@ const getStatusClass = (status) => {
         <div class="max-w-7xl mx-auto py-8 px-4">
             <header class="mb-8 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
                 <div>
-                    <h1 class="text-3xl font-black text-gray-900 tracking-tight">Admissions</h1>
+                    <div class="flex items-center gap-3">
+                        <h1 class="text-3xl font-black text-gray-900 tracking-tight">Admissions</h1>
+                        <span class="px-3 py-1 bg-blue-50 text-blue-700 text-xs font-black rounded-full border border-blue-100 shadow-sm">
+                            {{ filteredApplications.length }} {{ filteredApplications.length > 1 ? 'lignes' : 'ligne' }}
+                        </span>
+                    </div>
                     <p class="text-gray-500 font-medium">Gérer et valider les dossiers d'inscription des candidats.</p>
                 </div>
                 <div class="flex gap-3">
@@ -443,37 +448,43 @@ const getStatusClass = (status) => {
                     </div>
                 </div>
 
-                <!-- Active Filters Bar -->
-                <div v-if="hasActiveFilters" class="flex flex-wrap items-center gap-2 pt-3 border-t border-gray-100 relative z-20">
-                    <span class="text-[11px] font-black text-gray-400 uppercase tracking-wider mr-1">Filtres actifs :</span>
-                    
-                    <span v-if="searchQuery" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-blue-50 text-blue-700 text-xs font-bold border border-blue-100">
-                        Recherche: "{{ searchQuery }}"
-                        <button @click="searchQuery = ''" class="hover:text-blue-900 transition"><XMarkIcon class="h-3.5 w-3.5" /></button>
-                    </span>
-
-                    <template v-if="statusFilter.length > 0">
-                        <span v-for="st in statusFilter" :key="st" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-amber-50 text-amber-700 text-xs font-bold border border-amber-100">
-                            Statut: {{ st === 'pending' ? 'En attente' : st === 'admitted' ? 'Admis' : 'Rejeté' }}
-                            <button @click="toggleStatus(st)" class="hover:text-amber-900 transition"><XMarkIcon class="h-3.5 w-3.5" /></button>
+                <!-- Active Filters Bar & Counter -->
+                <div class="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-gray-100 relative z-20">
+                    <div class="flex flex-wrap items-center gap-2">
+                        <span class="inline-flex items-center gap-1 px-3 py-1 rounded-xl bg-gray-100 text-gray-800 text-xs font-black border border-gray-200/80">
+                            {{ filteredApplications.length }} {{ filteredApplications.length > 1 ? 'lignes' : 'ligne' }}
                         </span>
-                    </template>
 
-                    <template v-if="moduleFilter.length > 0">
-                        <span v-for="mId in moduleFilter" :key="mId" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-purple-50 text-purple-700 text-xs font-bold border border-purple-100">
-                            Module: {{ modules.find(m => Number(m.id) === Number(mId))?.titre || 'Module' }}
-                            <button @click="toggleModule(mId)" class="hover:text-purple-900 transition"><XMarkIcon class="h-3.5 w-3.5" /></button>
+                        <span v-if="hasActiveFilters" class="text-[11px] font-black text-gray-400 uppercase tracking-wider ml-1 mr-1">Filtres actifs :</span>
+                        
+                        <span v-if="searchQuery" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-blue-50 text-blue-700 text-xs font-bold border border-blue-100">
+                            Recherche: "{{ searchQuery }}"
+                            <button @click="searchQuery = ''" class="hover:text-blue-900 transition"><XMarkIcon class="h-3.5 w-3.5" /></button>
                         </span>
-                    </template>
 
-                    <template v-if="niveauFilter.length > 0">
-                        <span v-for="niv in niveauFilter" :key="niv" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-emerald-50 text-emerald-700 text-xs font-bold border border-emerald-100">
-                            Niveau: {{ niv }}
-                            <button @click="toggleNiveau(niv)" class="hover:text-emerald-900 transition"><XMarkIcon class="h-3.5 w-3.5" /></button>
-                        </span>
-                    </template>
+                        <template v-if="statusFilter.length > 0">
+                            <span v-for="st in statusFilter" :key="st" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-amber-50 text-amber-700 text-xs font-bold border border-amber-100">
+                                Statut: {{ st === 'pending' ? 'En attente' : st === 'admitted' ? 'Admis' : 'Rejeté' }}
+                                <button @click="toggleStatus(st)" class="hover:text-amber-900 transition"><XMarkIcon class="h-3.5 w-3.5" /></button>
+                            </span>
+                        </template>
 
-                    <button @click="resetFilters" class="text-xs font-bold text-red-500 hover:text-red-700 underline ml-auto transition">
+                        <template v-if="moduleFilter.length > 0">
+                            <span v-for="mId in moduleFilter" :key="mId" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-purple-50 text-purple-700 text-xs font-bold border border-purple-100">
+                                Module: {{ modules.find(m => Number(m.id) === Number(mId))?.titre || 'Module' }}
+                                <button @click="toggleModule(mId)" class="hover:text-purple-900 transition"><XMarkIcon class="h-3.5 w-3.5" /></button>
+                            </span>
+                        </template>
+
+                        <template v-if="niveauFilter.length > 0">
+                            <span v-for="niv in niveauFilter" :key="niv" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-emerald-50 text-emerald-700 text-xs font-bold border border-emerald-100">
+                                Niveau: {{ niv }}
+                                <button @click="toggleNiveau(niv)" class="hover:text-emerald-900 transition"><XMarkIcon class="h-3.5 w-3.5" /></button>
+                            </span>
+                        </template>
+                    </div>
+
+                    <button v-if="hasActiveFilters" @click="resetFilters" class="text-xs font-bold text-red-500 hover:text-red-700 underline ml-auto transition">
                         Tout réinitialiser
                     </button>
                 </div>

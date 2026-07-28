@@ -509,7 +509,7 @@
     ]
   },
   "src/Pages/Dashboard/Director.vue": {
-    "file": "assets/Director-BeoXdZQs.js",
+    "file": "assets/Director-DSUkyLYm.js",
     "name": "Director",
     "src": "src/Pages/Dashboard/Director.vue",
     "isDynamicEntry": true,
@@ -787,7 +787,7 @@
     ]
   },
   "src/Pages/Scolarite/ApplicationsIndex.vue": {
-    "file": "assets/ApplicationsIndex-DuTIEzzi.js",
+    "file": "assets/ApplicationsIndex-BCg7rt6E.js",
     "name": "ApplicationsIndex",
     "src": "src/Pages/Scolarite/ApplicationsIndex.vue",
     "isDynamicEntry": true,
@@ -803,7 +803,7 @@
       "_ConfirmModal-ooP7Z12Y.js"
     ],
     "css": [
-      "assets/ApplicationsIndex-CVYyeqzw.css"
+      "assets/ApplicationsIndex-Cr7yZJvd.css"
     ]
   },
   "src/Pages/Scolarite/Apply.vue": {
@@ -1346,7 +1346,7 @@
     "isEntry": true
   },
   "src/app.js": {
-    "file": "assets/app-C7-V83Lf.js",
+    "file": "assets/app-B5ZhWN_n.js",
     "name": "app",
     "src": "src/app.js",
     "isEntry": true,
