@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 
 use App\Models\Leave;
+use App\Models\LeaveDeduction;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
@@ -24,9 +25,13 @@ class LeaveController extends Controller
         $stats = [];
         $currentYear = Carbon::now()->year;
         $today = Carbon::today()->format('Y-m-d');
+        $deductions = [];
+        $users = [];
 
         if ($user->hasRole('Directeur') || $user->hasRole('Secrétaire')) {
             $leaves = Leave::with('user')->orderBy('created_at', 'desc')->get();
+            $deductions = LeaveDeduction::with(['user', 'creator'])->orderBy('created_at', 'desc')->get();
+            $users = User::select('id', 'name', 'email')->orderBy('name')->get();
             
             $stats = [
                 'pending_count' => Leave::where('status', 'en_attente')->count(),
@@ -37,9 +42,11 @@ class LeaveController extends Controller
                 'approved_year_count' => Leave::where('status', 'approuve')
                                             ->whereYear('date_debut', $currentYear)
                                             ->count(),
+                'total_deducted_days' => LeaveDeduction::sum('days_deducted'),
             ];
         } else {
             $leaves = Leave::with('user')->where('user_id', $user->id)->orderBy('created_at', 'desc')->get();
+            $deductions = LeaveDeduction::with('creator')->where('user_id', $user->id)->orderBy('created_at', 'desc')->get();
             
             $previousLeaves = Leave::where('user_id', $user->id)
                 ->whereYear('date_debut', $currentYear)
@@ -52,15 +59,20 @@ class LeaveController extends Controller
                 $accumulatedDays += Carbon::parse($l->date_debut)->diffInDays(Carbon::parse($l->date_fin)) + 1;
             }
 
+            $totalDeductedDays = LeaveDeduction::where('user_id', $user->id)->sum('days_deducted');
+
             $stats = [
                 'pending_count' => Leave::where('user_id', $user->id)->where('status', 'en_attente')->count(),
                 'consumed_days' => $accumulatedDays,
-                'remaining_days' => max(0, 30 - $accumulatedDays),
+                'deducted_days' => $totalDeductedDays,
+                'remaining_days' => max(0, 30 - $accumulatedDays - $totalDeductedDays),
             ];
         }
 
         return Inertia::render('Leaves/Index', [
             'leaves' => $leaves,
+            'deductions' => $deductions,
+            'users' => $users,
             'stats' => $stats,
         ]);
     }
@@ -187,6 +199,50 @@ class LeaveController extends Controller
         return back()->with('success', 'Votre demande de congé a été annulée.');
     }
 
+    public function storeDeduction(Request $request): RedirectResponse
+    {
+        if (!Auth::user()->hasRole('Directeur')) {
+            abort(403, 'Action non autorisée.');
+        }
+
+        $validated = $request->validate([
+            'user_id' => 'required|exists:users,id',
+            'reason_type' => 'required|string|in:absence,retard,autre',
+            'unit' => 'required|string|in:jours,heures',
+            'amount' => 'required|numeric|min:0.1',
+            'date_incident' => 'required|date',
+            'motif' => 'required|string',
+        ]);
+
+        $daysDeducted = $validated['unit'] === 'heures' 
+            ? round($validated['amount'] / 8, 2) 
+            : round($validated['amount'], 2);
+
+        LeaveDeduction::create([
+            'user_id' => $validated['user_id'],
+            'created_by' => Auth::id(),
+            'reason_type' => $validated['reason_type'],
+            'unit' => $validated['unit'],
+            'amount' => $validated['amount'],
+            'days_deducted' => $daysDeducted,
+            'motif' => $validated['motif'],
+            'date_incident' => $validated['date_incident'],
+        ]);
+
+        return back()->with('success', 'La retenue sur congé a été enregistrée avec succès.');
+    }
+
+    public function destroyDeduction(LeaveDeduction $deduction): RedirectResponse
+    {
+        if (!Auth::user()->hasRole('Directeur')) {
+            abort(403, 'Action non autorisée.');
+        }
+
+        $deduction->delete();
+
+        return back()->with('success', 'La retenue sur congé a été annulée avec succès.');
+    }
+
     public function downloadDocument(Leave $leaf)
     {
         $user = Auth::user();
@@ -262,9 +318,12 @@ class LeaveController extends Controller
             $accumulatedDays += Carbon::parse($l->date_debut)->diffInDays(Carbon::parse($l->date_fin)) + 1;
         }
 
-        if (($accumulatedDays + $requestedDays) > 30) {
-            $remaining = max(0, 30 - $accumulatedDays);
-            return "Le cumul de vos congés (hors maternité et maladie) ne peut dépasser 30 jours par an. Il vous reste $remaining jour(s) de disponible(s).";
+        $totalDeductions = LeaveDeduction::where('user_id', Auth::id())->sum('days_deducted');
+        $allowedDays = 30 - $totalDeductions;
+        $remaining = max(0, $allowedDays - $accumulatedDays);
+
+        if (($accumulatedDays + $requestedDays) > $allowedDays) {
+            return "Le cumul de vos congés et retenues (absences/retards) ne peut dépasser 30 jours par an. Il vous reste $remaining jour(s) de disponible(s).";
         }
 
         return null;

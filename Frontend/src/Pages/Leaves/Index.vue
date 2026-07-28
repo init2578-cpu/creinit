@@ -15,19 +15,39 @@ import {
     XMarkIcon,
     PencilSquareIcon,
     DocumentCheckIcon,
-    UserGroupIcon
+    UserGroupIcon,
+    MinusCircleIcon,
+    ExclamationTriangleIcon,
+    UserIcon
 } from '@heroicons/vue/24/outline'
 
 const props = defineProps({
-    leaves: Array,
-    stats: Object
+    leaves: {
+        type: Array,
+        default: () => []
+    },
+    deductions: {
+        type: Array,
+        default: () => []
+    },
+    users: {
+        type: Array,
+        default: () => []
+    },
+    stats: {
+        type: Object,
+        default: () => ({})
+    }
 })
 
 const page = usePage()
 const isDirecteur = computed(() => page.props.auth.user?.roles?.includes('Directeur'))
 
+const activeTab = ref('leaves') // 'leaves' or 'deductions'
 const showAddModal = ref(false)
 const showReviewModal = ref(false)
+const showDeductionModal = ref(false)
+
 const selectedLeave = ref(null)
 const editingLeave = ref(null)
 
@@ -44,6 +64,15 @@ const reviewForm = useForm({
     admin_commentaire: ''
 })
 
+const deductionForm = useForm({
+    user_id: '',
+    reason_type: 'absence',
+    unit: 'heures',
+    amount: '',
+    date_incident: '',
+    motif: ''
+})
+
 const numberOfDays = computed(() => {
     if (!form.date_debut || !form.date_fin) return null;
     const start = new Date(form.date_debut);
@@ -55,6 +84,15 @@ const numberOfDays = computed(() => {
     const diffTime = Math.abs(end - start);
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; 
     return diffDays;
+})
+
+const calculatedDaysDeducted = computed(() => {
+    if (!deductionForm.amount || isNaN(deductionForm.amount) || Number(deductionForm.amount) <= 0) return 0;
+    const amt = Number(deductionForm.amount);
+    if (deductionForm.unit === 'heures') {
+        return (amt / 8).toFixed(2);
+    }
+    return amt.toFixed(2);
 })
 
 function openAddModal() {
@@ -117,6 +155,26 @@ function deleteLeave(id) {
     }
 }
 
+function openDeductionModal() {
+    deductionForm.reset()
+    showDeductionModal.value = true
+}
+
+function submitDeduction() {
+    deductionForm.post(route('leaves.deductions.store'), {
+        onSuccess: () => {
+            showDeductionModal.value = false
+            deductionForm.reset()
+        }
+    })
+}
+
+function deleteDeduction(id) {
+    if (confirm('Voulez-vous vraiment annuler cette retenue sur congé ?')) {
+        router.delete(route('leaves.deductions.destroy', id))
+    }
+}
+
 function calculateDays(startDate, endDate) {
     const start = new Date(startDate);
     const end = new Date(endDate);
@@ -131,22 +189,32 @@ function calculateDays(startDate, endDate) {
 
     <AuthenticatedLayout>
         <div class="max-w-7xl mx-auto py-8 px-4">
-            <header class="mb-8 flex items-center justify-between">
+            <header class="mb-8 flex flex-wrap items-center justify-between gap-4">
                 <div>
                     <h1 class="text-3xl font-black text-gray-900 tracking-tight">Gestion des Congés</h1>
-                    <p class="text-gray-500">Demandes d'absences, congés annuels et permissions.</p>
+                    <p class="text-gray-500">Demandes d'absences, congés annuels et retenues (absences & retards).</p>
                 </div>
-                <button 
-                    @click="openAddModal"
-                    class="px-5 py-3 bg-indigo-600 text-white rounded-2xl font-black flex items-center gap-2 hover:bg-black transition shadow-lg shadow-indigo-100"
-                >
-                    <PlusIcon class="h-5 w-5" />
-                    Nouvelle Demande
-                </button>
+                <div class="flex items-center gap-3">
+                    <button 
+                        v-if="isDirecteur"
+                        @click="openDeductionModal"
+                        class="px-5 py-3 bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200/80 rounded-2xl font-black flex items-center gap-2 transition shadow-sm"
+                    >
+                        <MinusCircleIcon class="h-5 w-5 text-rose-600" />
+                        Appliquer une Retenue
+                    </button>
+                    <button 
+                        @click="openAddModal"
+                        class="px-5 py-3 bg-indigo-600 text-white rounded-2xl font-black flex items-center gap-2 hover:bg-black transition shadow-lg shadow-indigo-100"
+                    >
+                        <PlusIcon class="h-5 w-5" />
+                        Nouvelle Demande
+                    </button>
+                </div>
             </header>
 
             <!-- KPI Cards for Directeur -->
-            <div v-if="isDirecteur && stats" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div v-if="isDirecteur && stats" class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
                 <div class="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm flex items-center gap-5">
                     <div class="w-14 h-14 rounded-2xl bg-amber-50 text-amber-500 flex items-center justify-center">
                         <ClockIcon class="w-7 h-7" />
@@ -174,17 +242,26 @@ function calculateDays(startDate, endDate) {
                         <p class="text-3xl font-black text-gray-900">{{ stats.approved_year_count }}</p>
                     </div>
                 </div>
+                <div class="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm flex items-center gap-5">
+                    <div class="w-14 h-14 rounded-2xl bg-rose-50 text-rose-500 flex items-center justify-center">
+                        <MinusCircleIcon class="w-7 h-7" />
+                    </div>
+                    <div>
+                        <p class="text-[11px] font-black uppercase tracking-widest text-gray-400">Jours Déduits (Total)</p>
+                        <p class="text-3xl font-black text-rose-600">{{ stats.total_deducted_days || 0 }}j</p>
+                    </div>
+                </div>
             </div>
 
             <!-- KPI Cards for User -->
-            <div v-else-if="stats" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div v-else-if="stats" class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
                 <div class="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm flex items-center gap-5">
                     <div class="w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-500 flex items-center justify-center">
                         <CalendarDaysIcon class="w-7 h-7" />
                     </div>
                     <div>
                         <p class="text-[11px] font-black uppercase tracking-widest text-gray-400">Jours Restants</p>
-                        <p class="text-3xl font-black text-gray-900">{{ stats.remaining_days }}</p>
+                        <p class="text-3xl font-black text-indigo-600">{{ stats.remaining_days }}</p>
                     </div>
                 </div>
                 <div class="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm flex items-center gap-5">
@@ -194,6 +271,15 @@ function calculateDays(startDate, endDate) {
                     <div>
                         <p class="text-[11px] font-black uppercase tracking-widest text-gray-400">Jours Consommés</p>
                         <p class="text-3xl font-black text-gray-900">{{ stats.consumed_days }}</p>
+                    </div>
+                </div>
+                <div class="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm flex items-center gap-5">
+                    <div class="w-14 h-14 rounded-2xl bg-rose-50 text-rose-500 flex items-center justify-center">
+                        <MinusCircleIcon class="w-7 h-7" />
+                    </div>
+                    <div>
+                        <p class="text-[11px] font-black uppercase tracking-widest text-gray-400">Retenues (Absence/Retard)</p>
+                        <p class="text-3xl font-black text-rose-600">{{ stats.deducted_days || 0 }}j</p>
                     </div>
                 </div>
                 <div class="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm flex items-center gap-5">
@@ -207,7 +293,27 @@ function calculateDays(startDate, endDate) {
                 </div>
             </div>
 
-            <div class="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden">
+            <!-- Tabs Navigation -->
+            <div class="flex items-center gap-8 border-b border-gray-200/80 mb-6 px-2">
+                <button 
+                    @click="activeTab = 'leaves'"
+                    :class="['pb-4 font-black text-sm transition relative flex items-center gap-2', activeTab === 'leaves' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-gray-400 hover:text-gray-600']"
+                >
+                    <CalendarDaysIcon class="h-4 w-4" />
+                    Demandes de Congés ({{ leaves?.length || 0 }})
+                </button>
+                <button 
+                    @click="activeTab = 'deductions'"
+                    :class="['pb-4 font-black text-sm transition relative flex items-center gap-2.5', activeTab === 'deductions' ? 'text-rose-600 border-b-2 border-rose-600' : 'text-gray-400 hover:text-gray-600']"
+                >
+                    <MinusCircleIcon class="h-4 w-4" />
+                    <span>Retenues (Absences / Retards)</span>
+                    <span class="px-2 py-0.5 rounded-full text-xs font-black bg-rose-50 text-rose-700 border border-rose-100">{{ deductions?.length || 0 }}</span>
+                </button>
+            </div>
+
+            <!-- Tab 1: Leaves Table -->
+            <div v-if="activeTab === 'leaves'" class="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden">
                 <table class="w-full text-left border-collapse">
                     <thead>
                         <tr class="bg-gray-50/50 border-b border-gray-100">
@@ -221,8 +327,8 @@ function calculateDays(startDate, endDate) {
                     <tbody class="divide-y divide-gray-50">
                         <tr v-for="leave in leaves" :key="leave.id" class="group hover:bg-gray-50/50 transition-colors">
                             <td v-if="isDirecteur" class="px-8 py-6">
-                                <div class="font-black text-gray-900">{{ leave.user.name }}</div>
-                                <div class="text-xs text-gray-500 font-bold">{{ leave.user.email }}</div>
+                                <div class="font-black text-gray-900">{{ leave.user?.name }}</div>
+                                <div class="text-xs text-gray-500 font-bold">{{ leave.user?.email }}</div>
                             </td>
                             <td class="px-8 py-6">
                                 <div class="font-black text-indigo-600 mb-1">{{ leave.type }}</div>
@@ -280,10 +386,10 @@ function calculateDays(startDate, endDate) {
                             </td>
                         </tr>
                         <tr v-if="leaves.length === 0">
-                            <td :colspan="isDirecteur ? 4 : 3" class="px-8 py-20 text-center">
+                            <td :colspan="isDirecteur ? 5 : 4" class="px-8 py-20 text-center">
                                 <div class="flex flex-col items-center">
                                     <CalendarDaysIcon class="h-12 w-12 text-gray-200 mb-4" />
-                                    <p class="text-gray-400 font-bold">Aucune demande de congé.</p>
+                                    <p class="text-gray-400 font-bold">Aucune demande de congé enregistrée.</p>
                                 </div>
                             </td>
                         </tr>
@@ -291,7 +397,75 @@ function calculateDays(startDate, endDate) {
                 </table>
             </div>
 
-            <!-- Add/Edit Leave Modal -->
+            <!-- Tab 2: Deductions Table -->
+            <div v-else-if="activeTab === 'deductions'" class="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-gray-50/50 border-b border-gray-100">
+                            <th v-if="isDirecteur" class="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Agent / Employé</th>
+                            <th class="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Motif & Incident</th>
+                            <th class="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Quantité Saisie</th>
+                            <th class="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Équivalent Congé</th>
+                            <th class="px-8 py-5 text-[10px] font-black text-gray-400 uppercase tracking-widest">Explication</th>
+                            <th v-if="isDirecteur" class="px-8 py-5 text-[10px] font-black text-gray-400 text-right uppercase tracking-widest">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-50">
+                        <tr v-for="deduction in deductions" :key="deduction.id" class="group hover:bg-gray-50/50 transition-colors">
+                            <td v-if="isDirecteur" class="px-8 py-6">
+                                <div class="font-black text-gray-900">{{ deduction.user?.name }}</div>
+                                <div class="text-xs text-gray-500 font-bold">{{ deduction.user?.email }}</div>
+                            </td>
+                            <td class="px-8 py-6">
+                                <span :class="[
+                                    'px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider inline-block mb-1',
+                                    deduction.reason_type === 'absence' ? 'bg-red-50 text-red-600 border border-red-100' :
+                                    deduction.reason_type === 'retard' ? 'bg-amber-50 text-amber-600 border border-amber-100' :
+                                    'bg-purple-50 text-purple-600 border border-purple-100'
+                                ]">
+                                    {{ deduction.reason_type === 'absence' ? 'Absence non justifiée' : deduction.reason_type === 'retard' ? 'Retard répété' : 'Autre motif' }}
+                                </span>
+                                <div v-if="deduction.date_incident" class="text-xs font-bold text-gray-500 flex items-center gap-1 mt-0.5">
+                                    <ClockIcon class="h-3.5 w-3.5" />
+                                    Incident du {{ formatDate(deduction.date_incident) }}
+                                </div>
+                            </td>
+                            <td class="px-8 py-6 text-center">
+                                <span class="font-black text-gray-900 text-sm">
+                                    {{ deduction.amount }} {{ deduction.unit }}
+                                </span>
+                            </td>
+                            <td class="px-8 py-6 text-center">
+                                <span class="inline-flex items-center gap-1 px-3 py-1 bg-rose-50 text-rose-700 text-xs font-black rounded-xl border border-rose-100">
+                                    -{{ deduction.days_deducted }} j
+                                </span>
+                            </td>
+                            <td class="px-8 py-6">
+                                <p class="text-xs font-medium text-gray-600 max-w-xs">{{ deduction.motif }}</p>
+                                <p v-if="deduction.creator" class="text-[10px] text-gray-400 font-bold mt-1">Appliqué par {{ deduction.creator.name }}</p>
+                            </td>
+                            <td v-if="isDirecteur" class="px-8 py-6 text-right">
+                                <button 
+                                    @click="deleteDeduction(deduction.id)"
+                                    class="p-2.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition" title="Annuler cette retenue"
+                                >
+                                    <TrashIcon class="h-5 w-5" />
+                                </button>
+                            </td>
+                        </tr>
+                        <tr v-if="deductions.length === 0">
+                            <td :colspan="isDirecteur ? 6 : 4" class="px-8 py-20 text-center">
+                                <div class="flex flex-col items-center">
+                                    <MinusCircleIcon class="h-12 w-12 text-gray-200 mb-4" />
+                                    <p class="text-gray-400 font-bold">Aucune retenue enregistrée pour le moment.</p>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Modal Add Leave -->
             <div v-if="showAddModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm">
                 <div class="bg-white w-full max-w-lg rounded-[2.5rem] p-8 shadow-2xl">
                     <h2 class="text-2xl font-black text-gray-900 mb-6 tracking-tight">{{ editingLeave ? 'Modifier la demande' : 'Nouvelle demande de congé' }}</h2>
@@ -354,7 +528,7 @@ function calculateDays(startDate, endDate) {
             <div v-if="showReviewModal && selectedLeave" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm">
                 <div class="bg-white w-full max-w-lg rounded-[2.5rem] p-8 shadow-2xl">
                     <h2 class="text-2xl font-black text-gray-900 mb-2 tracking-tight">Traiter la demande</h2>
-                    <p class="text-gray-500 text-sm mb-6">Demande de {{ selectedLeave.user.name }}</p>
+                    <p class="text-gray-500 text-sm mb-6">Demande de {{ selectedLeave.user?.name }}</p>
                     
                     <div class="bg-gray-50 p-4 rounded-2xl mb-6">
                         <div class="font-black text-indigo-600 mb-1">{{ selectedLeave.type }}</div>
@@ -390,6 +564,92 @@ function calculateDays(startDate, endDate) {
                             <button @click="showReviewModal = false" type="button" class="flex-1 py-4 bg-gray-100 text-gray-600 rounded-2xl font-black">Annuler</button>
                             <button :disabled="reviewForm.processing" type="submit" class="flex-[2] py-4 bg-gray-900 hover:bg-black text-white rounded-2xl font-black shadow-lg">
                                 Confirmer
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Modal Retenue sur Congé (Directeur) -->
+            <div v-if="showDeductionModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm">
+                <div class="bg-white w-full max-w-lg rounded-[2.5rem] p-8 shadow-2xl">
+                    <div class="flex items-center gap-3 mb-2">
+                        <div class="w-10 h-10 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center">
+                            <MinusCircleIcon class="w-6 h-6" />
+                        </div>
+                        <h2 class="text-2xl font-black text-gray-900 tracking-tight">Appliquer une Retenue</h2>
+                    </div>
+                    <p class="text-gray-500 text-sm mb-6">Soustraire des heures ou jours de congé suite à des absences ou retards.</p>
+                    
+                    <form @submit.prevent="submitDeduction" class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-1">Sélectionner l'Agent</label>
+                            <select v-model="deductionForm.user_id" class="w-full bg-gray-50 border-0 rounded-xl font-bold py-3 px-4 focus:ring-2 focus:ring-rose-500">
+                                <option value="" disabled>Choisir un agent...</option>
+                                <option v-for="u in users" :key="u.id" :value="u.id">
+                                    {{ u.name }} ({{ u.email }})
+                                </option>
+                            </select>
+                            <p v-if="deductionForm.errors.user_id" class="mt-1 text-[10px] text-red-600 font-bold">{{ deductionForm.errors.user_id }}</p>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-1">Motif de la retenue</label>
+                                <select v-model="deductionForm.reason_type" class="w-full bg-gray-50 border-0 rounded-xl font-bold py-3 px-4 focus:ring-2 focus:ring-rose-500">
+                                    <option value="absence">Absence non justifiée</option>
+                                    <option value="retard">Retard répété</option>
+                                    <option value="autre">Autre motif</option>
+                                </select>
+                                <p v-if="deductionForm.errors.reason_type" class="mt-1 text-[10px] text-red-600 font-bold">{{ deductionForm.errors.reason_type }}</p>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-1">Date de l'incident</label>
+                                <DateInput v-model="deductionForm.date_incident" class="w-full bg-gray-50 border-0 rounded-xl font-bold py-3 px-4" />
+                                <p v-if="deductionForm.errors.date_incident" class="mt-1 text-[10px] text-red-600 font-bold">{{ deductionForm.errors.date_incident }}</p>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-1">Unité</label>
+                                <select v-model="deductionForm.unit" class="w-full bg-gray-50 border-0 rounded-xl font-bold py-3 px-4 focus:ring-2 focus:ring-rose-500">
+                                    <option value="heures">Heures</option>
+                                    <option value="jours">Jours</option>
+                                </select>
+                                <p v-if="deductionForm.errors.unit" class="mt-1 text-[10px] text-red-600 font-bold">{{ deductionForm.errors.unit }}</p>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-1">Quantité ({{ deductionForm.unit }})</label>
+                                <input v-model="deductionForm.amount" type="number" step="0.5" min="0.5" placeholder="ex: 4 ou 2" class="w-full bg-gray-50 border-0 rounded-xl font-bold py-3 px-4 focus:ring-2 focus:ring-rose-500" />
+                                <p v-if="deductionForm.errors.amount" class="mt-1 text-[10px] text-red-600 font-bold">{{ deductionForm.errors.amount }}</p>
+                            </div>
+                        </div>
+
+                        <!-- Impact Preview Card -->
+                        <div class="bg-rose-50/80 border border-rose-100 rounded-2xl p-4 flex items-center justify-between">
+                            <div class="flex items-center gap-2 text-rose-700">
+                                <ExclamationTriangleIcon class="h-5 w-5 text-rose-600" />
+                                <div>
+                                    <p class="text-xs font-black uppercase tracking-wider">Impact sur le solde</p>
+                                    <p class="text-[11px] text-rose-600 font-medium">8 heures d'absence/retard = 1 jour de congé déduit</p>
+                                </div>
+                            </div>
+                            <div class="text-2xl font-black text-rose-700">
+                                -{{ calculatedDaysDeducted }} <span class="text-xs font-bold">jour{{ calculatedDaysDeducted > 1 ? 's' : '' }}</span>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-black text-gray-400 uppercase tracking-widest mb-1">Explication / Remarque</label>
+                            <textarea v-model="deductionForm.motif" rows="3" placeholder="Préciser les heures ou détails du retard/absence..." class="w-full bg-gray-50 border-0 rounded-xl font-bold py-3 px-4 focus:ring-2 focus:ring-rose-500"></textarea>
+                            <p v-if="deductionForm.errors.motif" class="mt-1 text-[10px] text-red-600 font-bold">{{ deductionForm.errors.motif }}</p>
+                        </div>
+
+                        <div class="flex gap-4 mt-8">
+                            <button @click="showDeductionModal = false" type="button" class="flex-1 py-4 bg-gray-100 text-gray-600 rounded-2xl font-black">Annuler</button>
+                            <button :disabled="deductionForm.processing" type="submit" class="flex-[2] py-4 bg-rose-600 hover:bg-rose-700 text-white rounded-2xl font-black shadow-lg shadow-rose-100">
+                                Enregistrer la Retenue
                             </button>
                         </div>
                     </form>

@@ -406,6 +406,8 @@ Route::middleware(['auth'])->group(function (): void {
     Route::delete('/leaves/{leaf}', [\App\Http\Controllers\LeaveController::class, 'destroy'])->name('leaves.destroy');
     Route::middleware(['role:Directeur'])->group(function () {
         Route::patch('/leaves/{leaf}/status', [\App\Http\Controllers\LeaveController::class, 'updateStatus'])->name('leaves.status.update');
+        Route::post('/leaves/deductions', [\App\Http\Controllers\LeaveController::class, 'storeDeduction'])->name('leaves.deductions.store');
+        Route::delete('/leaves/deductions/{deduction}', [\App\Http\Controllers\LeaveController::class, 'destroyDeduction'])->name('leaves.deductions.destroy');
     });
 
     // AI Agent Assane
