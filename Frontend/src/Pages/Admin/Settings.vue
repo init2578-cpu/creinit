@@ -73,7 +73,7 @@ const labelMap = {
     cre_longitude: 'Longitude du CRE',
     cre_radius: 'Rayon de tolérance (mètres)',
     attendance_buffer_before: 'Délai d\'ouverture avant le cours (min)',
-    attendance_buffer_after: 'Délai de fermeture après le cours (min)',
+    attendance_buffer_after: 'Délai de fermeture après l\'ouverture (min)',
     // Général
     site_name: 'Nom de la plateforme (Vitrine)',
     site_description: 'Description de l\'établissement',

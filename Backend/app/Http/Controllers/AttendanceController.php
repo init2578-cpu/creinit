@@ -90,7 +90,7 @@ class AttendanceController extends Controller
             $schedule = null;
             foreach ($schedules as $s) {
                 $startTime = \Carbon\Carbon::createFromFormat('H:i:s', $s->start_time)->setDateFrom($now)->subMinutes($bufferBefore);
-                $endTime = \Carbon\Carbon::createFromFormat('H:i:s', $s->end_time)->setDateFrom($now)->addMinutes($bufferAfter);
+                $endTime = $startTime->copy()->addMinutes($bufferAfter);
                 if ($now->between($startTime, $endTime)) {
                     $schedule = $s;
                     break;
@@ -115,14 +115,13 @@ class AttendanceController extends Controller
 
             // Check timeframe with buffer
             $startTime = \Carbon\Carbon::createFromFormat('H:i:s', $schedule->start_time)->setDateFrom($now)->subMinutes($bufferBefore);
-            $endTime = \Carbon\Carbon::createFromFormat('H:i:s', $schedule->end_time)->setDateFrom($now)->addMinutes($bufferAfter);
+            $endTime = $startTime->copy()->addMinutes($bufferAfter);
 
             if (!$now->between($startTime, $endTime)) {
                 $msg = sprintf(
-                    "L'émargement n'est autorisé que durant le créneau du cours (%s à %s, avec une tolérance de %d min avant et %d min après).",
-                    substr($schedule->start_time, 0, 5),
-                    substr($schedule->end_time, 0, 5),
-                    $bufferBefore,
+                    "L'émargement n'est autorisé que durant la fenêtre d'ouverture (de %s à %s, soit %d min après l'ouverture).",
+                    $startTime->format('H:i'),
+                    $endTime->format('H:i'),
                     $bufferAfter
                 );
                 return redirect()
@@ -193,7 +192,7 @@ class AttendanceController extends Controller
         $schedule = null;
         foreach ($schedules as $s) {
             $startTime = \Carbon\Carbon::createFromFormat('H:i:s', $s->start_time)->setDateFrom($now)->subMinutes($bufferBefore);
-            $endTime = \Carbon\Carbon::createFromFormat('H:i:s', $s->end_time)->setDateFrom($now)->addMinutes($bufferAfter);
+            $endTime = $startTime->copy()->addMinutes($bufferAfter);
             if ($now->between($startTime, $endTime)) {
                 $schedule = $s;
                 break;
@@ -247,10 +246,10 @@ class AttendanceController extends Controller
 
             // 4. Restriction: check timeframe with buffer
             $startTime = \Carbon\Carbon::createFromFormat('H:i:s', $schedule->start_time)->setDateFrom($now)->subMinutes($bufferBefore);
-            $endTime = \Carbon\Carbon::createFromFormat('H:i:s', $schedule->end_time)->setDateFrom($now)->addMinutes($bufferAfter);
+            $endTime = $startTime->copy()->addMinutes($bufferAfter);
 
             if (!$now->between($startTime, $endTime)) {
-                $msg = sprintf("L'émargement n'est autorisé que durant le créneau du cours (tolérance: %dmin avant, %dmin après).", $bufferBefore, $bufferAfter);
+                $msg = sprintf("L'émargement n'est autorisé que durant la fenêtre d'ouverture (de %s à %s, soit %d min après l'ouverture).", $startTime->format('H:i'), $endTime->format('H:i'), $bufferAfter);
                 return redirect()->back()->with('error', $msg);
             }
         }

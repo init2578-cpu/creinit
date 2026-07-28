@@ -176,7 +176,7 @@ class AttendanceController extends Controller
         $bufferAfter = (int) Setting::getValue('attendance_buffer_after', 15);
 
         $startTime = Carbon::createFromFormat('H:i:s', $schedule->start_time)->setDateFrom($now)->subMinutes($bufferBefore);
-        $endTime = Carbon::createFromFormat('H:i:s', $schedule->end_time)->setDateFrom($now)->addMinutes($bufferAfter);
+        $endTime = $startTime->copy()->addMinutes($bufferAfter);
 
         $isWithinTimeframe = $courseDate->isToday() && $now->between($startTime, $endTime);
 
@@ -203,7 +203,7 @@ class AttendanceController extends Controller
             }
 
             if ($unauthorizedChanges) {
-                $msg = sprintf("L'émargement complet n'est autorisé que le jour même et durant le créneau (tolérance: %dmin avant, %dmin après). En dehors de ce délai, vous ne pouvez que modifier le statut d'un apprenant vers 'Justifié'.", $bufferBefore, $bufferAfter);
+                $msg = sprintf("L'émargement complet n'est autorisé que durant la fenêtre d'ouverture (de %s à %s, soit %d min après l'ouverture). En dehors de ce délai, vous ne pouvez que modifier le statut d'un apprenant vers 'Justifié'.", $startTime->format('H:i'), $endTime->format('H:i'), $bufferAfter);
                 return back()->withErrors(['schedule_id' => $msg]);
             }
         }
