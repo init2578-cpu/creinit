@@ -28,6 +28,26 @@ class LeaveController extends Controller
         $deductions = [];
         $users = [];
 
+        $myPreviousLeaves = Leave::where('user_id', $user->id)
+            ->whereYear('date_debut', $currentYear)
+            ->whereNotIn('type', ['Maternité', 'Maladie'])
+            ->whereIn('status', ['approuve', 'en_attente'])
+            ->get();
+
+        $myConsumedDays = 0;
+        foreach ($myPreviousLeaves as $l) {
+            $myConsumedDays += Carbon::parse($l->date_debut)->diffInDays(Carbon::parse($l->date_fin)) + 1;
+        }
+
+        $myDeductedDays = LeaveDeduction::where('user_id', $user->id)->sum('days_deducted');
+        $myRemainingDays = max(0, 30 - $myConsumedDays - $myDeductedDays);
+
+        $myStats = [
+            'consumed_days' => $myConsumedDays,
+            'deducted_days' => $myDeductedDays,
+            'remaining_days' => $myRemainingDays,
+        ];
+
         if ($user->hasRole('Directeur') || $user->hasRole('Secrétaire')) {
             $leaves = Leave::with('user')->orderBy('created_at', 'desc')->get();
             $deductions = LeaveDeduction::with(['user', 'creator'])->orderBy('created_at', 'desc')->get();
@@ -49,25 +69,12 @@ class LeaveController extends Controller
         } else {
             $leaves = Leave::with('user')->where('user_id', $user->id)->orderBy('created_at', 'desc')->get();
             $deductions = LeaveDeduction::with('creator')->where('user_id', $user->id)->orderBy('created_at', 'desc')->get();
-            
-            $previousLeaves = Leave::where('user_id', $user->id)
-                ->whereYear('date_debut', $currentYear)
-                ->whereNotIn('type', ['Maternité', 'Maladie'])
-                ->whereIn('status', ['approuve', 'en_attente'])
-                ->get();
-
-            $accumulatedDays = 0;
-            foreach ($previousLeaves as $l) {
-                $accumulatedDays += Carbon::parse($l->date_debut)->diffInDays(Carbon::parse($l->date_fin)) + 1;
-            }
-
-            $totalDeductedDays = LeaveDeduction::where('user_id', $user->id)->sum('days_deducted');
 
             $stats = [
                 'pending_count' => Leave::where('user_id', $user->id)->where('status', 'en_attente')->count(),
-                'consumed_days' => $accumulatedDays,
-                'deducted_days' => $totalDeductedDays,
-                'remaining_days' => max(0, 30 - $accumulatedDays - $totalDeductedDays),
+                'consumed_days' => $myConsumedDays,
+                'deducted_days' => $myDeductedDays,
+                'remaining_days' => $myRemainingDays,
             ];
         }
 
@@ -76,6 +83,7 @@ class LeaveController extends Controller
             'deductions' => $deductions,
             'users' => $users,
             'stats' => $stats,
+            'my_stats' => $myStats,
         ]);
     }
 
@@ -325,7 +333,7 @@ class LeaveController extends Controller
         $remaining = max(0, $allowedDays - $accumulatedDays);
 
         if (($accumulatedDays + $requestedDays) > $allowedDays) {
-            return "Le cumul de vos congés et retenues (absences/retards) ne peut dépasser 30 jours par an. Il vous reste $remaining jour(s) de disponible(s).";
+            return "Solde insuffisant : Votre droit annuel est de 30 jours. Vous avez déjà $accumulatedDays jour(s) de congé consommé(s)/en attente et $totalDeductions jour(s) de retenue (absences/retards). Il ne vous reste que $remaining jour(s) disponible(s).";
         }
 
         return null;

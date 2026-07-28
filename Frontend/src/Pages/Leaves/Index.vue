@@ -37,6 +37,10 @@ const props = defineProps({
     stats: {
         type: Object,
         default: () => ({})
+    },
+    my_stats: {
+        type: Object,
+        default: () => ({})
     }
 })
 
@@ -494,14 +498,44 @@ function calculateDays(startDate, endDate) {
                             </div>
                         </div>
                         
-                        <!-- Highlighted Duration -->
-                        <div v-if="numberOfDays" class="bg-indigo-50 border border-indigo-100 rounded-2xl p-4 flex items-center justify-between shadow-sm shadow-indigo-100/50">
-                            <div class="flex items-center gap-2 text-indigo-600">
-                                <ClockIcon class="h-6 w-6" />
-                                <span class="text-sm font-black uppercase tracking-widest">Durée estimée</span>
+                        <!-- Quota Summary Breakdown -->
+                        <div v-if="my_stats && form.type !== 'Maternité' && form.type !== 'Maladie'" class="bg-gray-50 border border-gray-100 rounded-2xl p-4 text-xs font-bold text-gray-600 space-y-1.5">
+                            <div class="flex justify-between">
+                                <span>Solde annuel de base :</span>
+                                <span class="font-black text-gray-900">30 jours</span>
                             </div>
-                            <div class="text-3xl font-black text-indigo-700">
-                                {{ numberOfDays }} <span class="text-sm font-bold opacity-70">jour{{ numberOfDays > 1 ? 's' : '' }}</span>
+                            <div class="flex justify-between text-gray-500">
+                                <span>Congés pris / en attente :</span>
+                                <span class="font-black text-gray-700">-{{ my_stats.consumed_days || 0 }}j</span>
+                            </div>
+                            <div class="flex justify-between text-rose-600">
+                                <span>Retenues (absences & retards) :</span>
+                                <span class="font-black">-{{ my_stats.deducted_days || 0 }}j</span>
+                            </div>
+                            <div class="border-t border-gray-200 pt-1.5 flex justify-between text-indigo-700 font-black text-sm">
+                                <span>Solde disponible :</span>
+                                <span>{{ my_stats.remaining_days || 0 }} jour(s)</span>
+                            </div>
+                        </div>
+
+                        <!-- Highlighted Duration & Excess Warning -->
+                        <div v-if="numberOfDays" class="space-y-2">
+                            <div class="bg-indigo-50 border border-indigo-100 rounded-2xl p-4 flex items-center justify-between shadow-sm shadow-indigo-100/50">
+                                <div class="flex items-center gap-2 text-indigo-600">
+                                    <ClockIcon class="h-6 w-6" />
+                                    <span class="text-sm font-black uppercase tracking-widest">Durée estimée</span>
+                                </div>
+                                <div class="text-3xl font-black text-indigo-700">
+                                    {{ numberOfDays }} <span class="text-sm font-bold opacity-70">jour{{ numberOfDays > 1 ? 's' : '' }}</span>
+                                </div>
+                            </div>
+
+                            <div v-if="form.type !== 'Maternité' && form.type !== 'Maladie' && my_stats && numberOfDays > (my_stats.remaining_days || 0)" class="bg-rose-50 border border-rose-200/80 rounded-2xl p-4 flex items-start gap-3">
+                                <ExclamationTriangleIcon class="h-5 w-5 text-rose-600 shrink-0 mt-0.5" />
+                                <div class="text-xs text-rose-700 font-medium">
+                                    <p class="font-black uppercase tracking-wider mb-0.5">Dépassement de solde disponible</p>
+                                    <p>Vous sollicitez {{ numberOfDays }} jour(s), mais votre solde restant (après déduction des congés passés et retenues) est de <strong>{{ my_stats.remaining_days || 0 }} jour(s)</strong>.</p>
+                                </div>
                             </div>
                         </div>
                         <div>
