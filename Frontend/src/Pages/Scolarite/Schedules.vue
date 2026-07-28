@@ -10,6 +10,7 @@ import {
     TrashIcon,
     ChevronLeftIcon,
     ChevronRightIcon,
+    ChevronDownIcon,
     PencilSquareIcon
 } from '@heroicons/vue/24/outline'
 import { formatTime } from '@/utils/format'
@@ -215,14 +216,19 @@ const navigateToAttendance = (schedule) => {
                     <p class="text-gray-500">Organisation hebdomadaire des salles et formateurs.</p>
                 </div>
                 <div class="flex items-center gap-3">
-                    <div class="flex items-center gap-2 bg-white px-4 py-3 rounded-2xl border border-gray-100 shadow-sm text-xs font-bold">
-                        <MapPinIcon class="h-4 w-4 text-gray-400" />
-                        <select v-model="selectedRoomFilter" class="bg-transparent border-0 font-extrabold text-gray-700 text-xs focus:ring-0 p-0 pr-6 cursor-pointer">
+                    <div class="relative flex items-center bg-white px-4 py-3 rounded-2xl border border-gray-100 shadow-sm text-xs font-bold hover:border-gray-200 transition">
+                        <MapPinIcon class="h-4 w-4 text-gray-400 shrink-0 mr-2" />
+                        <select 
+                            v-model="selectedRoomFilter" 
+                            class="bg-transparent border-none outline-none appearance-none font-extrabold text-gray-700 text-xs focus:ring-0 focus:outline-none p-0 pr-7 cursor-pointer"
+                            style="border: none !important; outline: none !important; box-shadow: none !important;"
+                        >
                             <option value="all">Toutes les salles</option>
                             <option v-for="room in rooms" :key="room.id" :value="room.id">
                                 {{ room.nom }}
                             </option>
                         </select>
+                        <ChevronDownIcon class="h-4 w-4 text-gray-400 pointer-events-none absolute right-3" />
                     </div>
 
                     <button 
