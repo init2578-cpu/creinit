@@ -31,7 +31,9 @@ class LeaveController extends Controller
         if ($user->hasRole('Directeur') || $user->hasRole('Secrétaire')) {
             $leaves = Leave::with('user')->orderBy('created_at', 'desc')->get();
             $deductions = LeaveDeduction::with(['user', 'creator'])->orderBy('created_at', 'desc')->get();
-            $users = User::select('id', 'name', 'email')->orderBy('name')->get();
+            $users = User::whereHas('roles', function($query) {
+                $query->whereIn('name', ['Directeur', 'Secrétaire', 'Formateur', 'Stagiaire', 'Agent', 'Personnel']);
+            })->select('id', 'name', 'email')->orderBy('name')->get();
             
             $stats = [
                 'pending_count' => Leave::where('status', 'en_attente')->count(),

@@ -587,7 +587,7 @@ function calculateDays(startDate, endDate) {
                             <select v-model="deductionForm.user_id" class="w-full bg-gray-50 border-0 rounded-xl font-bold py-3 px-4 focus:ring-2 focus:ring-rose-500">
                                 <option value="" disabled>Choisir un agent...</option>
                                 <option v-for="u in users" :key="u.id" :value="u.id">
-                                    {{ u.name }} ({{ u.email }})
+                                    {{ u.name }} {{ u.email ? `(${u.email})` : '' }}
                                 </option>
                             </select>
                             <p v-if="deductionForm.errors.user_id" class="mt-1 text-[10px] text-red-600 font-bold">{{ deductionForm.errors.user_id }}</p>
