@@ -10,6 +10,7 @@ import {
     TrashIcon,
     ChevronLeftIcon,
     ChevronRightIcon,
+    ChevronDownIcon,
     PencilSquareIcon
 } from '@heroicons/vue/24/outline'
 import { formatTime } from '@/utils/format'
@@ -215,14 +216,19 @@ const navigateToAttendance = (schedule) => {
                     <p class="text-gray-500">Organisation hebdomadaire des salles et formateurs.</p>
                 </div>
                 <div class="flex items-center gap-3">
-                    <div class="flex items-center gap-2 bg-white px-4 py-3 rounded-2xl border border-gray-100 shadow-sm text-xs font-bold">
-                        <MapPinIcon class="h-4 w-4 text-gray-400" />
-                        <select v-model="selectedRoomFilter" class="bg-transparent border-0 font-extrabold text-gray-700 text-xs focus:ring-0 p-0 pr-6 cursor-pointer">
+                    <div class="relative flex items-center bg-white px-4 py-2.5 rounded-2xl border border-gray-200/80 shadow-sm hover:border-blue-400 transition">
+                        <MapPinIcon class="h-4 w-4 text-blue-600 shrink-0 mr-2" />
+                        <select 
+                            v-model="selectedRoomFilter" 
+                            class="bg-transparent border-0 outline-none appearance-none font-black text-gray-800 text-xs focus:ring-0 focus:outline-none p-0 pr-7 cursor-pointer"
+                            style="box-shadow: none;"
+                        >
                             <option value="all">Toutes les salles</option>
                             <option v-for="room in rooms" :key="room.id" :value="room.id">
                                 {{ room.nom }}
                             </option>
                         </select>
+                        <ChevronDownIcon class="h-4 w-4 text-gray-400 pointer-events-none absolute right-3" />
                     </div>
 
                     <button 
@@ -261,52 +267,53 @@ const navigateToAttendance = (schedule) => {
                                 v-for="schedule in getSchedulesBySlot(day, hour)"
                                 :key="schedule.id"
                                 @click="navigateToAttendance(schedule)"
-                                class="relative p-2.5 rounded-2xl border shadow-sm transition cursor-pointer hover:shadow-md hover:scale-[1.01] group/card"
+                                class="relative p-3 rounded-2xl border bg-white shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer group/card border-l-4"
                                 :class="isScheduleCurrent(schedule) 
-                                    ? 'bg-indigo-50/90 border-indigo-300 ring-2 ring-indigo-100 text-indigo-800 font-medium' 
-                                    : 'bg-indigo-50/60 border-indigo-100 text-indigo-700 hover:border-indigo-300 hover:bg-indigo-50'"
+                                    ? 'border-l-indigo-600 border-indigo-200 bg-indigo-50/50 ring-2 ring-indigo-100' 
+                                    : 'border-l-blue-500 border-gray-100 hover:border-blue-300 hover:bg-blue-50/20'"
                                 :title="`Voir la liste de présence — ${schedule.group.nom_groupe} (${schedule.room?.nom})`"
                             >
                                 <!-- Indicator dot / clignotant -->
-                                <div v-if="isScheduleToday(schedule)" class="absolute top-2.5 right-2.5 flex h-3.5 w-3.5" :title="schedule.attendance_taken_today ? 'Émargement validé' : 'Émargement en attente'">
+                                <div v-if="isScheduleToday(schedule)" class="absolute top-2.5 right-2.5 flex h-3 w-3" :title="schedule.attendance_taken_today ? 'Émargement validé' : 'Émargement en attente'">
                                     <span 
                                         v-if="isScheduleCurrent(schedule)"
                                         class="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75"
                                         :class="schedule.attendance_taken_today ? 'bg-emerald-400' : 'bg-rose-400'"
                                     ></span>
                                     <span 
-                                        class="relative inline-flex rounded-full h-3.5 w-3.5"
+                                        class="relative inline-flex rounded-full h-3 w-3"
                                         :class="schedule.attendance_taken_today ? 'bg-emerald-500' : 'bg-rose-500'"
                                     ></span>
                                 </div>
 
-                                <div class="flex flex-col">
-                                    <div class="flex items-center justify-between gap-1 mb-1 pr-4">
-                                        <span class="text-[9px] font-black uppercase leading-none opacity-60 font-mono">
+                                <div class="flex flex-col gap-1.5">
+                                    <!-- Room & Time badges -->
+                                    <div class="flex items-center justify-between gap-1 flex-wrap pr-3">
+                                        <span class="inline-flex items-center gap-1 text-[9px] font-black uppercase px-2 py-0.5 rounded-lg bg-blue-50 text-blue-700 border border-blue-100/80">
+                                            <MapPinIcon class="h-2.5 w-2.5 text-blue-500" />
+                                            {{ schedule.room?.nom }}
+                                        </span>
+                                        <span class="text-[9px] font-extrabold text-gray-400 font-mono">
                                             {{ formatTime(schedule.start_time) }} - {{ formatTime(schedule.end_time) }}
                                         </span>
                                     </div>
-                                    
-                                    <div class="mb-1">
-                                        <span class="inline-block text-[9px] font-black uppercase px-2 py-0.5 rounded-md bg-blue-100/80 text-blue-900 border border-blue-200/60">
-                                            📍 {{ schedule.room?.nom }}
-                                        </span>
-                                    </div>
 
-                                    <p class="text-xs font-black leading-tight text-gray-900 mb-1">
+                                    <!-- Group Name -->
+                                    <p class="text-xs font-black text-gray-900 leading-tight">
                                         {{ schedule.group.nom_groupe }}
                                     </p>
 
-                                    <div class="flex items-center gap-1 mt-1 pt-1 border-t border-indigo-100/50">
-                                        <div class="flex-1 flex items-center gap-1 overflow-hidden">
-                                            <UserIcon class="h-3 w-3 flex-shrink-0 opacity-60" />
-                                            <span class="text-[9px] font-bold truncate opacity-80">{{ schedule.formateur.name }}</span>
+                                    <!-- Trainer & Actions -->
+                                    <div class="flex items-center justify-between gap-1 pt-1.5 mt-0.5 border-t border-gray-100">
+                                        <div class="flex items-center gap-1 min-w-0">
+                                            <UserIcon class="h-3 w-3 text-gray-400 shrink-0" />
+                                            <span class="text-[10px] font-bold text-gray-600 truncate">{{ schedule.formateur.name }}</span>
                                         </div>
                                         <div v-if="$page.props.auth.user.roles.some(r => ['Directeur', 'Secrétaire'].includes(r))" class="flex items-center gap-1 opacity-0 group-hover/card:opacity-100 transition-opacity">
-                                            <button @click.stop="openEditModal(schedule)" class="text-indigo-600 hover:text-indigo-900 transition p-0.5" title="Modifier">
+                                            <button @click.stop="openEditModal(schedule)" class="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition" title="Modifier">
                                                 <PencilSquareIcon class="h-3.5 w-3.5" />
                                             </button>
-                                            <button @click.stop="deleteSchedule(schedule.id)" class="text-red-500 hover:text-red-700 transition p-0.5" title="Supprimer">
+                                            <button @click.stop="deleteSchedule(schedule.id)" class="p-1 text-gray-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition" title="Supprimer">
                                                 <TrashIcon class="h-3.5 w-3.5" />
                                             </button>
                                         </div>
