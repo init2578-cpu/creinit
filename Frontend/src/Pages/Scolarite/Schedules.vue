@@ -117,11 +117,18 @@ const getGridPosition = (day, start) => {
     return { dayIndex, row }
 }
 
-const getScheduleBySlot = (day, hour) => {
-    return props.schedules.find(s => {
+const selectedRoomFilter = ref('all')
+
+const getSchedulesBySlot = (day, hour) => {
+    return props.schedules.filter(s => {
         const h = parseInt(s.start_time.split(':')[0])
         const scheduleDayName = days[s.day_of_week - 1]
-        return scheduleDayName === day && h === hour
+        const matchesSlot = scheduleDayName === day && h === hour
+        if (!matchesSlot) return false
+        if (selectedRoomFilter.value !== 'all' && s.room_id !== selectedRoomFilter.value) {
+            return false
+        }
+        return true
     })
 }
 
@@ -138,7 +145,11 @@ const selectedDayMobile = ref(defaultDay)
 const mobileSchedules = computed(() => {
     const dayNum = days.indexOf(selectedDayMobile.value) + 1
     return props.schedules
-        .filter(s => parseInt(s.day_of_week) === dayNum)
+        .filter(s => {
+            if (parseInt(s.day_of_week) !== dayNum) return false
+            if (selectedRoomFilter.value !== 'all' && s.room_id !== selectedRoomFilter.value) return false
+            return true
+        })
         .sort((a, b) => a.start_time.localeCompare(b.start_time))
 })
 
@@ -198,19 +209,31 @@ const navigateToAttendance = (schedule) => {
 
     <AuthenticatedLayout>
         <div class="max-w-7xl mx-auto py-8 px-4 font-sans">
-            <header class="mb-8 flex items-center justify-between">
+            <header class="mb-8 flex items-center justify-between flex-wrap gap-4">
                 <div>
                     <h1 class="text-3xl font-black text-gray-900 tracking-tight">Emploi du Temps</h1>
                     <p class="text-gray-500">Organisation hebdomadaire des salles et formateurs.</p>
                 </div>
-                <button 
-                    v-if="$page.props.auth.user.roles.some(r => ['Directeur', 'Secrétaire'].includes(r))"
-                    @click="openAddModal"
-                    class="px-5 py-3 bg-blue-600 text-white rounded-2xl font-black flex items-center gap-2 hover:bg-blue-700 transition shadow-lg shadow-blue-100"
-                >
-                    <PlusIcon class="h-5 w-5" />
-                    Ajouter un Créneau
-                </button>
+                <div class="flex items-center gap-3">
+                    <div class="flex items-center gap-2 bg-white px-4 py-3 rounded-2xl border border-gray-100 shadow-sm text-xs font-bold">
+                        <MapPinIcon class="h-4 w-4 text-gray-400" />
+                        <select v-model="selectedRoomFilter" class="bg-transparent border-0 font-extrabold text-gray-700 text-xs focus:ring-0 p-0 pr-6 cursor-pointer">
+                            <option value="all">Toutes les salles</option>
+                            <option v-for="room in rooms" :key="room.id" :value="room.id">
+                                {{ room.nom }}
+                            </option>
+                        </select>
+                    </div>
+
+                    <button 
+                        v-if="$page.props.auth.user.roles.some(r => ['Directeur', 'Secrétaire'].includes(r))"
+                        @click="openAddModal"
+                        class="px-5 py-3 bg-blue-600 text-white rounded-2xl font-black flex items-center gap-2 hover:bg-blue-700 transition shadow-lg shadow-blue-100"
+                    >
+                        <PlusIcon class="h-5 w-5" />
+                        Ajouter un Créneau
+                    </button>
+                </div>
             </header>
 
             <!-- Calendar Grid -->
@@ -225,58 +248,66 @@ const navigateToAttendance = (schedule) => {
                 <div class="grid grid-cols-7 relative">
                     <!-- Left Hour markers -->
                     <div class="flex flex-col">
-                        <div v-for="hour in hours" :key="hour" class="h-24 p-4 text-[10px] font-bold text-gray-300 border-r border-gray-50 font-mono">
+                        <div v-for="hour in hours" :key="hour" class="min-h-28 p-4 text-[10px] font-bold text-gray-300 border-r border-gray-50 font-mono">
                             {{ formatTime(hour) }}
                         </div>
                     </div>
 
                     <!-- Column per day -->
                     <div v-for="day in days" :key="day" class="relative group">
-                        <div v-for="hour in hours" :key="hour" class="h-24 border-r border-b border-gray-50 group-last:border-r-0">
-                            <!-- Cell Content -->
+                        <div v-for="hour in hours" :key="hour" class="min-h-28 border-r border-b border-gray-50 group-last:border-r-0 p-1.5 flex flex-col gap-1.5">
+                            <!-- Cell Content: Render ALL matching schedules -->
                             <div 
-                                v-if="getScheduleBySlot(day, hour)"
-                                @click="navigateToAttendance(getScheduleBySlot(day, hour))"
-                                class="absolute inset-x-1 m-1 p-3 rounded-2xl border shadow-sm transition overflow-hidden cursor-pointer hover:shadow-md hover:scale-[1.02]"
-                                :class="isScheduleCurrent(getScheduleBySlot(day, hour)) 
-                                    ? 'bg-indigo-50 border-indigo-300 ring-2 ring-indigo-100 text-indigo-800 font-medium' 
-                                    : 'bg-indigo-50 border-indigo-100 text-indigo-700 hover:border-indigo-300'"
-                                :title="`Voir la liste de présence — ${getScheduleBySlot(day, hour).group.nom_groupe}`"
+                                v-for="schedule in getSchedulesBySlot(day, hour)"
+                                :key="schedule.id"
+                                @click="navigateToAttendance(schedule)"
+                                class="relative p-2.5 rounded-2xl border shadow-sm transition cursor-pointer hover:shadow-md hover:scale-[1.01] group/card"
+                                :class="isScheduleCurrent(schedule) 
+                                    ? 'bg-indigo-50/90 border-indigo-300 ring-2 ring-indigo-100 text-indigo-800 font-medium' 
+                                    : 'bg-indigo-50/60 border-indigo-100 text-indigo-700 hover:border-indigo-300 hover:bg-indigo-50'"
+                                :title="`Voir la liste de présence — ${schedule.group.nom_groupe} (${schedule.room?.nom})`"
                             >
                                 <!-- Indicator dot / clignotant -->
-                                <div v-if="isScheduleToday(getScheduleBySlot(day, hour))" class="absolute top-3 right-3 flex h-4 w-4" :title="getScheduleBySlot(day, hour).attendance_taken_today ? 'Émargement validé' : 'Émargement en attente'">
+                                <div v-if="isScheduleToday(schedule)" class="absolute top-2.5 right-2.5 flex h-3.5 w-3.5" :title="schedule.attendance_taken_today ? 'Émargement validé' : 'Émargement en attente'">
                                     <span 
-                                        v-if="isScheduleCurrent(getScheduleBySlot(day, hour))"
+                                        v-if="isScheduleCurrent(schedule)"
                                         class="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75"
-                                        :class="getScheduleBySlot(day, hour).attendance_taken_today ? 'bg-emerald-400' : 'bg-rose-400'"
+                                        :class="schedule.attendance_taken_today ? 'bg-emerald-400' : 'bg-rose-400'"
                                     ></span>
                                     <span 
-                                        class="relative inline-flex rounded-full h-4 w-4"
-                                        :class="getScheduleBySlot(day, hour).attendance_taken_today ? 'bg-emerald-500' : 'bg-rose-500'"
+                                        class="relative inline-flex rounded-full h-3.5 w-3.5"
+                                        :class="schedule.attendance_taken_today ? 'bg-emerald-500' : 'bg-rose-500'"
                                     ></span>
                                 </div>
 
-                                <div class="flex flex-col h-full">
-                                    <p class="text-[9px] font-black uppercase leading-none mb-1 opacity-60 font-mono">
-                                        {{ formatTime(getScheduleBySlot(day, hour).start_time) }} - {{ formatTime(getScheduleBySlot(day, hour).end_time) }}
+                                <div class="flex flex-col">
+                                    <div class="flex items-center justify-between gap-1 mb-1 pr-4">
+                                        <span class="text-[9px] font-black uppercase leading-none opacity-60 font-mono">
+                                            {{ formatTime(schedule.start_time) }} - {{ formatTime(schedule.end_time) }}
+                                        </span>
+                                    </div>
+                                    
+                                    <div class="mb-1">
+                                        <span class="inline-block text-[9px] font-black uppercase px-2 py-0.5 rounded-md bg-blue-100/80 text-blue-900 border border-blue-200/60">
+                                            📍 {{ schedule.room?.nom }}
+                                        </span>
+                                    </div>
+
+                                    <p class="text-xs font-black leading-tight text-gray-900 mb-1">
+                                        {{ schedule.group.nom_groupe }}
                                     </p>
-                                    <p class="text-[10px] font-black uppercase leading-none mb-1 opacity-60">
-                                        {{ getScheduleBySlot(day, hour).room.nom }}
-                                    </p>
-                                    <p class="text-xs font-black leading-tight flex-1">
-                                        {{ getScheduleBySlot(day, hour).group.nom_groupe }}
-                                    </p>
-                                    <div class="flex items-center gap-1 mt-auto">
+
+                                    <div class="flex items-center gap-1 mt-1 pt-1 border-t border-indigo-100/50">
                                         <div class="flex-1 flex items-center gap-1 overflow-hidden">
-                                            <UserIcon class="h-3 w-3 flex-shrink-0" />
-                                            <span class="text-[9px] font-bold truncate">{{ getScheduleBySlot(day, hour).formateur.name }}</span>
+                                            <UserIcon class="h-3 w-3 flex-shrink-0 opacity-60" />
+                                            <span class="text-[9px] font-bold truncate opacity-80">{{ schedule.formateur.name }}</span>
                                         </div>
-                                        <div v-if="$page.props.auth.user.roles.some(r => ['Directeur', 'Secrétaire'].includes(r))" class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <button @click.stop="openEditModal(getScheduleBySlot(day, hour))" class="text-indigo-400 hover:text-indigo-900 transition">
-                                                <PencilSquareIcon class="h-3 w-3" />
+                                        <div v-if="$page.props.auth.user.roles.some(r => ['Directeur', 'Secrétaire'].includes(r))" class="flex items-center gap-1 opacity-0 group-hover/card:opacity-100 transition-opacity">
+                                            <button @click.stop="openEditModal(schedule)" class="text-indigo-600 hover:text-indigo-900 transition p-0.5" title="Modifier">
+                                                <PencilSquareIcon class="h-3.5 w-3.5" />
                                             </button>
-                                            <button @click.stop="deleteSchedule(getScheduleBySlot(day, hour).id)" class="text-red-400 hover:text-red-600 transition">
-                                                <TrashIcon class="h-3 w-3" />
+                                            <button @click.stop="deleteSchedule(schedule.id)" class="text-red-500 hover:text-red-700 transition p-0.5" title="Supprimer">
+                                                <TrashIcon class="h-3.5 w-3.5" />
                                             </button>
                                         </div>
                                     </div>
