@@ -448,14 +448,10 @@ const getStatusClass = (status) => {
                     </div>
                 </div>
 
-                <!-- Active Filters Bar & Counter -->
-                <div class="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-gray-100 relative z-20">
+                <!-- Active Filters Bar -->
+                <div v-if="hasActiveFilters" class="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-gray-100 relative z-20">
                     <div class="flex flex-wrap items-center gap-2">
-                        <span class="inline-flex items-center gap-1 px-3 py-1 rounded-xl bg-gray-100 text-gray-800 text-xs font-black border border-gray-200/80">
-                            {{ filteredApplications.length }} {{ filteredApplications.length > 1 ? 'lignes' : 'ligne' }}
-                        </span>
-
-                        <span v-if="hasActiveFilters" class="text-[11px] font-black text-gray-400 uppercase tracking-wider ml-1 mr-1">Filtres actifs :</span>
+                        <span class="text-[11px] font-black text-gray-400 uppercase tracking-wider mr-1">Filtres actifs :</span>
                         
                         <span v-if="searchQuery" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-blue-50 text-blue-700 text-xs font-bold border border-blue-100">
                             Recherche: "{{ searchQuery }}"
@@ -484,7 +480,7 @@ const getStatusClass = (status) => {
                         </template>
                     </div>
 
-                    <button v-if="hasActiveFilters" @click="resetFilters" class="text-xs font-bold text-red-500 hover:text-red-700 underline ml-auto transition">
+                    <button @click="resetFilters" class="text-xs font-bold text-red-500 hover:text-red-700 underline ml-auto transition">
                         Tout réinitialiser
                     </button>
                 </div>
