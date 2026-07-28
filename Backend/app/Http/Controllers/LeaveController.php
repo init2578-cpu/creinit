@@ -217,7 +217,7 @@ class LeaveController extends Controller
         ]);
 
         $daysDeducted = $validated['unit'] === 'heures' 
-            ? round($validated['amount'] / 8, 2) 
+            ? round($validated['amount'] / 6, 2) 
             : round($validated['amount'], 2);
 
         LeaveDeduction::create([

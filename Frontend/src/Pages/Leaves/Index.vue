@@ -90,7 +90,7 @@ const calculatedDaysDeducted = computed(() => {
     if (!deductionForm.amount || isNaN(deductionForm.amount) || Number(deductionForm.amount) <= 0) return 0;
     const amt = Number(deductionForm.amount);
     if (deductionForm.unit === 'heures') {
-        return (amt / 8).toFixed(2);
+        return (amt / 6).toFixed(2);
     }
     return amt.toFixed(2);
 })
@@ -632,7 +632,7 @@ function calculateDays(startDate, endDate) {
                                 <ExclamationTriangleIcon class="h-5 w-5 text-rose-600" />
                                 <div>
                                     <p class="text-xs font-black uppercase tracking-wider">Impact sur le solde</p>
-                                    <p class="text-[11px] text-rose-600 font-medium">8 heures d'absence/retard = 1 jour de congé déduit</p>
+                                    <p class="text-[11px] text-rose-600 font-medium">6 heures d'absence/retard = 1 jour de congé déduit</p>
                                 </div>
                             </div>
                             <div class="text-2xl font-black text-rose-700">
