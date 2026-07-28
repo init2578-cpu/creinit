@@ -8,6 +8,7 @@ import AlertModal from '@/Components/AlertModal.vue'
 import ConfirmModal from '@/Components/ConfirmModal.vue'
 import CelebrationOverlay from '@/Components/CelebrationOverlay.vue'
 import AssaneChat from '@/Components/AssaneChat.vue'
+import PendingAttendanceNotifier from '@/Components/PendingAttendanceNotifier.vue'
 
 const props = defineProps({
     noPadding: {
@@ -220,6 +221,9 @@ watch(() => page.props.flash, (flash) => {
 
             <!-- AI Assistant ASSANE -->
             <AssaneChat />
+
+            <!-- Real-time Pending Attendance Warning Notifier -->
+            <PendingAttendanceNotifier />
 
             <!-- Optional Footer -->
             <footer class="py-6 px-8 border-t border-gray-200 text-center text-sm text-gray-400">

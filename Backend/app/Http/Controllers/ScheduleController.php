@@ -5,14 +5,86 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Http\Requests\Scolarite\StoreScheduleRequest;
+use App\Models\Attendance;
 use App\Models\Room;
 use App\Models\Schedule;
+use Carbon\Carbon;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class ScheduleController extends Controller
 {
+    /**
+     * Get schedules for today where roll call has NOT been taken 15+ minutes after start time.
+     */
+    public function pendingAlerts(): JsonResponse
+    {
+        /** @var \App\Models\User $user */
+        $user = auth()->user();
+        if (!$user || (!$user->hasRole('Directeur') && !$user->hasRole('Secrétaire') && !$user->hasRole('Admin'))) {
+            return response()->json(['alerts' => [], 'count' => 0]);
+        }
+
+        $daysMap = [
+            1 => 'Lundi',
+            2 => 'Mardi',
+            3 => 'Mercredi',
+            4 => 'Jeudi',
+            5 => 'Vendredi',
+            6 => 'Samedi',
+            7 => 'Dimanche',
+        ];
+
+        $now = Carbon::now();
+        $currentDay = $daysMap[$now->dayOfWeekIso] ?? 'Lundi';
+        $todayStr = $now->toDateString();
+
+        $schedules = Schedule::query()
+            ->where('day_of_week', $currentDay)
+            ->whereHas('group', fn($q) => $q->where('status', 'active'))
+            ->with(['group', 'room', 'formateur'])
+            ->get();
+
+        $alerts = [];
+
+        foreach ($schedules as $schedule) {
+            if (!$schedule->start_time || !$schedule->end_time) {
+                continue;
+            }
+
+            $startTime = Carbon::parse($todayStr . ' ' . $schedule->start_time);
+            $endTime   = Carbon::parse($todayStr . ' ' . $schedule->end_time);
+
+            // Trigger alert if course started >= 15 min ago and course has not ended yet
+            if ($now->greaterThanOrEqualTo($startTime->copy()->addMinutes(15)) && $now->lessThan($endTime)) {
+                $attendanceTaken = Attendance::where('schedule_id', $schedule->id)
+                    ->where('date', $todayStr)
+                    ->exists();
+
+                if (!$attendanceTaken) {
+                    $minutesLate = (int) $now->diffInMinutes($startTime);
+                    $alerts[] = [
+                        'schedule_id'  => $schedule->id,
+                        'group_id'     => $schedule->group_id,
+                        'group_name'   => $schedule->group->nom_groupe ?? 'Groupe',
+                        'formateur'    => $schedule->formateur->name ?? 'Formateur non assigné',
+                        'room'         => $schedule->room->nom ?? 'Salle non assignée',
+                        'start_time'   => Carbon::parse($schedule->start_time)->format('H:i'),
+                        'end_time'     => Carbon::parse($schedule->end_time)->format('H:i'),
+                        'minutes_late' => $minutesLate,
+                    ];
+                }
+            }
+        }
+
+        return response()->json([
+            'alerts' => $alerts,
+            'count'  => count($alerts),
+        ]);
+    }
+
     public function index(): Response
     {
         /** @var \App\Models\User $user */

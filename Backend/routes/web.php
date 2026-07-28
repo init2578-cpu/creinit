@@ -291,6 +291,7 @@ Route::middleware(['auth'])->group(function (): void {
 
         // Schedules
         Route::get('/schedules', [\App\Http\Controllers\ScheduleController::class, 'index'])->name('schedules.index');
+        Route::get('/schedules/pending-attendance-alerts', [\App\Http\Controllers\ScheduleController::class, 'pendingAlerts'])->name('schedules.pending-alerts');
         Route::post('/schedules', [\App\Http\Controllers\ScheduleController::class, 'store'])->name('schedules.store');
         Route::put('/schedules/{schedule}', [\App\Http\Controllers\ScheduleController::class, 'update'])->name('schedules.update');
         Route::delete('/schedules/{schedule}', [\App\Http\Controllers\ScheduleController::class, 'destroy'])->name('schedules.destroy');
