@@ -30,6 +30,8 @@ const props = defineProps({
     isOpen: Boolean
 })
 
+const imageError = ref(false)
+
 const page = usePage()
 const roles = computed(() => page.props.auth.user.roles)
 
@@ -156,7 +158,7 @@ const isUrl = (url) => page.url.startsWith(url)
         <div class="w-full p-4 border-t border-gray-200 bg-gray-50/50">
             <div class="flex items-center gap-3 px-3 py-1">
                 <div class="h-8 w-8 rounded-full overflow-hidden border border-gray-200 bg-white shadow-sm">
-                    <img v-if="page.props.auth.user.profile_photo_url" :src="page.props.auth.user.profile_photo_url" class="h-full w-full object-cover">
+                    <img v-if="page.props.auth.user.profile_photo_url && !imageError" :src="page.props.auth.user.profile_photo_url" @error="imageError = true" class="h-full w-full object-cover">
                     <UserIcon v-else class="h-full w-full p-1.5 text-gray-400" />
                 </div>
                 <div class="flex flex-col">

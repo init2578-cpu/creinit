@@ -14,6 +14,7 @@ const page = usePage()
 
 const isProfileOpen = ref(false)
 const isNotificationsOpen = ref(false)
+const imageError = ref(false)
 
 function markAsRead(id) {
     // We would need a route for this, or just handle it optimistically
@@ -113,7 +114,7 @@ function markAllAsRead() {
                         class="flex items-center gap-3 p-1 rounded-full hover:bg-gray-50 transition focus:outline-none pr-3"
                     >
                         <div class="h-9 w-9 rounded-full overflow-hidden border-2 border-white shadow-sm bg-gray-100 ring-1 ring-gray-100">
-                            <img v-if="page.props.auth.user.profile_photo_url" :src="page.props.auth.user.profile_photo_url" class="h-full w-full object-cover">
+                            <img v-if="page.props.auth.user.profile_photo_url && !imageError" :src="page.props.auth.user.profile_photo_url" @error="imageError = true" class="h-full w-full object-cover">
                             <UserCircleIcon v-else class="h-full w-full text-gray-300" />
                         </div>
                         <div class="hidden sm:block text-left">
