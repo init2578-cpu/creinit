@@ -167,9 +167,13 @@ const formatTime = (timeString) => {
 const formatDateFrench = (dateString) => {
     if (!dateString) return ''
     try {
-        const date = new Date(dateString)
-        const formatted = date.toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
-        return formatted.charAt(0).toUpperCase() + formatted.slice(1)
+        const parts = dateString.split('-')
+        if (parts.length === 3) {
+            const date = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]))
+            const formatted = date.toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+            return formatted.charAt(0).toUpperCase() + formatted.slice(1)
+        }
+        return dateString
     } catch (e) {
         return dateString
     }
@@ -983,11 +987,11 @@ onUnmounted(() => {
                                                     <p class="text-sm font-black text-gray-900 leading-tight">
                                                         {{ formatDateFrench(absence.date) }}
                                                     </p>
-                                                    <div class="flex items-center gap-1.5 mt-1 text-[10px] font-bold text-gray-400">
+                                                    <div v-if="absence.start_time && absence.end_time" class="flex items-center gap-1.5 mt-1 text-[10px] font-bold text-gray-400">
                                                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-3.5 h-3.5">
                                                             <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
                                                         </svg>
-                                                        <span>{{ getFrenchDayName(absence.day_of_week) }} ({{ formatTime(absence.start_time) }} - {{ formatTime(absence.end_time) }})</span>
+                                                        <span>Créneau : {{ formatTime(absence.start_time) }} - {{ formatTime(absence.end_time) }}</span>
                                                     </div>
                                                 </div>
                                             </div>
