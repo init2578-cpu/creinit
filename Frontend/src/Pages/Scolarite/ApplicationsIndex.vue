@@ -33,6 +33,7 @@ const searchQuery = ref('')
 const statusFilter = ref([])
 const moduleFilter = ref([])
 const niveauFilter = ref([])
+const docFilter = ref('all') // 'all', 'missing', 'provided'
 const openDropdown = ref(null)
 
 function toggleDropdown(name) {
@@ -67,6 +68,16 @@ function toggleNiveau(val) {
     }
 }
 
+const missingDocsCount = computed(() => {
+    if (!props.applications) return 0
+    return props.applications.filter(a => !hasUploadedDocuments(a)).length
+})
+
+const providedDocsCount = computed(() => {
+    if (!props.applications) return 0
+    return props.applications.filter(a => hasUploadedDocuments(a)).length
+})
+
 const niveauOptions = computed(() => {
     if (!props.applications) return []
     const levels = props.applications.map(a => a.niveau_etude).filter(Boolean)
@@ -74,7 +85,7 @@ const niveauOptions = computed(() => {
 })
 
 const hasActiveFilters = computed(() => {
-    return searchQuery.value !== '' || statusFilter.value.length > 0 || moduleFilter.value.length > 0 || niveauFilter.value.length > 0
+    return searchQuery.value !== '' || statusFilter.value.length > 0 || moduleFilter.value.length > 0 || niveauFilter.value.length > 0 || docFilter.value !== 'all'
 })
 
 function resetFilters() {
@@ -82,6 +93,7 @@ function resetFilters() {
     statusFilter.value = []
     moduleFilter.value = []
     niveauFilter.value = []
+    docFilter.value = 'all'
     openDropdown.value = null
 }
 
@@ -109,6 +121,12 @@ const niveauLabel = computed(() => {
     return `Niveaux (${niveauFilter.value.length})`
 })
 
+const docLabel = computed(() => {
+    if (docFilter.value === 'missing') return 'Docs manquants'
+    if (docFilter.value === 'provided') return 'Docs fournis'
+    return 'Tous les documents'
+})
+
 const filteredApplications = computed(() => {
     if (!props.applications) return []
     return props.applications.filter(app => {
@@ -121,8 +139,13 @@ const filteredApplications = computed(() => {
         const matchesStatus = statusFilter.value.length === 0 || statusFilter.value.includes(app.status)
         const matchesModule = moduleFilter.value.length === 0 || moduleFilter.value.includes(Number(app.module_id))
         const matchesNiveau = niveauFilter.value.length === 0 || niveauFilter.value.includes(app.niveau_etude)
+        
+        const hasDocs = hasUploadedDocuments(app)
+        const matchesDoc = docFilter.value === 'all' || 
+            (docFilter.value === 'missing' && !hasDocs) || 
+            (docFilter.value === 'provided' && hasDocs)
 
-        return matchesSearch && matchesStatus && matchesModule && matchesNiveau
+        return matchesSearch && matchesStatus && matchesModule && matchesNiveau && matchesDoc
     })
 })
 
@@ -329,6 +352,10 @@ const getStatusClass = (status) => {
                         <span class="px-3 py-1 bg-blue-50 text-blue-700 text-xs font-black rounded-full border border-blue-100 shadow-sm">
                             {{ filteredApplications.length }} {{ filteredApplications.length > 1 ? 'lignes' : 'ligne' }}
                         </span>
+                        <span v-if="missingDocsCount > 0" @click="docFilter = 'missing'" class="cursor-pointer px-3 py-1 bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-bold rounded-full border border-rose-200/60 transition flex items-center gap-1.5 shadow-2xs" title="Cliquer pour filtrer les candidats sans documents">
+                            <span class="h-2 w-2 rounded-full bg-rose-500 animate-pulse"></span>
+                            {{ missingDocsCount }} sans document
+                        </span>
                     </div>
                     <p class="text-gray-500 font-medium">Gérer et valider les dossiers d'inscription des candidats.</p>
                 </div>
@@ -351,7 +378,7 @@ const getStatusClass = (status) => {
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3 items-center relative z-20">
                     <!-- Search Input -->
-                    <div class="relative lg:col-span-4">
+                    <div class="relative lg:col-span-3">
                         <span class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400">
                             <MagnifyingGlassIcon class="h-4 w-4" />
                         </span>
@@ -422,7 +449,7 @@ const getStatusClass = (status) => {
                     </div>
 
                     <!-- Niveau d'étude Filter Dropdown -->
-                    <div :class="hasActiveFilters ? 'lg:col-span-2' : 'lg:col-span-3'" class="relative">
+                    <div class="lg:col-span-2 relative">
                         <button 
                             @click="toggleDropdown('niveau')" 
                             type="button" 
@@ -442,6 +469,41 @@ const getStatusClass = (status) => {
                             <div v-for="niv in niveauOptions" :key="niv" @click="toggleNiveau(niv)" class="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-emerald-50/50 cursor-pointer transition">
                                 <input type="checkbox" :checked="niveauFilter.includes(niv)" readonly class="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500">
                                 <span class="text-xs font-bold text-gray-700 truncate">{{ niv }}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Documents Filter Dropdown -->
+                    <div :class="hasActiveFilters ? 'lg:col-span-1' : 'lg:col-span-2'" class="relative">
+                        <button 
+                            @click="toggleDropdown('doc')" 
+                            type="button" 
+                            class="w-full bg-gray-50/80 border border-gray-200/80 rounded-2xl px-3 py-2.5 font-semibold text-sm text-gray-800 focus:bg-white focus:border-blue-500 flex items-center justify-between transition"
+                            :class="{ 'border-rose-400 bg-rose-50/50 text-rose-700 font-bold': docFilter !== 'all' }"
+                        >
+                            <span class="truncate">{{ docLabel }}</span>
+                            <ChevronDownIcon class="h-4 w-4 text-gray-400 ml-1 shrink-0 transition-transform duration-150" :class="{ 'rotate-180': openDropdown === 'doc' }" />
+                        </button>
+
+                        <div v-if="openDropdown === 'doc'" class="absolute right-0 mt-2 w-56 bg-white border border-gray-100 rounded-2xl shadow-xl p-2 z-30 space-y-1">
+                            <div @click="docFilter = 'all'; openDropdown = null" class="flex items-center justify-between px-3 py-2 rounded-xl hover:bg-gray-50 cursor-pointer transition">
+                                <span class="text-xs font-bold text-gray-700">Tous les documents</span>
+                                <span class="text-[10px] font-extrabold text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">{{ applications?.length || 0 }}</span>
+                            </div>
+                            <div class="h-px bg-gray-100 my-1"></div>
+                            <div @click="docFilter = 'missing'; openDropdown = null" class="flex items-center justify-between px-3 py-2 rounded-xl hover:bg-rose-50/60 cursor-pointer transition">
+                                <span class="text-xs font-bold text-rose-700 flex items-center gap-1.5">
+                                    <XCircleIcon class="h-4 w-4 text-rose-500" />
+                                    Docs manquants
+                                </span>
+                                <span class="text-[10px] font-black text-rose-700 bg-rose-100 px-2 py-0.5 rounded-full">{{ missingDocsCount }}</span>
+                            </div>
+                            <div @click="docFilter = 'provided'; openDropdown = null" class="flex items-center justify-between px-3 py-2 rounded-xl hover:bg-emerald-50/60 cursor-pointer transition">
+                                <span class="text-xs font-bold text-emerald-700 flex items-center gap-1.5">
+                                    <CheckCircleIcon class="h-4 w-4 text-emerald-500" />
+                                    Docs fournis
+                                </span>
+                                <span class="text-[10px] font-black text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">{{ providedDocsCount }}</span>
                             </div>
                         </div>
                     </div>
@@ -489,6 +551,11 @@ const getStatusClass = (status) => {
                                 <button @click="toggleNiveau(niv)" class="hover:text-emerald-900 transition"><XMarkIcon class="h-3.5 w-3.5" /></button>
                             </span>
                         </template>
+
+                        <span v-if="docFilter !== 'all'" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-rose-50 text-rose-700 text-xs font-bold border border-rose-100">
+                            Documents: {{ docFilter === 'missing' ? 'Docs manquants' : 'Docs fournis' }}
+                            <button @click="docFilter = 'all'" class="hover:text-rose-900 transition"><XMarkIcon class="h-3.5 w-3.5" /></button>
+                        </span>
                     </div>
 
                     <button @click="resetFilters" class="text-xs font-bold text-red-500 hover:text-red-700 underline ml-auto transition">
@@ -516,23 +583,23 @@ const getStatusClass = (status) => {
                                     Aucun candidat ne correspond aux critères de recherche.
                                 </td>
                             </tr>
-                            <tr v-for="app in filteredApplications" :key="app.id" class="transition border-b border-gray-50" :class="hasUploadedDocuments(app) ? 'hover:bg-gray-50/50' : 'bg-red-50/20 hover:bg-red-50/40'">
+                            <tr v-for="app in filteredApplications" :key="app.id" class="hover:bg-slate-50/80 transition-colors border-b border-gray-50/80">
                                 <td class="px-6 py-4">
                                     <div class="flex items-center gap-3">
-                                        <div class="h-10 w-10 rounded-xl flex items-center justify-center overflow-hidden font-black" :class="hasUploadedDocuments(app) ? 'bg-blue-50 text-blue-600' : 'bg-red-100 text-red-600 border border-red-200'">
+                                        <div class="h-10 w-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center overflow-hidden font-black border border-blue-100/50 shrink-0">
                                             <img v-if="app.user?.profile_photo_url" :src="app.user.profile_photo_url" class="h-full w-full object-cover">
                                             <template v-else>{{ (app.nom_complet || (app.user ? app.user.name : 'N/A')).charAt(0) }}</template>
                                         </div>
                                         <div>
-                                            <p class="font-bold" :class="hasUploadedDocuments(app) ? 'text-gray-900' : 'text-red-900 font-extrabold'">{{ app.nom_complet || (app.user ? app.user.name : 'N/A') }}</p>
+                                            <p class="font-bold text-gray-900 text-sm leading-tight">{{ app.nom_complet || (app.user ? app.user.name : 'N/A') }}</p>
                                             <div class="flex items-center gap-2 mt-0.5">
-                                                <span class="text-[10px] text-gray-400 font-black uppercase tracking-wider">{{ app.user ? app.user.email : 'Candidat public' }}</span>
+                                                <span class="text-[10px] text-gray-400 font-medium uppercase tracking-wider">{{ app.user ? app.user.email : 'Candidat public' }}</span>
                                                 <span v-if="app.niveau_etude" class="text-[9px] font-extrabold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100">
                                                     {{ app.niveau_etude }}
                                                 </span>
-                                                <span v-if="!hasUploadedDocuments(app)" class="text-[9px] font-black text-red-700 bg-red-100/90 px-2 py-0.5 rounded-full border border-red-200 uppercase tracking-wide flex items-center gap-1">
-                                                    <XCircleIcon class="h-3 w-3 text-red-600" />
-                                                    Docs non fournis
+                                                <span v-if="!hasUploadedDocuments(app)" class="inline-flex items-center gap-1 text-[9px] font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-md border border-rose-100">
+                                                    <span class="h-1.5 w-1.5 rounded-full bg-rose-500 animate-pulse"></span>
+                                                    Doc manquant
                                                 </span>
                                             </div>
                                         </div>
@@ -545,13 +612,13 @@ const getStatusClass = (status) => {
                                     <span v-else class="text-[10px] text-gray-400 font-bold italic">N/A (Module non défini)</span>
                                 </td>
                                 <td class="px-6 py-4 text-sm font-medium">
-                                    <span v-if="hasUploadedDocuments(app)" class="px-3 py-1 bg-emerald-50 text-emerald-700 text-xs font-bold rounded-xl border border-emerald-100 inline-flex items-center gap-1.5">
-                                        <DocumentIcon class="h-4 w-4 text-emerald-600" />
+                                    <span v-if="hasUploadedDocuments(app)" class="px-3 py-1.5 bg-emerald-50/80 text-emerald-700 text-xs font-bold rounded-xl border border-emerald-200/60 inline-flex items-center gap-1.5 shadow-2xs">
+                                        <CheckCircleIcon class="h-4 w-4 text-emerald-600 shrink-0" />
                                         {{ app.cni_path === 'manual_enrollment' ? 'Docs partiellement fournis' : '2 Documents fournis' }}
                                     </span>
-                                    <span v-else class="px-3 py-1 bg-red-100 text-red-700 text-xs font-black rounded-xl border border-red-200 inline-flex items-center gap-1.5 shadow-sm">
-                                        <XCircleIcon class="h-4 w-4 text-red-600" />
-                                        {{ app.cni_path === 'manual_enrollment' ? 'Inscription Manuelle (Docs non fournis)' : 'Documents non fournis' }}
+                                    <span v-else class="px-3 py-1.5 bg-rose-50/90 text-rose-700 text-xs font-bold rounded-xl border border-rose-200/80 inline-flex items-center gap-1.5 shadow-2xs">
+                                        <XCircleIcon class="h-4 w-4 text-rose-600 shrink-0" />
+                                        Non fournis
                                     </span>
                                 </td>
                                 <td class="px-6 py-4 text-center">
