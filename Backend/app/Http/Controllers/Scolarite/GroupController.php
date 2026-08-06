@@ -57,8 +57,17 @@ class GroupController extends Controller
         $startYear = explode('-', $academicYear)[0];
         $yearSuffix = substr($startYear, -2);
         
-        $count = Group::where('annee_academique', 'like', $startYear . '-%')->count();
-        $nextNumber = $count + 1;
+        $maxGroup = Group::where('annee_academique', 'like', $startYear . '-%')
+            ->get()
+            ->map(function ($group) {
+                if (preg_match('/^G(\d+)-/', $group->nom_groupe, $matches)) {
+                    return (int)$matches[1];
+                }
+                return 0;
+            })
+            ->max();
+        
+        $nextNumber = ($maxGroup ?: 0) + 1;
         
         $validated['nom_groupe'] = "G{$nextNumber}-{$yearSuffix}";
 
