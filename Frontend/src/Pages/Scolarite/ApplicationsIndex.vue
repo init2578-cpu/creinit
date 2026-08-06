@@ -211,6 +211,17 @@ function closePreview() {
     isZoomed.value = false
 }
 
+function hasUploadedDocuments(app) {
+    if (!app) return false
+    const hasIdentity = !!(
+        app.cni_recto_path ||
+        (app.cni_path && app.cni_path !== 'manual_enrollment') ||
+        app.other_identity_doc_path
+    )
+    const hasDiploma = !!(app.diploma_path && app.diploma_path !== 'manual_enrollment')
+    return hasIdentity || hasDiploma
+}
+
 function openDetails(app) {
     applicationForDetails.value = app
     isDetailsOpen.value = true
@@ -505,19 +516,23 @@ const getStatusClass = (status) => {
                                     Aucun candidat ne correspond aux critères de recherche.
                                 </td>
                             </tr>
-                            <tr v-for="app in filteredApplications" :key="app.id" class="hover:bg-gray-50/50 transition">
+                            <tr v-for="app in filteredApplications" :key="app.id" class="transition border-b border-gray-50" :class="hasUploadedDocuments(app) ? 'hover:bg-gray-50/50' : 'bg-red-50/20 hover:bg-red-50/40'">
                                 <td class="px-6 py-4">
                                     <div class="flex items-center gap-3">
-                                        <div class="h-10 w-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center overflow-hidden font-black">
+                                        <div class="h-10 w-10 rounded-xl flex items-center justify-center overflow-hidden font-black" :class="hasUploadedDocuments(app) ? 'bg-blue-50 text-blue-600' : 'bg-red-100 text-red-600 border border-red-200'">
                                             <img v-if="app.user?.profile_photo_url" :src="app.user.profile_photo_url" class="h-full w-full object-cover">
                                             <template v-else>{{ (app.nom_complet || (app.user ? app.user.name : 'N/A')).charAt(0) }}</template>
                                         </div>
                                         <div>
-                                            <p class="font-bold text-gray-900">{{ app.nom_complet || (app.user ? app.user.name : 'N/A') }}</p>
+                                            <p class="font-bold" :class="hasUploadedDocuments(app) ? 'text-gray-900' : 'text-red-900 font-extrabold'">{{ app.nom_complet || (app.user ? app.user.name : 'N/A') }}</p>
                                             <div class="flex items-center gap-2 mt-0.5">
                                                 <span class="text-[10px] text-gray-400 font-black uppercase tracking-wider">{{ app.user ? app.user.email : 'Candidat public' }}</span>
                                                 <span v-if="app.niveau_etude" class="text-[9px] font-extrabold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100">
                                                     {{ app.niveau_etude }}
+                                                </span>
+                                                <span v-if="!hasUploadedDocuments(app)" class="text-[9px] font-black text-red-700 bg-red-100/90 px-2 py-0.5 rounded-full border border-red-200 uppercase tracking-wide flex items-center gap-1">
+                                                    <XCircleIcon class="h-3 w-3 text-red-600" />
+                                                    Docs non fournis
                                                 </span>
                                             </div>
                                         </div>
@@ -529,8 +544,15 @@ const getStatusClass = (status) => {
                                     </span>
                                     <span v-else class="text-[10px] text-gray-400 font-bold italic">N/A (Module non défini)</span>
                                 </td>
-                                <td class="px-6 py-4 text-sm font-medium text-gray-400">
-                                    {{ app.cni_path === 'manual_enrollment' ? 'Inscription Manuelle' : '2 Documents fournis' }}
+                                <td class="px-6 py-4 text-sm font-medium">
+                                    <span v-if="hasUploadedDocuments(app)" class="px-3 py-1 bg-emerald-50 text-emerald-700 text-xs font-bold rounded-xl border border-emerald-100 inline-flex items-center gap-1.5">
+                                        <DocumentIcon class="h-4 w-4 text-emerald-600" />
+                                        {{ app.cni_path === 'manual_enrollment' ? 'Docs partiellement fournis' : '2 Documents fournis' }}
+                                    </span>
+                                    <span v-else class="px-3 py-1 bg-red-100 text-red-700 text-xs font-black rounded-xl border border-red-200 inline-flex items-center gap-1.5 shadow-sm">
+                                        <XCircleIcon class="h-4 w-4 text-red-600" />
+                                        {{ app.cni_path === 'manual_enrollment' ? 'Inscription Manuelle (Docs non fournis)' : 'Documents non fournis' }}
+                                    </span>
                                 </td>
                                 <td class="px-6 py-4 text-center">
                                     <span class="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border" :class="getStatusClass(app.status)">
@@ -711,8 +733,9 @@ const getStatusClass = (status) => {
                                 </div>
                                 <EyeIcon class="h-4 w-4 text-gray-300 group-hover:text-blue-600" />
                             </button>
-                            <div v-if="!applicationForDetails.cni_recto_path && !applicationForDetails.cni_verso_path && !applicationForDetails.other_identity_doc_path && applicationForDetails.cni_path === 'manual_enrollment'" class="w-full text-center py-4 bg-gray-50 rounded-2xl border border-dashed border-gray-200 text-gray-400 text-xs font-bold italic">
-                                Aucun document (Inscription Manuelle)
+                            <div v-if="!hasUploadedDocuments(applicationForDetails)" class="w-full text-center py-4 bg-red-50 rounded-2xl border border-dashed border-red-200 text-red-600 text-xs font-black flex items-center justify-center gap-2">
+                                <XCircleIcon class="h-5 w-5 text-red-600" />
+                                <span>Aucun document téléversé (Docs non fournis)</span>
                             </div>
                         </div>
                     </div>
