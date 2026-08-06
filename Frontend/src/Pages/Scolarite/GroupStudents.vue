@@ -9,6 +9,7 @@ import {
     MagnifyingGlassIcon,
     AcademicCapIcon,
     CheckCircleIcon,
+    XCircleIcon,
     LockClosedIcon
 } from '@heroicons/vue/24/outline'
 
@@ -21,11 +22,26 @@ const props = defineProps({
 const search = ref('')
 const selectedUsers = ref([])
 
+const hasUploadedDocuments = (student) => {
+    if (!student) return false;
+    const hasCni = student.cni_path && student.cni_path !== 'manual_enrollment';
+    const hasDiploma = student.diploma_path && student.diploma_path !== 'manual_enrollment';
+    return Boolean(hasCni || hasDiploma);
+};
+
+const missingDocsCurrentCount = computed(() => {
+    return props.currentStudents.filter(s => !hasUploadedDocuments(s)).length;
+});
+
+const missingDocsAvailableCount = computed(() => {
+    return props.availableStudents.filter(s => !hasUploadedDocuments(s)).length;
+});
+
 const filteredAvailable = computed(() => {
     return props.availableStudents.filter(s => 
         s.name.toLowerCase().includes(search.value.toLowerCase()) ||
         s.email?.toLowerCase().includes(search.value.toLowerCase()) ||
-        s.telephone.includes(search.value)
+        s.telephone?.includes(search.value)
     )
 })
 
@@ -120,21 +136,49 @@ const nominate = (userId, role) => {
                     <div class="p-8 border-b border-gray-100 bg-gray-50/50 flex items-center justify-between">
                         <div>
                             <h3 class="text-xl font-black text-gray-900 tracking-tight">Liste du Groupe</h3>
-                            <p class="text-indigo-600 text-xs font-black uppercase tracking-widest">{{ currentStudents.length }} Apprenants inscrits</p>
+                            <div class="flex items-center gap-2 mt-0.5">
+                                <p class="text-indigo-600 text-xs font-black uppercase tracking-widest">{{ currentStudents.length }} Apprenants inscrits</p>
+                                <span v-if="missingDocsCurrentCount > 0" class="text-[10px] font-extrabold text-rose-700 bg-rose-50 px-2.5 py-0.5 rounded-full border border-rose-200/80 flex items-center gap-1">
+                                    <span class="h-1.5 w-1.5 rounded-full bg-rose-500 animate-pulse"></span>
+                                    {{ missingDocsCurrentCount }} sans document
+                                </span>
+                            </div>
                         </div>
                     </div>
                     
                     <div class="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
-                        <div v-for="student in currentStudents" :key="student.id" class="p-4 rounded-3xl border border-gray-50 bg-white hover:border-indigo-100 transition group">
+                        <div 
+                            v-for="student in currentStudents" 
+                            :key="student.id" 
+                            class="p-4 rounded-3xl border transition group"
+                            :class="hasUploadedDocuments(student) 
+                                ? 'border-gray-100 bg-white hover:border-indigo-100' 
+                                : 'border-rose-200/80 bg-rose-50/40 hover:bg-rose-50/70 hover:border-rose-300'"
+                        >
                             <div class="flex items-center justify-between">
                                 <div class="flex items-center gap-4">
-                                    <div class="h-12 w-12 rounded-2xl bg-indigo-50 flex items-center justify-center overflow-hidden text-indigo-600 font-black text-lg">
+                                    <div 
+                                        class="h-12 w-12 rounded-2xl flex items-center justify-center overflow-hidden font-black text-lg shrink-0"
+                                        :class="hasUploadedDocuments(student) 
+                                            ? 'bg-indigo-50 text-indigo-600' 
+                                            : 'bg-rose-100 text-rose-600 border border-rose-200'"
+                                    >
                                         <img v-if="student.profile_photo_url" :src="student.profile_photo_url" class="h-full w-full object-cover">
                                         <template v-else>{{ student.name.charAt(0) }}</template>
                                     </div>
                                     <div>
-                                        <p class="font-black text-gray-900 leading-tight">{{ student.name }}</p>
-                                        <p class="text-xs text-gray-400 font-medium">{{ student.email || student.telephone }}</p>
+                                        <div class="flex items-center gap-2 flex-wrap">
+                                            <p class="font-black leading-tight" :class="hasUploadedDocuments(student) ? 'text-gray-900' : 'text-rose-950 font-black'">
+                                                {{ student.name }}
+                                            </p>
+                                            <span v-if="!hasUploadedDocuments(student)" class="inline-flex items-center gap-1 text-[9px] font-bold text-rose-700 bg-rose-100/90 px-2 py-0.5 rounded-md border border-rose-200 uppercase tracking-wider shrink-0">
+                                                <XCircleIcon class="h-3 w-3 text-rose-600 shrink-0" />
+                                                Docs non fournis
+                                            </span>
+                                        </div>
+                                        <p class="text-xs font-medium mt-0.5" :class="hasUploadedDocuments(student) ? 'text-gray-400' : 'text-rose-700/80'">
+                                            {{ student.email || student.telephone }}
+                                        </p>
                                     </div>
                                 </div>
                                 <div class="flex items-center gap-2">
@@ -185,7 +229,13 @@ const nominate = (userId, role) => {
                     <div class="p-8 border-b border-gray-100 bg-gray-50/50 space-y-4">
                         <div class="flex items-center justify-between">
                             <h3 class="text-xl font-black text-gray-900 tracking-tight">Apprenants Disponibles</h3>
-                            <span class="px-3 py-1 bg-green-100 text-green-700 text-[10px] font-black uppercase tracking-widest rounded-full">Admis au module</span>
+                            <div class="flex items-center gap-2">
+                                <span v-if="missingDocsAvailableCount > 0" class="px-2.5 py-1 bg-rose-50 text-rose-600 text-[10px] font-black uppercase tracking-widest rounded-full border border-rose-200/60 flex items-center gap-1">
+                                    <span class="h-1.5 w-1.5 rounded-full bg-rose-500 animate-pulse"></span>
+                                    {{ missingDocsAvailableCount }} sans doc
+                                </span>
+                                <span class="px-3 py-1 bg-green-100 text-green-700 text-[10px] font-black uppercase tracking-widest rounded-full">Admis au module</span>
+                            </div>
                         </div>
                         
                         <div class="relative">
@@ -203,13 +253,27 @@ const nominate = (userId, role) => {
                         <label 
                             v-for="student in filteredAvailable" 
                             :key="student.id" 
-                            class="flex items-center justify-between p-4 rounded-3xl border border-gray-50 cursor-pointer hover:border-indigo-200 transition-all select-none"
-                            :class="{'bg-indigo-50/30 border-indigo-200': selectedUsers.includes(student.id)}"
+                            class="flex items-center justify-between p-4 rounded-3xl border cursor-pointer transition-all select-none"
+                            :class="[
+                                selectedUsers.includes(student.id) 
+                                    ? 'bg-indigo-50/40 border-indigo-300' 
+                                    : hasUploadedDocuments(student) 
+                                        ? 'border-gray-50 bg-white hover:border-indigo-200' 
+                                        : 'border-rose-200/80 bg-rose-50/40 hover:bg-rose-50/70 hover:border-rose-300'
+                            ]"
                         >
                             <div class="flex items-center gap-4">
-                                <div class="relative">
-                                    <div class="h-12 w-12 rounded-2xl bg-gray-100 flex items-center justify-center text-gray-400 font-black text-lg overflow-hidden transition-colors"
-                                        :class="{'bg-indigo-600 text-white': selectedUsers.includes(student.id)}">
+                                <div class="relative shrink-0">
+                                    <div 
+                                        class="h-12 w-12 rounded-2xl flex items-center justify-center font-black text-lg overflow-hidden transition-colors"
+                                        :class="[
+                                            selectedUsers.includes(student.id) 
+                                                ? 'bg-indigo-600 text-white' 
+                                                : hasUploadedDocuments(student) 
+                                                    ? 'bg-gray-100 text-gray-400' 
+                                                    : 'bg-rose-100 text-rose-600 border border-rose-200'
+                                        ]"
+                                    >
                                         <template v-if="!selectedUsers.includes(student.id)">
                                             <img v-if="student.profile_photo_url" :src="student.profile_photo_url" class="h-full w-full object-cover">
                                             <span v-else>{{ student.name.charAt(0) }}</span>
@@ -224,11 +288,21 @@ const nominate = (userId, role) => {
                                     >
                                 </div>
                                 <div>
-                                    <p class="font-black text-gray-900 leading-tight">{{ student.name }}</p>
-                                    <p class="text-xs text-gray-400 font-medium">{{ student.telephone }}</p>
+                                    <div class="flex items-center gap-2 flex-wrap">
+                                        <p class="font-black leading-tight" :class="hasUploadedDocuments(student) ? 'text-gray-900' : 'text-rose-950 font-black'">
+                                            {{ student.name }}
+                                        </p>
+                                        <span v-if="!hasUploadedDocuments(student)" class="inline-flex items-center gap-1 text-[9px] font-bold text-rose-700 bg-rose-100/90 px-2 py-0.5 rounded-md border border-rose-200 uppercase tracking-wider shrink-0">
+                                            <XCircleIcon class="h-3 w-3 text-rose-600 shrink-0" />
+                                            Docs non fournis
+                                        </span>
+                                    </div>
+                                    <p class="text-xs font-medium mt-0.5" :class="hasUploadedDocuments(student) ? 'text-gray-400' : 'text-rose-700/80'">
+                                        {{ student.telephone }}
+                                    </p>
                                 </div>
                             </div>
-                            <div class="text-[10px] font-black uppercase tracking-widest text-indigo-400">
+                            <div class="text-[10px] font-black uppercase tracking-widest shrink-0 ml-2" :class="hasUploadedDocuments(student) ? 'text-indigo-400' : 'text-rose-600 font-extrabold'">
                                 {{ student.sexe === 'M' ? 'Homme' : 'Femme' }}
                             </div>
                         </label>

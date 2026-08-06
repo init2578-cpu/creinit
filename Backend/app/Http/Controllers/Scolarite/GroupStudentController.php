@@ -16,11 +16,20 @@ class GroupStudentController extends Controller
     {
         // Students already in the group
         $currentStudents = $group->students()
-            ->join('applications', function ($join) use ($group) {
+            ->leftJoin('applications', function ($join) use ($group) {
                 $join->on('users.id', '=', 'applications.user_id')
                      ->where('applications.module_id', '=', $group->module_id);
             })
-            ->get(['users.id', 'users.name', 'users.email', 'users.telephone', 'users.profile_photo_path', 'applications.sexe']);
+            ->get([
+                'users.id', 
+                'users.name', 
+                'users.email', 
+                'users.telephone', 
+                'users.profile_photo_path', 
+                'applications.sexe',
+                'applications.cni_path',
+                'applications.diploma_path'
+            ]);
 
         // Available users: admitted for the same module but not in THIS group
         $availableStudents = User::role(['Apprenant', 'Stagiaire'])
@@ -32,7 +41,16 @@ class GroupStudentController extends Controller
             ->whereDoesntHave('studentGroups', function ($query) use ($group) {
                 $query->where('group_id', $group->id);
             })
-            ->get(['users.id', 'users.name', 'users.email', 'users.telephone', 'users.profile_photo_path', 'applications.sexe']);
+            ->get([
+                'users.id', 
+                'users.name', 
+                'users.email', 
+                'users.telephone', 
+                'users.profile_photo_path', 
+                'applications.sexe',
+                'applications.cni_path',
+                'applications.diploma_path'
+            ]);
 
         return Inertia::render('Scolarite/GroupStudents', [
             'group' => $group->load(['module', 'formateur']),
