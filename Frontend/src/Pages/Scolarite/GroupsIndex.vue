@@ -154,6 +154,17 @@ const calculateTotalHours = (schedules) => {
     const minutes = totalMinutes % 60
     return minutes > 0 ? `${hours}h${minutes.toString().padStart(2, '0')}` : `${hours}h`
 }
+
+const sortedGroups = computed(() => {
+    if (!props.groups) return []
+    return [...props.groups].sort((a, b) => {
+        const matchA = (a.nom_groupe || '').match(/^G(\d+)/i)
+        const matchB = (b.nom_groupe || '').match(/^G(\d+)/i)
+        const numA = matchA ? parseInt(matchA[1], 10) : a.id
+        const numB = matchB ? parseInt(matchB[1], 10) : b.id
+        return numB - numA
+    })
+})
 </script>
 
 <template>
@@ -177,9 +188,9 @@ const calculateTotalHours = (schedules) => {
             </div>
 
             <!-- Groups Grid -->
-            <div v-if="groups.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div v-if="sortedGroups.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <div 
-                    v-for="group in groups" 
+                    v-for="group in sortedGroups" 
                     :key="group.id" 
                     class="bg-white rounded-[2.5rem] border shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden group"
                     :class="group.status === 'closed' ? 'border-gray-200 opacity-80' : 'border-gray-100'"

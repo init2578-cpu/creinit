@@ -38,12 +38,20 @@ class GroupController extends Controller
             
         $formateurs = $trainers->concat($assistants);
 
+        $groups = Group::with(['module', 'formateur', 'students'])
+            ->withCount('students')
+            ->get()
+            ->sortByDesc(function ($group) {
+                if (preg_match('/^G(\d+)/i', (string) $group->nom_groupe, $matches)) {
+                    return (int) $matches[1];
+                }
+                return $group->id;
+            })
+            ->values();
+
         return Inertia::render('Scolarite/GroupsIndex', [
-            'groups' => Group::with(['module', 'formateur', 'students'])
-                ->withCount('students')
-                ->orderByDesc('created_at')
-                ->get(),
-            'modules' => Module::all(['id', 'titre']),
+            'groups' => $groups,
+            'modules' => Module::activeForEnrollment()->get(['id', 'titre']),
             'formateurs' => $formateurs,
         ]);
     }
