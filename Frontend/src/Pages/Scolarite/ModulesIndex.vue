@@ -343,6 +343,15 @@ function deletePhase(phaseId) {
         })
     }
 }
+
+// Phase Preview
+const isPhasePreviewOpen = ref(false)
+const previewPhase = ref(null)
+
+function openPhasePreview(phase) {
+    previewPhase.value = phase
+    isPhasePreviewOpen.value = true
+}
 </script>
 
 <template>
@@ -672,10 +681,13 @@ function deletePhase(phaseId) {
                                                     <p v-if="phase.description" class="text-[11px] text-gray-500 font-medium line-clamp-1 mt-0.5">{{ phase.description }}</p>
                                                 </div>
                                                 <div class="flex items-center gap-1">
-                                                    <button type="button" @click="openPhaseModal(phase)" class="p-1.5 text-gray-400 hover:text-blue-600 rounded-lg transition">
+                                                    <button type="button" @click="openPhasePreview(phase)" class="p-1.5 text-gray-400 hover:text-blue-600 rounded-lg transition" title="Aperçu">
+                                                        <EyeIcon class="h-4 w-4" />
+                                                    </button>
+                                                    <button type="button" @click="openPhaseModal(phase)" class="p-1.5 text-gray-400 hover:text-blue-600 rounded-lg transition" title="Modifier">
                                                         <PencilSquareIcon class="h-4 w-4" />
                                                     </button>
-                                                    <button type="button" @click="deletePhase(phase.id)" class="p-1.5 text-gray-400 hover:text-red-600 rounded-lg transition">
+                                                    <button type="button" @click="deletePhase(phase.id)" class="p-1.5 text-gray-400 hover:text-red-600 rounded-lg transition" title="Supprimer">
                                                         <TrashIcon class="h-4 w-4" />
                                                     </button>
                                                 </div>
@@ -823,10 +835,13 @@ function deletePhase(phaseId) {
                             <p v-if="phase.description" class="text-xs font-medium text-gray-500 line-clamp-1 mt-0.5">{{ phase.description }}</p>
                         </div>
                         <div class="flex items-center gap-2">
-                            <button @click="openPhaseModal(phase)" class="p-2 text-gray-400 hover:text-blue-600 hover:bg-white rounded-xl transition">
+                            <button @click="openPhasePreview(phase)" class="p-2 text-gray-400 hover:text-blue-600 hover:bg-white rounded-xl transition" title="Aperçu">
+                                <EyeIcon class="h-4 w-4" />
+                            </button>
+                            <button @click="openPhaseModal(phase)" class="p-2 text-gray-400 hover:text-blue-600 hover:bg-white rounded-xl transition" title="Modifier">
                                 <PencilSquareIcon class="h-4 w-4" />
                             </button>
-                            <button @click="deletePhase(phase.id)" class="p-2 text-gray-400 hover:text-red-600 hover:bg-white rounded-xl transition">
+                            <button @click="deletePhase(phase.id)" class="p-2 text-gray-400 hover:text-red-600 hover:bg-white rounded-xl transition" title="Supprimer">
                                 <TrashIcon class="h-4 w-4" />
                             </button>
                         </div>
@@ -869,6 +884,45 @@ function deletePhase(phaseId) {
                         </button>
                     </div>
                 </form>
+            </div>
+        </div>
+
+        <!-- Phase Preview Modal -->
+        <div v-if="isPhasePreviewOpen" class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-gray-900/80 backdrop-blur-sm">
+            <div class="bg-white w-full max-w-3xl rounded-[3rem] overflow-hidden shadow-2xl max-h-[90vh] flex flex-col border border-white/20">
+                <div class="p-8 border-b border-gray-100 flex items-center justify-between flex-shrink-0">
+                    <div>
+                        <span class="text-xs font-black uppercase tracking-wider text-indigo-600 bg-indigo-100/85 px-3 py-1 rounded-xl">Phase {{ previewPhase.ordre }}</span>
+                        <h3 class="text-2xl font-black text-gray-900 tracking-tight mt-2">{{ previewPhase.titre }}</h3>
+                        <p v-if="previewPhase.quota_heures" class="text-xs text-gray-400 font-bold uppercase tracking-wider mt-1">Durée : {{ previewPhase.quota_heures }} heures</p>
+                    </div>
+                    <button @click="isPhasePreviewOpen = false" class="p-3 hover:bg-gray-100 rounded-2xl transition text-gray-400">
+                        <XMarkIcon class="h-6 w-6" />
+                    </button>
+                </div>
+
+                <div class="p-8 overflow-y-auto custom-scrollbar flex-1 space-y-6">
+                    <div v-if="previewPhase.description" class="p-4 bg-indigo-50/40 rounded-2xl border border-indigo-50 text-sm font-medium text-gray-600 italic leading-relaxed">
+                        {{ previewPhase.description }}
+                    </div>
+
+                    <div v-if="previewPhase.start_date || previewPhase.end_date" class="flex flex-wrap gap-4 text-xs font-bold text-gray-500 uppercase tracking-wider">
+                        <span v-if="previewPhase.start_date">Début : {{ new Date(previewPhase.start_date).toLocaleDateString('fr-FR') }}</span>
+                        <span v-if="previewPhase.end_date">Fin : {{ new Date(previewPhase.end_date).toLocaleDateString('fr-FR') }}</span>
+                    </div>
+
+                    <div class="border-t border-gray-100 pt-6">
+                        <h4 class="text-xs font-black text-gray-400 uppercase tracking-widest mb-4">Contenu de la phase</h4>
+                        <article v-if="previewPhase.content" class="prose prose-indigo max-w-none prose-headings:font-black prose-p:text-gray-700 bg-gray-50/50 p-6 rounded-2xl border border-gray-100">
+                            <div v-html="previewPhase.content"></div>
+                        </article>
+                        <p v-else class="text-sm text-gray-400 italic">Aucun contenu textuel pour cette phase.</p>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 border-t border-gray-100 flex justify-end flex-shrink-0">
+                    <button @click="isPhasePreviewOpen = false" class="px-8 py-3 bg-gray-900 text-white rounded-xl font-black text-xs uppercase tracking-widest">Fermer</button>
+                </div>
             </div>
         </div>
     </AuthenticatedLayout>
