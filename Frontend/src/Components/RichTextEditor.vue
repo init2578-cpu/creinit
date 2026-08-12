@@ -9,7 +9,8 @@ import { Table } from '@tiptap/extension-table'
 import { TableRow } from '@tiptap/extension-table-row'
 import { TableCell } from '@tiptap/extension-table-cell'
 import { TableHeader } from '@tiptap/extension-table-header'
-import { watch, onBeforeUnmount } from 'vue'
+import { Image } from '@tiptap/extension-image'
+import { ref, watch, onBeforeUnmount } from 'vue'
 
 const props = defineProps({
     modelValue: {
@@ -42,6 +43,7 @@ const editor = useEditor({
         TableRow,
         TableHeader,
         TableCell,
+        Image,
     ],
     editorProps: {
         attributes: {
@@ -52,6 +54,35 @@ const editor = useEditor({
         emit('update:modelValue', editor.getHTML())
     },
 })
+
+const imageInput = ref(null)
+
+function triggerImageUpload() {
+    const choice = window.confirm("Cliquez sur 'OK' pour choisir une image locale depuis votre appareil, ou sur 'Annuler' pour saisir l'URL d'une image en ligne.")
+    if (choice) {
+        if (imageInput.value) {
+            imageInput.value.click()
+        }
+    } else {
+        const url = window.prompt("URL de l'image :")
+        if (url) {
+            editor.value.chain().focus().setImage({ src: url }).run()
+        }
+    }
+}
+
+function handleImageUpload(event) {
+    const file = event.target.files[0]
+    if (file) {
+        const reader = new FileReader()
+        reader.onload = (e) => {
+            const base64 = e.target.result
+            editor.value.chain().focus().setImage({ src: base64 }).run()
+        }
+        reader.readAsDataURL(file)
+    }
+    event.target.value = ''
+}
 
 watch(() => props.modelValue, (value) => {
     if (!editor.value) return
@@ -212,6 +243,24 @@ onBeforeUnmount(() => {
                 </svg>
             </button>
 
+            <button 
+                type="button"
+                @click="triggerImageUpload" 
+                class="p-2 rounded-lg hover:bg-gray-100 transition-all text-xs flex items-center gap-1 font-bold text-gray-700"
+                title="Insérer une image (locale ou URL)"
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+            </button>
+            <input 
+                type="file" 
+                ref="imageInput" 
+                @change="handleImageUpload" 
+                accept="image/*" 
+                class="hidden" 
+            />
+
             <!-- Table Actions Sub-toolbar -->
             <transition name="fade">
                 <div v-if="editor.isActive('table')" class="flex items-center gap-1 bg-blue-50/50 border border-blue-100 rounded-lg p-1 animate-fade-in">
@@ -346,5 +395,14 @@ onBeforeUnmount(() => {
     font-size: 1.5rem;
     font-weight: 800;
     margin-bottom: 0.75rem;
+}
+
+/* Image styling inside Tiptap editor */
+.ProseMirror img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 1rem;
+    margin: 1.5rem 0;
+    border: 1px solid #e5e7eb;
 }
 </style>
