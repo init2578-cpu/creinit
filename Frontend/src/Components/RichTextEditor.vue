@@ -86,6 +86,11 @@ function handleImageUpload(event) {
 
 watch(() => props.modelValue, (value) => {
     if (!editor.value) return
+    
+    // Si l'éditeur a le focus, l'utilisateur est en train d'écrire ou d'insérer des éléments.
+    // L'éditeur est la source de vérité, donc on évite d'écraser le contenu à la volée.
+    if (editor.value.isFocused) return
+
     const isSame = editor.value.getHTML() === value
     // Only set content if it's fundamentally different (e.g. initially loaded or changed from outside)
     if (!isSame) {
