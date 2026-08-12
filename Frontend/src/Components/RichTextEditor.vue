@@ -5,6 +5,10 @@ import Underline from '@tiptap/extension-underline'
 import Link from '@tiptap/extension-link'
 import { TextStyle } from '@tiptap/extension-text-style'
 import { Color } from '@tiptap/extension-color'
+import { Table } from '@tiptap/extension-table'
+import { TableRow } from '@tiptap/extension-table-row'
+import { TableCell } from '@tiptap/extension-table-cell'
+import { TableHeader } from '@tiptap/extension-table-header'
 import { watch, onBeforeUnmount } from 'vue'
 
 const props = defineProps({
@@ -32,6 +36,12 @@ const editor = useEditor({
                 class: 'text-blue-600 underline cursor-pointer',
             },
         }),
+        Table.configure({
+            resizable: true,
+        }),
+        TableRow,
+        TableHeader,
+        TableCell,
     ],
     editorProps: {
         attributes: {
@@ -188,6 +198,67 @@ onBeforeUnmount(() => {
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
             </button>
+
+            <div class="h-6 w-px bg-gray-200 mx-1"></div>
+
+            <button 
+                type="button"
+                @click="editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()" 
+                class="p-2 rounded-lg hover:bg-gray-100 transition-all text-xs flex items-center gap-1 font-bold text-gray-700"
+                title="Insérer un tableau (3x3)"
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+            </button>
+
+            <!-- Table Actions Sub-toolbar -->
+            <transition name="fade">
+                <div v-if="editor.isActive('table')" class="flex items-center gap-1 bg-blue-50/50 border border-blue-100 rounded-lg p-1 animate-fade-in">
+                    <button 
+                        type="button"
+                        @click="editor.chain().focus().addRowAfter().run()" 
+                        class="px-2 py-1 text-[10px] font-black uppercase text-blue-700 hover:bg-blue-100 rounded transition-all"
+                        title="Ajouter une ligne en dessous"
+                    >
+                        + Ligne
+                    </button>
+                    <button 
+                        type="button"
+                        @click="editor.chain().focus().deleteRow().run()" 
+                        class="px-2 py-1 text-[10px] font-black uppercase text-red-600 hover:bg-red-50 rounded transition-all"
+                        title="Supprimer la ligne"
+                    >
+                        - Ligne
+                    </button>
+                    <div class="h-4 w-px bg-blue-100 mx-0.5"></div>
+                    <button 
+                        type="button"
+                        @click="editor.chain().focus().addColumnAfter().run()" 
+                        class="px-2 py-1 text-[10px] font-black uppercase text-blue-700 hover:bg-blue-100 rounded transition-all"
+                        title="Ajouter une colonne à droite"
+                    >
+                        + Col
+                    </button>
+                    <button 
+                        type="button"
+                        @click="editor.chain().focus().deleteColumn().run()" 
+                        class="px-2 py-1 text-[10px] font-black uppercase text-red-600 hover:bg-red-50 rounded transition-all"
+                        title="Supprimer la colonne"
+                    >
+                        - Col
+                    </button>
+                    <div class="h-4 w-px bg-blue-100 mx-0.5"></div>
+                    <button 
+                        type="button"
+                        @click="editor.chain().focus().deleteTable().run()" 
+                        class="px-2 py-1 text-[10px] font-black uppercase text-red-700 bg-red-50 hover:bg-red-100 rounded transition-all"
+                        title="Supprimer le tableau"
+                    >
+                        Suppr. Tab
+                    </button>
+                </div>
+            </transition>
         </div>
 
         <!-- Editor Area -->
@@ -199,6 +270,53 @@ onBeforeUnmount(() => {
 /* Tiptap styles */
 .ProseMirror {
     outline: none !important;
+}
+
+/* Table styling inside Tiptap editor */
+.ProseMirror table {
+    border-collapse: collapse;
+    table-layout: fixed;
+    width: 100%;
+    margin: 2rem 0;
+    overflow: hidden;
+    border-radius: 1rem;
+    border: 1px solid #e5e7eb;
+}
+
+.ProseMirror th,
+.ProseMirror td {
+    min-width: 1em;
+    border: 1px solid #e5e7eb;
+    padding: 0.75rem 1rem;
+    vertical-align: top;
+    box-sizing: border-box;
+    position: relative;
+}
+
+.ProseMirror th {
+    font-weight: 800;
+    text-align: left;
+    background-color: #f9fafb;
+    color: #111827;
+}
+
+.ProseMirror .selectedCell:after {
+    z-index: 2;
+    position: absolute;
+    content: "";
+    left: 0; right: 0; top: 0; bottom: 0;
+    background: rgba(200, 200, 255, 0.4);
+    pointer-events: none;
+}
+
+.ProseMirror .column-resize-handle {
+    position: absolute;
+    right: -2px;
+    top: 0;
+    bottom: -2px;
+    width: 4px;
+    background-color: #3b82f6;
+    pointer-events: none;
 }
 
 .ProseMirror blockquote {
