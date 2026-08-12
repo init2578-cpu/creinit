@@ -3,6 +3,8 @@ import { useEditor, EditorContent } from '@tiptap/vue-3'
 import StarterKit from '@tiptap/starter-kit'
 import Underline from '@tiptap/extension-underline'
 import Link from '@tiptap/extension-link'
+import { TextStyle } from '@tiptap/extension-text-style'
+import { Color } from '@tiptap/extension-color'
 import { watch, onBeforeUnmount } from 'vue'
 
 const props = defineProps({
@@ -21,6 +23,8 @@ const editor = useEditor({
             link: false,
             underline: false,
         }),
+        TextStyle,
+        Color,
         Underline,
         Link.configure({
             openOnClick: false,
@@ -87,6 +91,30 @@ onBeforeUnmount(() => {
                 U
             </button>
             
+            <div class="h-6 w-px bg-gray-200 mx-1"></div>
+
+            <!-- Color Picker -->
+            <div class="flex items-center gap-1.5 px-1">
+                <div class="relative w-6 h-6 rounded-md overflow-hidden border border-gray-200 shadow-sm flex items-center justify-center bg-white group hover:border-gray-400 transition-all">
+                    <input 
+                        type="color" 
+                        @input="editor.chain().focus().setColor($event.target.value).run()"
+                        :value="editor.getAttributes('textStyle').color || '#000000'"
+                        class="absolute inset-0 w-10 h-10 -translate-x-2 -translate-y-2 cursor-pointer border-0 p-0"
+                        title="Couleur de police"
+                    />
+                </div>
+                <button 
+                    v-if="editor.getAttributes('textStyle').color"
+                    type="button"
+                    @click="editor.chain().focus().unsetColor().run()"
+                    class="p-1 text-[10px] font-black uppercase text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition-all tracking-wider"
+                    title="Réinitialiser la couleur"
+                >
+                    Effacer
+                </button>
+            </div>
+
             <div class="h-6 w-px bg-gray-200 mx-1"></div>
 
             <button 
