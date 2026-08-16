@@ -437,10 +437,21 @@ const isExamStarted = (exam) => {
     return new Date(exam.scheduled_at) <= new Date();
 };
 
+const canManageExam = (exam) => {
+    if (!exam) return false;
+    if (isSecretaire.value) return false;
+    if (isDirecteur.value) return true;
+    if (isTrainer.value) {
+        return exam.user_id === page.props.auth.user.id;
+    }
+    return true;
+};
+
 const canModifyExam = (exam) => {
     if (!exam) return false;
     if (isSecretaire.value) return false;
     if (isDirecteur.value) return true;
+    if (isTrainer.value && exam.user_id !== page.props.auth.user.id) return false;
     return !isExamStarted(exam) || !exam.exam_results || exam.exam_results.length === 0;
 };
 
@@ -689,11 +700,11 @@ function approveExam(examId) {
                                         >
                                             <DocumentIcon class="h-6 w-6" />
                                         </a>
-                                        <button v-if="exam.type === 'online'" @click="openQuestionModal(exam)" class="p-2 text-blue-500 hover:bg-blue-50 rounded-xl transition" :title="isSecretaire ? 'Voir les questions' : 'Gérer les questions'">
+                                        <button v-if="exam.type === 'online' && (canManageExam(exam) || isSecretaire)" @click="openQuestionModal(exam)" class="p-2 text-blue-500 hover:bg-blue-50 rounded-xl transition" :title="isSecretaire ? 'Voir les questions' : 'Gérer les questions'">
                                             <QueueListIcon class="h-6 w-6" />
                                         </button>
                                         <button 
-                                            v-if="exam.is_approved && !isSecretaire"
+                                            v-if="exam.is_approved && !isSecretaire && canManageExam(exam)"
                                             @click="openGradeModal(exam)" 
                                             class="p-2 text-green-600 hover:bg-green-50 rounded-xl transition" 
                                             title="Consulter les notes / Saisie"
@@ -701,7 +712,7 @@ function approveExam(examId) {
                                             <ClipboardDocumentCheckIcon class="h-6 w-6" />
                                         </button>
                                         <button 
-                                            v-else-if="!isSecretaire"
+                                            v-else-if="!isSecretaire && canManageExam(exam)"
                                             disabled 
                                             class="p-2 text-gray-300 cursor-not-allowed rounded-xl transition" 
                                             title="L'attribution des notes est bloquée tant que le directeur n'a pas validé l'épreuve"
@@ -711,7 +722,7 @@ function approveExam(examId) {
                                         <button v-if="canModifyExam(exam)" @click="openModal(exam)" class="p-2 text-blue-600 hover:bg-blue-50 rounded-xl transition" title="Modifier">
                                             <PencilIcon class="h-6 w-6" />
                                         </button>
-                                        <button v-if="!isSecretaire" @click="duplicateExam(exam.id)" class="p-2 text-indigo-600 hover:bg-indigo-50 rounded-xl transition" title="Dupliquer pour un autre groupe">
+                                        <button v-if="!isSecretaire && canManageExam(exam)" @click="duplicateExam(exam.id)" class="p-2 text-indigo-600 hover:bg-indigo-50 rounded-xl transition" title="Dupliquer pour un autre groupe">
                                             <DocumentDuplicateIcon class="h-6 w-6" />
                                         </button>
                                         <button v-if="canModifyExam(exam)" @click="deleteExam(exam.id)" class="p-2 text-red-600 hover:bg-red-50 rounded-xl transition" title="Supprimer">

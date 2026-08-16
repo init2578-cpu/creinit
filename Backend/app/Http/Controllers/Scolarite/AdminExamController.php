@@ -32,20 +32,29 @@ class AdminExamController extends Controller
         $groupsQuery = Group::query();
 
         if (!$user->hasRole('Directeur') && !$user->hasRole('Secrétaire') && $user->isTrainer()) {
+            $allowedUserIds = $user->getAllowedTrainerUserIds();
+            $examQuery->whereIn('user_id', $allowedUserIds);
             $moduleIds = $user->groupsAsFormateur()->pluck('module_id');
             if ($moduleIds->isNotEmpty()) {
-                $examQuery->whereIn('module_id', $moduleIds);
                 $moduleQuery->whereIn('id', $moduleIds);
-                $groupsQuery->where('formateur_id', $user->id);
+                $groupsQuery->whereIn('formateur_id', $allowedUserIds);
             }
         }
 
+        $isDirecteur = $user->hasRole('Directeur');
+        $allowedUserIds = $user->getAllowedTrainerUserIds();
+
         return Inertia::render('Scolarite/ExamsIndex', [
-            'exams'   => $examQuery->get()->map(function ($exam) {
+            'exams'   => $examQuery->get()->map(function ($exam) use ($isDirecteur, $allowedUserIds) {
                 $exam->expected_results_count = User::role('Apprenant')
                     ->whereHas('studentGroups', function ($query) use ($exam) {
                         $query->whereIn('groups.id', $exam->groups->pluck('id'));
                     })->count();
+
+                $exam->can_manage = $isDirecteur || in_array((int)$exam->user_id, $allowedUserIds, true);
+                $isStarted = $exam->scheduled_at && $exam->scheduled_at->isPast() && $exam->examResults()->exists();
+                $exam->can_modify = $isDirecteur || (in_array((int)$exam->user_id, $allowedUserIds, true) && !$isStarted);
+
                 return $exam;
             }),
             'modules' => $moduleQuery->get(),
@@ -124,6 +133,10 @@ class AdminExamController extends Controller
             abort(403, 'Action non autorisée pour les secrétaires.');
         }
 
+        if ($request->user()->isTrainer() && !$request->user()->hasRole('Directeur') && !in_array((int)$exam->user_id, $request->user()->getAllowedTrainerUserIds(), true)) {
+            abort(403, 'Vous ne pouvez pas modifier cet examen.');
+        }
+
         if ($exam->scheduled_at && $exam->scheduled_at->isPast() && !$request->user()->hasRole('Directeur') && $exam->examResults()->exists()) {
             return redirect()->back()->with('error', 'Impossible de modifier cet examen car il a déjà commencé et contient des participations.');
         }
@@ -176,6 +189,10 @@ class AdminExamController extends Controller
             abort(403, 'Action non autorisée pour les secrétaires.');
         }
 
+        if ($request->user()->isTrainer() && !$request->user()->hasRole('Directeur') && !in_array((int)$exam->user_id, $request->user()->getAllowedTrainerUserIds(), true)) {
+            abort(403, 'Vous ne pouvez pas supprimer cet examen.');
+        }
+
         if ($exam->scheduled_at && $exam->scheduled_at->isPast() && !$request->user()->hasRole('Directeur') && $exam->examResults()->exists()) {
             return redirect()->back()->with('error', 'Impossible de supprimer cet examen car il a déjà commencé et contient des participations.');
         }
@@ -191,6 +208,10 @@ class AdminExamController extends Controller
     {
         if ($request->user()->hasRole('Secrétaire')) {
             abort(403, 'Action non autorisée pour les secrétaires.');
+        }
+
+        if ($request->user()->isTrainer() && !$request->user()->hasRole('Directeur') && !in_array((int)$exam->user_id, $request->user()->getAllowedTrainerUserIds(), true)) {
+            abort(403, 'Vous ne pouvez pas dupliquer cet examen.');
         }
 
         $newExam = $exam->replicate();
@@ -232,6 +253,10 @@ class AdminExamController extends Controller
     {
         if ($request->user()->hasRole('Secrétaire')) {
             abort(403, 'Action non autorisée pour les secrétaires.');
+        }
+
+        if ($request->user()->isTrainer() && !$request->user()->hasRole('Directeur') && !in_array((int)$exam->user_id, $request->user()->getAllowedTrainerUserIds(), true)) {
+            abort(403, 'Vous ne pouvez pas saisir les notes de cet examen.');
         }
 
         if (!$exam->is_approved) {
@@ -306,6 +331,10 @@ class AdminExamController extends Controller
             abort(403, 'Action non autorisée pour les secrétaires.');
         }
 
+        if ($request->user()->isTrainer() && !$request->user()->hasRole('Directeur') && !in_array((int)$exam->user_id, $request->user()->getAllowedTrainerUserIds(), true)) {
+            abort(403, 'Vous ne pouvez pas consulter la gestion des résultats de cet examen.');
+        }
+
         $user = $request->user();
 
         // Get students enrolled in the groups assigned to this exam
@@ -362,6 +391,10 @@ class AdminExamController extends Controller
             abort(403, 'Action non autorisée pour les secrétaires.');
         }
 
+        if ($request->user()->isTrainer() && !$request->user()->hasRole('Directeur') && !in_array((int)$exam->user_id, $request->user()->getAllowedTrainerUserIds(), true)) {
+            abort(403, 'Vous ne pouvez pas débloquer cet examen.');
+        }
+
         if (!$user->hasRole(['Apprenant', 'Stagiaire'])) {
             abort(403, 'Utilisateur invalide.');
         }
@@ -386,6 +419,10 @@ class AdminExamController extends Controller
     {
         if ($request->user()->hasRole('Secrétaire')) {
             abort(403, 'Action non autorisée pour les secrétaires.');
+        }
+
+        if ($request->user()->isTrainer() && !$request->user()->hasRole('Directeur') && !in_array((int)$exam->user_id, $request->user()->getAllowedTrainerUserIds(), true)) {
+            abort(403, 'Vous ne pouvez pas gérer les questions de cet examen.');
         }
 
         if ($exam->scheduled_at && $exam->scheduled_at->isPast() && !$request->user()->hasRole('Directeur') && $exam->examResults()->exists()) {

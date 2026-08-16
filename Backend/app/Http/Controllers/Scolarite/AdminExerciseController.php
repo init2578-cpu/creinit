@@ -319,7 +319,11 @@ class AdminExerciseController extends Controller
         if ($question->exam_id) {
             $exam = $question->exam;
             
-            if ($exam->scheduled_at && $exam->scheduled_at->isPast() && !request()->user()->hasRole('Directeur') && $exam->examResults()->exists()) {
+            if ($request->user()->isTrainer() && !$request->user()->hasRole('Directeur') && !in_array((int)$exam->user_id, $request->user()->getAllowedTrainerUserIds(), true)) {
+                abort(403, 'Vous ne pouvez pas modifier les questions de cet examen.');
+            }
+
+            if ($exam->scheduled_at && $exam->scheduled_at->isPast() && !$request->user()->hasRole('Directeur') && $exam->examResults()->exists()) {
                 return redirect()->back()->with('error', 'Impossible de modifier la question car cet examen a déjà commencé et contient des participations.');
             }
             
@@ -337,7 +341,7 @@ class AdminExerciseController extends Controller
             }
         }
 
-        if ($question->chapter_id && !request()->user()->hasRole('Directeur')) {
+        if ($question->chapter_id && !$request->user()->hasRole('Directeur')) {
             $question->chapter->update(['is_approved' => false]);
         }
 
@@ -375,6 +379,9 @@ class AdminExerciseController extends Controller
 
         if ($question->exam_id) {
             $exam = $question->exam;
+            if (request()->user()->isTrainer() && !request()->user()->hasRole('Directeur') && !in_array((int)$exam->user_id, request()->user()->getAllowedTrainerUserIds(), true)) {
+                abort(403, 'Vous ne pouvez pas supprimer les questions de cet examen.');
+            }
             if ($exam->scheduled_at && $exam->scheduled_at->isPast() && !request()->user()->hasRole('Directeur') && $exam->examResults()->exists()) {
                 return redirect()->back()->with('error', 'Impossible de supprimer la question car cet examen a déjà commencé et contient des participations.');
             }

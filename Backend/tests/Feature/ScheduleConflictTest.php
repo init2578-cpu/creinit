@@ -135,4 +135,15 @@ class ScheduleConflictTest extends TestCase
             'end_time' => '11:00',
         ]);
     }
+
+    public function test_pending_alerts_endpoint_executes_without_error(): void
+    {
+        $director = User::factory()->create();
+        $director->assignRole('Directeur');
+
+        $response = $this->actingAs($director)->getJson(route('api.attendance.pending-alerts'));
+
+        $response->assertOk()
+            ->assertJsonStructure(['alerts', 'count']);
+    }
 }

@@ -21,68 +21,67 @@ class ScheduleController extends Controller
      */
     public function pendingAlerts(): JsonResponse
     {
-        /** @var \App\Models\User $user */
-        $user = auth()->user();
-        if (!$user || (!$user->hasRole('Directeur') && !$user->hasRole('Secrétaire') && !$user->hasRole('Admin'))) {
-            return response()->json(['alerts' => [], 'count' => 0]);
-        }
-
-        $daysMap = [
-            1 => 'Lundi',
-            2 => 'Mardi',
-            3 => 'Mercredi',
-            4 => 'Jeudi',
-            5 => 'Vendredi',
-            6 => 'Samedi',
-            7 => 'Dimanche',
-        ];
-
-        $now = Carbon::now();
-        $currentDay = $daysMap[$now->dayOfWeekIso] ?? 'Lundi';
-        $todayStr = $now->toDateString();
-
-        $schedules = Schedule::query()
-            ->where('day_of_week', $currentDay)
-            ->whereHas('group', fn($q) => $q->where('status', 'active'))
-            ->with(['group', 'room', 'formateur'])
-            ->get();
-
-        $alerts = [];
-
-        foreach ($schedules as $schedule) {
-            if (!$schedule->start_time || !$schedule->end_time) {
-                continue;
+        try {
+            /** @var \App\Models\User $user */
+            $user = auth()->user();
+            if (!$user || (!$user->hasRole('Directeur') && !$user->hasRole('Secrétaire') && !$user->hasRole('Admin'))) {
+                return response()->json(['alerts' => [], 'count' => 0]);
             }
 
-            $startTime = Carbon::parse($todayStr . ' ' . $schedule->start_time);
-            $endTime   = Carbon::parse($todayStr . ' ' . $schedule->end_time);
+            $now = Carbon::now();
+            $currentDay = (int) $now->dayOfWeekIso;
+            $todayStr = $now->toDateString();
 
-            // Trigger alert if course started >= 15 min ago and course has not ended yet
-            if ($now->greaterThanOrEqualTo($startTime->copy()->addMinutes(15)) && $now->lessThan($endTime)) {
-                $attendanceTaken = Attendance::where('schedule_id', $schedule->id)
-                    ->where('date', $todayStr)
-                    ->exists();
+            $schedules = Schedule::query()
+                ->where('day_of_week', $currentDay)
+                ->whereHas('group', fn($q) => $q->where('status', 'active'))
+                ->with(['group', 'room', 'formateur'])
+                ->get();
 
-                if (!$attendanceTaken) {
-                    $minutesLate = (int) $now->diffInMinutes($startTime);
-                    $alerts[] = [
-                        'schedule_id'  => $schedule->id,
-                        'group_id'     => $schedule->group_id,
-                        'group_name'   => $schedule->group->nom_groupe ?? 'Groupe',
-                        'formateur'    => $schedule->formateur->name ?? 'Formateur non assigné',
-                        'room'         => $schedule->room->nom ?? 'Salle non assignée',
-                        'start_time'   => Carbon::parse($schedule->start_time)->format('H:i'),
-                        'end_time'     => Carbon::parse($schedule->end_time)->format('H:i'),
-                        'minutes_late' => $minutesLate,
-                    ];
+            $alerts = [];
+
+            foreach ($schedules as $schedule) {
+                if (!$schedule->start_time || !$schedule->end_time) {
+                    continue;
+                }
+
+                try {
+                    $startTime = Carbon::parse($todayStr . ' ' . (string) $schedule->start_time);
+                    $endTime   = Carbon::parse($todayStr . ' ' . (string) $schedule->end_time);
+
+                    // Trigger alert if course started >= 15 min ago and course has not ended yet
+                    if ($now->greaterThanOrEqualTo($startTime->copy()->addMinutes(15)) && $now->lessThan($endTime)) {
+                        $attendanceTaken = Attendance::where('schedule_id', $schedule->id)
+                            ->where('date', $todayStr)
+                            ->exists();
+
+                        if (!$attendanceTaken) {
+                            $minutesLate = (int) $now->diffInMinutes($startTime);
+                            $alerts[] = [
+                                'schedule_id'  => $schedule->id,
+                                'group_id'     => $schedule->group_id,
+                                'group_name'   => $schedule->group->nom_groupe ?? 'Groupe',
+                                'formateur'    => $schedule->formateur->name ?? 'Formateur non assigné',
+                                'room'         => $schedule->room->nom ?? 'Salle non assignée',
+                                'start_time'   => $startTime->format('H:i'),
+                                'end_time'     => $endTime->format('H:i'),
+                                'minutes_late' => $minutesLate,
+                            ];
+                        }
+                    }
+                } catch (\Throwable $itemError) {
+                    continue;
                 }
             }
-        }
 
-        return response()->json([
-            'alerts' => $alerts,
-            'count'  => count($alerts),
-        ]);
+            return response()->json([
+                'alerts' => $alerts,
+                'count'  => count($alerts),
+            ]);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Pending alerts error: ' . $e->getMessage());
+            return response()->json(['alerts' => [], 'count' => 0]);
+        }
     }
 
     public function index(): Response

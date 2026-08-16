@@ -199,6 +199,24 @@ class User extends Authenticatable implements PasskeyUser
     }
 
     /**
+     * Get the user IDs associated with this trainer (the user, their tutor, and their assistants).
+     *
+     * @return array<int>
+     */
+    public function getAllowedTrainerUserIds(): array
+    {
+        $ids = [$this->id];
+        if ($this->hasRole('Stagiaire') && $this->internshipRecord?->tuteur_id) {
+            $ids[] = $this->internshipRecord->tuteur_id;
+        }
+        $assistantIds = InternshipRecord::where('tuteur_id', $this->id)->pluck('user_id')->toArray();
+        if (!empty($assistantIds)) {
+            $ids = array_merge($ids, $assistantIds);
+        }
+        return array_values(array_unique(array_map('intval', $ids)));
+    }
+
+    /**
      * Get the URL of the user's profile photo.
      */
     public function getProfilePhotoUrlAttribute(): ?string
