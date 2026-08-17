@@ -344,62 +344,62 @@ const getStatusClass = (status) => {
     <Head title="Gestion des Admissions" />
 
     <AuthenticatedLayout>
-        <div class="max-w-7xl mx-auto py-8 px-4">
-            <header class="mb-8 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+        <div class="w-full max-w-7xl mx-auto py-3 px-2 sm:px-4">
+            <header class="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <div class="flex items-center gap-3">
-                        <h1 class="text-3xl font-black text-gray-900 tracking-tight">Admissions</h1>
-                        <span class="px-3 py-1 bg-blue-50 text-blue-700 text-xs font-black rounded-full border border-blue-100 shadow-sm">
+                    <div class="flex flex-wrap items-center gap-2.5">
+                        <h1 class="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight">Admissions</h1>
+                        <span class="px-2.5 py-0.5 bg-blue-50 text-blue-700 text-xs font-black rounded-full border border-blue-100 shadow-xs">
                             {{ filteredApplications.length }} {{ filteredApplications.length > 1 ? 'lignes' : 'ligne' }}
                         </span>
-                        <span v-if="missingDocsCount > 0" @click="docFilter = 'missing'" class="cursor-pointer px-3 py-1 bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-bold rounded-full border border-rose-200/60 transition flex items-center gap-1.5 shadow-2xs" title="Cliquer pour filtrer les candidats sans documents">
+                        <span v-if="missingDocsCount > 0" @click="docFilter = 'missing'" class="cursor-pointer px-2.5 py-0.5 bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-bold rounded-full border border-rose-200/60 transition flex items-center gap-1.5 shadow-2xs" title="Cliquer pour filtrer les candidats sans documents">
                             <span class="h-2 w-2 rounded-full bg-rose-500 animate-pulse"></span>
                             {{ missingDocsCount }} sans document
                         </span>
                     </div>
-                    <p class="text-gray-500 font-medium">Gérer et valider les dossiers d'inscription des candidats.</p>
+                    <p class="text-gray-500 font-medium text-xs sm:text-sm mt-0.5">Gérer et valider les dossiers d'inscription des candidats.</p>
                 </div>
-                <div class="flex gap-3">
-                    <button @click="isLinkGenOpen = true" class="flex items-center gap-2 px-5 py-2.5 bg-white text-blue-600 border border-blue-100 rounded-2xl font-black text-sm hover:bg-blue-50 transition shadow-sm">
-                        <LinkIcon class="h-5 w-5" />
+                <div class="flex flex-wrap items-center gap-2.5">
+                    <button @click="isLinkGenOpen = true" class="flex items-center gap-2 px-4 py-2 bg-white text-blue-600 border border-blue-100 rounded-xl font-black text-xs sm:text-sm hover:bg-blue-50 transition shadow-xs">
+                        <LinkIcon class="h-4 w-4 sm:h-5 sm:w-5" />
                         Générer un lien
                     </button>
-                    <button @click="isManualEnrollOpen = true" class="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-2xl font-black text-sm hover:bg-blue-700 transition shadow-lg shadow-blue-100">
-                        <UserPlusIcon class="h-5 w-5" />
+                    <button @click="isManualEnrollOpen = true" class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl font-black text-xs sm:text-sm hover:bg-blue-700 transition shadow-md shadow-blue-100">
+                        <UserPlusIcon class="h-4 w-4 sm:h-5 sm:w-5" />
                         Inscrire un candidat
                     </button>
                 </div>
             </header>
 
             <!-- Filter Bar -->
-            <div class="bg-white p-5 rounded-[2rem] border border-gray-100 shadow-sm mb-6 space-y-4 relative">
+            <div class="bg-white p-4 sm:p-5 rounded-2xl sm:rounded-[2rem] border border-gray-100 shadow-xs mb-6 space-y-4 relative">
                 <!-- Overlay to close popovers when clicking outside -->
                 <div v-if="openDropdown" @click="openDropdown = null" class="fixed inset-0 z-10 opacity-0"></div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3 items-center relative z-20">
+                <div class="flex flex-wrap items-center gap-2.5 relative z-20">
                     <!-- Search Input -->
-                    <div class="relative lg:col-span-3">
-                        <span class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400">
+                    <div class="relative flex-1 min-w-[200px] max-w-full sm:max-w-xs">
+                        <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
                             <MagnifyingGlassIcon class="h-4 w-4" />
                         </span>
                         <input 
                             v-model="searchQuery" 
                             type="text" 
                             placeholder="Rechercher un candidat..." 
-                            class="w-full bg-gray-50/80 border border-gray-200/80 rounded-2xl pl-10 pr-4 py-2.5 font-semibold text-sm text-gray-900 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100 placeholder-gray-400 transition"
+                            class="w-full bg-gray-50/80 border border-gray-200/80 rounded-xl pl-9 pr-3.5 py-2 font-semibold text-xs sm:text-sm text-gray-900 focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100 placeholder-gray-400 transition"
                         />
                     </div>
                     
                     <!-- Statut Filter Dropdown -->
-                    <div class="lg:col-span-2 relative">
+                    <div class="relative flex-1 sm:flex-none min-w-[140px]">
                         <button 
                             @click="toggleDropdown('status')" 
                             type="button" 
-                            class="w-full bg-gray-50/80 border border-gray-200/80 rounded-2xl px-4 py-2.5 font-semibold text-sm text-gray-800 focus:bg-white focus:border-blue-500 flex items-center justify-between transition"
+                            class="w-full bg-gray-50/80 border border-gray-200/80 rounded-xl px-3.5 py-2 font-semibold text-xs sm:text-sm text-gray-800 focus:bg-white focus:border-blue-500 flex items-center justify-between gap-2 transition"
                             :class="{ 'border-blue-500 bg-blue-50/40 text-blue-700 font-bold': statusFilter.length > 0 }"
                         >
                             <span class="truncate">{{ statusLabel }}</span>
-                            <ChevronDownIcon class="h-4 w-4 text-gray-400 ml-1 shrink-0 transition-transform duration-150" :class="{ 'rotate-180': openDropdown === 'status' }" />
+                            <ChevronDownIcon class="h-4 w-4 text-gray-400 shrink-0 transition-transform duration-150" :class="{ 'rotate-180': openDropdown === 'status' }" />
                         </button>
 
                         <div v-if="openDropdown === 'status'" class="absolute left-0 mt-2 w-56 bg-white border border-gray-100 rounded-2xl shadow-xl p-2 z-30 space-y-1">
@@ -424,15 +424,15 @@ const getStatusClass = (status) => {
                     </div>
 
                     <!-- Module Filter Dropdown -->
-                    <div class="lg:col-span-3 relative">
+                    <div class="relative flex-1 sm:flex-none min-w-[160px]">
                         <button 
                             @click="toggleDropdown('module')" 
                             type="button" 
-                            class="w-full bg-gray-50/80 border border-gray-200/80 rounded-2xl px-4 py-2.5 font-semibold text-sm text-gray-800 focus:bg-white focus:border-blue-500 flex items-center justify-between transition"
+                            class="w-full bg-gray-50/80 border border-gray-200/80 rounded-xl px-3.5 py-2 font-semibold text-xs sm:text-sm text-gray-800 focus:bg-white focus:border-blue-500 flex items-center justify-between gap-2 transition"
                             :class="{ 'border-blue-500 bg-blue-50/40 text-blue-700 font-bold': moduleFilter.length > 0 }"
                         >
                             <span class="truncate">{{ moduleLabel }}</span>
-                            <ChevronDownIcon class="h-4 w-4 text-gray-400 ml-1 shrink-0 transition-transform duration-150" :class="{ 'rotate-180': openDropdown === 'module' }" />
+                            <ChevronDownIcon class="h-4 w-4 text-gray-400 shrink-0 transition-transform duration-150" :class="{ 'rotate-180': openDropdown === 'module' }" />
                         </button>
 
                         <div v-if="openDropdown === 'module'" class="absolute left-0 mt-2 w-64 max-h-64 overflow-y-auto bg-white border border-gray-100 rounded-2xl shadow-xl p-2 z-30 space-y-1">
@@ -449,15 +449,15 @@ const getStatusClass = (status) => {
                     </div>
 
                     <!-- Niveau d'étude Filter Dropdown -->
-                    <div class="lg:col-span-2 relative">
+                    <div class="relative flex-1 sm:flex-none min-w-[140px]">
                         <button 
                             @click="toggleDropdown('niveau')" 
                             type="button" 
-                            class="w-full bg-gray-50/80 border border-gray-200/80 rounded-2xl px-4 py-2.5 font-semibold text-sm text-gray-800 focus:bg-white focus:border-blue-500 flex items-center justify-between transition"
+                            class="w-full bg-gray-50/80 border border-gray-200/80 rounded-xl px-3.5 py-2 font-semibold text-xs sm:text-sm text-gray-800 focus:bg-white focus:border-blue-500 flex items-center justify-between gap-2 transition"
                             :class="{ 'border-blue-500 bg-blue-50/40 text-blue-700 font-bold': niveauFilter.length > 0 }"
                         >
                             <span class="truncate">{{ niveauLabel }}</span>
-                            <ChevronDownIcon class="h-4 w-4 text-gray-400 ml-1 shrink-0 transition-transform duration-150" :class="{ 'rotate-180': openDropdown === 'niveau' }" />
+                            <ChevronDownIcon class="h-4 w-4 text-gray-400 shrink-0 transition-transform duration-150" :class="{ 'rotate-180': openDropdown === 'niveau' }" />
                         </button>
 
                         <div v-if="openDropdown === 'niveau'" class="absolute left-0 mt-2 w-60 max-h-64 overflow-y-auto bg-white border border-gray-100 rounded-2xl shadow-xl p-2 z-30 space-y-1">
@@ -474,15 +474,15 @@ const getStatusClass = (status) => {
                     </div>
 
                     <!-- Documents Filter Dropdown -->
-                    <div :class="hasActiveFilters ? 'lg:col-span-1' : 'lg:col-span-2'" class="relative">
+                    <div class="relative flex-1 sm:flex-none min-w-[150px]">
                         <button 
                             @click="toggleDropdown('doc')" 
                             type="button" 
-                            class="w-full bg-gray-50/80 border border-gray-200/80 rounded-2xl px-3 py-2.5 font-semibold text-sm text-gray-800 focus:bg-white focus:border-blue-500 flex items-center justify-between transition"
+                            class="w-full bg-gray-50/80 border border-gray-200/80 rounded-xl px-3 py-2 font-semibold text-xs sm:text-sm text-gray-800 focus:bg-white focus:border-blue-500 flex items-center justify-between gap-2 transition"
                             :class="{ 'border-rose-400 bg-rose-50/50 text-rose-700 font-bold': docFilter !== 'all' }"
                         >
                             <span class="truncate">{{ docLabel }}</span>
-                            <ChevronDownIcon class="h-4 w-4 text-gray-400 ml-1 shrink-0 transition-transform duration-150" :class="{ 'rotate-180': openDropdown === 'doc' }" />
+                            <ChevronDownIcon class="h-4 w-4 text-gray-400 shrink-0 transition-transform duration-150" :class="{ 'rotate-180': openDropdown === 'doc' }" />
                         </button>
 
                         <div v-if="openDropdown === 'doc'" class="absolute right-0 mt-2 w-56 bg-white border border-gray-100 rounded-2xl shadow-xl p-2 z-30 space-y-1">
@@ -509,11 +509,11 @@ const getStatusClass = (status) => {
                     </div>
 
                     <!-- Reset Button -->
-                    <div v-if="hasActiveFilters" class="lg:col-span-1 flex justify-end">
+                    <div v-if="hasActiveFilters" class="ml-auto">
                         <button 
                             @click="resetFilters"
                             title="Réinitialiser tous les filtres"
-                            class="w-full py-2.5 bg-red-50 text-red-600 hover:bg-red-100 border border-red-200/60 rounded-2xl font-bold text-xs transition flex items-center justify-center gap-1.5 shadow-sm"
+                            class="px-3 py-2 bg-red-50 text-red-600 hover:bg-red-100 border border-red-200/60 rounded-xl font-bold text-xs transition flex items-center justify-center gap-1.5 shadow-xs"
                         >
                             <ArrowPathIcon class="h-4 w-4" />
                             <span>Effacer</span>
