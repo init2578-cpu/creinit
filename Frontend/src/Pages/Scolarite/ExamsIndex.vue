@@ -109,18 +109,10 @@ const currentHour = computed(() => new Date().getHours());
 const currentMinute = computed(() => new Date().getMinutes());
 
 const filteredStartHourOptions = computed(() => {
-    if (startDate.value === todayString.value) {
-        return hourOptions.filter(h => parseInt(h) >= currentHour.value);
-    }
     return hourOptions;
 });
 
 const filteredStartMinuteOptions = computed(() => {
-    if (startDate.value === todayString.value) {
-        if (parseInt(startHour.value) === currentHour.value) {
-            return minuteOptions.filter(m => parseInt(m) >= currentMinute.value);
-        }
-    }
     return minuteOptions;
 });
 
@@ -1025,7 +1017,7 @@ function approveExam(examId) {
                                             <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-gray-400 group-focus-within:text-orange-600 transition-colors pointer-events-none">
                                                 <CalendarIcon class="h-5 w-5" />
                                             </span>
-                                            <DateInput v-model="startDate" :min-date="todayString" required class="w-full pl-12 pr-4 py-4 bg-white border-2 border-transparent focus:border-orange-600 rounded-2xl font-bold text-gray-700 focus:ring-0 transition-all outline-none text-xs" />
+                                            <DateInput v-model="startDate" required class="w-full pl-12 pr-4 py-4 bg-white border-2 border-transparent focus:border-orange-600 rounded-2xl font-bold text-gray-700 focus:ring-0 transition-all outline-none text-xs" />
                                         </div>
                                         <div class="flex items-center bg-white border-2 border-transparent focus-within:border-orange-600 rounded-2xl px-3 transition-all">
                                             <select v-model="startHour" class="bg-transparent border-0 font-black text-xs p-2 focus:ring-0 cursor-pointer text-gray-700">
@@ -1047,7 +1039,7 @@ function approveExam(examId) {
                                             <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-gray-400 group-focus-within:text-orange-600 transition-colors pointer-events-none">
                                                 <CalendarIcon class="h-5 w-5" />
                                             </span>
-                                            <DateInput v-model="endDate" :min-date="todayString" required class="w-full pl-12 pr-4 py-4 bg-white border-2 border-transparent focus:border-orange-600 rounded-2xl font-bold text-gray-700 focus:ring-0 transition-all outline-none text-xs" />
+                                            <DateInput v-model="endDate" required class="w-full pl-12 pr-4 py-4 bg-white border-2 border-transparent focus:border-orange-600 rounded-2xl font-bold text-gray-700 focus:ring-0 transition-all outline-none text-xs" />
                                         </div>
                                         <div class="flex items-center bg-white border-2 border-transparent focus-within:border-orange-600 rounded-2xl px-3 transition-all">
                                             <select v-model="endHour" class="bg-transparent border-0 font-black text-xs p-2 focus:ring-0 cursor-pointer text-gray-700">
