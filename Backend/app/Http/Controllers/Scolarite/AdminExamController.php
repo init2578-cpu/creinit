@@ -383,6 +383,105 @@ class AdminExamController extends Controller
     }
 
     /**
+     * Grade open questions for a specific student exam result.
+     */
+    public function gradeOpenQuestions(Request $request, Exam $exam, User $user): RedirectResponse
+    {
+        if ($request->user()->hasRole('Secrétaire')) {
+            abort(403, 'Action non autorisée pour les secrétaires.');
+        }
+
+        if ($request->user()->isTrainer() && !$request->user()->hasRole('Directeur') && !in_array((int)$exam->user_id, $request->user()->getAllowedTrainerUserIds(), true)) {
+            abort(403, 'Vous ne pouvez pas noter cet examen.');
+        }
+
+        $validated = $request->validate([
+            'open_question_scores' => 'required|array',
+            'open_question_scores.*' => 'nullable|numeric|min:0',
+            'score' => 'nullable|numeric|min:0|max:20',
+            'bonus' => 'nullable|numeric|min:0',
+        ]);
+
+        $result = ExamResult::where('exam_id', $exam->id)
+            ->where('user_id', $user->id)
+            ->first();
+
+        if (!$result) {
+            return redirect()->back()->with('error', 'Aucune soumission trouvée pour cet apprenant.');
+        }
+
+        $answers = $result->answers ?? [];
+        if (!is_array($answers)) {
+            $answers = [];
+        }
+
+        $questionScores = $answers['_question_scores'] ?? [];
+        foreach ($validated['open_question_scores'] as $questionId => $scoreValue) {
+            if ($scoreValue !== null && $scoreValue !== '') {
+                $questionScores[(string)$questionId] = (float)$scoreValue;
+            }
+        }
+        $answers['_question_scores'] = $questionScores;
+
+        if (isset($validated['score']) && $validated['score'] !== null) {
+            $finalScore = (float)$validated['score'];
+        } else {
+            $qcmEarned = 0;
+            $openEarned = 0;
+
+            $exam->load('questions.options');
+            foreach ($exam->questions as $question) {
+                if ($question->type === 'qcm') {
+                    $correctOptionIds = $question->options()->where('is_correct', true)->pluck('id')->toArray();
+                    $userAnswers = $answers[$question->id] ?? [];
+                    if (!is_array($userAnswers)) {
+                        $userAnswers = !empty($userAnswers) ? [$userAnswers] : [];
+                    }
+
+                    $totalCorrectExpected = count($correctOptionIds);
+                    $questionPoints = (float)$question->points;
+                    $pointsPerCorrectOption = $totalCorrectExpected > 0 ? $questionPoints / $totalCorrectExpected : 0;
+
+                    $questionScore = 0;
+                    foreach ($userAnswers as $ansId) {
+                        if (in_array((int)$ansId, $correctOptionIds, true)) {
+                            $questionScore += $pointsPerCorrectOption;
+                        } else {
+                            $questionScore -= $pointsPerCorrectOption;
+                        }
+                    }
+                    if ($questionScore < 0) $questionScore = 0;
+                    if ($questionScore > $questionPoints) $questionScore = $questionPoints;
+                    $qcmEarned += $questionScore;
+                } else {
+                    $qScore = $questionScores[(string)$question->id] ?? 0;
+                    $openEarned += min((float)$qScore, (float)$question->points);
+                }
+            }
+
+            $totalExamPoints = (float)$exam->questions->sum('points');
+            if ($totalExamPoints > 0) {
+                $finalScore = (($qcmEarned + $openEarned) / $totalExamPoints) * 20;
+            } else {
+                $finalScore = 0;
+            }
+        }
+
+        $result->answers = $answers;
+        $result->score = round($finalScore, 2);
+        if (isset($validated['bonus'])) {
+            $result->bonus = (float)$validated['bonus'];
+        }
+        $result->save();
+
+        if ($result->user) {
+            $result->user->notify(new \App\Notifications\ExamResultGradedNotification($result));
+        }
+
+        return redirect()->back()->with('success', 'Correction des questions ouvertes enregistrée avec succès.');
+    }
+
+    /**
      * Unlock a blocked exam result for a student.
      */
     public function unlock(Request $request, Exam $exam, \App\Models\User $user): RedirectResponse

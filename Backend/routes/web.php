@@ -271,6 +271,7 @@ Route::middleware(['auth'])->group(function (): void {
             Route::patch('exams/{exam}/approve', [AdminExamController::class, 'approve'])->name('exams.approve');
             Route::get('exams/{exam}/results', [AdminExamController::class, 'getResults'])->name('exams.results');
             Route::post('exams/{exam}/grades', [AdminExamController::class, 'enterGrades'])->name('exams.enter-grades');
+            Route::post('exams/{exam}/results/{user}/grade-open-questions', [AdminExamController::class, 'gradeOpenQuestions'])->name('exams.grade-open-questions');
             Route::post('exams/{exam}/unlock/{user}', [AdminExamController::class, 'unlock'])->name('exams.unlock');
             Route::get('exercises', [AdminExerciseController::class, 'index'])->name('exercises.index');
             Route::post('exercises', [AdminExerciseController::class, 'store'])->name('exercises.store');

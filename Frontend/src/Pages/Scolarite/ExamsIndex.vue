@@ -142,6 +142,12 @@ const gradeForm = useForm({
     grades: [] // Array of { user_id, score }
 });
 
+const openQuestionForm = useForm({
+    open_question_scores: {},
+    score: null,
+    bonus: 0,
+});
+
 const questionForm = useForm({
     enonce: '',
     expected_answer: '',
@@ -290,7 +296,87 @@ const openGradeModal = async (exam) => {
 
 const openAnswersModal = (student) => {
     selectedStudentForAnswers.value = student;
+    const existingScores = student.answers?._question_scores || {};
+    const initialScores = {};
+
+    if (selectedExamForGrades.value?.questions) {
+        selectedExamForGrades.value.questions.forEach(q => {
+            if (q.type === 'open') {
+                initialScores[q.id] = existingScores[q.id] !== undefined ? existingScores[q.id] : 0;
+            }
+        });
+    }
+
+    openQuestionForm.open_question_scores = initialScores;
+    openQuestionForm.score = student.score;
+    openQuestionForm.bonus = student.bonus || 0;
     isAnswersModalOpen.value = true;
+};
+
+const calculatedLiveScore = computed(() => {
+    if (!selectedExamForGrades.value || !selectedStudentForAnswers.value) return 0;
+    let qcmEarned = 0;
+    let openEarned = 0;
+    const answers = selectedStudentForAnswers.value.answers || {};
+
+    selectedExamForGrades.value.questions?.forEach(q => {
+        if (q.type === 'qcm') {
+            const correctOptions = q.options?.filter(o => o.is_correct).map(o => o.id) || [];
+            const userAns = answers[q.id] || [];
+            const userAnsArray = Array.isArray(userAns) ? userAns : (userAns !== undefined && userAns !== null ? [userAns] : []);
+            const ptsPerOpt = correctOptions.length > 0 ? q.points / correctOptions.length : 0;
+            let qPts = 0;
+            userAnsArray.forEach(id => {
+                if (correctOptions.includes(Number(id))) {
+                    qPts += ptsPerOpt;
+                } else {
+                    qPts -= ptsPerOpt;
+                }
+            });
+            if (qPts < 0) qPts = 0;
+            if (qPts > q.points) qPts = q.points;
+            qcmEarned += qPts;
+        } else {
+            const pts = parseFloat(openQuestionForm.open_question_scores[q.id]) || 0;
+            openEarned += Math.min(pts, q.points);
+        }
+    });
+
+    const totalPts = selectedExamForGrades.value.total_points || selectedExamForGrades.value.questions?.reduce((s, q) => s + (parseFloat(q.points) || 0), 0) || 20;
+    const finalScore = totalPts > 0 ? ((qcmEarned + openEarned) / totalPts) * 20 : 0;
+    return Math.round(finalScore * 100) / 100;
+});
+
+const hasOpenQuestions = computed(() => {
+    return selectedExamForGrades.value?.questions?.some(q => q.type === 'open');
+});
+
+const isOpenQuestionGraded = (student) => {
+    if (!student || !student.answers || !student.answers._question_scores) return false;
+    return Object.keys(student.answers._question_scores).length > 0;
+};
+
+const submitOpenQuestionGrades = () => {
+    openQuestionForm.score = calculatedLiveScore.value;
+    openQuestionForm.post(route('exams.grade-open-questions', {
+        exam: selectedExamForGrades.value.id,
+        user: selectedStudentForAnswers.value.user_id
+    }), {
+        preserveScroll: true,
+        onSuccess: async () => {
+            const response = await axios.get(route('exams.results', selectedExamForGrades.value.id));
+            gradeForm.grades = response.data;
+            const updated = gradeForm.grades.find(s => s.user_id === selectedStudentForAnswers.value.user_id);
+            if (updated) {
+                selectedStudentForAnswers.value = updated;
+            }
+            window.platformAlert("Correction enregistrée avec succès !", "success");
+        },
+        onError: (err) => {
+            console.error(err);
+            window.platformAlert("Erreur lors de l'enregistrement de la correction.", "error");
+        }
+    });
 };
 
 const isOptionSelected = (answers, questionId, optionId) => {
@@ -1090,6 +1176,13 @@ function approveExam(examId) {
                                             <span class="text-[10px] font-black uppercase tracking-widest hidden sm:inline">Copie</span>
                                         </button>
 
+                                        <!-- Badge Statut Correction Questions Ouvertes -->
+                                        <span v-if="student.status === 'completed' && hasOpenQuestions" 
+                                              class="px-2 py-1 text-[9px] font-black uppercase tracking-wider rounded-lg border"
+                                              :class="isOpenQuestionGraded(student) ? 'bg-green-50 text-green-700 border-green-200' : 'bg-purple-50 text-purple-700 border-purple-200 animate-pulse'">
+                                            {{ isOpenQuestionGraded(student) ? 'Q. Notées' : 'À corriger' }}
+                                        </span>
+
                                         <!-- Note de Base -->
                                         <div class="relative w-28 group-focus-within:scale-105 transition-transform duration-300">
                                             <input 
@@ -1098,10 +1191,10 @@ function approveExam(examId) {
                                                 step="0.25" 
                                                 min="0" 
                                                 :max="20"
-                                                :disabled="selectedExamForGrades?.type === 'online' || (selectedExamForGrades?.type === 'paper' && student.is_graded && !isDirecteur)"
+                                                :disabled="isSecretaire || (selectedExamForGrades?.type === 'paper' && student.is_graded && !isDirecteur)"
                                                 class="w-full bg-gray-50 border-2 border-transparent focus:border-green-600 rounded-2xl font-black text-center px-3 py-3 text-xs transition-all focus:bg-white focus:ring-0 outline-none text-gray-700 shadow-inner disabled:opacity-60 disabled:cursor-not-allowed"
                                                 placeholder="0.00"
-                                                :title="selectedExamForGrades?.type === 'online' ? 'La note est calculée automatiquement pour les QCM en ligne' : (selectedExamForGrades?.type === 'paper' && student.is_graded && !isDirecteur ? 'Note déjà saisie. Seul le directeur peut la modifier.' : 'Saisir la note')"
+                                                :title="(selectedExamForGrades?.type === 'paper' && student.is_graded && !isDirecteur) ? 'Note déjà saisie. Seul le directeur peut la modifier.' : 'Saisir la note'"
                                             >
                                             <div class="absolute -top-2.5 -right-1">
                                                 <span class="px-1.5 py-0.5 bg-gray-900 text-white text-[7px] font-black rounded-lg shadow-lg">Base /20</span>
@@ -1470,11 +1563,61 @@ function approveExam(examId) {
                                     </p>
                                     <p class="text-sm font-medium text-blue-900 whitespace-pre-wrap">{{ question.expected_answer }}</p>
                                 </div>
+
+                                <!-- Input pour attribuer une note à la question ouverte -->
+                                <div v-if="!isSecretaire && canManageExam(selectedExamForGrades)" class="bg-purple-50/60 p-4 rounded-2xl border border-purple-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                                    <div>
+                                        <label class="text-xs font-black text-purple-900 uppercase tracking-wider block mb-1">
+                                            Note attribuée à cette question
+                                        </label>
+                                        <p class="text-[11px] text-purple-600 font-medium">Saisissez les points attribués sur {{ question.points }} pts max.</p>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <input
+                                            type="number"
+                                            v-model.number="openQuestionForm.open_question_scores[question.id]"
+                                            step="0.25"
+                                            min="0"
+                                            :max="question.points"
+                                            class="w-24 px-3 py-2 bg-white border border-purple-200 rounded-xl font-black text-purple-900 text-center text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
+                                            placeholder="0"
+                                        />
+                                        <span class="text-xs font-bold text-purple-700">/ {{ question.points }} pts</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         <div v-if="!selectedExamForGrades?.questions || selectedExamForGrades.questions.length === 0" class="text-center py-10 text-gray-400 font-bold">
                             Aucune question trouvée.
                         </div>
+                    </div>
+                </div>
+
+                <!-- Footer / Action bar -->
+                <div class="p-6 bg-white border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-4 relative z-10 shadow-lg">
+                    <div class="flex items-center gap-3">
+                        <div class="h-10 w-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center font-black">
+                            <CheckCircleIcon class="h-6 w-6" />
+                        </div>
+                        <div>
+                            <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Note Globale Calculée</p>
+                            <p class="text-xl font-black text-purple-900">{{ calculatedLiveScore }} <span class="text-xs font-bold text-gray-400">/ 20</span></p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3 w-full sm:w-auto">
+                        <button @click="isAnswersModalOpen = false" type="button" class="flex-1 sm:flex-none px-6 py-3 bg-gray-100 text-gray-600 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-gray-200 transition-all">
+                            Fermer
+                        </button>
+                        <button 
+                            v-if="!isSecretaire && canManageExam(selectedExamForGrades) && hasOpenQuestions"
+                            @click="submitOpenQuestionGrades" 
+                            :disabled="openQuestionForm.processing"
+                            type="button" 
+                            class="flex-1 sm:flex-none px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-purple-100 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                        >
+                            <CheckCircleIcon class="h-4 w-4" />
+                            {{ openQuestionForm.processing ? 'Enregistrement...' : 'Enregistrer la correction' }}
+                        </button>
                     </div>
                 </div>
             </div>

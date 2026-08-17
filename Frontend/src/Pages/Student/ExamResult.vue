@@ -123,6 +123,18 @@ const isOptionSelected = (answers, questionId, optionId) => {
                                 </p>
                                 <p class="text-base font-medium text-emerald-900 whitespace-pre-wrap leading-relaxed relative z-10">{{ question.expected_answer }}</p>
                             </div>
+                            <div v-if="result.answers?._question_scores?.[question.id] !== undefined" class="p-4 bg-purple-50 rounded-2xl border border-purple-100 flex items-center justify-between">
+                                <span class="text-xs font-black text-purple-900 uppercase tracking-wider">Note attribuée</span>
+                                <span class="px-3 py-1 bg-purple-600 text-white font-black text-sm rounded-xl">
+                                    {{ result.answers._question_scores[question.id] }} / {{ question.points }} pts
+                                </span>
+                            </div>
+                            <div v-else class="p-4 bg-amber-50 rounded-2xl border border-amber-100 flex items-center justify-between">
+                                <span class="text-xs font-bold text-amber-800">Evaluation manuelle</span>
+                                <span class="px-3 py-1 bg-amber-200 text-amber-900 font-black text-xs rounded-xl">
+                                    En attente de correction
+                                </span>
+                            </div>
                         </div>
                     </div>
                     <div v-if="!exam.questions || exam.questions.length === 0" class="text-center py-12 text-gray-400 font-bold bg-gray-50 rounded-3xl border border-gray-100">
