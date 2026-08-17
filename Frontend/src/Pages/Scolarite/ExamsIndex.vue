@@ -108,27 +108,10 @@ const minuteOptions = Array.from({ length: 12 }, (_, i) => (i * 5).toString().pa
 const currentHour = computed(() => new Date().getHours());
 const currentMinute = computed(() => new Date().getMinutes());
 
-const filteredStartHourOptions = computed(() => {
-    return hourOptions;
-});
-
-const filteredStartMinuteOptions = computed(() => {
-    return minuteOptions;
-});
-
-const filteredEndHourOptions = computed(() => {
-    if (endDate.value === startDate.value) {
-        return hourOptions.filter(h => parseInt(h) >= (parseInt(startHour.value) || 0));
-    }
-    return hourOptions;
-});
-
-const filteredEndMinuteOptions = computed(() => {
-    if (endDate.value === startDate.value && startHour.value === endHour.value) {
-        return minuteOptions.filter(m => parseInt(m) >= (parseInt(startMin.value) || 0));
-    }
-    return minuteOptions;
-});
+const filteredStartHourOptions = computed(() => hourOptions);
+const filteredStartMinuteOptions = computed(() => minuteOptions);
+const filteredEndHourOptions = computed(() => hourOptions);
+const filteredEndMinuteOptions = computed(() => minuteOptions);
 
 const gradeForm = useForm({
     grades: [] // Array of { user_id, score }
