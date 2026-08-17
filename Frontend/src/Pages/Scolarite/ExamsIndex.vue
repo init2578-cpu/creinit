@@ -520,30 +520,6 @@ const canModifyExam = (exam) => {
 
 // Reactive duration calculation and time constraints enforcement
 watch(() => [startDate.value, startHour.value, startMin.value, endDate.value, endHour.value, endMin.value], () => {
-    // 1. Force startHour/startMin to be >= current time if startDate is today
-    if (startDate.value === todayString.value) {
-        const now = new Date();
-        const curH = now.getHours();
-        const curM = now.getMinutes();
-
-        const selH = parseInt(startHour.value) || 0;
-        const selM = parseInt(startMin.value) || 0;
-
-        if (selH < curH) {
-            startHour.value = curH.toString().padStart(2, '0');
-        }
-
-        const updatedH = parseInt(startHour.value) || 0;
-        if (updatedH === curH && selM < curM) {
-            const nextMin = minuteOptions.find(m => parseInt(m) >= curM);
-            if (nextMin) {
-                startMin.value = nextMin;
-            } else {
-                startHour.value = ((curH + 1) % 24).toString().padStart(2, '0');
-                startMin.value = '00';
-            }
-        }
-    }
 
     // 2. Adjust endHour/endMin if end time is before start time on the same day
     if (endDate.value === startDate.value) {
