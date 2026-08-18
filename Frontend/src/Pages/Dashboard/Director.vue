@@ -413,7 +413,7 @@ onUnmounted(() => {
                     <div class="lg:col-span-3 bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm flex flex-col justify-between">
                         <div class="flex items-center justify-between mb-6">
                             <div>
-                                <h3 class="text-xl font-black text-gray-900 tracking-tight">Tendance de Présentation</h3>
+                                <h3 class="text-xl font-black text-gray-900 tracking-tight">Tendance de Présence</h3>
                                 <p class="text-xs text-gray-500 font-medium">
                                     Évolution du taux global 
                                     <span v-if="selectedPeriod === '7J'">sur les 7 derniers jours d'activité</span>
