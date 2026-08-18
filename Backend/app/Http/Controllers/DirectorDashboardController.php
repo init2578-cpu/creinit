@@ -56,7 +56,7 @@ class DirectorDashboardController extends Controller
      */
     public function getKpis(): array
     {
-        $kpis = \Illuminate\Support\Facades\Cache::remember('director_dashboard_kpis_v3', 600, function () {
+        $kpis = \Illuminate\Support\Facades\Cache::remember('director_dashboard_kpis_v4', 600, function () {
             return [
                 'attendance_rate'          => $this->getAttendanceRate(),
                 'gender_parity'            => $this->getGenderParity(),
@@ -177,6 +177,8 @@ class DirectorDashboardController extends Controller
     {
         return ExamResult::with('user:id,name,email')
             ->select('user_id', DB::raw('AVG(score) as avg_score'))
+            ->whereNotNull('score')
+            ->where('score', '>', 0)
             ->groupBy('user_id')
             ->orderByDesc('avg_score')
             ->limit(5)
