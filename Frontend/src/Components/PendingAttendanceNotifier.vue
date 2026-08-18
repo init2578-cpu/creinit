@@ -133,7 +133,7 @@ onUnmounted(() => {
                         <h4 class="text-sm font-black tracking-tight text-white flex items-center gap-1.5">
                             Retard Émargement 
                             <span class="px-2 py-0.5 bg-red-600 text-white text-[9px] font-black rounded-full uppercase tracking-wider animate-pulse">
-                                +15 min
+                                +5 min
                             </span>
                         </h4>
                         <p class="text-[10px] text-slate-400 font-bold">Alerte Direction & Secrétariat</p>
