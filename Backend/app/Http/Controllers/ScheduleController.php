@@ -17,7 +17,7 @@ use Inertia\Response;
 class ScheduleController extends Controller
 {
     /**
-     * Get schedules for today where roll call has NOT been taken 15+ minutes after start time.
+     * Get schedules for today where roll call has NOT been taken 5+ minutes after start time.
      */
     public function pendingAlerts(): JsonResponse
     {
@@ -49,8 +49,8 @@ class ScheduleController extends Controller
                     $startTime = Carbon::parse($todayStr . ' ' . (string) $schedule->start_time);
                     $endTime   = Carbon::parse($todayStr . ' ' . (string) $schedule->end_time);
 
-                    // Trigger alert if course started >= 15 min ago and course has not ended yet
-                    if ($now->greaterThanOrEqualTo($startTime->copy()->addMinutes(15)) && $now->lessThan($endTime)) {
+                    // Trigger alert if course started >= 5 min ago and course has not ended yet
+                    if ($now->greaterThanOrEqualTo($startTime->copy()->addMinutes(5)) && $now->lessThan($endTime)) {
                         $attendanceTaken = Attendance::where('schedule_id', $schedule->id)
                             ->where('date', $todayStr)
                             ->exists();

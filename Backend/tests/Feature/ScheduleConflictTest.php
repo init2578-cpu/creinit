@@ -146,4 +146,51 @@ class ScheduleConflictTest extends TestCase
         $response->assertOk()
             ->assertJsonStructure(['alerts', 'count']);
     }
+
+    public function test_pending_alerts_triggers_after_5_minutes(): void
+    {
+        $director = User::factory()->create();
+        $director->assignRole('Directeur');
+
+        $formateur = User::factory()->create();
+        $formateur->assignRole('Formateur');
+
+        $module = Module::create([
+            'code_module' => 'M102',
+            'titre' => 'Module Test Alert',
+            'quota_heures' => 40,
+        ]);
+
+        $activeGroup = Group::create([
+            'nom_groupe' => 'G3-26',
+            'module_id' => $module->id,
+            'formateur_id' => $formateur->id,
+            'annee_academique' => '2025-2026',
+            'status' => 'active',
+        ]);
+
+        $room = Room::create(['nom' => 'Salle C3', 'capacite' => 30, 'type_salle' => 'cours']);
+
+        $now = \Carbon\Carbon::now();
+        $currentDay = (int) $now->dayOfWeekIso;
+
+        // Course started 6 minutes ago and ends in 1 hour
+        $startTime = $now->copy()->subMinutes(6)->format('H:i:s');
+        $endTime = $now->copy()->addHour()->format('H:i:s');
+
+        Schedule::create([
+            'group_id' => $activeGroup->id,
+            'room_id' => $room->id,
+            'formateur_id' => $formateur->id,
+            'day_of_week' => $currentDay,
+            'start_time' => $startTime,
+            'end_time' => $endTime,
+        ]);
+
+        $response = $this->actingAs($director)->getJson(route('api.attendance.pending-alerts'));
+
+        $response->assertOk()
+            ->assertJsonCount(1, 'alerts')
+            ->assertJsonPath('alerts.0.group_name', 'G3-26');
+    }
 }
