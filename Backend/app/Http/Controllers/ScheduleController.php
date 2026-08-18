@@ -56,7 +56,7 @@ class ScheduleController extends Controller
                             ->exists();
 
                         if (!$attendanceTaken) {
-                            $minutesLate = (int) $now->diffInMinutes($startTime);
+                            $minutesLate = (int) $startTime->diffInMinutes($now);
                             $alerts[] = [
                                 'schedule_id'  => $schedule->id,
                                 'group_id'     => $schedule->group_id,

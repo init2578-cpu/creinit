@@ -191,6 +191,7 @@ class ScheduleConflictTest extends TestCase
 
         $response->assertOk()
             ->assertJsonCount(1, 'alerts')
-            ->assertJsonPath('alerts.0.group_name', 'G3-26');
+            ->assertJsonPath('alerts.0.group_name', 'G3-26')
+            ->assertJsonPath('alerts.0.minutes_late', 6);
     }
 }
