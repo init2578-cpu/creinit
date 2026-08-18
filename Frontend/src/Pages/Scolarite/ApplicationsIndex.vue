@@ -20,7 +20,8 @@ import {
     PencilIcon,
     MagnifyingGlassIcon,
     ArrowPathIcon,
-    ChevronDownIcon
+    ChevronDownIcon,
+    UserGroupIcon
 } from '@heroicons/vue/24/outline'
 import { useForm } from '@inertiajs/vue3'
 
@@ -34,7 +35,13 @@ const statusFilter = ref([])
 const moduleFilter = ref([])
 const niveauFilter = ref([])
 const docFilter = ref('all') // 'all', 'missing', 'provided'
+const groupFilter = ref('all') // 'all', 'no_group', 'has_group'
 const openDropdown = ref(null)
+
+function hasGroup(app) {
+    if (!app || !app.user) return false
+    return Array.isArray(app.user.student_groups) && app.user.student_groups.length > 0
+}
 
 function toggleDropdown(name) {
     openDropdown.value = openDropdown.value === name ? null : name
@@ -78,6 +85,17 @@ const providedDocsCount = computed(() => {
     return props.applications.filter(a => hasUploadedDocuments(a)).length
 })
 
+const admittedNoGroupCount = computed(() => {
+    if (!props.applications) return 0
+    return props.applications.filter(a => a.status === 'admitted' && !hasGroup(a)).length
+})
+
+function filterAdmittedNoGroup() {
+    resetFilters()
+    statusFilter.value = ['admitted']
+    groupFilter.value = 'no_group'
+}
+
 const niveauOptions = computed(() => {
     if (!props.applications) return []
     const levels = props.applications.map(a => a.niveau_etude).filter(Boolean)
@@ -85,7 +103,7 @@ const niveauOptions = computed(() => {
 })
 
 const hasActiveFilters = computed(() => {
-    return searchQuery.value !== '' || statusFilter.value.length > 0 || moduleFilter.value.length > 0 || niveauFilter.value.length > 0 || docFilter.value !== 'all'
+    return searchQuery.value !== '' || statusFilter.value.length > 0 || moduleFilter.value.length > 0 || niveauFilter.value.length > 0 || docFilter.value !== 'all' || groupFilter.value !== 'all'
 })
 
 function resetFilters() {
@@ -94,6 +112,7 @@ function resetFilters() {
     moduleFilter.value = []
     niveauFilter.value = []
     docFilter.value = 'all'
+    groupFilter.value = 'all'
     openDropdown.value = null
 }
 
@@ -127,6 +146,12 @@ const docLabel = computed(() => {
     return 'Tous les documents'
 })
 
+const groupLabel = computed(() => {
+    if (groupFilter.value === 'no_group') return 'Sans groupe'
+    if (groupFilter.value === 'has_group') return 'Avec groupe'
+    return 'Tous les groupes'
+})
+
 const filteredApplications = computed(() => {
     if (!props.applications) return []
     return props.applications.filter(app => {
@@ -145,7 +170,12 @@ const filteredApplications = computed(() => {
             (docFilter.value === 'missing' && !hasDocs) || 
             (docFilter.value === 'provided' && hasDocs)
 
-        return matchesSearch && matchesStatus && matchesModule && matchesNiveau && matchesDoc
+        const userHasGroup = hasGroup(app)
+        const matchesGroup = groupFilter.value === 'all' ||
+            (groupFilter.value === 'no_group' && !userHasGroup) ||
+            (groupFilter.value === 'has_group' && userHasGroup)
+
+        return matchesSearch && matchesStatus && matchesModule && matchesNiveau && matchesDoc && matchesGroup
     })
 })
 
@@ -356,6 +386,10 @@ const getStatusClass = (status) => {
                             <span class="h-2 w-2 rounded-full bg-rose-500 animate-pulse"></span>
                             {{ missingDocsCount }} sans document
                         </span>
+                        <span v-if="admittedNoGroupCount > 0" @click="filterAdmittedNoGroup" class="cursor-pointer px-2.5 py-0.5 bg-amber-50 hover:bg-amber-100 text-amber-700 text-xs font-bold rounded-full border border-amber-200/60 transition flex items-center gap-1.5 shadow-2xs" title="Cliquer pour filtrer les apprenants admis sans groupe">
+                            <span class="h-2 w-2 rounded-full bg-amber-500 animate-pulse"></span>
+                            {{ admittedNoGroupCount }} admis sans groupe
+                        </span>
                     </div>
                     <p class="text-gray-500 font-medium text-xs sm:text-sm mt-0.5">Gérer et valider les dossiers d'inscription des candidats.</p>
                 </div>
@@ -508,6 +542,54 @@ const getStatusClass = (status) => {
                         </div>
                     </div>
 
+                    <!-- Groupe Filter Dropdown -->
+                    <div class="relative flex-1 sm:flex-none min-w-[150px]">
+                        <button 
+                            @click="toggleDropdown('group')" 
+                            type="button" 
+                            class="w-full bg-gray-50/80 border border-gray-200/80 rounded-xl px-3 py-2 font-semibold text-xs sm:text-sm text-gray-800 focus:bg-white focus:border-blue-500 flex items-center justify-between gap-2 transition"
+                            :class="{ 'border-amber-400 bg-amber-50/50 text-amber-700 font-bold': groupFilter !== 'all' }"
+                        >
+                            <span class="truncate">{{ groupLabel }}</span>
+                            <ChevronDownIcon class="h-4 w-4 text-gray-400 shrink-0 transition-transform duration-150" :class="{ 'rotate-180': openDropdown === 'group' }" />
+                        </button>
+
+                        <div v-if="openDropdown === 'group'" class="absolute right-0 mt-2 w-60 bg-white border border-gray-100 rounded-2xl shadow-xl p-2 z-30 space-y-1">
+                            <div @click="groupFilter = 'all'; openDropdown = null" class="flex items-center justify-between px-3 py-2 rounded-xl hover:bg-gray-50 cursor-pointer transition">
+                                <span class="text-xs font-bold text-gray-700">Tous les groupes</span>
+                                <span class="text-[10px] font-extrabold text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">{{ applications?.length || 0 }}</span>
+                            </div>
+                            <div class="h-px bg-gray-100 my-1"></div>
+                            <div @click="groupFilter = 'no_group'; openDropdown = null" class="flex items-center justify-between px-3 py-2 rounded-xl hover:bg-amber-50/60 cursor-pointer transition">
+                                <span class="text-xs font-bold text-amber-700 flex items-center gap-1.5">
+                                    <UserGroupIcon class="h-4 w-4 text-amber-500" />
+                                    Sans groupe
+                                </span>
+                                <span class="text-[10px] font-black text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full">
+                                    {{ applications?.filter(a => !hasGroup(a)).length || 0 }}
+                                </span>
+                            </div>
+                            <div @click="groupFilter = 'has_group'; openDropdown = null" class="flex items-center justify-between px-3 py-2 rounded-xl hover:bg-emerald-50/60 cursor-pointer transition">
+                                <span class="text-xs font-bold text-emerald-700 flex items-center gap-1.5">
+                                    <UserGroupIcon class="h-4 w-4 text-emerald-500" />
+                                    Avec groupe
+                                </span>
+                                <span class="text-[10px] font-black text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">
+                                    {{ applications?.filter(a => hasGroup(a)).length || 0 }}
+                                </span>
+                            </div>
+                            <div class="h-px bg-gray-100 my-1"></div>
+                            <div @click="filterAdmittedNoGroup(); openDropdown = null" class="flex items-center justify-between px-3 py-2 rounded-xl hover:bg-indigo-50/60 cursor-pointer transition">
+                                <span class="text-xs font-black text-indigo-700 flex items-center gap-1.5">
+                                    ⚡ Admis sans groupe
+                                </span>
+                                <span class="text-[10px] font-black text-indigo-700 bg-indigo-100 px-2 py-0.5 rounded-full">
+                                    {{ admittedNoGroupCount }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Reset Button -->
                     <div v-if="hasActiveFilters" class="ml-auto">
                         <button 
@@ -556,6 +638,11 @@ const getStatusClass = (status) => {
                             Documents: {{ docFilter === 'missing' ? 'Docs manquants' : 'Docs fournis' }}
                             <button @click="docFilter = 'all'" class="hover:text-rose-900 transition"><XMarkIcon class="h-3.5 w-3.5" /></button>
                         </span>
+
+                        <span v-if="groupFilter !== 'all'" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-amber-50 text-amber-700 text-xs font-bold border border-amber-100">
+                            Groupe: {{ groupFilter === 'no_group' ? 'Sans groupe' : 'Avec groupe' }}
+                            <button @click="groupFilter = 'all'" class="hover:text-amber-900 transition"><XMarkIcon class="h-3.5 w-3.5" /></button>
+                        </span>
                     </div>
 
                     <button @click="resetFilters" class="text-xs font-bold text-red-500 hover:text-red-700 underline ml-auto transition">
@@ -592,10 +679,18 @@ const getStatusClass = (status) => {
                                         </div>
                                         <div>
                                             <p class="font-bold text-gray-900 text-sm leading-tight">{{ app.nom_complet || (app.user ? app.user.name : 'N/A') }}</p>
-                                            <div class="flex items-center gap-2 mt-0.5">
+                                            <div class="flex flex-wrap items-center gap-2 mt-0.5">
                                                 <span class="text-[10px] text-gray-400 font-medium uppercase tracking-wider">{{ app.user ? app.user.email : 'Candidat public' }}</span>
                                                 <span v-if="app.niveau_etude" class="text-[9px] font-extrabold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100">
                                                     {{ app.niveau_etude }}
+                                                </span>
+                                                <span v-if="hasGroup(app)" class="inline-flex items-center gap-1 text-[9px] font-extrabold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100" title="Affecté au groupe">
+                                                    <UserGroupIcon class="h-3 w-3 text-emerald-600" />
+                                                    {{ app.user.student_groups.map(g => g.nom_groupe || g.nom).join(', ') }}
+                                                </span>
+                                                <span v-else-if="app.status === 'admitted'" class="inline-flex items-center gap-1 text-[9px] font-extrabold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200/80" title="Admis sans groupe">
+                                                    <UserGroupIcon class="h-3 w-3 text-amber-600" />
+                                                    Sans groupe
                                                 </span>
                                                 <span v-if="!hasUploadedDocuments(app)" class="inline-flex items-center gap-1 text-[9px] font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-md border border-rose-100">
                                                     <span class="h-1.5 w-1.5 rounded-full bg-rose-500 animate-pulse"></span>

@@ -69,7 +69,7 @@ class ApplicationController extends Controller
     public function index(): Response
     {
         return Inertia::render('Scolarite/ApplicationsIndex', [
-            'applications' => Application::with(['user', 'module'])->orderByDesc('created_at')->get(),
+            'applications' => Application::with(['user.studentGroups', 'module'])->orderByDesc('created_at')->get(),
             'modules' => \App\Models\Module::activeForEnrollment()->get(['id', 'titre']),
         ]);
     }
