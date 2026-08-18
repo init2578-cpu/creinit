@@ -80,8 +80,8 @@ class ApplicationController extends Controller
         
         $validated = $request->validate([
             'nom_complet' => 'required|string|max:255',
-            'email'       => 'nullable|email|max:255|unique:users,email',
-            'telephone'   => 'required|string|max:20|unique:users,telephone',
+            'email'       => 'nullable|email|max:255',
+            'telephone'   => 'required|string|max:20',
             'module_id'   => [
                 'required',
                 \Illuminate\Validation\Rule::exists('modules', 'id')->where(function ($query) use ($today) {
@@ -106,6 +106,74 @@ class ApplicationController extends Controller
             'cni_verso' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
             'diploma' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
         ]);
+
+        $telephone = trim($validated['telephone']);
+        $cleanPhone = preg_replace('/[^0-9]/', '', $telephone);
+        $email = !empty($validated['email']) ? strtolower(trim($validated['email'])) : null;
+
+        // Check if candidate already registered online or exists in Users/Applications
+        $existingUser = \App\Models\User::where(function ($query) use ($telephone, $cleanPhone, $email) {
+            $query->where('telephone', $telephone);
+            if ($cleanPhone) {
+                $query->orWhereRaw("REPLACE(REPLACE(REPLACE(telephone, ' ', ''), '-', ''), '+', '') = ?", [$cleanPhone]);
+            }
+            if ($email) {
+                $query->orWhere('email', $email);
+            }
+        })->first();
+
+        $existingApp = Application::where(function ($query) use ($telephone, $cleanPhone, $email) {
+            $query->where('telephone', $telephone);
+            if ($cleanPhone) {
+                $query->orWhereRaw("REPLACE(REPLACE(REPLACE(telephone, ' ', ''), '-', ''), '+', '') = ?", [$cleanPhone]);
+            }
+            if ($email) {
+                $query->orWhereHas('user', function ($uq) use ($email) {
+                    $uq->where('email', $email);
+                });
+            }
+        })->first();
+
+        if ($existingUser || $existingApp) {
+            $errors = [];
+
+            $phoneMatch = false;
+            if ($existingUser) {
+                $uClean = preg_replace('/[^0-9]/', '', $existingUser->telephone ?? '');
+                if ($existingUser->telephone === $telephone || ($cleanPhone && $uClean === $cleanPhone)) {
+                    $phoneMatch = true;
+                }
+            }
+            if ($existingApp && !$phoneMatch) {
+                $aClean = preg_replace('/[^0-9]/', '', $existingApp->telephone ?? '');
+                if ($existingApp->telephone === $telephone || ($cleanPhone && $aClean === $cleanPhone)) {
+                    $phoneMatch = true;
+                }
+            }
+
+            $emailMatch = false;
+            if ($email) {
+                if ($existingUser && strtolower($existingUser->email ?? '') === $email) {
+                    $emailMatch = true;
+                }
+                if ($existingApp && $existingApp->user && strtolower($existingApp->user->email ?? '') === $email) {
+                    $emailMatch = true;
+                }
+            }
+
+            if ($phoneMatch) {
+                $errors['telephone'] = "Ce numéro de téléphone est déjà utilisé par un candidat inscrit en ligne via le lien ou enregistré dans la plateforme.";
+            }
+            if ($emailMatch) {
+                $errors['email'] = "Cette adresse email est déjà utilisée par un candidat inscrit en ligne via le lien ou enregistré dans la plateforme.";
+            }
+
+            if (empty($errors)) {
+                $errors['telephone'] = "Un candidat avec ce numéro de téléphone ou cet email est déjà inscrit en ligne.";
+            }
+
+            return back()->withErrors($errors);
+        }
 
         // Create or find user
         $user = \App\Models\User::where(function ($query) use ($validated) {

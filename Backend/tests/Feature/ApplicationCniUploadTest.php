@@ -100,4 +100,81 @@ class ApplicationCniUploadTest extends TestCase
 
         Storage::disk('private')->assertExists($application->other_identity_doc_path);
     }
+
+    public function test_manual_enrollment_blocked_for_already_registered_online_candidate(): void
+    {
+        Storage::fake('private');
+
+        \Spatie\Permission\Models\Role::create(['name' => 'Directeur']);
+        $admin = \App\Models\User::create([
+            'name' => 'Admin User',
+            'email' => 'admin@cre.sn',
+            'password' => bcrypt('password'),
+            'telephone' => '770000000',
+        ]);
+        $admin->assignRole('Directeur');
+
+        $module = Module::create([
+            'titre' => 'Comptabilité',
+            'code_module' => 'COMPTA',
+            'quota_heures' => 50,
+            'is_active' => true,
+        ]);
+
+        // 1. Candidate registers online via link
+        $this->post(route('applications.store'), [
+            'module_id' => $module->id,
+            'nom_complet' => 'Samba Ndiaye',
+            'telephone' => '775554433',
+            'email' => 'samba@online.com',
+            'adresse_reelle' => 'Dakar',
+            'date_naissance' => '1998-04-12',
+            'lieu_naissance' => 'Dakar',
+            'niveau_etude' => 'Master',
+            'dernier_diplome_libelle' => 'Master 1',
+            'fonction' => 'Comptable',
+            'sexe' => 'M',
+            'cni_recto' => UploadedFile::fake()->image('cni_recto.jpg'),
+            'cni_verso' => UploadedFile::fake()->image('cni_verso.jpg'),
+            'diploma' => UploadedFile::fake()->create('diploma.pdf', 100, 'application/pdf'),
+        ]);
+
+        $this->assertDatabaseHas('applications', [
+            'telephone' => '775554433',
+        ]);
+
+        // 2. Admin tries manual enrollment with SAME phone number
+        $responsePhone = $this->actingAs($admin)->post(route('applications.enroll.manual'), [
+            'module_id' => $module->id,
+            'nom_complet' => 'Samba Manual',
+            'telephone' => '775554433',
+            'email' => 'other@example.com',
+            'adresse_reelle' => 'Dakar',
+            'date_naissance' => '1998-04-12',
+            'lieu_naissance' => 'Dakar',
+            'niveau_etude' => 'Master',
+            'dernier_diplome_libelle' => 'Master 1',
+            'fonction' => 'Comptable',
+            'sexe' => 'M',
+        ]);
+
+        $responsePhone->assertSessionHasErrors(['telephone']);
+
+        // 3. Admin tries manual enrollment with SAME email address
+        $responseEmail = $this->actingAs($admin)->post(route('applications.enroll.manual'), [
+            'module_id' => $module->id,
+            'nom_complet' => 'Samba Manual 2',
+            'telephone' => '779998877',
+            'email' => 'samba@online.com',
+            'adresse_reelle' => 'Dakar',
+            'date_naissance' => '1998-04-12',
+            'lieu_naissance' => 'Dakar',
+            'niveau_etude' => 'Master',
+            'dernier_diplome_libelle' => 'Master 1',
+            'fonction' => 'Comptable',
+            'sexe' => 'M',
+        ]);
+
+        $responseEmail->assertSessionHasErrors(['email']);
+    }
 }
