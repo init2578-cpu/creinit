@@ -153,6 +153,10 @@ class ModuleController extends Controller
      */
     public function destroyChapter(Chapter $chapter): RedirectResponse
     {
+        if (request()->user() && !request()->user()->hasRole('Directeur')) {
+            abort(403, "Seule la direction peut supprimer un chapitre de cours.");
+        }
+
         $chapter->delete();
 
         return back()->with('success', 'Le chapitre a été supprimé.');
@@ -287,6 +291,10 @@ class ModuleController extends Controller
 
     public function reorderChapters(Request $request, Module $module): RedirectResponse
     {
+        if (!$request->user()->hasRole('Directeur')) {
+            abort(403, "Seule la direction peut réorganiser les chapitres de cours.");
+        }
+
         $validated = $request->validate([
             'chapters' => 'required|array',
             'chapters.*.id' => 'required|exists:chapters,id',
@@ -338,6 +346,17 @@ class ModuleController extends Controller
 
         $chapter->phases()->create($validated);
 
+        if (!$request->user()->hasRole('Directeur')) {
+            $chapter->update([
+                'is_approved' => false,
+                'is_published' => false,
+            ]);
+            $directeurs = \App\Models\User::role('Directeur')->get();
+            foreach ($directeurs as $directeur) {
+                $directeur->notify(new \App\Notifications\ChapterProposedNotification($chapter, $request->user()));
+            }
+        }
+
         return back()->with('success', 'La phase a été créée.');
     }
 
@@ -357,6 +376,18 @@ class ModuleController extends Controller
         ]);
 
         $phase->update($validated);
+        $chapter = $phase->chapter;
+
+        if ($chapter && !$request->user()->hasRole('Directeur')) {
+            $chapter->update([
+                'is_approved' => false,
+                'is_published' => false,
+            ]);
+            $directeurs = \App\Models\User::role('Directeur')->get();
+            foreach ($directeurs as $directeur) {
+                $directeur->notify(new \App\Notifications\ChapterProposedNotification($chapter, $request->user()));
+            }
+        }
 
         return back()->with('success', 'La phase a été mise à jour.');
     }
@@ -366,7 +397,19 @@ class ModuleController extends Controller
      */
     public function destroyPhase(\App\Models\Phase $phase): RedirectResponse
     {
+        $chapter = $phase->chapter;
         $phase->delete();
+
+        if ($chapter && request()->user() && !request()->user()->hasRole('Directeur')) {
+            $chapter->update([
+                'is_approved' => false,
+                'is_published' => false,
+            ]);
+            $directeurs = \App\Models\User::role('Directeur')->get();
+            foreach ($directeurs as $directeur) {
+                $directeur->notify(new \App\Notifications\ChapterProposedNotification($chapter, request()->user()));
+            }
+        }
 
         return back()->with('success', 'La phase a été supprimée.');
     }
@@ -386,6 +429,17 @@ class ModuleController extends Controller
             \App\Models\Phase::where('id', $phaseData['id'])
                 ->where('chapter_id', $chapter->id)
                 ->update(['ordre' => $phaseData['ordre']]);
+        }
+
+        if (!$request->user()->hasRole('Directeur')) {
+            $chapter->update([
+                'is_approved' => false,
+                'is_published' => false,
+            ]);
+            $directeurs = \App\Models\User::role('Directeur')->get();
+            foreach ($directeurs as $directeur) {
+                $directeur->notify(new \App\Notifications\ChapterProposedNotification($chapter, $request->user()));
+            }
         }
 
         return back()->with('success', 'L\'ordre des phases a été mis à jour.');

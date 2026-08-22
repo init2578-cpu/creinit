@@ -22,7 +22,7 @@ const props = defineProps({
     formateurs: Array
 })
 
-const days = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi']
+const days = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche']
 const hours = Array.from({ length: 13 }, (_, i) => i + 8) // 8h to 20h
 const hourOptions = Array.from({ length: 13 }, (_, i) => (i + 8).toString().padStart(2, '0'))
 const minuteOptions = ['00', '15', '30', '45']
@@ -139,7 +139,7 @@ let clockTimer = null
 
 // Mobile schedule display state
 const currentDayIndex = new Date().getDay() // 0 = Sunday, 1 = Monday, ...
-const defaultDay = currentDayIndex === 0 || currentDayIndex === 7 ? 'Lundi' : days[currentDayIndex - 1]
+const defaultDay = currentDayIndex === 0 ? 'Dimanche' : days[currentDayIndex - 1]
 const selectedDayMobile = ref(defaultDay)
 
 // Get all schedules for the selected mobile day, sorted by start_time
@@ -244,14 +244,14 @@ const navigateToAttendance = (schedule) => {
 
             <!-- Calendar Grid -->
             <div class="hidden md:block bg-white rounded-[2.5rem] shadow-sm border border-gray-100 overflow-hidden">
-                <div class="grid grid-cols-7 border-b border-gray-50">
+                <div class="grid grid-cols-8 border-b border-gray-50">
                     <div class="p-4 bg-gray-50/50"></div>
                     <div v-for="day in days" :key="day" class="p-4 bg-gray-50/50 text-center text-xs font-black text-gray-400 uppercase tracking-widest">
                         {{ day }}
                     </div>
                 </div>
 
-                <div class="grid grid-cols-7 relative">
+                <div class="grid grid-cols-8 relative">
                     <!-- Left Hour markers -->
                     <div class="flex flex-col">
                         <div v-for="hour in hours" :key="hour" class="min-h-28 p-4 text-[10px] font-bold text-gray-300 border-r border-gray-50 font-mono">

@@ -229,4 +229,103 @@ class TrainerModuleRestrictionsTest extends TestCase
         $response->assertSessionHas('error');
         $this->assertFalse((bool)$chapter->fresh()->is_published);
     }
+
+    public function test_trainer_modifying_phase_resets_chapter_approval()
+    {
+        \Illuminate\Support\Facades\Notification::fake();
+
+        $director = User::factory()->create();
+        $director->assignRole('Directeur');
+
+        $trainer = User::factory()->create();
+        $trainer->assignRole('Formateur');
+
+        $module = \App\Models\Module::create([
+            'code_module' => 'DEV-101',
+            'titre' => 'Module Phase Test',
+            'quota_heures' => 15,
+        ]);
+
+        $chapter = \App\Models\Chapter::create([
+            'module_id' => $module->id,
+            'titre' => 'Chapitre Initial Approuvé',
+            'is_approved' => true,
+            'is_published' => true,
+            'ordre' => 1,
+        ]);
+
+        // Trainer stores a phase on an approved chapter
+        $this->actingAs($trainer)->post(route('chapters.phases.store', $chapter->id), [
+            'titre' => 'Nouvelle Phase',
+            'description' => 'Description de la phase',
+        ]);
+
+        $this->assertFalse((bool)$chapter->fresh()->is_approved);
+        $this->assertFalse((bool)$chapter->fresh()->is_published);
+
+        \Illuminate\Support\Facades\Notification::assertSentTo(
+            $director,
+            \App\Notifications\ChapterProposedNotification::class
+        );
+    }
+
+    public function test_trainer_cannot_modify_schedules()
+    {
+        $trainer = User::factory()->create();
+        $trainer->assignRole('Formateur');
+
+        $module = \App\Models\Module::create([
+            'code_module' => 'DEV-102',
+            'titre' => 'Module Test Group',
+            'quota_heures' => 10,
+        ]);
+
+        $group = \App\Models\Group::create([
+            'nom_groupe' => 'Groupe Schedule Test',
+            'module_id' => $module->id,
+            'formateur_id' => $trainer->id,
+            'annee_academique' => '2025-2026',
+        ]);
+
+        $room = \App\Models\Room::create([
+            'nom' => 'Salle S1',
+            'capacite' => 20,
+            'type_salle' => 'cours',
+        ]);
+
+        $schedule = \App\Models\Schedule::create([
+            'group_id' => $group->id,
+            'room_id' => $room->id,
+            'formateur_id' => $trainer->id,
+            'day_of_week' => 1,
+            'start_time' => '08:00',
+            'end_time' => '10:00',
+        ]);
+
+        // 1. Store schedule -> 403
+        $response = $this->actingAs($trainer)->post(route('schedules.store'), [
+            'group_id' => $group->id,
+            'room_id' => $room->id,
+            'formateur_id' => $trainer->id,
+            'day_of_week' => 2,
+            'start_time' => '10:00',
+            'end_time' => '12:00',
+        ]);
+        $response->assertStatus(403);
+
+        // 2. Update schedule -> 403
+        $response = $this->actingAs($trainer)->put(route('schedules.update', $schedule->id), [
+            'group_id' => $group->id,
+            'room_id' => $room->id,
+            'formateur_id' => $trainer->id,
+            'day_of_week' => 1,
+            'start_time' => '09:00',
+            'end_time' => '11:00',
+        ]);
+        $response->assertStatus(403);
+
+        // 3. Destroy schedule -> 403
+        $response = $this->actingAs($trainer)->delete(route('schedules.destroy', $schedule->id));
+        $response->assertStatus(403);
+    }
 }

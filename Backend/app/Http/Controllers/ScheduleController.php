@@ -135,6 +135,10 @@ class ScheduleController extends Controller
 
     public function store(StoreScheduleRequest $request): RedirectResponse
     {
+        if ($request->user()->hasRole('Formateur') || ($request->user()->isTrainer() && !$request->user()->hasRole('Directeur') && !$request->user()->hasRole('Secrétaire'))) {
+            abort(403, "Seuls le Directeur et la Secrétaire peuvent ajouter un créneau de cours.");
+        }
+
         Schedule::create($request->validated());
 
         return back()->with('success', 'Créneau d\'emploi du temps ajouté avec succès.');
@@ -142,6 +146,10 @@ class ScheduleController extends Controller
 
     public function update(StoreScheduleRequest $request, Schedule $schedule): RedirectResponse
     {
+        if ($request->user()->hasRole('Formateur') || ($request->user()->isTrainer() && !$request->user()->hasRole('Directeur') && !$request->user()->hasRole('Secrétaire'))) {
+            abort(403, "Seuls le Directeur et la Secrétaire peuvent modifier un créneau de cours.");
+        }
+
         $schedule->update($request->validated());
 
         return back()->with('success', 'Créneau d\'emploi du temps mis à jour avec succès.');
@@ -149,6 +157,10 @@ class ScheduleController extends Controller
 
     public function destroy(Schedule $schedule): RedirectResponse
     {
+        if (request()->user()->hasRole('Formateur') || (request()->user()->isTrainer() && !request()->user()->hasRole('Directeur') && !request()->user()->hasRole('Secrétaire'))) {
+            abort(403, "Seuls le Directeur et la Secrétaire peuvent supprimer un créneau de cours.");
+        }
+
         $schedule->delete();
 
         return back()->with('success', 'Créneau supprimé.');

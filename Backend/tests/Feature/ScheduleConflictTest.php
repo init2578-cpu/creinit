@@ -194,4 +194,47 @@ class ScheduleConflictTest extends TestCase
             ->assertJsonPath('alerts.0.group_name', 'G3-26')
             ->assertJsonPath('alerts.0.minutes_late', 6);
     }
+
+    public function test_create_schedule_on_sunday_succeeds(): void
+    {
+        $director = User::factory()->create();
+        $director->assignRole('Directeur');
+
+        $formateur = User::factory()->create();
+        $formateur->assignRole('Formateur');
+
+        $module = Module::create([
+            'code_module' => 'M103',
+            'titre' => 'Module Dimanche',
+            'quota_heures' => 40,
+        ]);
+
+        $group = Group::create([
+            'nom_groupe' => 'G-Dimanche',
+            'module_id' => $module->id,
+            'formateur_id' => $formateur->id,
+            'annee_academique' => '2025-2026',
+            'status' => 'active',
+        ]);
+
+        $room = Room::create(['nom' => 'Salle Dimanche', 'capacite' => 20, 'type_salle' => 'cours']);
+
+        $response = $this->actingAs($director)->post(route('schedules.store'), [
+            'group_id' => $group->id,
+            'room_id' => $room->id,
+            'formateur_id' => $formateur->id,
+            'day_of_week' => 7, // Dimanche
+            'start_time' => '10:00',
+            'end_time' => '12:00',
+        ]);
+
+        $response->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('schedules', [
+            'group_id' => $group->id,
+            'room_id' => $room->id,
+            'day_of_week' => 7,
+            'start_time' => '10:00',
+            'end_time' => '12:00',
+        ]);
+    }
 }
