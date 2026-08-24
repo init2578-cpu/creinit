@@ -648,40 +648,40 @@ function approveExam(examId) {
             </div>
 
             <div class="bg-white rounded-[2.5rem] shadow-sm border border-gray-100 overflow-hidden">
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse">
+                <div class="overflow-x-auto custom-scrollbar">
+                    <table class="w-full text-left border-collapse min-w-[950px]">
                         <thead>
                             <tr class="bg-gray-50/50 text-gray-400 text-[10px] uppercase font-black tracking-widest border-b border-gray-100">
-                                <th class="px-6 py-4">Examen</th>
-                                <th class="px-6 py-4">Type</th>
-                                <th class="px-6 py-4 text-center">Planification</th>
-                                <th class="px-6 py-4 text-center">Score Max</th>
-                                <th class="px-6 py-4 text-right">Actions</th>
+                                <th class="px-6 py-4 whitespace-nowrap">Examen</th>
+                                <th class="px-6 py-4 whitespace-nowrap">Type</th>
+                                <th class="px-6 py-4 text-center whitespace-nowrap">Planification</th>
+                                <th class="px-6 py-4 text-center whitespace-nowrap">Score Max</th>
+                                <th class="px-6 py-4 text-right whitespace-nowrap">Actions</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-50">
                             <tr v-for="exam in exams" :key="exam.id" class="hover:bg-gray-50/50 transition group">
                                 <td class="px-6 py-4">
                                     <div class="flex items-center gap-4">
-                                        <div class="h-12 w-12 rounded-xl bg-gray-100 text-gray-500 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition">
+                                        <div class="h-12 w-12 rounded-xl bg-gray-100 text-gray-500 flex items-center justify-center shrink-0 group-hover:bg-blue-600 group-hover:text-white transition">
                                             <AcademicCapIcon class="h-6 w-6" />
                                         </div>
-                                        <div>
-                                            <div class="flex items-center gap-2">
-                                                <p class="font-bold text-gray-900">{{ exam.titre }}</p>
-                                                <span v-if="!exam.is_approved" class="px-2 py-0.5 bg-yellow-50 text-yellow-700 border border-yellow-100 text-[9px] font-black uppercase rounded tracking-wider">
+                                        <div class="min-w-0 flex-1">
+                                            <div class="flex flex-wrap items-center gap-2">
+                                                <p class="font-bold text-gray-900 tracking-tight leading-snug">{{ exam.titre }}</p>
+                                                <span v-if="!exam.is_approved" class="px-2 py-0.5 bg-yellow-50 text-yellow-700 border border-yellow-100 text-[9px] font-black uppercase rounded tracking-wider shrink-0 whitespace-nowrap">
                                                     En attente
                                                 </span>
-                                                <span v-else class="px-2 py-0.5 bg-green-50 text-green-700 border border-green-100 text-[9px] font-black uppercase rounded tracking-wider">
+                                                <span v-else class="px-2 py-0.5 bg-green-50 text-green-700 border border-green-100 text-[9px] font-black uppercase rounded tracking-wider shrink-0 whitespace-nowrap">
                                                     Validé
                                                 </span>
-                                                <div v-if="exam.user" class="px-2 py-0.5 rounded-md bg-gray-100 border border-gray-200 flex items-center gap-1" :title="`Proposé le ${new Date(exam.created_at).toLocaleDateString('fr-FR')} à ${new Date(exam.created_at).toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'})} par ${exam.user.name}`">
-                                                    <span class="h-4 w-4 rounded-full bg-gray-300 text-[8px] flex items-center justify-center font-black text-white">{{ exam.user.name.charAt(0) }}</span>
-                                                    <span class="text-[9px] font-black text-gray-600 tracking-wider">{{ exam.user.name }}</span>
-                                                    <span class="text-[8px] font-bold text-gray-400 border-l border-gray-300 pl-1 ml-0.5">le {{ new Date(exam.created_at).toLocaleDateString('fr-FR') }} à {{ new Date(exam.created_at).toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'}) }}</span>
+                                                <div v-if="exam.user" class="px-2 py-0.5 rounded-md bg-gray-100 border border-gray-200 flex items-center gap-1 shrink-0 whitespace-nowrap" :title="`Proposé le ${new Date(exam.created_at).toLocaleDateString('fr-FR')} à ${new Date(exam.created_at).toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'})} par ${exam.user.name}`">
+                                                    <span class="h-4 w-4 rounded-full bg-gray-300 text-[8px] flex items-center justify-center font-black text-white shrink-0">{{ exam.user.name.charAt(0) }}</span>
+                                                    <span class="text-[9px] font-black text-gray-600 tracking-wider whitespace-nowrap">{{ exam.user.name }}</span>
+                                                    <span class="text-[8px] font-bold text-gray-400 border-l border-gray-300 pl-1 ml-0.5 whitespace-nowrap">le {{ new Date(exam.created_at).toLocaleDateString('fr-FR') }} à {{ new Date(exam.created_at).toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'}) }}</span>
                                                 </div>
                                                 <div v-if="isExamEnded(exam) && (exam.exam_results?.length < exam.expected_results_count)" 
-                                                      class="px-2 py-0.5 bg-amber-500 text-white text-[8px] font-black uppercase rounded shadow-lg shadow-amber-100 ring-2 ring-amber-50 flex items-center gap-1.5">
+                                                      class="px-2 py-0.5 bg-amber-500 text-white text-[8px] font-black uppercase rounded shadow-lg shadow-amber-100 ring-2 ring-amber-50 flex items-center gap-1.5 shrink-0 whitespace-nowrap">
                                                     <span class="h-1 w-1 rounded-full bg-white animate-ping"></span>
                                                     MANQUE {{ exam.expected_results_count - exam.exam_results?.length }} NOTES
                                                 </div>
@@ -695,7 +695,7 @@ function approveExam(examId) {
                                                     <span 
                                                         v-for="g in exam.groups" 
                                                         :key="g.id"
-                                                        class="px-1.5 py-0.5 bg-blue-50 text-blue-600 rounded text-[8px] font-black uppercase tracking-wider border border-blue-100"
+                                                        class="px-1.5 py-0.5 bg-blue-50 text-blue-600 rounded text-[8px] font-black uppercase tracking-wider border border-blue-100 whitespace-nowrap"
                                                     >
                                                         {{ g.nom_groupe }}
                                                     </span>
@@ -704,60 +704,60 @@ function approveExam(examId) {
                                         </div>
                                     </div>
                                 </td>
-                                <td class="px-6 py-4">
-                                    <span class="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border" :class="getTypeClass(exam.type)">
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border inline-block" :class="getTypeClass(exam.type)">
                                         {{ getTypeLabel(exam.type) }}
                                     </span>
                                 </td>
-                                <td class="px-6 py-4">
+                                <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="flex flex-col items-center gap-1">
                                         <div class="flex flex-col items-center">
-                                            <span class="text-xs font-black text-gray-900 flex items-center gap-1.5 uppercase tracking-tight">
-                                                <CalendarIcon class="h-3.5 w-3.5 text-gray-400" />
+                                            <span class="text-xs font-black text-gray-900 flex items-center gap-1.5 uppercase tracking-tight whitespace-nowrap">
+                                                <CalendarIcon class="h-3.5 w-3.5 text-gray-400 shrink-0" />
                                                 {{ exam.scheduled_at ? new Date(exam.scheduled_at).toLocaleDateString('fr-FR') : 'Non planifié' }}
                                             </span>
-                                            <span v-if="exam.scheduled_at" class="text-[10px] font-bold text-blue-600 mt-0.5">
+                                            <span v-if="exam.scheduled_at" class="text-[10px] font-bold text-blue-600 mt-0.5 whitespace-nowrap">
                                                 {{ new Date(exam.scheduled_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', hour12: false }) }}
                                                 -
                                                 {{ new Date(new Date(exam.scheduled_at).getTime() + exam.duree_minutes * 60000).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', hour12: false }) }}
                                             </span>
                                         </div>
-                                        <div class="flex items-center gap-2">
-                                            <span class="text-[10px] text-gray-400 font-bold flex items-center gap-1">
-                                                <ClockIcon class="h-3 w-3" />
+                                        <div class="flex items-center gap-2 whitespace-nowrap">
+                                            <span class="text-[10px] text-gray-400 font-bold flex items-center gap-1 whitespace-nowrap">
+                                                <ClockIcon class="h-3 w-3 shrink-0" />
                                                 {{ exam.duree_minutes }} min
                                             </span>
-                                            <span v-if="isExamEnded(exam)" class="text-[9px] font-black text-red-500 bg-red-50 px-1.5 py-0.5 rounded border border-red-100 uppercase tracking-widest">
+                                            <span v-if="isExamEnded(exam)" class="text-[9px] font-black text-red-500 bg-red-50 px-1.5 py-0.5 rounded border border-red-100 uppercase tracking-widest whitespace-nowrap">
                                                 Terminé
                                             </span>
                                         </div>
                                     </div>
                                 </td>
-                                <td class="px-6 py-4 text-center">
+                                <td class="px-6 py-4 text-center whitespace-nowrap">
                                     <span class="text-sm font-black text-gray-900">{{ parseFloat(exam.total_points).toFixed(0) }}</span>
                                     <span class="text-[10px] text-gray-400 font-bold ml-1">pts</span>
                                 </td>
-                                <td class="px-6 py-4 text-right">
-                                    <div class="flex justify-end gap-2">
-                                        <button v-if="isDirecteur && !exam.is_approved" @click="approveExam(exam.id)" class="p-2 text-emerald-600 hover:bg-emerald-50 rounded-xl transition" title="Valider l'examen">
+                                <td class="px-6 py-4 text-right whitespace-nowrap">
+                                    <div class="flex items-center justify-end gap-1.5 shrink-0 whitespace-nowrap">
+                                        <button v-if="isDirecteur && !exam.is_approved" @click="approveExam(exam.id)" class="p-2 text-emerald-600 hover:bg-emerald-50 rounded-xl transition shrink-0" title="Valider l'examen">
                                             <CheckCircleIcon class="h-6 w-6" />
                                         </button>
                                         <a 
                                             v-if="exam.type === 'paper' && exam.document_path" 
                                             :href="route('exams.download-file', exam.id)" 
                                             target="_blank"
-                                            class="p-2 text-purple-600 hover:bg-purple-50 rounded-xl transition flex items-center justify-center" 
+                                            class="p-2 text-purple-600 hover:bg-purple-50 rounded-xl transition flex items-center justify-center shrink-0" 
                                             title="Voir l'énoncé proposé"
                                         >
                                             <DocumentIcon class="h-6 w-6" />
                                         </a>
-                                        <button v-if="exam.type === 'online' && (canManageExam(exam) || isSecretaire || exam.can_view_questions)" @click="openQuestionModal(exam)" class="p-2 text-blue-500 hover:bg-blue-50 rounded-xl transition" :title="canManageExam(exam) ? 'Gérer les questions' : 'Voir les questions'">
+                                        <button v-if="exam.type === 'online' && (canManageExam(exam) || isSecretaire || exam.can_view_questions)" @click="openQuestionModal(exam)" class="p-2 text-blue-500 hover:bg-blue-50 rounded-xl transition shrink-0" :title="canManageExam(exam) ? 'Gérer les questions' : 'Voir les questions'">
                                             <QueueListIcon class="h-6 w-6" />
                                         </button>
                                         <button 
                                             v-if="exam.is_approved && !isSecretaire && (canManageExam(exam) || exam.can_view_questions)"
                                             @click="openGradeModal(exam)" 
-                                            class="p-2 text-green-600 hover:bg-green-50 rounded-xl transition" 
+                                            class="p-2 text-green-600 hover:bg-green-50 rounded-xl transition shrink-0" 
                                             :title="canManageExam(exam) ? 'Consulter les notes / Saisie' : 'Consulter les résultats'"
                                         >
                                             <ClipboardDocumentCheckIcon class="h-6 w-6" />
@@ -765,18 +765,18 @@ function approveExam(examId) {
                                         <button 
                                             v-else-if="!isSecretaire && canManageExam(exam)"
                                             disabled 
-                                            class="p-2 text-gray-300 cursor-not-allowed rounded-xl transition" 
+                                            class="p-2 text-gray-300 cursor-not-allowed rounded-xl transition shrink-0" 
                                             title="L'attribution des notes est bloquée tant que le directeur n'a pas validé l'épreuve"
                                         >
                                             <ClipboardDocumentCheckIcon class="h-6 w-6" />
                                         </button>
-                                        <button v-if="canModifyExam(exam)" @click="openModal(exam)" class="p-2 text-blue-600 hover:bg-blue-50 rounded-xl transition" title="Modifier">
+                                        <button v-if="canModifyExam(exam)" @click="openModal(exam)" class="p-2 text-blue-600 hover:bg-blue-50 rounded-xl transition shrink-0" title="Modifier">
                                             <PencilIcon class="h-6 w-6" />
                                         </button>
-                                        <button v-if="!isSecretaire && canManageExam(exam)" @click="duplicateExam(exam.id)" class="p-2 text-indigo-600 hover:bg-indigo-50 rounded-xl transition" title="Dupliquer pour un autre groupe">
+                                        <button v-if="!isSecretaire && canManageExam(exam)" @click="duplicateExam(exam.id)" class="p-2 text-indigo-600 hover:bg-indigo-50 rounded-xl transition shrink-0" title="Dupliquer pour un autre groupe">
                                             <DocumentDuplicateIcon class="h-6 w-6" />
                                         </button>
-                                        <button v-if="canModifyExam(exam)" @click="deleteExam(exam.id)" class="p-2 text-red-600 hover:bg-red-50 rounded-xl transition" title="Supprimer">
+                                        <button v-if="canModifyExam(exam)" @click="deleteExam(exam.id)" class="p-2 text-red-600 hover:bg-red-50 rounded-xl transition shrink-0" title="Supprimer">
                                             <TrashIcon class="h-6 w-6" />
                                         </button>
                                     </div>
