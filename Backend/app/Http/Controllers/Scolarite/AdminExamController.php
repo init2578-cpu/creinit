@@ -21,12 +21,42 @@ use Inertia\Response;
 class AdminExamController extends Controller
 {
     /**
-     * Determine if a user has management access to an exam.
+     * Determine if a user can view an exam.
      */
-    private function isAllowedForExam(User $user, Exam $exam): bool
+    private function canViewExam(User $user, Exam $exam): bool
+    {
+        if ($user->hasRole('Directeur') || $user->hasRole('Secrétaire')) {
+            return true;
+        }
+
+        $allowedUserIds = $user->getAllowedTrainerUserIds();
+        if (in_array((int)$exam->user_id, $allowedUserIds, true)) {
+            return true;
+        }
+
+        return $exam->groups()->whereIn('formateur_id', $allowedUserIds)->exists();
+    }
+
+    /**
+     * Determine if a user can modify or manage an exam.
+     * Assistants (Stagiaires) can view exams proposed by their primary trainer,
+     * but CANNOT modify, update, delete, duplicate, or manage questions/grades unless they created it themselves.
+     */
+    private function canModifyExam(User $user, Exam $exam): bool
     {
         if ($user->hasRole('Directeur')) {
             return true;
+        }
+
+        if ($user->hasRole('Secrétaire')) {
+            return false;
+        }
+
+        $isAssistant = $user->hasRole('Stagiaire') || !empty($user->internshipRecord?->tuteur_id);
+
+        if ($isAssistant) {
+            // An assistant can ONLY modify an exam if they are the direct creator
+            return (int)$exam->user_id === (int)$user->id;
         }
 
         $allowedUserIds = $user->getAllowedTrainerUserIds();
@@ -82,9 +112,10 @@ class AdminExamController extends Controller
                         $query->whereIn('groups.id', $exam->groups->pluck('id'));
                     })->count();
 
-                $exam->can_manage = $this->isAllowedForExam($user, $exam);
+                $exam->can_manage = $this->canModifyExam($user, $exam);
                 $isStarted = $exam->scheduled_at && $exam->scheduled_at->isPast() && $exam->examResults()->exists();
                 $exam->can_modify = $isDirecteur || ($exam->can_manage && !$isStarted);
+                $exam->can_view_questions = $this->canViewExam($user, $exam);
 
                 return $exam;
             }),
@@ -179,7 +210,7 @@ class AdminExamController extends Controller
             abort(403, 'Action non autorisée pour les secrétaires.');
         }
 
-        if (!$this->isAllowedForExam($request->user(), $exam)) {
+        if (!$this->canModifyExam($request->user(), $exam)) {
             abort(403, 'Vous ne pouvez pas modifier cet examen.');
         }
 
@@ -252,7 +283,7 @@ class AdminExamController extends Controller
             abort(403, 'Action non autorisée pour les secrétaires.');
         }
 
-        if (!$this->isAllowedForExam($request->user(), $exam)) {
+        if (!$this->canModifyExam($request->user(), $exam)) {
             abort(403, 'Vous ne pouvez pas supprimer cet examen.');
         }
 
@@ -273,7 +304,7 @@ class AdminExamController extends Controller
             abort(403, 'Action non autorisée pour les secrétaires.');
         }
 
-        if (!$this->isAllowedForExam($request->user(), $exam)) {
+        if (!$this->canModifyExam($request->user(), $exam)) {
             abort(403, 'Vous ne pouvez pas dupliquer cet examen.');
         }
 
@@ -335,7 +366,7 @@ class AdminExamController extends Controller
             abort(403, 'Action non autorisée pour les secrétaires.');
         }
 
-        if (!$this->isAllowedForExam($request->user(), $exam)) {
+        if (!$this->canModifyExam($request->user(), $exam)) {
             abort(403, 'Vous ne pouvez pas saisir les notes de cet examen.');
         }
 
@@ -411,7 +442,7 @@ class AdminExamController extends Controller
             abort(403, 'Action non autorisée pour les secrétaires.');
         }
 
-        if (!$this->isAllowedForExam($request->user(), $exam)) {
+        if (!$this->canViewExam($request->user(), $exam)) {
             abort(403, 'Vous ne pouvez pas consulter la gestion des résultats de cet examen.');
         }
 
@@ -471,7 +502,7 @@ class AdminExamController extends Controller
             abort(403, 'Action non autorisée pour les secrétaires.');
         }
 
-        if (!$this->isAllowedForExam($request->user(), $exam)) {
+        if (!$this->canModifyExam($request->user(), $exam)) {
             abort(403, 'Vous ne pouvez pas noter cet examen.');
         }
 
@@ -570,7 +601,7 @@ class AdminExamController extends Controller
             abort(403, 'Action non autorisée pour les secrétaires.');
         }
 
-        if (!$this->isAllowedForExam($request->user(), $exam)) {
+        if (!$this->canModifyExam($request->user(), $exam)) {
             abort(403, 'Vous ne pouvez pas débloquer cet examen.');
         }
 
@@ -600,7 +631,7 @@ class AdminExamController extends Controller
             abort(403, 'Action non autorisée pour les secrétaires.');
         }
 
-        if (!$this->isAllowedForExam($request->user(), $exam)) {
+        if (!$this->canModifyExam($request->user(), $exam)) {
             abort(403, 'Vous ne pouvez pas gérer les questions de cet examen.');
         }
 
@@ -678,7 +709,7 @@ class AdminExamController extends Controller
      */
     public function download(Request $request, Exam $exam)
     {
-        if (!$request->user()->hasRole('Secrétaire') && !$this->isAllowedForExam($request->user(), $exam)) {
+        if (!$request->user()->hasRole('Secrétaire') && !$this->canViewExam($request->user(), $exam)) {
             abort(403, 'Vous ne pouvez pas télécharger cet énoncé.');
         }
         if ($exam->type !== 'paper' || !$exam->document_path) {

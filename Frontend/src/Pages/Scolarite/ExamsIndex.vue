@@ -512,6 +512,7 @@ const isExamStarted = (exam) => {
 
 const canManageExam = (exam) => {
     if (!exam) return false;
+    if (exam.can_manage !== undefined) return exam.can_manage;
     if (isSecretaire.value) return false;
     if (isDirecteur.value) return true;
     if (isTrainer.value) {
@@ -522,6 +523,7 @@ const canManageExam = (exam) => {
 
 const canModifyExam = (exam) => {
     if (!exam) return false;
+    if (exam.can_modify !== undefined) return exam.can_modify;
     if (isSecretaire.value) return false;
     if (isDirecteur.value) return true;
     if (isTrainer.value && exam.user_id !== page.props.auth.user.id) return false;
@@ -749,14 +751,14 @@ function approveExam(examId) {
                                         >
                                             <DocumentIcon class="h-6 w-6" />
                                         </a>
-                                        <button v-if="exam.type === 'online' && (canManageExam(exam) || isSecretaire)" @click="openQuestionModal(exam)" class="p-2 text-blue-500 hover:bg-blue-50 rounded-xl transition" :title="isSecretaire ? 'Voir les questions' : 'Gérer les questions'">
+                                        <button v-if="exam.type === 'online' && (canManageExam(exam) || isSecretaire || exam.can_view_questions)" @click="openQuestionModal(exam)" class="p-2 text-blue-500 hover:bg-blue-50 rounded-xl transition" :title="canManageExam(exam) ? 'Gérer les questions' : 'Voir les questions'">
                                             <QueueListIcon class="h-6 w-6" />
                                         </button>
                                         <button 
-                                            v-if="exam.is_approved && !isSecretaire && canManageExam(exam)"
+                                            v-if="exam.is_approved && !isSecretaire && (canManageExam(exam) || exam.can_view_questions)"
                                             @click="openGradeModal(exam)" 
                                             class="p-2 text-green-600 hover:bg-green-50 rounded-xl transition" 
-                                            title="Consulter les notes / Saisie"
+                                            :title="canManageExam(exam) ? 'Consulter les notes / Saisie' : 'Consulter les résultats'"
                                         >
                                             <ClipboardDocumentCheckIcon class="h-6 w-6" />
                                         </button>

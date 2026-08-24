@@ -136,7 +136,7 @@ class TrainerExamRestrictionTest extends TestCase
         $this->assertNotContains($exam2->id, $examIds);
     }
 
-    public function test_assistant_and_tutor_can_see_and_manage_each_others_exams(): void
+    public function test_assistant_can_see_tutor_exams_in_index_but_cannot_modify_them(): void
     {
         Role::firstOrCreate(['name' => 'Stagiaire']);
 
@@ -183,17 +183,24 @@ class TrainerExamRestrictionTest extends TestCase
         $this->assertContains($examTutor->id, $examIds);
         $this->assertContains($examAssistant->id, $examIds);
 
-        // Tutor sees both exams in index
-        $response = $this->actingAs($tutor)->get(route('exams.index'));
-        $response->assertStatus(200);
-        $examIds = collect($response->inertiaPage()['props']['exams'])->pluck('id')->toArray();
-        $this->assertContains($examTutor->id, $examIds);
-        $this->assertContains($examAssistant->id, $examIds);
-
-        // Assistant can update Tutor's exam
+        // Assistant CANNOT update Tutor's exam
         $response = $this->actingAs($assistant)->put(route('exams.update', $examTutor->id), [
             'module_id' => $module->id,
             'titre' => 'Titre mis a jour par Assistant',
+            'type' => 'online',
+            'duree_minutes' => 60,
+            'total_points' => 20,
+        ]);
+        $response->assertStatus(403);
+
+        // Assistant CANNOT delete Tutor's exam
+        $response = $this->actingAs($assistant)->delete(route('exams.destroy', $examTutor->id));
+        $response->assertStatus(403);
+
+        // Tutor CAN update Assistant's exam or their own exam
+        $response = $this->actingAs($tutor)->put(route('exams.update', $examTutor->id), [
+            'module_id' => $module->id,
+            'titre' => 'Titre mis a jour par Tuteur',
             'type' => 'online',
             'duree_minutes' => 60,
             'total_points' => 20,
