@@ -365,5 +365,37 @@ class TrainerExamRestrictionTest extends TestCase
         $exam->refresh();
         $this->assertEquals($trainer2->id, $exam->user_id);
     }
+
+    public function test_trainer_receives_notification_when_exam_is_assigned_by_director(): void
+    {
+        \Illuminate\Support\Facades\Notification::fake();
+
+        $director = User::factory()->create();
+        $director->assignRole('Directeur');
+
+        $trainer = User::factory()->create();
+        $trainer->assignRole('Formateur');
+
+        $module = Module::create([
+            'code_module' => 'M110',
+            'titre' => 'Module Test 10',
+            'quota_heures' => 30,
+        ]);
+
+        $response = $this->actingAs($director)->post(route('exams.store'), [
+            'module_id' => $module->id,
+            'titre' => 'Examen Directement Attribué',
+            'type' => 'online',
+            'duree_minutes' => 60,
+            'total_points' => 20,
+            'user_id' => $trainer->id,
+        ]);
+
+        $response->assertStatus(302);
+        \Illuminate\Support\Facades\Notification::assertSentTo(
+            $trainer,
+            \App\Notifications\ExamAssignedNotification::class
+        );
+    }
 }
 

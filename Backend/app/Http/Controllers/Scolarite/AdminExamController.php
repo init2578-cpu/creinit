@@ -11,6 +11,7 @@ use App\Models\Module;
 use App\Models\Group;
 use App\Models\User;
 use App\Notifications\NewExamAvailableNotification;
+use App\Notifications\ExamAssignedNotification;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -108,6 +109,14 @@ class AdminExamController extends Controller
         $exam = Exam::create($validated);
         $exam->load('module');
 
+        if ($user->hasRole('Directeur') && (int)$exam->user_id !== (int)$user->id && $exam->user) {
+            try {
+                $exam->user->notify(new ExamAssignedNotification($exam));
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::error('Erreur d\'envoi de la notification d\'attribution d\'examen: ' . $e->getMessage());
+            }
+        }
+
         $user = $request->user();
         if ($user->hasRole('Directeur')) {
             $exam->groups()->sync($request->input('group_ids', []));
@@ -184,12 +193,22 @@ class AdminExamController extends Controller
             return redirect()->back()->with('error', "Impossible de réduire le barème : le total des points des questions existantes ({$currentPoints}) dépasse le nouveau barème ({$request->total_points}).");
         }
 
+        $previousUserId = (int)$exam->user_id;
+
         $user = $request->user();
         if ($user->hasRole('Directeur') && $request->filled('user_id')) {
             $validated['user_id'] = $request->input('user_id');
         }
 
         $exam->update($validated);
+
+        if ($user->hasRole('Directeur') && (int)$exam->user_id !== $previousUserId && (int)$exam->user_id !== (int)$user->id && $exam->user) {
+            try {
+                $exam->user->notify(new ExamAssignedNotification($exam));
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::error('Erreur d\'envoi de la notification d\'attribution d\'examen: ' . $e->getMessage());
+            }
+        }
 
         $user = $request->user();
         if ($user->hasRole('Directeur')) {
@@ -255,6 +274,14 @@ class AdminExamController extends Controller
         }
 
         $newExam->save();
+
+        if ($request->user()->hasRole('Directeur') && (int)$newExam->user_id !== (int)$request->user()->id && $newExam->user) {
+            try {
+                $newExam->user->notify(new ExamAssignedNotification($newExam));
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::error('Erreur d\'envoi de la notification d\'attribution d\'examen: ' . $e->getMessage());
+            }
+        }
 
         foreach ($exam->questions as $question) {
             $newQuestion = $question->replicate();
