@@ -34,15 +34,24 @@ class AdminExamController extends Controller
         if (!$user->hasRole('Directeur') && !$user->hasRole('Secrétaire') && $user->isTrainer()) {
             $allowedUserIds = $user->getAllowedTrainerUserIds();
             $examQuery->whereIn('user_id', $allowedUserIds);
-            $moduleIds = $user->groupsAsFormateur()->pluck('module_id');
+            $moduleIds = Group::whereIn('formateur_id', $allowedUserIds)->pluck('module_id');
             if ($moduleIds->isNotEmpty()) {
                 $moduleQuery->whereIn('id', $moduleIds);
-                $groupsQuery->whereIn('formateur_id', $allowedUserIds);
+            } else {
+                $moduleQuery->whereRaw('1 = 0');
             }
+            $groupsQuery->whereIn('formateur_id', $allowedUserIds);
         }
 
         $isDirecteur = $user->hasRole('Directeur');
         $allowedUserIds = $user->getAllowedTrainerUserIds();
+
+        $trainers = [];
+        if ($isDirecteur) {
+            $trainers = User::whereHas('roles', function ($q) {
+                $q->whereIn('name', ['Formateur', 'Stagiaire']);
+            })->get(['id', 'name'])->filter(fn($u) => $u->isTrainer())->values();
+        }
 
         return Inertia::render('Scolarite/ExamsIndex', [
             'exams'   => $examQuery->get()->map(function ($exam) use ($isDirecteur, $allowedUserIds) {
@@ -59,6 +68,7 @@ class AdminExamController extends Controller
             }),
             'modules' => $moduleQuery->get(),
             'groups'  => $groupsQuery->get(),
+            'trainers' => $trainers,
         ]);
     }
 
@@ -79,6 +89,7 @@ class AdminExamController extends Controller
             'document' => 'nullable|file|mimes:pdf,doc,docx|max:10240',
             'group_ids' => 'nullable|array',
             'group_ids.*' => 'exists:groups,id',
+            'user_id' => 'nullable|exists:users,id',
         ]);
 
         if ($request->hasFile('document')) {
@@ -88,7 +99,11 @@ class AdminExamController extends Controller
 
         $user = $request->user();
         $validated['is_approved'] = $user->hasRole('Directeur');
-        $validated['user_id'] = $user->id;
+        if ($user->hasRole('Directeur') && $request->filled('user_id')) {
+            $validated['user_id'] = $request->input('user_id');
+        } else {
+            $validated['user_id'] = $user->id;
+        }
 
         $exam = Exam::create($validated);
         $exam->load('module');
@@ -97,7 +112,8 @@ class AdminExamController extends Controller
         if ($user->hasRole('Directeur')) {
             $exam->groups()->sync($request->input('group_ids', []));
         } elseif ($user->isTrainer()) {
-            $trainerGroupIds = \App\Models\Group::where('formateur_id', $user->id)->pluck('id')->toArray();
+            $allowedUserIds = $user->getAllowedTrainerUserIds();
+            $trainerGroupIds = \App\Models\Group::whereIn('formateur_id', $allowedUserIds)->pluck('id')->toArray();
             $currentGroupIds = $exam->groups()->pluck('groups.id')->toArray();
             $otherGroupIds = array_diff($currentGroupIds, $trainerGroupIds);
             $newTrainerGroupIds = array_intersect($request->input('group_ids', []), $trainerGroupIds);
@@ -152,6 +168,7 @@ class AdminExamController extends Controller
             'document' => 'nullable|file|mimes:pdf,doc,docx|max:10240',
             'group_ids' => 'nullable|array',
             'group_ids.*' => 'exists:groups,id',
+            'user_id' => 'nullable|exists:users,id',
         ]);
 
         if ($request->hasFile('document')) {
@@ -167,13 +184,19 @@ class AdminExamController extends Controller
             return redirect()->back()->with('error', "Impossible de réduire le barème : le total des points des questions existantes ({$currentPoints}) dépasse le nouveau barème ({$request->total_points}).");
         }
 
+        $user = $request->user();
+        if ($user->hasRole('Directeur') && $request->filled('user_id')) {
+            $validated['user_id'] = $request->input('user_id');
+        }
+
         $exam->update($validated);
 
         $user = $request->user();
         if ($user->hasRole('Directeur')) {
             $exam->groups()->sync($request->input('group_ids', []));
         } elseif ($user->isTrainer()) {
-            $trainerGroupIds = \App\Models\Group::where('formateur_id', $user->id)->pluck('id')->toArray();
+            $allowedUserIds = $user->getAllowedTrainerUserIds();
+            $trainerGroupIds = \App\Models\Group::whereIn('formateur_id', $allowedUserIds)->pluck('id')->toArray();
             $currentGroupIds = $exam->groups()->pluck('groups.id')->toArray();
             $otherGroupIds = array_diff($currentGroupIds, $trainerGroupIds);
             $newTrainerGroupIds = array_intersect($request->input('group_ids', []), $trainerGroupIds);
@@ -219,6 +242,10 @@ class AdminExamController extends Controller
         $newExam->scheduled_at = null;
         $newExam->is_approved = false;
         $newExam->are_grades_published = false;
+
+        if ($request->user()->hasRole('Directeur') && $request->filled('user_id')) {
+            $newExam->user_id = $request->input('user_id');
+        }
         
         if ($exam->document_path && Storage::disk('public')->exists($exam->document_path)) {
             $extension = pathinfo($exam->document_path, PATHINFO_EXTENSION);
@@ -243,7 +270,12 @@ class AdminExamController extends Controller
             }
         }
 
-        return redirect()->back()->with('success', 'Examen dupliqué avec succès. Veuillez modifier la copie pour lui assigner un groupe et une date.');
+        $msg = 'Examen dupliqué avec succès. Veuillez modifier la copie pour lui assigner un groupe et une date.';
+        if ($request->user()->hasRole('Directeur')) {
+            $msg = 'Examen dupliqué avec succès. Veuillez modifier la copie pour lui assigner un formateur, un groupe et une date.';
+        }
+
+        return redirect()->back()->with('success', $msg);
     }
 
     /**

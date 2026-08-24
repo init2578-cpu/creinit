@@ -21,7 +21,8 @@ import {
     CheckIcon,
     ArrowPathIcon,
     PencilSquareIcon,
-    DocumentDuplicateIcon
+    DocumentDuplicateIcon,
+    UserIcon
 } from '@heroicons/vue/24/outline';
 import { ref, computed, watch } from 'vue';
 import axios from 'axios';
@@ -29,7 +30,11 @@ import axios from 'axios';
 const props = defineProps({
     exams: Array,
     modules: Array,
-    groups: Array
+    groups: Array,
+    trainers: {
+        type: Array,
+        default: () => []
+    }
 });
 
 const page = usePage();
@@ -89,7 +94,8 @@ const form = useForm({
     scheduled_at: '',
     scheduled_end: '',
     document: null,
-    group_ids: []
+    group_ids: [],
+    user_id: ''
 });
 
 const startDate = ref('');
@@ -181,6 +187,7 @@ const openModal = (exam = null) => {
         form.duree_minutes = exam.duree_minutes;
         form.total_points = exam.total_points;
         form.group_ids = exam.groups ? exam.groups.map(g => g.id) : [];
+        form.user_id = exam.user_id;
         if (exam.scheduled_at) {
             const dateObj = new Date(exam.scheduled_at);
             startDate.value = formatLocalDate(dateObj);
@@ -202,6 +209,7 @@ const openModal = (exam = null) => {
     } else {
         form.reset();
         form.group_ids = [];
+        form.user_id = page.props.auth.user.id;
         setInitialTimes();
     }
     isModalOpen.value = true;
@@ -250,7 +258,11 @@ const deleteExam = (id) => {
 };
 
 const duplicateExam = (id) => {
-    if (confirm('Voulez-vous dupliquer cet examen ? Une nouvelle copie sera créée, prête à être assignée à un autre groupe.')) {
+    let confirmMsg = 'Voulez-vous dupliquer cet examen ? Une nouvelle copie sera créée, prête à être assignée à un autre groupe.';
+    if (isDirecteur.value) {
+        confirmMsg = 'Voulez-vous dupliquer cet examen ? Une nouvelle copie sera créée. Vous pourrez ensuite l\'éditer pour l\'attribuer à un autre formateur, lui assigner des groupes et une date.';
+    }
+    if (confirm(confirmMsg)) {
         router.post(route('exams.duplicate', id), {}, {
             preserveScroll: true
         });
@@ -837,6 +849,22 @@ function approveExam(examId) {
                                         </span>
                                         <input v-model="form.titre" type="text" required placeholder="Ex: Examen Final Module 1" class="w-full pl-12 pr-4 py-4 bg-white border-2 border-transparent focus:border-blue-600 rounded-2xl font-bold text-gray-700 focus:ring-0 transition-all outline-none">
                                     </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Formateur (Directeur uniquement) -->
+                            <div v-if="isDirecteur" class="space-y-2">
+                                <label class="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 ml-1">
+                                    Formateur responsable de l'examen
+                                </label>
+                                <div class="relative group">
+                                    <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-gray-400 group-focus-within:text-blue-600 transition-colors pointer-events-none">
+                                        <UserIcon class="h-5 w-5" />
+                                    </span>
+                                    <select v-model="form.user_id" required class="w-full pl-12 pr-10 py-4 bg-white border-2 border-transparent focus:border-blue-600 rounded-2xl font-bold text-gray-700 focus:ring-0 transition-all">
+                                        <option value="">Sélectionner un formateur</option>
+                                        <option v-for="t in trainers" :key="t.id" :value="t.id">{{ t.name }}</option>
+                                    </select>
                                 </div>
                             </div>
 
