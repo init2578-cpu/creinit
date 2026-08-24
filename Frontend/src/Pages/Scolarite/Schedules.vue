@@ -447,7 +447,7 @@ const navigateToAttendance = (schedule) => {
                                 <select v-model="form.group_id" @change="onGroupChange" class="w-full bg-gray-50 border-0 rounded-xl font-bold py-3 px-4 focus:ring-2 focus:ring-blue-600">
                                     <option value="">Choisir un groupe</option>
                                     <option v-for="g in groups" :key="g.id" :value="g.id">
-                                        {{ g.nom_groupe }} ({{ g.formateur?.name || 'N/A' }})
+                                        {{ g.nom_groupe }} ({{ g.formateur?.name || 'N/A' }}){{ g.status === 'closed' ? ' — [Clôturé]' : '' }}
                                     </option>
                                 </select>
                                 <p v-if="form.errors.group_id" class="text-red-500 text-[10px] mt-1 font-bold">{{ form.errors.group_id }}</p>

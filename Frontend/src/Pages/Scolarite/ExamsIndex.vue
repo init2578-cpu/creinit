@@ -898,7 +898,15 @@ function approveExam(examId) {
                                                 class="h-5 w-5 rounded-lg text-blue-600 focus:ring-blue-500 border-gray-300 cursor-pointer shadow-sm transition-all"
                                             >
                                             <div class="flex flex-col">
-                                                <span class="text-xs font-black text-gray-700 tracking-tight">{{ g.nom_groupe }}</span>
+                                                <div class="flex items-center gap-1.5">
+                                                    <span class="text-xs font-black text-gray-700 tracking-tight">{{ g.nom_groupe }}</span>
+                                                    <span 
+                                                        class="px-1.5 py-0.2 text-[8px] font-black uppercase tracking-wider rounded border"
+                                                        :class="g.status === 'closed' ? 'bg-rose-50 text-rose-600 border-rose-100' : 'bg-emerald-50 text-emerald-600 border-emerald-100'"
+                                                    >
+                                                        {{ g.status === 'closed' ? 'Clôturé' : 'En cours' }}
+                                                    </span>
+                                                </div>
                                                 <span class="text-[9px] text-gray-400 font-bold uppercase tracking-wider">Année: {{ g.annee_academique }}</span>
                                             </div>
                                         </label>

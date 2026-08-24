@@ -2,7 +2,7 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
 import { Head, useForm } from '@inertiajs/vue3'
 import ConfirmModal from '@/Components/ConfirmModal.vue'
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { 
     UserGroupIcon, 
     AcademicCapIcon,
@@ -10,11 +10,28 @@ import {
     MapPinIcon,
     CakeIcon,
     EnvelopeIcon,
-    CheckCircleIcon
+    CheckCircleIcon,
+    LockClosedIcon
 } from '@heroicons/vue/24/outline'
 
 const props = defineProps({
     groups: Array
+})
+
+const statusFilter = ref('all') // 'all' | 'active' | 'closed'
+
+const activeCount = computed(() => (props.groups || []).filter(g => g.status !== 'closed').length)
+const closedCount = computed(() => (props.groups || []).filter(g => g.status === 'closed').length)
+
+const filteredGroups = computed(() => {
+    if (!props.groups) return []
+    if (statusFilter.value === 'active') {
+        return props.groups.filter(g => g.status !== 'closed')
+    }
+    if (statusFilter.value === 'closed') {
+        return props.groups.filter(g => g.status === 'closed')
+    }
+    return props.groups
 })
 
 const nominationForm = useForm({
@@ -86,40 +103,92 @@ function toggleGroup(groupId) {
                         Mes <span class="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-indigo-600 to-emerald-600">Groupes</span>
                     </h1>
                     <p class="text-gray-500 text-sm font-medium">
-                        Consultez la liste de vos groupes de formation et gérez le détail de vos apprenants.
+                        Consultez la liste de vos groupes de formation (en cours et clôturés) et gérez le détail de vos apprenants.
                     </p>
                 </div>
             </header>
 
-            <div v-if="groups.length === 0" class="bg-white rounded-3xl p-12 text-center shadow-sm border border-gray-100">
+            <!-- Status Filter Tabs -->
+            <div v-if="groups && groups.length > 0" class="flex flex-wrap items-center gap-2 mb-6 bg-white p-2 rounded-2xl border border-gray-100 shadow-sm w-fit">
+                <button 
+                    @click="statusFilter = 'all'"
+                    class="px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2"
+                    :class="statusFilter === 'all' ? 'bg-slate-900 text-white shadow-sm' : 'text-gray-500 hover:text-gray-900 hover:bg-slate-50'"
+                >
+                    Tous les groupes
+                    <span class="px-2 py-0.5 rounded-full text-[10px] font-black" :class="statusFilter === 'all' ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-600'">{{ groups.length }}</span>
+                </button>
+
+                <button 
+                    @click="statusFilter = 'active'"
+                    class="px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2"
+                    :class="statusFilter === 'active' ? 'bg-emerald-600 text-white shadow-sm' : 'text-gray-500 hover:text-emerald-700 hover:bg-emerald-50'"
+                >
+                    <span class="h-2 w-2 rounded-full" :class="statusFilter === 'active' ? 'bg-white animate-pulse' : 'bg-emerald-500'"></span>
+                    En cours
+                    <span class="px-2 py-0.5 rounded-full text-[10px] font-black" :class="statusFilter === 'active' ? 'bg-emerald-700 text-white' : 'bg-emerald-100 text-emerald-800'">{{ activeCount }}</span>
+                </button>
+
+                <button 
+                    @click="statusFilter = 'closed'"
+                    class="px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2"
+                    :class="statusFilter === 'closed' ? 'bg-rose-600 text-white shadow-sm' : 'text-gray-500 hover:text-rose-700 hover:bg-rose-50'"
+                >
+                    <LockClosedIcon class="h-3.5 w-3.5" :class="statusFilter === 'closed' ? 'text-white' : 'text-rose-600'" />
+                    Clôturés
+                    <span class="px-2 py-0.5 rounded-full text-[10px] font-black" :class="statusFilter === 'closed' ? 'bg-rose-700 text-white' : 'bg-rose-100 text-rose-800'">{{ closedCount }}</span>
+                </button>
+            </div>
+
+            <div v-if="filteredGroups.length === 0" class="bg-white rounded-3xl p-12 text-center shadow-sm border border-gray-100">
                 <div class="h-16 w-16 bg-gray-50 text-gray-400 rounded-2xl flex items-center justify-center mx-auto mb-4">
                     <AcademicCapIcon class="h-8 w-8" />
                 </div>
-                <p class="text-gray-600 font-bold text-lg">Aucun groupe</p>
-                <p class="text-gray-400 text-sm">Vous n'avez aucun groupe assigné pour le moment.</p>
+                <p class="text-gray-600 font-bold text-lg">Aucun groupe {{ statusFilter === 'active' ? 'en cours' : statusFilter === 'closed' ? 'clôturé' : '' }}</p>
+                <p class="text-gray-400 text-sm">Aucun groupe ne correspond au filtre sélectionné.</p>
             </div>
 
             <div v-else class="space-y-4">
                 <div 
-                    v-for="group in groups" 
+                    v-for="group in filteredGroups" 
                     :key="group.id"
-                    class="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden transition-all duration-300"
-                    :class="openGroups.includes(group.id) ? 'ring-2 ring-blue-500/20 shadow-md' : 'hover:border-blue-200 hover:shadow-md'"
+                    class="bg-white rounded-3xl shadow-sm border overflow-hidden transition-all duration-300"
+                    :class="[
+                        openGroups.includes(group.id) ? 'ring-2 ring-blue-500/20 shadow-md' : 'hover:border-blue-200 hover:shadow-md',
+                        group.status === 'closed' ? 'border-rose-100 bg-rose-50/10' : 'border-gray-100'
+                    ]"
                 >
                     <!-- Accordion Header -->
                     <button 
                         @click="toggleGroup(group.id)"
-                        class="w-full flex items-center justify-between p-6 text-left focus:outline-none bg-white transition-all hover:bg-slate-50/30"
+                        class="w-full flex items-center justify-between p-6 text-left focus:outline-none transition-all hover:bg-slate-50/30"
+                        :class="group.status === 'closed' ? 'bg-rose-50/20' : 'bg-white'"
                     >
                         <div class="flex items-center gap-4">
-                            <div class="h-12 w-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center border border-blue-100 shrink-0">
-                                <AcademicCapIcon class="h-6 w-6" />
+                            <div 
+                                class="h-12 w-12 rounded-2xl flex items-center justify-center border shrink-0"
+                                :class="group.status === 'closed' ? 'bg-rose-50 text-rose-600 border-rose-100' : 'bg-blue-50 text-blue-600 border-blue-100'"
+                            >
+                                <LockClosedIcon v-if="group.status === 'closed'" class="h-6 w-6" />
+                                <AcademicCapIcon v-else class="h-6 w-6" />
                             </div>
                             <div>
                                 <h2 class="text-lg font-black text-gray-900 group-hover:text-blue-600 transition-colors">
                                     {{ group.nom_groupe }} <span class="text-gray-400 font-bold mx-2">•</span> <span class="text-gray-500 font-medium text-sm sm:text-base">{{ group.module?.titre || group.module?.nom_module }}</span>
                                 </h2>
                                 <div class="flex items-center gap-3 mt-1.5">
+                                    <!-- Status Badge -->
+                                    <span 
+                                        class="inline-flex items-center gap-1.5 text-[9px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-md border"
+                                        :class="group.status === 'closed' 
+                                            ? 'bg-rose-50 text-rose-700 border-rose-200' 
+                                            : 'bg-emerald-50 text-emerald-700 border-emerald-200'"
+                                    >
+                                        <span v-if="group.status !== 'closed'" class="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                        <LockClosedIcon v-else class="h-3 w-3 text-rose-600" />
+                                        {{ group.status === 'closed' ? 'Clôturé' : 'En cours' }}
+                                    </span>
+
                                     <span class="inline-flex items-center text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md bg-slate-50 text-slate-500 border border-slate-200/50">
                                         Année : {{ group.annee_academique }}
                                     </span>
