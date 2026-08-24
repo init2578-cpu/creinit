@@ -50,8 +50,8 @@ class StoreApplicationRequest extends FormRequest
             
             // New fields
             'nom_complet' => ['required', 'string', 'max:255'],
-            'email' => ['nullable', 'email', 'max:255', 'unique:users,email'],
-            'telephone' => ['required', 'string', 'max:20', 'unique:users,telephone'],
+            'email' => ['nullable', 'email', 'max:255'],
+            'telephone' => ['required', 'string', 'max:20'],
             'adresse_reelle' => ['required', 'string', 'max:255'],
             'date_naissance' => ['required', 'date'],
             'lieu_naissance' => ['required', 'string', 'max:255'],
@@ -61,5 +61,18 @@ class StoreApplicationRequest extends FormRequest
             'etablissement' => ['nullable', 'string', 'max:255'],
             'sexe' => ['required', 'string', 'in:M,F'],
         ];
+    }
+
+    public function withValidator($validator): void
+    {
+        $validator->after(function ($validator) {
+            $telephone = $this->input('telephone');
+            $email = $this->input('email');
+
+            $errors = \App\Http\Controllers\ApplicationController::isPhoneOrEmailRegistered($telephone, $email);
+            foreach ($errors as $field => $message) {
+                $validator->errors()->add($field, $message);
+            }
+        });
     }
 }

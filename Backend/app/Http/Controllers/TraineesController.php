@@ -79,7 +79,7 @@ class TraineesController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
+            'email' => 'required|string|email|max:255',
             'password' => 'required|string|min:8',
             'telephone' => 'nullable|string|max:20',
             'adresse' => 'nullable|string|max:255',
@@ -95,6 +95,14 @@ class TraineesController extends Controller
             'cv' => 'nullable|file|mimes:pdf,jpg,png,jpeg|max:5120',
             'diploma' => 'nullable|file|mimes:pdf,jpg,png,jpeg|max:5120',
         ]);
+
+        $existingErrors = ApplicationController::isPhoneOrEmailRegistered(
+            $validated['telephone'] ?? null,
+            $validated['email'] ?? null
+        );
+        if (!empty($existingErrors)) {
+            return back()->withErrors($existingErrors)->withInput();
+        }
 
         DB::transaction(function() use ($validated, $request) {
             $user = User::create([
@@ -145,7 +153,7 @@ class TraineesController extends Controller
         
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users')->ignore($trainee->id)],
+            'email' => ['required', 'string', 'email', 'max:255'],
             'password' => 'nullable|string|min:8',
             'telephone' => 'nullable|string|max:20',
             'adresse' => 'nullable|string|max:255',
@@ -163,6 +171,15 @@ class TraineesController extends Controller
             'cv' => 'nullable|file|mimes:pdf,jpg,png,jpeg|max:5120',
             'diploma' => 'nullable|file|mimes:pdf,jpg,png,jpeg|max:5120',
         ]);
+
+        $existingErrors = ApplicationController::isPhoneOrEmailRegistered(
+            $validated['telephone'] ?? null,
+            $validated['email'] ?? null,
+            ignoreUserId: $trainee->id
+        );
+        if (!empty($existingErrors)) {
+            return back()->withErrors($existingErrors)->withInput();
+        }
 
         // is_active can come as string '1'/'0'/'true'/'false' or be absent (checkbox unchecked in FormData)
         $isActive = filter_var($request->input('is_active', false), FILTER_VALIDATE_BOOLEAN);

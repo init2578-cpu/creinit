@@ -74,6 +74,59 @@ class ApplicationController extends Controller
         ]);
     }
 
+    /**
+     * Helper to check if phone or email is already registered in users or applications tables.
+     */
+    public static function isPhoneOrEmailRegistered(?string $phone, ?string $email, ?int $ignoreUserId = null, ?int $ignoreAppId = null): array
+    {
+        $errors = [];
+        $telephone = $phone ? trim($phone) : null;
+        $cleanPhone = $telephone ? preg_replace('/[^0-9]/', '', $telephone) : null;
+        $cleanEmail = !empty($email) ? strtolower(trim($email)) : null;
+
+        if ($cleanPhone) {
+            $phoneInUsers = \App\Models\User::when($ignoreUserId, fn($q) => $q->where('id', '!=', $ignoreUserId))
+                ->where(function ($q) use ($telephone, $cleanPhone) {
+                    $q->where('telephone', $telephone);
+                    if ($cleanPhone) {
+                        $q->orWhereRaw("REPLACE(REPLACE(REPLACE(telephone, ' ', ''), '-', ''), '+', '') = ?", [$cleanPhone]);
+                    }
+                })->exists();
+
+            $phoneInApps = \App\Models\Application::when($ignoreAppId, fn($q) => $q->where('id', '!=', $ignoreAppId))
+                ->where(function ($q) use ($telephone, $cleanPhone) {
+                    $q->where('telephone', $telephone);
+                    if ($cleanPhone) {
+                        $q->orWhereRaw("REPLACE(REPLACE(REPLACE(telephone, ' ', ''), '-', ''), '+', '') = ?", [$cleanPhone]);
+                    }
+                })->exists();
+
+            if ($phoneInUsers || $phoneInApps) {
+                $errors['telephone'] = "Ce numéro de téléphone est déjà enregistré dans notre base de données. Inscription impossible.";
+            }
+        }
+
+        if ($cleanEmail) {
+            $emailInUsers = \App\Models\User::when($ignoreUserId, fn($q) => $q->where('id', '!=', $ignoreUserId))
+                ->whereRaw("LOWER(email) = ?", [$cleanEmail])
+                ->exists();
+
+            $emailInApps = \App\Models\Application::when($ignoreAppId, fn($q) => $q->where('id', '!=', $ignoreAppId))
+                ->whereHas('user', function ($uq) use ($cleanEmail, $ignoreUserId) {
+                    $uq->whereRaw("LOWER(email) = ?", [$cleanEmail]);
+                    if ($ignoreUserId) {
+                        $uq->where('id', '!=', $ignoreUserId);
+                    }
+                })->exists();
+
+            if ($emailInUsers || $emailInApps) {
+                $errors['email'] = "Cette adresse email est déjà enregistrée dans notre base de données. Inscription impossible.";
+            }
+        }
+
+        return $errors;
+    }
+
     public function enrollManual(Request $request)
     {
         $today = now()->startOfDay()->toDateString();
@@ -108,92 +161,20 @@ class ApplicationController extends Controller
         ]);
 
         $telephone = trim($validated['telephone']);
-        $cleanPhone = preg_replace('/[^0-9]/', '', $telephone);
         $email = !empty($validated['email']) ? strtolower(trim($validated['email'])) : null;
 
-        // Check if candidate already registered online or exists in Users/Applications
-        $existingUser = \App\Models\User::where(function ($query) use ($telephone, $cleanPhone, $email) {
-            $query->where('telephone', $telephone);
-            if ($cleanPhone) {
-                $query->orWhereRaw("REPLACE(REPLACE(REPLACE(telephone, ' ', ''), '-', ''), '+', '') = ?", [$cleanPhone]);
-            }
-            if ($email) {
-                $query->orWhere('email', $email);
-            }
-        })->first();
-
-        $existingApp = Application::where(function ($query) use ($telephone, $cleanPhone, $email) {
-            $query->where('telephone', $telephone);
-            if ($cleanPhone) {
-                $query->orWhereRaw("REPLACE(REPLACE(REPLACE(telephone, ' ', ''), '-', ''), '+', '') = ?", [$cleanPhone]);
-            }
-            if ($email) {
-                $query->orWhereHas('user', function ($uq) use ($email) {
-                    $uq->where('email', $email);
-                });
-            }
-        })->first();
-
-        if ($existingUser || $existingApp) {
-            $errors = [];
-
-            $phoneMatch = false;
-            if ($existingUser) {
-                $uClean = preg_replace('/[^0-9]/', '', $existingUser->telephone ?? '');
-                if ($existingUser->telephone === $telephone || ($cleanPhone && $uClean === $cleanPhone)) {
-                    $phoneMatch = true;
-                }
-            }
-            if ($existingApp && !$phoneMatch) {
-                $aClean = preg_replace('/[^0-9]/', '', $existingApp->telephone ?? '');
-                if ($existingApp->telephone === $telephone || ($cleanPhone && $aClean === $cleanPhone)) {
-                    $phoneMatch = true;
-                }
-            }
-
-            $emailMatch = false;
-            if ($email) {
-                if ($existingUser && strtolower($existingUser->email ?? '') === $email) {
-                    $emailMatch = true;
-                }
-                if ($existingApp && $existingApp->user && strtolower($existingApp->user->email ?? '') === $email) {
-                    $emailMatch = true;
-                }
-            }
-
-            if ($phoneMatch) {
-                $errors['telephone'] = "Ce numéro de téléphone est déjà utilisé par un candidat inscrit en ligne via le lien ou enregistré dans la plateforme.";
-            }
-            if ($emailMatch) {
-                $errors['email'] = "Cette adresse email est déjà utilisée par un candidat inscrit en ligne via le lien ou enregistré dans la plateforme.";
-            }
-
-            if (empty($errors)) {
-                $errors['telephone'] = "Un candidat avec ce numéro de téléphone ou cet email est déjà inscrit en ligne.";
-            }
-
-            return back()->withErrors($errors);
+        $existingErrors = static::isPhoneOrEmailRegistered($telephone, $email);
+        if (!empty($existingErrors)) {
+            return back()->withErrors($existingErrors)->withInput();
         }
 
-        // Create or find user
-        $user = \App\Models\User::where(function ($query) use ($validated) {
-            if ($validated['email']) {
-                $query->where('email', $validated['email']);
-                $query->orWhere('telephone', $validated['telephone']);
-            } else {
-                $query->where('telephone', $validated['telephone'])
-                      ->whereNull('email');
-            }
-        })->first();
-
-        if (!$user) {
-            $user = \App\Models\User::create([
-                'email' => $validated['email'],
-                'name' => $this->formatTitleCase($validated['nom_complet']),
-                'password' => \Illuminate\Support\Facades\Hash::make('password'),
-                'telephone' => $validated['telephone'],
-            ]);
-        }
+        // Create user
+        $user = \App\Models\User::create([
+            'email' => $validated['email'],
+            'name' => $this->formatTitleCase($validated['nom_complet']),
+            'password' => \Illuminate\Support\Facades\Hash::make('password'),
+            'telephone' => $validated['telephone'],
+        ]);
 
         $cniRectoPath = $request->hasFile('cni_recto') ? $request->file('cni_recto')->store('applications/cni_recto', 'private') : null;
         $cniVersoPath = $request->hasFile('cni_verso') ? $request->file('cni_verso')->store('applications/cni_verso', 'private') : null;
@@ -201,26 +182,25 @@ class ApplicationController extends Controller
         $diplomaPath = $request->hasFile('diploma') ? $request->file('diploma')->store('applications/diplomas', 'private') : 'manual_enrollment';
 
         // Create application (pending validation even for manual enrollment)
-        Application::updateOrCreate(
-            ['user_id' => $user->id, 'module_id' => $validated['module_id']],
-            [
-                'status' => 'pending',
-                'cni_path' => $cniPath,
-                'cni_recto_path' => $cniRectoPath,
-                'cni_verso_path' => $cniVersoPath,
-                'diploma_path' => $diplomaPath,
-                'telephone' => $validated['telephone'],
-                'adresse_reelle' => $this->formatTitleCase($validated['adresse_reelle']),
-                'date_naissance' => $validated['date_naissance'],
-                'lieu_naissance' => $this->formatTitleCase($validated['lieu_naissance']),
-                'niveau_etude' => $this->formatTitleCase($validated['niveau_etude']),
-                'dernier_diplome_libelle' => $this->formatTitleCase($validated['dernier_diplome_libelle']),
-                'fonction' => $this->formatTitleCase($validated['fonction']),
-                'etablissement' => $this->formatTitleCase($validated['etablissement']),
-                'sexe' => $validated['sexe'],
-                'nom_complet' => $this->formatTitleCase($validated['nom_complet']),
-            ]
-        );
+        Application::create([
+            'user_id' => $user->id,
+            'module_id' => $validated['module_id'],
+            'status' => 'pending',
+            'cni_path' => $cniPath,
+            'cni_recto_path' => $cniRectoPath,
+            'cni_verso_path' => $cniVersoPath,
+            'diploma_path' => $diplomaPath,
+            'telephone' => $validated['telephone'],
+            'adresse_reelle' => $this->formatTitleCase($validated['adresse_reelle']),
+            'date_naissance' => $validated['date_naissance'],
+            'lieu_naissance' => $this->formatTitleCase($validated['lieu_naissance']),
+            'niveau_etude' => $this->formatTitleCase($validated['niveau_etude']),
+            'dernier_diplome_libelle' => $this->formatTitleCase($validated['dernier_diplome_libelle']),
+            'fonction' => $this->formatTitleCase($validated['fonction']),
+            'etablissement' => $this->formatTitleCase($validated['etablissement']),
+            'sexe' => $validated['sexe'],
+            'nom_complet' => $this->formatTitleCase($validated['nom_complet']),
+        ]);
 
         return back()->with('success', "Candidat inscrit avec succès au module.");
     }
@@ -251,27 +231,17 @@ class ApplicationController extends Controller
 
     public function store(StoreApplicationRequest $request): RedirectResponse
     {
-        // For public application, we MUST NOT use the current session user if they are an Admin/Formateur
-        // because they might be testing the form or registering someone else.
-        // We always look up or create a candidate based on the form data.
-        $user = \App\Models\User::where(function ($query) use ($request) {
-            if ($request->email) {
-                $query->where('email', $request->email);
-                $query->orWhere('telephone', $request->telephone);
-            } else {
-                $query->where('telephone', $request->telephone)
-                      ->whereNull('email');
-            }
-        })->first();
-
-        if (!$user) {
-            $user = \App\Models\User::create([
-               'email' => $request->email,
-               'name' => $this->formatTitleCase($request->nom_complet),
-               'password' => \Illuminate\Support\Facades\Hash::make('password'),
-               'telephone' => $request->telephone,
-           ]);
+        $existingErrors = static::isPhoneOrEmailRegistered($request->telephone, $request->email);
+        if (!empty($existingErrors)) {
+            return back()->withErrors($existingErrors)->withInput();
         }
+
+        $user = \App\Models\User::create([
+            'email' => $request->email,
+            'name' => $this->formatTitleCase($request->nom_complet),
+            'password' => \Illuminate\Support\Facades\Hash::make('password'),
+            'telephone' => $request->telephone,
+        ]);
         
         $hasCni = $request->boolean('has_cni', true);
         $cniRectoPath = ($hasCni && $request->hasFile('cni_recto')) ? $request->file('cni_recto')->store('applications/cni_recto', 'private') : null;
@@ -280,29 +250,28 @@ class ApplicationController extends Controller
         $cniLegacyPath = $request->hasFile('cni') ? $request->file('cni')->store('applications/cni', 'private') : ($cniRectoPath ?? $otherIdentityDocPath ?? 'manual_enrollment');
         $diplomaPath = $request->file('diploma')->store('applications/diplomas', 'private');
 
-        Application::updateOrCreate(
-            ['user_id' => $user->id, 'module_id' => $request->module_id],
-            [
-                'cni_path' => $cniLegacyPath,
-                'cni_recto_path' => $cniRectoPath,
-                'cni_verso_path' => $cniVersoPath,
-                'has_cni' => $hasCni,
-                'other_identity_doc_path' => $otherIdentityDocPath,
-                'diploma_path' => $diplomaPath,
-                'commentaires' => $request->commentaires,
-                'adresse_reelle' => $this->formatTitleCase($request->adresse_reelle),
-                'date_naissance' => $request->date_naissance,
-                'lieu_naissance' => $this->formatTitleCase($request->lieu_naissance),
-                'niveau_etude' => $this->formatTitleCase($request->niveau_etude),
-                'dernier_diplome_libelle' => $this->formatTitleCase($request->dernier_diplome_libelle),
-                'fonction' => $this->formatTitleCase($request->fonction),
-                'etablissement' => $this->formatTitleCase($request->etablissement),
-                'telephone' => $request->telephone,
-                'status' => 'pending',
-                'sexe' => $request->sexe,
-                'nom_complet' => $this->formatTitleCase($request->nom_complet),
-            ]
-        );
+        Application::create([
+            'user_id' => $user->id,
+            'module_id' => $request->module_id,
+            'cni_path' => $cniLegacyPath,
+            'cni_recto_path' => $cniRectoPath,
+            'cni_verso_path' => $cniVersoPath,
+            'has_cni' => $hasCni,
+            'other_identity_doc_path' => $otherIdentityDocPath,
+            'diploma_path' => $diplomaPath,
+            'commentaires' => $request->commentaires,
+            'adresse_reelle' => $this->formatTitleCase($request->adresse_reelle),
+            'date_naissance' => $request->date_naissance,
+            'lieu_naissance' => $this->formatTitleCase($request->lieu_naissance),
+            'niveau_etude' => $this->formatTitleCase($request->niveau_etude),
+            'dernier_diplome_libelle' => $this->formatTitleCase($request->dernier_diplome_libelle),
+            'fonction' => $this->formatTitleCase($request->fonction),
+            'etablissement' => $this->formatTitleCase($request->etablissement),
+            'telephone' => $request->telephone,
+            'status' => 'pending',
+            'sexe' => $request->sexe,
+            'nom_complet' => $this->formatTitleCase($request->nom_complet),
+        ]);
 
         return back()->with('success', 'Votre candidature a été soumise avec succès. Nous vous contacterons prochainement.');
     }

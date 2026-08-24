@@ -67,9 +67,9 @@ class StudentsController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
+            'email' => 'required|string|email|max:255',
             'password' => 'nullable|string|min:8',
-            'telephone' => 'nullable|string|max:20|unique:users,telephone',
+            'telephone' => 'nullable|string|max:20',
             'adresse' => 'nullable|string|max:255',
             // Profile fields
             'date_naissance' => 'nullable|date',
@@ -78,6 +78,14 @@ class StudentsController extends Controller
             'dernier_diplome' => 'nullable|string|max:255',
             'sexe' => 'nullable|string|in:M,F',
         ]);
+
+        $existingErrors = ApplicationController::isPhoneOrEmailRegistered(
+            $validated['telephone'] ?? null,
+            $validated['email'] ?? null
+        );
+        if (!empty($existingErrors)) {
+            return back()->withErrors($existingErrors)->withInput();
+        }
 
         DB::transaction(function() use ($validated) {
             $user = User::create([
@@ -116,9 +124,9 @@ class StudentsController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users')->ignore($student->id)],
+            'email' => ['required', 'string', 'email', 'max:255'],
             'password' => 'nullable|string|min:8',
-            'telephone' => ['nullable', 'string', 'max:20', Rule::unique('users')->ignore($student->id)],
+            'telephone' => ['nullable', 'string', 'max:20'],
             'adresse' => 'nullable|string|max:255',
             'is_active' => 'required|boolean',
             // Profile fields
@@ -128,6 +136,17 @@ class StudentsController extends Controller
             'dernier_diplome' => 'nullable|string|max:255',
             'sexe' => 'nullable|string|in:M,F',
         ]);
+
+        $appId = Application::where('user_id', $student->id)->value('id');
+        $existingErrors = ApplicationController::isPhoneOrEmailRegistered(
+            $validated['telephone'] ?? null,
+            $validated['email'] ?? null,
+            ignoreUserId: $student->id,
+            ignoreAppId: $appId ? (int)$appId : null
+        );
+        if (!empty($existingErrors)) {
+            return back()->withErrors($existingErrors)->withInput();
+        }
 
         DB::transaction(function() use ($validated, $student) {
             $student->update([
