@@ -604,18 +604,22 @@ class AdminExamController extends Controller
             $exam->groups()->sync($request->input('group_ids'));
         }
 
-        // Notify students enrolled in the assigned groups
-        $students = User::role('Apprenant')
-            ->whereHas('studentGroups', function ($query) use ($exam) {
-                $query->whereIn('groups.id', $exam->groups->pluck('id'));
-            })->get();
+        try {
+            // Notify students enrolled in the assigned groups
+            $students = User::role('Apprenant')
+                ->whereHas('studentGroups', function ($query) use ($exam) {
+                    $query->whereIn('groups.id', $exam->groups->pluck('id'));
+                })->get();
 
-        foreach ($students as $student) {
-            $student->notify(new NewExamAvailableNotification($exam));
-        }
+            foreach ($students as $student) {
+                $student->notify(new NewExamAvailableNotification($exam));
+            }
 
-        if ($exam->user && $exam->user_id !== $request->user()->id) {
-            $exam->user->notify(new \App\Notifications\ExamApprovedNotification($exam));
+            if ($exam->user && $exam->user_id !== $request->user()->id) {
+                $exam->user->notify(new \App\Notifications\ExamApprovedNotification($exam));
+            }
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Erreur lors de l\'envoi des notifications de validation d\'examen : ' . $e->getMessage());
         }
 
         return redirect()->back()->with('success', 'L\'examen a été validé avec succès.');
