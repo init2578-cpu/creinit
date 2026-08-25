@@ -175,12 +175,12 @@ watch(() => page.props.flash, (flash) => {
 
 
 <template>
-    <div class="min-h-screen bg-gray-50 flex">
+    <div class="min-h-screen bg-gray-50 flex max-w-full overflow-x-hidden">
         <!-- Sidebar -->
         <Sidebar :is-open="isSidebarOpen" @toggle-sidebar="toggleSidebar" />
 
         <!-- Main Content Area -->
-        <div class="flex-1 flex flex-col lg:ml-64 transition-all duration-300">
+        <div class="flex-1 flex flex-col lg:ml-64 transition-all duration-300 min-w-0 max-w-full overflow-x-hidden">
             <!-- Topbar -->
             <Topbar @toggle-sidebar="toggleSidebar" />
 

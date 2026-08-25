@@ -38,15 +38,15 @@ const isOptionSelected = (answers, questionId, optionId) => {
                         <h1 class="text-2xl sm:text-4xl font-black text-white tracking-tight mb-2">Correction de l'Examen</h1>
                         <p class="text-slate-400 font-bold uppercase tracking-widest text-[10px] sm:text-xs px-2">{{ exam.titre }} - {{ exam.module?.titre }}</p>
                         
-                        <div class="mt-6 sm:mt-10 flex items-center justify-center gap-4 sm:gap-8">
+                        <div class="mt-4 sm:mt-10 flex items-center justify-center gap-3 sm:gap-8 max-w-full px-1">
                             <div class="text-center">
-                                <div class="text-3xl sm:text-6xl font-black text-white leading-none">{{ percentage }}%</div>
-                                <div class="text-[9px] sm:text-[10px] font-black text-slate-500 uppercase tracking-widest mt-1.5 sm:mt-2">Réussite</div>
+                                <div class="text-2xl sm:text-5xl md:text-6xl font-black text-white leading-none whitespace-nowrap">{{ percentage }}%</div>
+                                <div class="text-[9px] sm:text-[10px] font-black text-slate-500 uppercase tracking-widest mt-1 sm:mt-2">Réussite</div>
                             </div>
-                            <div class="h-10 sm:h-16 w-px bg-white/10"></div>
+                            <div class="h-8 sm:h-16 w-px bg-white/10 shrink-0"></div>
                             <div class="text-center">
-                                <div class="text-3xl sm:text-6xl font-black text-emerald-500 leading-none">{{ finalScore.toFixed(2) }}<span class="text-lg sm:text-3xl text-emerald-700">/{{ exam.total_points }}</span></div>
-                                <div class="text-[9px] sm:text-[10px] font-black text-slate-500 uppercase tracking-widest mt-1.5 sm:mt-2">Note Finale</div>
+                                <div class="text-2xl sm:text-5xl md:text-6xl font-black text-emerald-500 leading-none whitespace-nowrap">{{ finalScore.toFixed(2) }}<span class="text-sm sm:text-2xl md:text-3xl text-emerald-700">/{{ exam.total_points }}</span></div>
+                                <div class="text-[9px] sm:text-[10px] font-black text-slate-500 uppercase tracking-widest mt-1 sm:mt-2">Note Finale</div>
                             </div>
                         </div>
                     </div>
