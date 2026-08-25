@@ -77,11 +77,26 @@ function requestFullscreen() {
     }
 }
 
+let violationStartTime = 0;
+
 function handleVisibilityChange() {
     if (document.hidden && !props.exam.is_practice && isStarted.value) {
         autoSaveAnswers()
         triggerViolation("Sortie d'onglet détectée. Revenez immédiatement !")
-    } else if (!document.hidden && countdownInterval) {
+    } else if (!document.hidden && countdownInterval && document.hasFocus()) {
+        stopViolationCountdown()
+    }
+}
+
+function handleBlur() {
+    if (!props.exam.is_practice && isStarted.value && !showViolationModal.value) {
+        autoSaveAnswers()
+        triggerViolation("Perte de focus (changement de fenêtre) détectée. Revenez immédiatement !")
+    }
+}
+
+function handleFocus() {
+    if (countdownInterval && !document.hidden && document.fullscreenElement) {
         stopViolationCountdown()
     }
 }
@@ -90,30 +105,37 @@ function handleFullscreenChange() {
     if (!document.fullscreenElement && !props.exam.is_practice && isStarted.value) {
         autoSaveAnswers()
         triggerViolation("Le mode plein écran est obligatoire.")
-    } else if (document.fullscreenElement && countdownInterval) {
+    } else if (document.fullscreenElement && countdownInterval && !document.hidden && document.hasFocus()) {
         stopViolationCountdown()
     }
 }
 
 function triggerViolation(message) {
+    if (showViolationModal.value) return; // Prevent restarting countdown if already in violation
+
     showViolationModal.value = true
     violationMessage.value = message
     countdown.value = 15
+    violationStartTime = Date.now()
     
     if (countdownInterval) clearInterval(countdownInterval)
     
     countdownInterval = setInterval(() => {
-        if (countdown.value > 0) {
-            countdown.value--
+        let elapsed = Math.floor((Date.now() - violationStartTime) / 1000)
+        let remaining = 15 - elapsed
+
+        if (remaining > 0) {
+            countdown.value = remaining
         } else {
             clearInterval(countdownInterval)
+            countdown.value = 0
             emergencySubmit()
         }
     }, 1000)
 }
 
 function stopViolationCountdown() {
-    if (!document.hidden && document.fullscreenElement) {
+    if (!document.hidden && document.fullscreenElement && document.hasFocus()) {
         if (countdownInterval) {
             clearInterval(countdownInterval)
             countdownInterval = null
@@ -162,6 +184,8 @@ onMounted(() => {
     if (!props.exam.is_practice) {
         document.addEventListener('visibilitychange', handleVisibilityChange)
         document.addEventListener('fullscreenchange', handleFullscreenChange)
+        window.addEventListener('blur', handleBlur)
+        window.addEventListener('focus', handleFocus)
         window.addEventListener('beforeunload', autoSaveAnswers)
     }
 })
@@ -169,6 +193,8 @@ onMounted(() => {
 onUnmounted(() => {
     if (!props.exam.is_practice) {
         window.removeEventListener('beforeunload', autoSaveAnswers)
+        window.removeEventListener('blur', handleBlur)
+        window.removeEventListener('focus', handleFocus)
     }
     document.removeEventListener('visibilitychange', handleVisibilityChange)
     document.removeEventListener('fullscreenchange', handleFullscreenChange)
