@@ -104,14 +104,14 @@ const submit = () => {
                         <label
                             v-for="option in question.options"
                             :key="option.id"
-                            class="group relative flex items-center gap-4 p-4 sm:p-5 rounded-2xl border cursor-pointer transition-all duration-300 transform active:scale-[0.98]"
+                            class="group relative flex items-start gap-3 sm:gap-4 p-3.5 sm:p-5 rounded-2xl border cursor-pointer transition-all duration-300 transform active:scale-[0.98]"
                             :class="answers[question.id] === option.id
                                 ? 'border-blue-500 bg-blue-50 shadow-md shadow-blue-100/50'
                                 : 'border-gray-100 hover:border-blue-200 hover:bg-blue-50/30 hover:shadow-sm'"
                         >
-                            <div class="relative flex items-center justify-center w-6 h-6 shrink-0 rounded-full border transition-colors duration-300"
+                            <div class="relative flex items-center justify-center w-5 h-5 sm:w-6 sm:h-6 shrink-0 mt-0.5 rounded-full border transition-colors duration-300"
                                 :class="answers[question.id] === option.id ? 'border-blue-500 bg-blue-500' : 'border-gray-300 bg-white group-hover:border-blue-400'">
-                                <div class="w-2.5 h-2.5 rounded-full bg-white transition-transform duration-300" :class="answers[question.id] === option.id ? 'scale-100' : 'scale-0'"></div>
+                                <div class="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-white transition-transform duration-300" :class="answers[question.id] === option.id ? 'scale-100' : 'scale-0'"></div>
                             </div>
                             <input
                                 type="radio"
@@ -120,7 +120,7 @@ const submit = () => {
                                 v-model="answers[question.id]"
                                 class="sr-only"
                             />
-                            <span class="font-bold text-gray-800 text-sm sm:text-base leading-snug">{{ option.texte }}</span>
+                            <span class="font-bold text-gray-800 text-xs sm:text-base leading-relaxed break-words flex-1 min-w-0">{{ option.texte }}</span>
                         </label>
                     </div>
 

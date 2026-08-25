@@ -189,51 +189,51 @@ function jumpToQuestion(index) {
         </div>
 
         <!-- Focused Header -->
-        <header class="h-24 bg-slate-900/50 backdrop-blur-md border-b border-white/5 px-8 flex items-center justify-between sticky top-0 z-40">
-            <div class="flex items-center gap-6">
-                <button @click="showQuestionMap = true" class="p-4 bg-white/5 hover:bg-white/10 rounded-2xl transition border border-white/5">
-                    <Bars3Icon class="h-6 w-6 text-white" />
+        <header class="min-h-[4.5rem] sm:h-24 bg-slate-900/50 backdrop-blur-md border-b border-white/5 px-3 sm:px-8 py-3 sm:py-0 flex items-center justify-between sticky top-0 z-40">
+            <div class="flex items-center gap-2 sm:gap-6 min-w-0">
+                <button @click="showQuestionMap = true" class="p-2.5 sm:p-4 bg-white/5 hover:bg-white/10 rounded-xl sm:rounded-2xl transition border border-white/5 shrink-0">
+                    <Bars3Icon class="h-5 w-5 sm:h-6 sm:w-6 text-white" />
                 </button>
-                <div class="flex flex-col">
-                    <h1 class="text-xl font-bold text-white tracking-tight leading-tight">{{ exam.titre }}</h1>
-                    <p class="text-[10px] text-blue-400 font-black uppercase tracking-[0.2em] mt-1">
+                <div class="flex flex-col min-w-0">
+                    <h1 class="text-sm sm:text-xl font-bold text-white tracking-tight leading-tight truncate max-w-[140px] sm:max-w-none">{{ exam.titre }}</h1>
+                    <p class="text-[9px] sm:text-[10px] text-blue-400 font-black uppercase tracking-wider sm:tracking-[0.2em] mt-0.5 whitespace-nowrap">
                         Question {{ currentQuestionIndex + 1 }} sur {{ exam.questions.length }}
                     </p>
                 </div>
             </div>
 
-            <div class="flex items-center gap-6">
+            <div class="flex items-center gap-2 sm:gap-6 shrink-0">
                 <Timer v-if="isStarted" :duration-minutes="exam.duree_minutes" :absolute-end-time="exam.end_at" @expired="emergencySubmit" />
-                <button v-if="!exam.is_practice" @click="requestFullscreen" class="p-3 bg-white/5 rounded-xl border border-white/5 hover:bg-white/10 transition text-slate-400" title="Rétablir le plein écran">
-                    <ArrowsPointingOutIcon class="h-5 w-5" />
+                <button v-if="!exam.is_practice" @click="requestFullscreen" class="p-2.5 sm:p-3 bg-white/5 rounded-xl border border-white/5 hover:bg-white/10 transition text-slate-400 hidden sm:flex" title="Rétablir le plein écran">
+                    <ArrowsPointingOutIcon class="h-4 w-4 sm:h-5 sm:w-5" />
                 </button>
             </div>
         </header>
 
         <!-- Question Area -->
-        <main class="flex-1 flex flex-col items-center justify-center p-8 relative overflow-y-auto custom-scrollbar">
+        <main class="flex-1 flex flex-col items-center justify-center p-3 sm:p-8 py-4 sm:py-8 relative overflow-y-auto custom-scrollbar">
             <!-- Glassmorphic Card -->
-            <div v-if="currentQuestion" class="w-full max-w-4xl bg-white/5 backdrop-blur-xl rounded-[3.5rem] shadow-2xl border border-white/10 p-10 sm:p-16 transition-all duration-500 hover:border-white/20">
-                <div class="mb-12">
-                    <div class="flex items-center gap-3 mb-6">
-                        <span class="px-4 py-1.5 bg-blue-500/20 text-blue-400 text-[10px] font-black uppercase tracking-widest rounded-full border border-blue-500/30">
+            <div v-if="currentQuestion" class="w-full max-w-4xl bg-white/5 backdrop-blur-xl rounded-2xl sm:rounded-[3.5rem] shadow-2xl border border-white/10 p-4 sm:p-12 transition-all duration-500 hover:border-white/20">
+                <div class="mb-6 sm:mb-10">
+                    <div class="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+                        <span class="px-3 sm:px-4 py-1 bg-blue-500/20 text-blue-400 text-[9px] sm:text-[10px] font-black uppercase tracking-widest rounded-full border border-blue-500/30">
                             {{ currentQuestion.points }} Points
                         </span>
-                        <span class="px-4 py-1.5 bg-white/5 text-slate-400 text-[10px] font-black uppercase tracking-widest rounded-full border border-white/5">
+                        <span class="px-3 sm:px-4 py-1 bg-white/5 text-slate-400 text-[9px] sm:text-[10px] font-black uppercase tracking-widest rounded-full border border-white/5">
                             {{ currentQuestion.type === 'qcm' ? 'Choix Multiple' : 'Question Ouverte' }}
                         </span>
                     </div>
-                    <p class="text-2xl sm:text-3xl font-bold text-white leading-[1.4] tracking-tight">
+                    <p class="text-base sm:text-2xl md:text-3xl font-bold text-white leading-relaxed tracking-tight break-words">
                         {{ currentQuestion.enonce }}
                     </p>
                 </div>
 
                 <!-- Options / Inputs -->
-                <div v-if="currentQuestion.type === 'qcm'" class="grid grid-cols-1 gap-4">
+                <div v-if="currentQuestion.type === 'qcm'" class="grid grid-cols-1 gap-3 sm:gap-4">
                     <label 
                         v-for="(option, idx) in currentQuestion.options" 
                         :key="option.id"
-                        class="relative group flex items-center p-6 cursor-pointer rounded-3xl border-2 transition-all"
+                        class="relative group flex items-start p-3.5 sm:p-6 cursor-pointer rounded-xl sm:rounded-3xl border-2 transition-all gap-2 sm:gap-4"
                         :class="form.answers[currentQuestion.id]?.includes(option.id) 
                             ? 'border-blue-600 bg-blue-600/10' 
                             : 'border-white/5 bg-white/5 hover:bg-white/10 hover:border-white/10'"
@@ -246,44 +246,46 @@ function jumpToQuestion(index) {
                             class="hidden"
                         />
                         <div 
-                            class="h-8 w-8 rounded-xl border-2 flex items-center justify-center mr-6 transition-all font-black text-xs"
+                            class="h-7 w-7 sm:h-8 sm:w-8 rounded-lg sm:rounded-xl border-2 flex items-center justify-center shrink-0 font-black text-xs mt-0.5 transition-all"
                             :class="form.answers[currentQuestion.id]?.includes(option.id) 
                                 ? 'border-blue-500 bg-blue-500 text-white' 
                                 : 'border-white/20 bg-transparent text-slate-500 group-hover:border-white/40'"
                         >
                             {{ String.fromCharCode(65 + idx) }}
                         </div>
-                        <span class="text-lg text-slate-200 font-medium group-hover:text-white transition-colors">{{ option.texte }}</span>
+                        <span class="text-sm sm:text-base md:text-lg text-slate-200 font-medium group-hover:text-white transition-colors leading-relaxed break-words flex-1 min-w-0">
+                            {{ option.texte }}
+                        </span>
                         
-                        <div v-if="form.answers[currentQuestion.id]?.includes(option.id)" class="ml-auto">
-                            <CheckCircleIcon class="h-6 w-6 text-blue-500" />
+                        <div v-if="form.answers[currentQuestion.id]?.includes(option.id)" class="shrink-0 self-center ml-1 sm:ml-auto">
+                            <CheckCircleIcon class="h-5 w-5 sm:h-6 sm:w-6 text-blue-500" />
                         </div>
                     </label>
                 </div>
-                <div v-else-if="currentQuestion.type === 'open'" class="mt-4">
+                <div v-else-if="currentQuestion.type === 'open'" class="mt-2 sm:mt-4">
                     <textarea 
                         v-model="form.answers[currentQuestion.id]"
-                        class="w-full h-48 bg-white/5 border border-white/10 rounded-[2rem] p-8 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all resize-none placeholder-slate-500 text-lg"
+                        class="w-full h-36 sm:h-48 bg-white/5 border border-white/10 rounded-xl sm:rounded-[2rem] p-4 sm:p-8 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all resize-none placeholder-slate-500 text-sm sm:text-lg"
                         placeholder="Saisissez votre réponse ici..."
                     ></textarea>
                 </div>
             </div>
             
-            <div v-else-if="exam.questions.length === 0" class="text-center p-12 bg-white/5 rounded-3xl border border-dashed border-white/10 max-w-lg">
-                <ExclamationTriangleIcon class="h-12 w-12 text-blue-400 mx-auto mb-4" />
-                <h3 class="text-xl font-bold text-white mb-2">Aucune question</h3>
-                <p class="text-slate-400">Cet examen ne contient aucune question pour le moment. Veuillez contacter votre formateur.</p>
+            <div v-else-if="exam.questions.length === 0" class="text-center p-8 sm:p-12 bg-white/5 rounded-3xl border border-dashed border-white/10 max-w-lg">
+                <ExclamationTriangleIcon class="h-10 w-10 sm:h-12 sm:w-12 text-blue-400 mx-auto mb-4" />
+                <h3 class="text-lg sm:text-xl font-bold text-white mb-2">Aucune question</h3>
+                <p class="text-slate-400 text-xs sm:text-sm">Cet examen ne contient aucune question pour le moment. Veuillez contacter votre formateur.</p>
             </div>
         </main>
 
         <!-- Navigation Controls -->
-        <footer class="h-28 bg-slate-900/50 backdrop-blur-md border-t border-white/5 px-12 flex items-center justify-between sticky bottom-0 z-40">
+        <footer class="h-20 sm:h-28 bg-slate-900/50 backdrop-blur-md border-t border-white/5 px-3 sm:px-12 flex items-center justify-between sticky bottom-0 z-40 shrink-0">
             <button 
                 @click="prevQuestion" 
                 :disabled="currentQuestionIndex === 0"
-                class="flex items-center gap-2 px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-slate-400 hover:bg-white/5 disabled:opacity-10 disabled:cursor-not-allowed transition"
+                class="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-8 py-2.5 sm:py-4 rounded-xl sm:rounded-2xl font-black text-[11px] sm:text-xs uppercase tracking-wider sm:tracking-widest text-slate-400 hover:bg-white/5 disabled:opacity-10 disabled:cursor-not-allowed transition"
             >
-                <ChevronLeftIcon class="h-5 w-5" />
+                <ChevronLeftIcon class="h-4 w-4 sm:h-5 sm:w-5" />
                 Précédent
             </button>
 
@@ -300,24 +302,24 @@ function jumpToQuestion(index) {
                 ></div>
             </div>
 
-            <div class="flex items-center gap-4">
+            <div class="flex items-center gap-2 sm:gap-4">
                 <button 
                     v-if="currentQuestionIndex < exam.questions.length - 1"
                     @click="nextQuestion"
-                    class="flex items-center gap-3 px-10 py-5 bg-blue-600 text-white rounded-[1.5rem] font-black text-xs uppercase tracking-widest hover:bg-blue-500 transition shadow-xl shadow-blue-900/20"
+                    class="flex items-center gap-2 sm:gap-3 px-5 sm:px-10 py-3 sm:py-5 bg-blue-600 text-white rounded-xl sm:rounded-[1.5rem] font-black text-xs uppercase tracking-wider sm:tracking-widest hover:bg-blue-500 transition shadow-xl shadow-blue-900/20"
                 >
                     Suivant
-                    <ChevronRightIcon class="h-5 w-5" />
+                    <ChevronRightIcon class="h-4 w-4 sm:h-5 sm:w-5" />
                 </button>
 
                 <button 
                     v-else
                     @click="submitExam"
                     :disabled="form.processing"
-                    class="flex items-center gap-3 px-10 py-5 bg-emerald-600 text-white rounded-[1.5rem] font-black text-xs uppercase tracking-widest hover:bg-emerald-500 transition shadow-xl shadow-emerald-900/20"
+                    class="flex items-center gap-2 sm:gap-3 px-5 sm:px-10 py-3 sm:py-5 bg-emerald-600 text-white rounded-xl sm:rounded-[1.5rem] font-black text-xs uppercase tracking-wider sm:tracking-widest hover:bg-emerald-500 transition shadow-xl shadow-emerald-900/20"
                 >
-                    <CheckCircleIcon class="h-6 w-6" />
-                    Terminer l'épreuve
+                    <CheckCircleIcon class="h-5 w-5 sm:h-6 sm:w-6" />
+                    Terminer
                 </button>
             </div>
         </footer>

@@ -104,13 +104,13 @@ function submitExam() {
                             v-for="opt in currentQuestion.options" 
                             :key="opt.id"
                             @click="selectOption(opt.id)"
-                            class="p-6 rounded-2xl border-2 text-left transition-all flex items-center gap-4 group"
+                            class="p-4 sm:p-6 rounded-2xl border-2 text-left transition-all flex items-start gap-3 sm:gap-4 group"
                             :class="answers[currentQuestion.id]?.includes(opt.id) ? 'border-blue-600 bg-blue-50/50' : 'border-gray-50 bg-gray-50 hover:border-gray-200'"
                         >
-                            <div class="h-6 w-6 rounded-md border-2 flex items-center justify-center shrink-0 transition-colors" :class="answers[currentQuestion.id]?.includes(opt.id) ? 'bg-blue-600 border-blue-600' : 'bg-white border-gray-200 group-hover:border-blue-400'">
+                            <div class="h-6 w-6 rounded-md border-2 flex items-center justify-center shrink-0 mt-0.5 transition-colors" :class="answers[currentQuestion.id]?.includes(opt.id) ? 'bg-blue-600 border-blue-600' : 'bg-white border-gray-200 group-hover:border-blue-400'">
                                 <div class="h-3 w-3 bg-white rounded-sm" v-if="answers[currentQuestion.id]?.includes(opt.id)"></div>
                             </div>
-                            <span class="font-bold text-gray-700">{{ opt.texte }}</span>
+                            <span class="font-bold text-gray-700 text-xs sm:text-base leading-relaxed break-words flex-1 min-w-0">{{ opt.texte }}</span>
                         </button>
                     </div>
 
