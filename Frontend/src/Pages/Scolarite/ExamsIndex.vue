@@ -1190,94 +1190,74 @@ function approveExam(examId) {
                                 </div>
 
                                 <div class="flex items-center gap-4">
-                                    <template v-if="student.status === 'blocked' || student.status === 'started'">
-                                        <!-- Voir la copie (Brouillon) -->
-                                        <button 
-                                            v-if="selectedExamForGrades?.type === 'online'" 
-                                            type="button" 
-                                            @click="openAnswersModal(student)" 
-                                            class="p-2 text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded-xl transition-colors shadow-sm border border-blue-100 flex items-center gap-1.5"
-                                            title="Voir les réponses sauvegardées"
+                                    <!-- Voir la copie -->
+                                    <button 
+                                        v-if="(student.status === 'completed' || student.status === 'blocked' || student.status === 'started') && selectedExamForGrades?.type === 'online'" 
+                                        type="button" 
+                                        @click="openAnswersModal(student)" 
+                                        class="p-2 text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded-xl transition-colors shadow-sm border border-blue-100 flex items-center gap-1.5"
+                                        title="Voir la copie"
+                                    >
+                                        <EyeIcon class="h-5 w-5" />
+                                        <span class="text-[10px] font-black uppercase tracking-widest hidden sm:inline">Copie</span>
+                                    </button>
+
+                                    <!-- Status Badge (Blocked / Started) -->
+                                    <span v-if="student.status === 'blocked' || student.status === 'started'"
+                                          class="px-3 py-1 font-bold rounded-lg text-[10px] uppercase shrink-0"
+                                          :class="student.status === 'blocked' ? 'bg-red-100 text-red-600' : 'bg-amber-100 text-amber-600'">
+                                        {{ student.status === 'blocked' ? 'Bloqué' : 'En cours' }}
+                                    </span>
+
+                                    <!-- Badge Statut Correction Questions Ouvertes -->
+                                    <span v-if="student.status === 'completed' && hasOpenQuestions" 
+                                          class="px-2 py-1 text-[9px] font-black uppercase tracking-wider rounded-lg border shrink-0"
+                                          :class="isOpenQuestionGraded(student) ? 'bg-green-50 text-green-700 border-green-200' : 'bg-purple-50 text-purple-700 border-purple-200 animate-pulse'">
+                                        {{ isOpenQuestionGraded(student) ? 'Q. Notées' : 'À corriger' }}
+                                    </span>
+
+                                    <!-- Note de Base -->
+                                    <div class="relative w-28 group-focus-within:scale-105 transition-transform duration-300">
+                                        <input 
+                                            v-model="student.score" 
+                                            type="number" 
+                                            step="any" 
+                                            min="0" 
+                                            :max="20"
+                                            :disabled="isSecretaire || (selectedExamForGrades?.type === 'paper' && student.is_graded && !isDirecteur)"
+                                            class="w-full bg-gray-50 border-2 border-transparent focus:border-green-600 rounded-2xl font-black text-center px-3 py-3 text-xs transition-all focus:bg-white focus:ring-0 outline-none text-gray-700 shadow-inner disabled:opacity-60 disabled:cursor-not-allowed"
+                                            placeholder="0.00"
+                                            :title="(selectedExamForGrades?.type === 'paper' && student.is_graded && !isDirecteur) ? 'Note déjà saisie. Seul le directeur peut la modifier.' : 'Saisir la note'"
                                         >
-                                            <EyeIcon class="h-5 w-5" />
-                                            <span class="text-[10px] font-black uppercase tracking-widest hidden sm:inline">Copie</span>
-                                        </button>
-
-                                        <span class="px-3 py-1 font-bold rounded-lg text-[10px] uppercase"
-                                              :class="student.status === 'blocked' ? 'bg-red-100 text-red-600' : 'bg-amber-100 text-amber-600'">
-                                            {{ student.status === 'blocked' ? 'Bloqué' : 'Débloqué / En cours' }}
-                                        </span>
-                                        <!-- Score sauvegardé pour les examens interrompus -->
-                                        <div v-if="student.score !== null && student.score !== undefined" class="flex flex-col items-center px-3 py-1.5 rounded-xl border" :class="student.score >= 10 ? 'bg-emerald-50 border-emerald-200' : 'bg-red-50 border-red-200'">
-                                            <span class="text-[8px] font-black uppercase tracking-widest mb-0.5" :class="student.score >= 10 ? 'text-emerald-500' : 'text-red-400'">Note obtenue</span>
-                                            <span class="text-base font-black leading-none" :class="student.score >= 10 ? 'text-emerald-700' : 'text-red-600'">
-                                                {{ student.score }}<span class="text-[9px] font-bold text-gray-400">/20</span>
-                                            </span>
+                                        <div class="absolute -top-2.5 -right-1">
+                                            <span class="px-1.5 py-0.5 bg-gray-900 text-white text-[7px] font-black rounded-lg shadow-lg">Base /20</span>
                                         </div>
-                                        <button v-if="!isExamEnded(selectedExamForGrades)" type="button" @click="unlockExam(student.user_id)" class="px-3 py-1 bg-gray-900 hover:bg-gray-800 text-white rounded-lg text-[10px] font-bold uppercase transition-colors shadow-sm">
-                                            Gérer
-                                        </button>
-                                    </template>
-                                    <template v-else>
-                                        <!-- Voir la copie -->
-                                        <button 
-                                            v-if="student.status === 'completed' && selectedExamForGrades?.type === 'online'" 
-                                            type="button" 
-                                            @click="openAnswersModal(student)" 
-                                            class="p-2 text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded-xl transition-colors shadow-sm border border-blue-100 flex items-center gap-1.5"
-                                            title="Voir la copie"
+                                    </div>
+
+                                    <!-- Bonus / Plus -->
+                                    <div class="relative w-28 group-focus-within:scale-105 transition-transform duration-300">
+                                        <input 
+                                            v-model="student.bonus" 
+                                            type="number" 
+                                            step="any" 
+                                            min="0" 
+                                            :disabled="selectedExamForGrades?.type === 'paper' && student.is_graded && !isDirecteur"
+                                            class="w-full bg-green-50/30 border-2 border-dashed border-green-200 focus:border-green-600 focus:border-solid focus:bg-white rounded-2xl font-black text-center px-3 py-3 text-xs transition-all focus:ring-0 outline-none text-green-700 shadow-sm disabled:opacity-60 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:border-gray-200"
+                                            placeholder="0.00"
+                                            :title="selectedExamForGrades?.type === 'paper' && student.is_graded && !isDirecteur ? 'Note déjà saisie. Seul le directeur peut la modifier.' : 'Saisir un bonus'"
                                         >
-                                            <EyeIcon class="h-5 w-5" />
-                                            <span class="text-[10px] font-black uppercase tracking-widest hidden sm:inline">Copie</span>
-                                        </button>
-
-                                        <!-- Badge Statut Correction Questions Ouvertes -->
-                                        <span v-if="student.status === 'completed' && hasOpenQuestions" 
-                                              class="px-2 py-1 text-[9px] font-black uppercase tracking-wider rounded-lg border"
-                                              :class="isOpenQuestionGraded(student) ? 'bg-green-50 text-green-700 border-green-200' : 'bg-purple-50 text-purple-700 border-purple-200 animate-pulse'">
-                                            {{ isOpenQuestionGraded(student) ? 'Q. Notées' : 'À corriger' }}
-                                        </span>
-
-                                        <!-- Note de Base -->
-                                        <div class="relative w-28 group-focus-within:scale-105 transition-transform duration-300">
-                                            <input 
-                                                v-model="student.score" 
-                                                type="number" 
-                                                step="any" 
-                                                min="0" 
-                                                :max="20"
-                                                :disabled="isSecretaire || (selectedExamForGrades?.type === 'paper' && student.is_graded && !isDirecteur)"
-                                                class="w-full bg-gray-50 border-2 border-transparent focus:border-green-600 rounded-2xl font-black text-center px-3 py-3 text-xs transition-all focus:bg-white focus:ring-0 outline-none text-gray-700 shadow-inner disabled:opacity-60 disabled:cursor-not-allowed"
-                                                placeholder="0.00"
-                                                :title="(selectedExamForGrades?.type === 'paper' && student.is_graded && !isDirecteur) ? 'Note déjà saisie. Seul le directeur peut la modifier.' : 'Saisir la note'"
-                                            >
-                                            <div class="absolute -top-2.5 -right-1">
-                                                <span class="px-1.5 py-0.5 bg-gray-900 text-white text-[7px] font-black rounded-lg shadow-lg">Base /20</span>
-                                            </div>
+                                        <div class="absolute -top-2.5 -right-1">
+                                            <span class="px-1.5 py-0.5 bg-green-600 text-white text-[7px] font-black rounded-lg shadow-lg">Bonus (+)</span>
                                         </div>
-
-                                        <!-- Bonus / Plus -->
-                                        <div class="relative w-28 group-focus-within:scale-105 transition-transform duration-300">
-                                            <input 
-                                                v-model="student.bonus" 
-                                                type="number" 
-                                                step="any" 
-                                                min="0" 
-                                                :disabled="selectedExamForGrades?.type === 'paper' && student.is_graded && !isDirecteur"
-                                                class="w-full bg-green-50/30 border-2 border-dashed border-green-200 focus:border-green-600 focus:border-solid focus:bg-white rounded-2xl font-black text-center px-3 py-3 text-xs transition-all focus:ring-0 outline-none text-green-700 shadow-sm disabled:opacity-60 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:border-gray-200"
-                                                placeholder="0.00"
-                                                :title="selectedExamForGrades?.type === 'paper' && student.is_graded && !isDirecteur ? 'Note déjà saisie. Seul le directeur peut la modifier.' : 'Saisir un bonus'"
-                                            >
-                                            <div class="absolute -top-2.5 -right-1">
-                                                <span class="px-1.5 py-0.5 bg-green-600 text-white text-[7px] font-black rounded-lg shadow-lg">Bonus (+)</span>
-                                            </div>
-                                        </div>
-                                        
-                                        <!-- Reset / Unlock for completed exams if needed -->
-                                        <button v-if="student.status === 'completed' && !isExamEnded(selectedExamForGrades)" type="button" @click="unlockExam(student.user_id)" class="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors" title="Réinitialiser la tentative de l'étudiant">
-                                            <ArrowPathIcon class="h-5 w-5" />
-                                        </button>
-                                    </template>
+                                    </div>
+                                    
+                                    <!-- Gérer Button for Blocked/Started or Reset for Completed -->
+                                    <button v-if="(student.status === 'blocked' || student.status === 'started') && !isExamEnded(selectedExamForGrades)" type="button" @click="unlockExam(student.user_id)" class="px-3 py-1 bg-gray-900 hover:bg-gray-800 text-white rounded-lg text-[10px] font-bold uppercase transition-colors shadow-sm shrink-0">
+                                        Gérer
+                                    </button>
+                                    <button v-else-if="student.status === 'completed' && !isExamEnded(selectedExamForGrades)" type="button" @click="unlockExam(student.user_id)" class="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors shrink-0" title="Réinitialiser la tentative de l'étudiant">
+                                        <ArrowPathIcon class="h-5 w-5" />
+                                    </button>
                                 </div>
                             </div>
 
