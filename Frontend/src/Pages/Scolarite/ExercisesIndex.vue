@@ -686,7 +686,7 @@ const toggleModule = (moduleId) => {
                                         v-model.number="q.points"
                                         @change="updateQuestionPoints(q)"
                                         min="0"
-                                        step="0.5"
+                                        step="any"
                                         class="w-16 text-center bg-blue-50 text-blue-700 border-0 rounded-lg font-black text-[11px] py-1 focus:ring-2 focus:ring-blue-400"
                                         title="Barème (points)"
                                     />
@@ -898,7 +898,7 @@ const toggleModule = (moduleId) => {
                         <div class="grid grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Note ({{ selectedExercise.exercise_points }} max)</label>
-                                <input :disabled="isSecretaire" v-model="gradeForm.grade" type="number" step="0.5" required class="w-full bg-gray-50 disabled:opacity-75 border-0 rounded-2xl focus:ring-2 focus:ring-blue-500 font-bold px-5 py-3.5">
+                                <input :disabled="isSecretaire" v-model="gradeForm.grade" type="number" step="any" required class="w-full bg-gray-50 disabled:opacity-75 border-0 rounded-2xl focus:ring-2 focus:ring-blue-500 font-bold px-5 py-3.5">
                             </div>
                             <div>
                                 <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Décision</label>

@@ -1177,7 +1177,7 @@ function approveExam(examId) {
                                             <input 
                                                 v-model="student.score" 
                                                 type="number" 
-                                                step="0.25" 
+                                                step="any" 
                                                 min="0" 
                                                 :max="20"
                                                 :disabled="isSecretaire || (selectedExamForGrades?.type === 'paper' && student.is_graded && !isDirecteur)"
@@ -1195,7 +1195,7 @@ function approveExam(examId) {
                                             <input 
                                                 v-model="student.bonus" 
                                                 type="number" 
-                                                step="0.25" 
+                                                step="any" 
                                                 min="0" 
                                                 :disabled="selectedExamForGrades?.type === 'paper' && student.is_graded && !isDirecteur"
                                                 class="w-full bg-green-50/30 border-2 border-dashed border-green-200 focus:border-green-600 focus:border-solid focus:bg-white rounded-2xl font-black text-center px-3 py-3 text-xs transition-all focus:ring-0 outline-none text-green-700 shadow-sm disabled:opacity-60 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:border-gray-200"
@@ -1565,7 +1565,7 @@ function approveExam(examId) {
                                         <input
                                             type="number"
                                             v-model.number="openQuestionForm.open_question_scores[question.id]"
-                                            step="0.25"
+                                            step="any"
                                             min="0"
                                             :max="question.points"
                                             class="w-24 px-3 py-2 bg-white border border-purple-200 rounded-xl font-black text-purple-900 text-center text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
