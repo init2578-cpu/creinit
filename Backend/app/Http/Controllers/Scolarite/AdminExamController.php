@@ -546,7 +546,15 @@ class AdminExamController extends Controller
         $questionScores = $answers['_question_scores'] ?? [];
         foreach ($validated['open_question_scores'] as $questionId => $scoreValue) {
             if ($scoreValue !== null && $scoreValue !== '') {
-                $questionScores[(string)$questionId] = (float)$scoreValue;
+                $question = $exam->questions->firstWhere('id', $questionId);
+                if ($question && $question->type === 'open') {
+                    $maxPoints = (float)$question->points;
+                    $givenScore = (float)$scoreValue;
+                    if ($givenScore > $maxPoints) {
+                        return redirect()->back()->with('error', "La note attribuée à une question ouverte ne peut pas dépasser son barème ({$maxPoints} pts).");
+                    }
+                    $questionScores[(string)$questionId] = $givenScore;
+                }
             }
         }
         $answers['_question_scores'] = $questionScores;

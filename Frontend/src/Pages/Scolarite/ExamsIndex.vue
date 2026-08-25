@@ -344,6 +344,18 @@ const isOpenQuestionGraded = (student) => {
 };
 
 const submitOpenQuestionGrades = () => {
+    if (selectedExamForGrades.value?.questions) {
+        for (const q of selectedExamForGrades.value.questions) {
+            if (q.type === 'open') {
+                const enteredScore = parseFloat(openQuestionForm.open_question_scores[q.id]);
+                if (enteredScore > q.points) {
+                    window.platformAlert(`La note saisie pour la question "${q.enonce.substring(0, 30)}..." dépasse le maximum autorisé (${q.points} pts).`, "error");
+                    return;
+                }
+            }
+        }
+    }
+
     openQuestionForm.score = calculatedLiveScore.value;
     openQuestionForm.post(route('exams.grade-open-questions', {
         exam: selectedExamForGrades.value.id,
