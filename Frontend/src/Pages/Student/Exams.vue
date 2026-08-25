@@ -129,32 +129,32 @@ const formatTime = (dateString) => {
                 <div
                     v-for="exam in exams"
                     :key="exam.id"
-                    class="bg-white p-6 rounded-[2.5rem] shadow-sm border border-gray-100 flex items-center justify-between hover:border-blue-200 transition"
+                    class="bg-white p-4 sm:p-6 rounded-2xl sm:rounded-[2.5rem] shadow-sm border border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:border-blue-200 transition"
                 >
-                    <div class="flex items-center gap-5">
-                        <div class="h-14 w-14 rounded-2xl flex items-center justify-center shadow-sm border border-gray-100"
+                    <div class="flex items-start sm:items-center gap-3 sm:gap-5 min-w-0">
+                        <div class="h-12 w-12 sm:h-14 sm:w-14 rounded-2xl flex items-center justify-center shadow-sm border border-gray-100 shrink-0 mt-0.5 sm:mt-0"
                             :class="exam.my_result ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-500'"
                         >
-                            <CheckCircleIcon v-if="exam.my_result" class="h-7 w-7" />
-                            <ClockIcon v-else class="h-7 w-7" />
+                            <CheckCircleIcon v-if="exam.my_result" class="h-6 w-6 sm:h-7 sm:w-7" />
+                            <ClockIcon v-else class="h-6 w-6 sm:h-7 sm:w-7" />
                         </div>
-                        <div>
-                            <h3 class="font-black text-gray-900 text-lg tracking-tight">{{ exam.titre }}</h3>
-                            <div class="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1">
+                        <div class="min-w-0 flex-1">
+                            <h3 class="font-black text-gray-900 text-base sm:text-lg tracking-tight leading-snug break-words">{{ exam.titre }}</h3>
+                            <div class="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1">
                                 <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
                                     {{ exam.module?.titre }} •
                                     {{ exam.is_practice ? 'Entraînement' : 'Examen' }} •
                                     {{ exam.total_points }} pts
                                 </p>
                                 <div v-if="exam.scheduled_at" class="flex items-center gap-1.5 px-2 py-0.5 bg-blue-50 text-blue-500 rounded-md border border-blue-100 text-[10px] font-black uppercase tracking-tight">
-                                    <ClockIcon class="h-3 w-3" />
-                                    {{ formatDateTime(exam.scheduled_at) }} - {{ formatTime(exam.end_at) }}
+                                    <ClockIcon class="h-3 w-3 shrink-0" />
+                                    <span>{{ formatDateTime(exam.scheduled_at) }} - {{ formatTime(exam.end_at) }}</span>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <div class="flex items-center gap-4">
+                    <div class="flex flex-wrap items-center justify-start md:justify-end gap-2 sm:gap-4 pt-3 md:pt-0 border-t border-gray-100 md:border-t-0">
                         <!-- Énoncé pour examen sur table (accessible uniquement si débuté) -->
                         <template v-if="!exam.is_online && exam.document_path">
                             <button 
@@ -188,14 +188,14 @@ const formatTime = (dateString) => {
                             Bientôt
                         </span>
 
-                        <span v-if="exam.my_result" class="px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border" :class="statusClass(exam)">
+                        <span v-if="exam.my_result" class="px-3 sm:px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border whitespace-nowrap" :class="statusClass(exam)">
                             {{ statusLabel(exam) }}
                         </span>
 
                         <Link
                             v-if="exam.are_grades_published"
                             :href="route('student.exams.result', exam.id)"
-                            class="px-5 py-2.5 bg-emerald-50 text-emerald-600 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-100 transition border border-emerald-200 shadow-sm flex items-center justify-center gap-2"
+                            class="px-4 sm:px-5 py-2 sm:py-2.5 bg-emerald-50 text-emerald-600 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-100 transition border border-emerald-200 shadow-sm flex items-center justify-center gap-1.5 whitespace-nowrap"
                         >
                             Voir la correction &rarr;
                         </Link>
@@ -204,7 +204,7 @@ const formatTime = (dateString) => {
                             v-if="exam.is_online && exam.can_start && (!exam.my_result || exam.is_practice) && exam.my_result?.status !== 'blocked' && exam.my_result?.status !== 'started'"
                             @click="handleExamAction(exam, 'start')"
                             :disabled="isLocating && loadingExamId === exam.id"
-                            class="px-5 py-2.5 bg-gray-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-red-600 transition shadow-lg shadow-gray-200 flex items-center justify-center gap-2 disabled:opacity-50"
+                            class="px-4 sm:px-5 py-2 sm:py-2.5 bg-gray-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-red-600 transition shadow-lg shadow-gray-200 flex items-center justify-center gap-2 disabled:opacity-50 whitespace-nowrap"
                         >
                             <ArrowPathIcon v-if="isLocating && loadingExamId === exam.id" class="h-3.5 w-3.5 animate-spin" />
                             {{ isLocating && loadingExamId === exam.id ? 'GPS...' : (exam.my_result ? 'Refaire' : 'Commencer') }}
