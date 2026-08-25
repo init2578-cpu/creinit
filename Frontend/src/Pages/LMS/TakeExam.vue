@@ -125,7 +125,10 @@ function stopViolationCountdown() {
 // Emergency auto-submit
 function emergencySubmit() {
     autoSaveAnswers()
-    form.post(route('student.exams.submit', props.exam.id), {
+    form.transform((data) => ({
+        ...data,
+        is_blocked: true
+    })).post(route('student.exams.submit', props.exam.id), {
         preserveScroll: true
     })
 }

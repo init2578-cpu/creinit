@@ -295,11 +295,13 @@ class ExamController extends Controller
                 ->first();
 
             $finalScore = $totalPoints > 0 ? round(($score / $totalPoints) * 20, 2) : 0;
+            $isBlocked = $request->boolean('is_blocked');
+            $status = $isBlocked ? 'blocked' : 'completed';
 
             if ($result) {
                 $result->update([
                     'score' => $finalScore,
-                    'status' => 'completed',
+                    'status' => $status,
                     'finished_at' => now(),
                     'answers' => $validated['answers'],
                 ]);
@@ -308,10 +310,14 @@ class ExamController extends Controller
                     'exam_id' => $exam->id,
                     'user_id' => $request->user()->id,
                     'score' => $finalScore,
-                    'status' => 'completed',
+                    'status' => $status,
                     'finished_at' => now(),
                     'answers' => $validated['answers'],
                 ]);
+            }
+
+            if ($isBlocked) {
+                return redirect()->route('student.dashboard')->with('error', "Examen verrouillé suite à une infraction aux consignes (changement de fenêtre ou sortie du mode plein écran). Vos réponses ont été enregistrées et transmises à votre formateur.");
             }
 
             if ($exam->isExpired()) {
