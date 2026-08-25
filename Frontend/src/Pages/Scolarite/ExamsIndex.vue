@@ -1253,10 +1253,10 @@ function approveExam(examId) {
                                     
                                     <!-- Gérer Button for Blocked/Started or Reset for Completed -->
                                     <template v-if="canManageExam(selectedExamForGrades)">
-                                        <button v-if="(student.status === 'blocked' || student.status === 'started') && !isExamEnded(selectedExamForGrades)" type="button" @click="unlockExam(student.user_id)" class="px-3 py-1 bg-gray-900 hover:bg-gray-800 text-white rounded-lg text-[10px] font-bold uppercase transition-colors shadow-sm shrink-0">
+                                        <button v-if="(student.status === 'blocked' || student.status === 'started') && (!isExamEnded(selectedExamForGrades) || isDirecteur)" type="button" @click="unlockExam(student.user_id)" class="px-3 py-1 bg-gray-900 hover:bg-gray-800 text-white rounded-lg text-[10px] font-bold uppercase transition-colors shadow-sm shrink-0">
                                             Gérer
                                         </button>
-                                        <button v-else-if="student.status === 'completed' && !isExamEnded(selectedExamForGrades)" type="button" @click="unlockExam(student.user_id)" class="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors shrink-0" title="Réinitialiser la tentative de l'étudiant">
+                                        <button v-else-if="student.status === 'completed' && (!isExamEnded(selectedExamForGrades) || isDirecteur)" type="button" @click="unlockExam(student.user_id)" class="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors shrink-0" title="Réinitialiser la tentative de l'étudiant">
                                             <ArrowPathIcon class="h-5 w-5" />
                                         </button>
                                     </template>
