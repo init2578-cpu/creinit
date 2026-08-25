@@ -1193,7 +1193,7 @@ function approveExam(examId) {
                                     <template v-if="student.status === 'blocked' || student.status === 'started'">
                                         <span class="px-3 py-1 font-bold rounded-lg text-[10px] uppercase"
                                               :class="student.status === 'blocked' ? 'bg-red-100 text-red-600' : 'bg-amber-100 text-amber-600'">
-                                            {{ student.status === 'blocked' ? 'Bloqué' : 'En cours / Déconnecté' }}
+                                            {{ student.status === 'blocked' ? 'Bloqué' : 'Débloqué / En cours' }}
                                         </span>
                                         <!-- Score sauvegardé pour les examens interrompus -->
                                         <div v-if="student.score !== null && student.score !== undefined" class="flex flex-col items-center px-3 py-1.5 rounded-xl border" :class="student.score >= 10 ? 'bg-emerald-50 border-emerald-200' : 'bg-red-50 border-red-200'">
@@ -1202,8 +1202,8 @@ function approveExam(examId) {
                                                 {{ student.score }}<span class="text-[9px] font-bold text-gray-400">/20</span>
                                             </span>
                                         </div>
-                                        <button v-if="!isExamEnded(selectedExamForGrades)" type="button" @click="unlockExam(student.user_id)" class="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded-lg text-[10px] font-bold uppercase transition-colors shadow-sm">
-                                            {{ student.status === 'blocked' ? 'Débloquer' : 'Réinitialiser' }}
+                                        <button v-if="!isExamEnded(selectedExamForGrades)" type="button" @click="unlockExam(student.user_id)" class="px-3 py-1 bg-gray-900 hover:bg-gray-800 text-white rounded-lg text-[10px] font-bold uppercase transition-colors shadow-sm">
+                                            Gérer
                                         </button>
                                     </template>
                                     <template v-else>
