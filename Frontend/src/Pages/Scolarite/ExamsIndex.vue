@@ -1171,6 +1171,13 @@ function approveExam(examId) {
                                               :class="student.status === 'blocked' ? 'bg-red-100 text-red-600' : 'bg-amber-100 text-amber-600'">
                                             {{ student.status === 'blocked' ? 'Bloqué' : 'En cours / Déconnecté' }}
                                         </span>
+                                        <!-- Score sauvegardé pour les examens interrompus -->
+                                        <div v-if="student.score !== null && student.score !== undefined" class="flex flex-col items-center px-3 py-1.5 rounded-xl border" :class="student.score >= 10 ? 'bg-emerald-50 border-emerald-200' : 'bg-red-50 border-red-200'">
+                                            <span class="text-[8px] font-black uppercase tracking-widest mb-0.5" :class="student.score >= 10 ? 'text-emerald-500' : 'text-red-400'">Note obtenue</span>
+                                            <span class="text-base font-black leading-none" :class="student.score >= 10 ? 'text-emerald-700' : 'text-red-600'">
+                                                {{ student.score }}<span class="text-[9px] font-bold text-gray-400">/20</span>
+                                            </span>
+                                        </div>
                                         <button v-if="!isExamEnded(selectedExamForGrades)" type="button" @click="unlockExam(student.user_id)" class="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded-lg text-[10px] font-bold uppercase transition-colors shadow-sm">
                                             {{ student.status === 'blocked' ? 'Débloquer' : 'Réinitialiser' }}
                                         </button>
