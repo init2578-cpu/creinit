@@ -61,7 +61,7 @@ function markAllAsRead() {
 
                     <div 
                         v-if="isNotificationsOpen" 
-                        class="absolute right-0 mt-3 w-80 bg-white/90 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/20 py-2 z-50 overflow-hidden"
+                        class="fixed sm:absolute top-16 sm:top-auto right-2 sm:right-0 left-2 sm:left-auto mt-2 sm:mt-3 sm:w-80 bg-white rounded-2xl shadow-2xl border border-gray-100 py-2 z-50 overflow-hidden max-w-[calc(100vw-1rem)]"
                     >
                         <div class="px-4 py-2 border-b border-gray-100/50 flex items-center justify-between">
                             <h3 class="text-xs font-black uppercase tracking-widest text-gray-400">Notifications</h3>
@@ -128,7 +128,7 @@ function markAllAsRead() {
 
                     <div 
                         v-if="isProfileOpen" 
-                        class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-100 py-1 transition transform origin-top-right"
+                        class="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 py-1 transition transform origin-top-right z-50"
                     >
                         <Link :href="route('profile.edit')" @click="isProfileOpen = false" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">Mon profil</Link>
                         <Link :href="route('profile.settings')" @click="isProfileOpen = false" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">Paramètres</Link>
