@@ -52,8 +52,8 @@ const isOptionSelected = (answers, questionId, optionId) => {
                     </div>
                     
                     <!-- Decorative background -->
-                    <div class="absolute inset-0 opacity-20">
-                        <div class="absolute top-0 right-0 w-64 h-64 bg-emerald-600 rounded-full blur-[100px] translate-x-1/2 -translate-y-1/2"></div>
+                    <div class="absolute inset-0 opacity-20 pointer-events-none overflow-hidden">
+                        <div class="absolute top-0 right-0 w-48 h-48 bg-emerald-600/30 rounded-full blur-3xl"></div>
                     </div>
                 </div>
 
