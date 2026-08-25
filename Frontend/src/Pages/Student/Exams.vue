@@ -65,7 +65,8 @@ const proceedWithAction = (exam, action, latitude, longitude) => {
 
 const statusLabel = (exam) => {
     if (!exam.my_result) return 'À faire'
-    if (exam.my_result.status === 'blocked' || exam.my_result.status === 'started') return 'Bloqué'
+    if (exam.my_result.status === 'blocked') return 'Bloqué'
+    if (exam.my_result.status === 'started') return 'En cours'
     
     if (!exam.is_practice && !exam.are_grades_published) return 'En attente de validation'
     
@@ -80,7 +81,8 @@ const statusLabel = (exam) => {
 
 const statusClass = (exam) => {
     if (!exam.my_result) return 'bg-amber-50 text-amber-600 border-amber-100'
-    if (exam.my_result.status === 'blocked' || exam.my_result.status === 'started') return 'bg-red-100 text-red-600 border-red-200 animate-pulse'
+    if (exam.my_result.status === 'blocked') return 'bg-red-100 text-red-600 border-red-200 animate-pulse'
+    if (exam.my_result.status === 'started') return 'bg-blue-50 text-blue-600 border-blue-200 animate-pulse'
     
     if (!exam.is_practice && !exam.are_grades_published) return 'bg-gray-100 text-gray-500 border-gray-200'
 
@@ -201,13 +203,13 @@ const formatTime = (dateString) => {
                         </Link>
 
                         <button
-                            v-if="exam.is_online && exam.can_start && (!exam.my_result || exam.is_practice) && exam.my_result?.status !== 'blocked' && exam.my_result?.status !== 'started'"
+                            v-if="exam.is_online && ((exam.can_start && (!exam.my_result || exam.is_practice)) || exam.my_result?.status === 'started')"
                             @click="handleExamAction(exam, 'start')"
                             :disabled="isLocating && loadingExamId === exam.id"
                             class="px-4 sm:px-5 py-2 sm:py-2.5 bg-gray-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-red-600 transition shadow-lg shadow-gray-200 flex items-center justify-center gap-2 disabled:opacity-50 whitespace-nowrap"
                         >
                             <ArrowPathIcon v-if="isLocating && loadingExamId === exam.id" class="h-3.5 w-3.5 animate-spin" />
-                            {{ isLocating && loadingExamId === exam.id ? 'GPS...' : (exam.my_result ? 'Refaire' : 'Commencer') }}
+                            {{ isLocating && loadingExamId === exam.id ? 'GPS...' : (exam.my_result?.status === 'started' ? 'Reprendre' : (exam.my_result ? 'Refaire' : 'Commencer')) }}
                         </button>
                     </div>
                 </div>
