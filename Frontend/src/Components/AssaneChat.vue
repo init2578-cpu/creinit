@@ -55,11 +55,18 @@ const sendMessage = async () => {
 </script>
 
 <template>
+    <!-- Click-outside backdrop -->
+    <div 
+        v-if="isOpen" 
+        @click="isOpen = false" 
+        class="fixed inset-0 z-40 bg-black/10 sm:bg-transparent"
+    ></div>
+
     <div class="fixed bottom-6 right-6 z-50">
         <!-- Floating Button -->
         <button 
-            @click="toggleChat"
-            class="w-14 h-14 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full shadow-2xl flex items-center justify-center transition-all duration-300 transform hover:scale-110 active:scale-95"
+            @click.stop="toggleChat"
+            class="w-14 h-14 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full shadow-2xl flex items-center justify-center transition-all duration-300 transform hover:scale-110 active:scale-95 relative z-50"
             :class="{ 'rotate-90': isOpen }"
         >
             <svg v-if="!isOpen" xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -73,7 +80,8 @@ const sendMessage = async () => {
         <!-- Chat Window -->
         <div 
             v-if="isOpen"
-            class="fixed sm:absolute bottom-20 right-2 sm:right-0 left-2 sm:left-auto max-w-[calc(100vw-1rem)] sm:w-96 bg-white rounded-2xl shadow-2xl overflow-hidden border border-gray-100 flex flex-col transition-all duration-300 ease-out animate-in fade-in slide-in-from-bottom-5"
+            @click.stop
+            class="fixed sm:absolute bottom-20 right-2 sm:right-0 left-2 sm:left-auto max-w-[calc(100vw-1rem)] sm:w-96 bg-white rounded-2xl shadow-2xl overflow-hidden border border-gray-100 flex flex-col transition-all duration-300 ease-out animate-in fade-in slide-in-from-bottom-5 z-50"
         >
             <!-- Header -->
             <div class="bg-emerald-600 p-4 text-white flex items-center space-x-3">
