@@ -46,6 +46,7 @@ const isTrainer = computed(() => page.props.auth.user.is_trainer);
 const isModalOpen = ref(false);
 const isGradeModalOpen = ref(false);
 const isAnswersModalOpen = ref(false);
+const showScoreBeforeClose = ref(false);
 const editingExam = ref(null);
 const selectedExamForGrades = ref(null);
 const selectedStudentForAnswers = ref(null);
@@ -376,6 +377,16 @@ const submitOpenQuestionGrades = () => {
             window.platformAlert("Erreur lors de l'enregistrement de la correction.", "error");
         }
     });
+};
+
+const closeAnswersModalWithScore = () => {
+    // Always show score summary before closing
+    showScoreBeforeClose.value = true;
+};
+
+const confirmCloseAnswersModal = () => {
+    showScoreBeforeClose.value = false;
+    isAnswersModalOpen.value = false;
 };
 
 const isOptionSelected = (answers, questionId, optionId) => {
@@ -1606,7 +1617,7 @@ function approveExam(examId) {
                         </div>
                     </div>
                     <div class="flex items-center gap-3 w-full sm:w-auto">
-                        <button @click="isAnswersModalOpen = false" type="button" class="flex-1 sm:flex-none px-6 py-3 bg-gray-100 text-gray-600 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-gray-200 transition-all">
+                        <button @click="closeAnswersModalWithScore" type="button" class="flex-1 sm:flex-none px-6 py-3 bg-gray-100 text-gray-600 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-gray-200 transition-all">
                             Fermer
                         </button>
                         <button 
@@ -1620,6 +1631,57 @@ function approveExam(examId) {
                             {{ openQuestionForm.processing ? 'Enregistrement...' : 'Enregistrer la correction' }}
                         </button>
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Score Summary Before Close Overlay -->
+        <div v-if="showScoreBeforeClose && selectedStudentForAnswers" class="fixed inset-0 z-[70] flex items-center justify-center bg-gray-900/70 backdrop-blur-sm p-4">
+            <div class="bg-white w-full max-w-sm rounded-[3rem] shadow-2xl p-10 text-center border border-gray-100">
+                <!-- Icon -->
+                <div class="w-20 h-20 mx-auto mb-6 rounded-3xl flex items-center justify-center"
+                    :class="calculatedLiveScore >= 10 ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-500'">
+                    <CheckCircleIcon class="h-10 w-10" />
+                </div>
+
+                <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Note finale de</p>
+                <h3 class="text-xl font-black text-gray-900 mb-6 tracking-tight">{{ selectedStudentForAnswers.name }}</h3>
+
+                <!-- Big score display -->
+                <div class="py-8 px-6 rounded-3xl mb-6"
+                    :class="calculatedLiveScore >= 10 ? 'bg-emerald-50 border border-emerald-100' : 'bg-red-50 border border-red-100'">
+                    <div class="flex items-end justify-center gap-1">
+                        <span class="text-7xl font-black tracking-tighter leading-none"
+                            :class="calculatedLiveScore >= 10 ? 'text-emerald-600' : 'text-red-500'">
+                            {{ calculatedLiveScore }}
+                        </span>
+                        <span class="text-2xl font-bold text-gray-400 mb-2">/20</span>
+                    </div>
+                    <p class="mt-3 text-sm font-bold"
+                        :class="calculatedLiveScore >= 10 ? 'text-emerald-700' : 'text-red-600'">
+                        {{ calculatedLiveScore >= 16 ? 'Excellent !' : calculatedLiveScore >= 14 ? 'Très bien' : calculatedLiveScore >= 12 ? 'Bien' : calculatedLiveScore >= 10 ? 'Passable' : 'Insuffisant' }}
+                    </p>
+                </div>
+
+                <p class="text-xs text-gray-400 font-medium mb-6">
+                    Examen : <strong class="text-gray-700">{{ selectedExamForGrades?.titre }}</strong>
+                </p>
+
+                <div class="flex gap-3">
+                    <button
+                        @click="showScoreBeforeClose = false"
+                        type="button"
+                        class="flex-1 py-4 bg-gray-100 text-gray-600 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-gray-200 transition-all"
+                    >
+                        Retour
+                    </button>
+                    <button
+                        @click="confirmCloseAnswersModal"
+                        type="button"
+                        class="flex-1 py-4 bg-gray-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-gray-700 transition-all"
+                    >
+                        Fermer
+                    </button>
                 </div>
             </div>
         </div>
