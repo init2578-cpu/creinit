@@ -32,6 +32,13 @@ function markAllAsRead() {
 </script>
 
 <template>
+    <!-- Click-outside backdrop -->
+    <div 
+        v-if="isNotificationsOpen || isProfileOpen" 
+        @click="isNotificationsOpen = false; isProfileOpen = false" 
+        class="fixed inset-0 z-40 bg-black/10 sm:bg-transparent"
+    ></div>
+
     <header class="h-16 bg-white border-b border-gray-200 sticky top-0 z-40">
         <div class="px-4 sm:px-6 lg:px-8 h-full flex items-center justify-between">
             <div class="flex items-center lg:hidden">
@@ -45,9 +52,9 @@ function markAllAsRead() {
 
             <div class="flex-1 flex justify-end items-center gap-4">
                 <!-- Notifications -->
-                <div class="relative">
+                <div class="relative z-50">
                     <button 
-                        @click="isNotificationsOpen = !isNotificationsOpen; isProfileOpen = false"
+                        @click.stop="isNotificationsOpen = !isNotificationsOpen; isProfileOpen = false"
                         class="p-2 rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-50 focus:outline-none relative"
                     >
                         <BellIcon class="h-6 w-6" />
@@ -108,9 +115,9 @@ function markAllAsRead() {
                 </div>
 
                 <!-- Profile Dropdown -->
-                <div class="relative">
+                <div class="relative z-50">
                     <button 
-                        @click="isProfileOpen = !isProfileOpen"
+                        @click.stop="isProfileOpen = !isProfileOpen; isNotificationsOpen = false"
                         class="flex items-center gap-3 p-1 rounded-full hover:bg-gray-50 transition focus:outline-none pr-3"
                     >
                         <div class="h-9 w-9 rounded-full overflow-hidden border-2 border-white shadow-sm bg-gray-100 ring-1 ring-gray-100">
