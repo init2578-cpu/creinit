@@ -640,7 +640,14 @@ class AdminExamController extends Controller
             ->first();
 
         if ($result) {
-            $result->delete();
+            $result->update([
+                'status' => 'started',
+                'answers' => null,
+                'score' => null,
+                'bonus' => 0,
+                'started_at' => now(),
+                'finished_at' => null,
+            ]);
             return redirect()->back()->with('success', 'L\'examen a été réinitialisé pour cet étudiant. Il peut recommencer à zéro.');
         }
 
