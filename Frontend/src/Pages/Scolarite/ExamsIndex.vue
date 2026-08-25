@@ -1224,10 +1224,10 @@ function approveExam(examId) {
                                             step="any" 
                                             min="0" 
                                             :max="20"
-                                            :disabled="isSecretaire || (selectedExamForGrades?.type === 'paper' && student.is_graded && !isDirecteur)"
+                                            :disabled="isSecretaire || (selectedExamForGrades?.type === 'paper' && student.is_graded && !isDirecteur) || student.status === 'blocked' || student.status === 'started'"
                                             class="w-full bg-gray-50 border-2 border-transparent focus:border-green-600 rounded-2xl font-black text-center px-3 py-3 text-xs transition-all focus:bg-white focus:ring-0 outline-none text-gray-700 shadow-inner disabled:opacity-60 disabled:cursor-not-allowed"
                                             placeholder="0.00"
-                                            :title="(selectedExamForGrades?.type === 'paper' && student.is_graded && !isDirecteur) ? 'Note déjà saisie. Seul le directeur peut la modifier.' : 'Saisir la note'"
+                                            :title="(student.status === 'blocked' || student.status === 'started') ? 'Terminez l\'évaluation de l\'apprenant avant de modifier la base.' : ((selectedExamForGrades?.type === 'paper' && student.is_graded && !isDirecteur) ? 'Note déjà saisie. Seul le directeur peut la modifier.' : 'Saisir la note')"
                                         >
                                         <div class="absolute -top-2.5 -right-1">
                                             <span class="px-1.5 py-0.5 bg-gray-900 text-white text-[7px] font-black rounded-lg shadow-lg">Base /20</span>
