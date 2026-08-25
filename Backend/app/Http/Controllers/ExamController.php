@@ -113,35 +113,37 @@ class ExamController extends Controller
         }
 
         $savedAnswers = [];
+        $existingResult = null;
 
         if (!$exam->is_practice) {
-            $existing = ExamResult::where('exam_id', $exam->id)
+            $existingResult = ExamResult::where('exam_id', $exam->id)
                 ->where('user_id', $request->user()->id)
                 ->first();
 
-            if ($existing) {
-                if ($existing->status === 'completed') {
+            if ($existingResult) {
+                if ($existingResult->status === 'completed') {
                     return redirect()->route('student.exams.index')->with('success', "Vous avez déjà passé cet examen.");
                 }
                 
-                if ($existing->status === 'blocked') {
+                if ($existingResult->status === 'blocked') {
                     return redirect()->route('student.exams.index')->with('error', "Cet examen a été bloqué suite à une interruption. Veuillez contacter votre formateur pour le débloquer.");
                 }
 
-                if ($existing->answers && is_array($existing->answers)) {
-                    $savedAnswers = $existing->answers;
+                if ($existingResult->answers && is_array($existingResult->answers)) {
+                    $savedAnswers = $existingResult->answers;
                 }
             }
         }
 
         $exam->load(['questions.options']);
-
-        // Ensure questions stay as a sequential array even if custom ordered
         $exam->setRelation('questions', $exam->questions->values());
 
         $component = $exam->is_practice ? 'Student/PracticeExam' : 'LMS/TakeExam';
 
-        if (!$exam->can_start && !$exam->is_practice) {
+        // Allow resume if the student was already started (admin unblocked them)
+        // Only block access for new attempts when can_start is false
+        $canAccess = $exam->can_start || ($existingResult && $existingResult->status === 'started');
+        if (!$canAccess && !$exam->is_practice) {
             return redirect()->route('student.exams.index')->with('error', "Cet examen n'est pas accessible actuellement.");
         }
 
@@ -153,14 +155,16 @@ class ExamController extends Controller
 
     public function start(Request $request, Exam $exam): \Illuminate\Http\JsonResponse
     {
-        if (!$exam->is_approved || (!$exam->can_start && !$exam->is_practice)) {
-            return response()->json(['error' => "Cet examen n'est pas accessible actuellement."], 403);
-        }
-
         if (!$exam->is_practice) {
             $existing = ExamResult::where('exam_id', $exam->id)
                 ->where('user_id', $request->user()->id)
                 ->first();
+
+            // Allow resume if already started (admin unblocked) — even if can_start is false
+            $canAccess = $exam->is_approved && ($exam->can_start || ($existing && $existing->status === 'started'));
+            if (!$canAccess) {
+                return response()->json(['error' => "Cet examen n'est pas accessible actuellement."], 403);
+            }
 
             if (!$existing) {
                 ExamResult::create([
@@ -169,6 +173,10 @@ class ExamController extends Controller
                     'status' => 'started',
                     'started_at' => now(),
                 ]);
+            }
+        } else {
+            if (!$exam->is_approved) {
+                return response()->json(['error' => "Cet examen n'est pas accessible actuellement."], 403);
             }
         }
 
