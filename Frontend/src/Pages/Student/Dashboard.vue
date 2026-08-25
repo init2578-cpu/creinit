@@ -243,7 +243,7 @@ const handleExamAction = (exam) => {
                                     </div>
                                     <div>
                                         <p class="text-sm font-black text-gray-900">{{ exam.titre }}</p>
-                                        <p class="text-[8px] text-rose-500 font-black uppercase tracking-widest mt-0.5">{{ exam.is_practice ? 'Entraînement' : 'Examen Final' }}</p>
+                                        <p class="text-[8px] text-rose-500 font-black uppercase tracking-widest mt-0.5">{{ exam.my_result?.status === 'started' ? 'Examen débloqué - À terminer' : (exam.is_practice ? 'Entraînement' : 'Examen Final') }}</p>
                                     </div>
                                 </div>
                                 <button 
@@ -252,7 +252,7 @@ const handleExamAction = (exam) => {
                                     class="px-4 py-2 bg-rose-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-rose-700 transition active:scale-95 shadow-sm hover:shadow flex items-center justify-center gap-2 disabled:opacity-50"
                                 >
                                     <ArrowPathIcon v-if="isLocating && loadingExamId === exam.id" class="h-3.5 w-3.5 animate-spin" />
-                                    {{ isLocating && loadingExamId === exam.id ? 'GPS...' : 'Commencer' }}
+                                    {{ isLocating && loadingExamId === exam.id ? 'GPS...' : (exam.my_result?.status === 'started' ? 'Reprendre' : 'Commencer') }}
                                 </button>
                             </div>
                             <div v-if="upcomingExams.length === 0" class="py-8 text-center text-gray-400 font-bold italic text-xs">

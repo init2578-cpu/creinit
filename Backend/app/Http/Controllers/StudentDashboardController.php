@@ -80,16 +80,29 @@ class StudentDashboardController extends Controller
             $exams = Exam::whereHas('groups', function ($query) use ($group) {
                     $query->where('groups.id', $group->id);
                 })
-                ->whereDoesntHave('examResults', function ($query) use ($user) {
-                    $query->where('user_id', $user->id);
+                ->where(function ($query) use ($user) {
+                    $query->whereDoesntHave('examResults', function ($q) use ($user) {
+                        $q->where('user_id', $user->id);
+                    })
+                    ->orWhereHas('examResults', function ($q) use ($user) {
+                        $q->where('user_id', $user->id)
+                          ->where('status', 'started');
+                    });
                 })
                 ->where('is_active', true)
                 ->where('is_approved', true)
-                ->get();
+                ->get()
+                ->map(function ($exam) use ($user) {
+                    $exam->my_result = \App\Models\ExamResult::where('exam_id', $exam->id)
+                        ->where('user_id', $user->id)
+                        ->first();
+                    return $exam;
+                });
                 
-            // On filtre les examens expirés
+            // On filtre les examens expirés, SAUF s'ils ont un statut "started" (débloqué)
             $upcomingExams = $exams->filter(function($exam) {
-                return !$exam->has_ended;
+                $isResuming = $exam->my_result && $exam->my_result->status === 'started';
+                return !$exam->has_ended || $isResuming;
             })->values();
         }
 
