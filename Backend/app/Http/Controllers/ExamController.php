@@ -52,11 +52,67 @@ class ExamController extends Controller
         ]);
     }
 
+    /**
+     * Helper to compute a score out of 20 from exam questions and student answers.
+     */
+    public function calculateScore(Exam $exam, array $answers): float
+    {
+        $score = 0;
+        $totalPoints = 0;
+        $exam->loadMissing('questions.options');
+
+        foreach ($exam->questions as $question) {
+            $totalPoints += (float)$question->points;
+
+            if ($question->type === 'qcm') {
+                $correctOptions = $question->options->where('is_correct', true);
+                $correctOptionIds = $correctOptions->pluck('id')->toArray();
+
+                $userAnswers = $answers[$question->id] ?? [];
+                if (!is_array($userAnswers)) {
+                    $userAnswers = !empty($userAnswers) ? [$userAnswers] : [];
+                }
+
+                $totalCorrectExpected = count($correctOptionIds);
+                $questionPoints = (float)$question->points;
+                
+                $pointsPerCorrectOption = $totalCorrectExpected > 0 ? $questionPoints / $totalCorrectExpected : 0;
+                
+                $questionScore = 0;
+                foreach ($userAnswers as $ansId) {
+                    if (in_array((int)$ansId, $correctOptionIds, true)) {
+                        $questionScore += $pointsPerCorrectOption;
+                    } else {
+                        $questionScore -= $pointsPerCorrectOption;
+                    }
+                }
+                
+                if ($questionScore < 0) {
+                    $questionScore = 0;
+                }
+                if ($questionScore > $questionPoints) {
+                    $questionScore = $questionPoints;
+                }
+                
+                $score += $questionScore;
+            } else {
+                $openScores = $answers['_question_scores'] ?? [];
+                if (isset($openScores[(string)$question->id])) {
+                    $score += min((float)$openScores[(string)$question->id], (float)$question->points);
+                }
+            }
+        }
+
+        return $totalPoints > 0 ? round(($score / $totalPoints) * 20, 2) : 0.0;
+    }
+
     public function show(Request $request, Exam $exam): Response|RedirectResponse
     {
         if (!$exam->is_approved) {
             return redirect()->route('student.exams.index')->with('error', "Cet examen n'est pas accessible actuellement.");
         }
+
+        $savedAnswers = [];
 
         if (!$exam->is_practice) {
             $existing = ExamResult::where('exam_id', $exam->id)
@@ -68,11 +124,12 @@ class ExamController extends Controller
                     return redirect()->route('student.exams.index')->with('success', "Vous avez déjà passé cet examen.");
                 }
                 
-                if ($existing->status === 'blocked' || $existing->status === 'started') {
-                    if ($existing->status === 'started') {
-                        $existing->update(['status' => 'blocked']);
-                    }
+                if ($existing->status === 'blocked') {
                     return redirect()->route('student.exams.index')->with('error', "Cet examen a été bloqué suite à une interruption. Veuillez contacter votre formateur pour le débloquer.");
+                }
+
+                if ($existing->answers && is_array($existing->answers)) {
+                    $savedAnswers = $existing->answers;
                 }
             }
         }
@@ -90,6 +147,7 @@ class ExamController extends Controller
 
         return Inertia::render($component, [
             'exam' => $exam,
+            'savedAnswers' => $savedAnswers,
         ]);
     }
 
@@ -118,6 +176,45 @@ class ExamController extends Controller
     }
 
     /**
+     * Auto-save draft answers continuously during the exam.
+     */
+    public function saveAnswers(Request $request, Exam $exam): \Illuminate\Http\JsonResponse
+    {
+        if (!$exam->is_approved) {
+            return response()->json(['error' => "Cet examen n'est pas accessible actuellement."], 403);
+        }
+
+        $validated = $request->validate([
+            'answers' => ['required', 'array'],
+        ]);
+
+        $user = $request->user();
+        $result = ExamResult::where('exam_id', $exam->id)
+            ->where('user_id', $user->id)
+            ->first();
+
+        $score = $this->calculateScore($exam, $validated['answers']);
+
+        if (!$result) {
+            $result = ExamResult::create([
+                'exam_id' => $exam->id,
+                'user_id' => $user->id,
+                'score' => $score,
+                'status' => 'started',
+                'started_at' => now(),
+                'answers' => $validated['answers'],
+            ]);
+        } else if ($result->status !== 'completed') {
+            $result->update([
+                'score' => $score,
+                'answers' => $validated['answers'],
+            ]);
+        }
+
+        return response()->json(['success' => true, 'score' => $result->score]);
+    }
+
+    /**
      * Submit exam/practice results.
      */
     public function submit(Request $request, Exam $exam): Response|RedirectResponse
@@ -130,20 +227,14 @@ class ExamController extends Controller
             'answers' => ['required', 'array'],
         ]);
 
-        if (!$exam->is_practice && $exam->isExpired()) {
-            // We still save the result but maybe we should flag it or just block it.
-            // For now, let's block it if it's way over the limit, otherwise allow but it's risky.
-            // Requirement said "rejeter si isExpired".
-            return redirect()->route('student.dashboard')->with('error', "Délai expiré. Votre examen n'a pas pu être validé.");
-        }
-
         $score = 0;
         $totalPoints = 0;
         $feedback = [];
 
+        $exam->loadMissing(['questions.options']);
+
         foreach ($exam->questions as $question) {
-            $totalPoints += $question->points;
-            $userAnswerId = $validated['answers'][$question->id] ?? null;
+            $totalPoints += (float)$question->points;
 
             if ($question->type === 'qcm') {
                 $correctOptions = $question->options()->where('is_correct', true)->get();
@@ -155,13 +246,13 @@ class ExamController extends Controller
                 }
 
                 $totalCorrectExpected = count($correctOptionIds);
-                $questionPoints = $question->points;
+                $questionPoints = (float)$question->points;
                 
                 $pointsPerCorrectOption = $totalCorrectExpected > 0 ? $questionPoints / $totalCorrectExpected : 0;
                 
                 $questionScore = 0;
                 foreach ($userAnswers as $ansId) {
-                    if (in_array($ansId, $correctOptionIds)) {
+                    if (in_array((int)$ansId, $correctOptionIds, true)) {
                         $questionScore += $pointsPerCorrectOption;
                     } else {
                         $questionScore -= $pointsPerCorrectOption;
@@ -177,7 +268,6 @@ class ExamController extends Controller
                 
                 $score += $questionScore;
 
-                // Correction immédiate pour le mode practice
                 if ($exam->is_practice) {
                     $isCorrect = ($questionScore == $questionPoints && $questionPoints > 0);
                     $feedback[] = [
@@ -188,11 +278,10 @@ class ExamController extends Controller
                     ];
                 }
             } else {
-                // Pour les questions ouvertes, la correction n'est pas automatique.
                 if ($exam->is_practice) {
                     $feedback[] = [
                         'question_id' => $question->id,
-                        'is_correct' => null, // Pas de verdict automatique
+                        'is_correct' => null,
                         'correct_option_id' => null,
                         'explanation' => 'Réponse attendue : ' . ($question->expected_answer ?? 'Non spécifiée'),
                     ];
@@ -205,7 +294,7 @@ class ExamController extends Controller
                 ->where('user_id', $request->user()->id)
                 ->first();
 
-            $finalScore = $totalPoints > 0 ? ($score / $totalPoints) * 20 : 0;
+            $finalScore = $totalPoints > 0 ? round(($score / $totalPoints) * 20, 2) : 0;
 
             if ($result) {
                 $result->update([
@@ -223,6 +312,10 @@ class ExamController extends Controller
                     'finished_at' => now(),
                     'answers' => $validated['answers'],
                 ]);
+            }
+
+            if ($exam->isExpired()) {
+                return redirect()->route('student.dashboard')->with('info', "Le temps imparti était écoulé. Vos réponses enregistrées ont été soumises.");
             }
 
             return redirect()->route('student.dashboard')->with('success', 'Examen terminé.');

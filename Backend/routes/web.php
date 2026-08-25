@@ -110,6 +110,7 @@ Route::middleware(['auth'])->group(function (): void {
         // Exams
         Route::get('/exams', [ExamController::class, 'index'])->name('exams.index');
         Route::post('/exams/{exam}/start', [ExamController::class, 'start'])->name('exams.start');
+        Route::post('/exams/{exam}/save-answers', [ExamController::class, 'saveAnswers'])->name('exams.save-answers');
         Route::post('/exams/{exam}/submit', [ExamController::class, 'submit'])->name('exams.submit');
         
         Route::middleware(\App\Http\Middleware\EnsureWithinPremises::class)->group(function () {

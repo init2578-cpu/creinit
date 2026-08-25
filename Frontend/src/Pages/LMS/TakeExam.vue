@@ -16,7 +16,8 @@ import {
 import ConfirmModal from '@/Components/ConfirmModal.vue'
 
 const props = defineProps({
-    exam: Object
+    exam: Object,
+    savedAnswers: [Object, Array]
 })
 
 const currentQuestionIndex = ref(0)
@@ -27,10 +28,28 @@ const isStarted = ref(false)
 const showQuestionMap = ref(false)
 const showConfirmSubmit = ref(false)
 let countdownInterval = null
+let saveDebounceTimer = null
 
 const form = useForm({
     answers: {}
 })
+
+// Auto-save draft answers
+function autoSaveAnswers() {
+    if (props.exam.is_practice || !isStarted.value) return
+    axios.post(route('student.exams.save-answers', props.exam.id), {
+        answers: form.answers
+    }).catch(err => {
+        console.error('Erreur de sauvegarde automatique des réponses:', err)
+    })
+}
+
+watch(() => form.answers, () => {
+    if (saveDebounceTimer) clearTimeout(saveDebounceTimer)
+    saveDebounceTimer = setTimeout(() => {
+        autoSaveAnswers()
+    }, 800)
+}, { deep: true })
 
 // Fullscreen & Anti-Cheat
 function startExam() {
@@ -60,6 +79,7 @@ function requestFullscreen() {
 
 function handleVisibilityChange() {
     if (document.hidden && !props.exam.is_practice && isStarted.value) {
+        autoSaveAnswers()
         triggerViolation("Sortie d'onglet détectée. Revenez immédiatement !")
     } else if (!document.hidden && countdownInterval) {
         stopViolationCountdown()
@@ -68,6 +88,7 @@ function handleVisibilityChange() {
 
 function handleFullscreenChange() {
     if (!document.fullscreenElement && !props.exam.is_practice && isStarted.value) {
+        autoSaveAnswers()
         triggerViolation("Le mode plein écran est obligatoire.")
     } else if (document.fullscreenElement && countdownInterval) {
         stopViolationCountdown()
@@ -103,11 +124,9 @@ function stopViolationCountdown() {
 
 // Emergency auto-submit
 function emergencySubmit() {
+    autoSaveAnswers()
     form.post(route('student.exams.submit', props.exam.id), {
-        preserveScroll: true,
-        onFinish: () => {
-            // Force redirect if possible
-        }
+        preserveScroll: true
     })
 }
 
@@ -123,7 +142,9 @@ function handleConfirmSubmit() {
 onMounted(() => {
     if (props.exam && props.exam.questions) {
         props.exam.questions.forEach(q => {
-            if (q.type === 'qcm') {
+            if (props.savedAnswers && props.savedAnswers[q.id] !== undefined) {
+                form.answers[q.id] = props.savedAnswers[q.id]
+            } else if (q.type === 'qcm') {
                 form.answers[q.id] = []
             } else {
                 form.answers[q.id] = ''
@@ -131,13 +152,21 @@ onMounted(() => {
         })
     }
 
+    if (props.savedAnswers && Object.keys(props.savedAnswers).length > 0) {
+        isStarted.value = true
+    }
+
     if (!props.exam.is_practice) {
         document.addEventListener('visibilitychange', handleVisibilityChange)
         document.addEventListener('fullscreenchange', handleFullscreenChange)
+        window.addEventListener('beforeunload', autoSaveAnswers)
     }
 })
 
 onUnmounted(() => {
+    if (!props.exam.is_practice) {
+        window.removeEventListener('beforeunload', autoSaveAnswers)
+    }
     document.removeEventListener('visibilitychange', handleVisibilityChange)
     document.removeEventListener('fullscreenchange', handleFullscreenChange)
     if (countdownInterval) clearInterval(countdownInterval)

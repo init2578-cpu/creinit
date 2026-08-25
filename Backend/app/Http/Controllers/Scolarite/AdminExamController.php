@@ -463,30 +463,47 @@ class AdminExamController extends Controller
 
         $students = $studentsQuery->get();
 
-        // If the exam has officially ended, auto-grade students who didn't submit with 0
-        if ($exam->isExpired() && $exam->type === 'online') {
-            foreach ($students as $student) {
-                ExamResult::firstOrCreate(
-                    ['exam_id' => $exam->id, 'user_id' => $student->id],
-                    ['score' => 0, 'finished_at' => $exam->scheduled_at->addMinutes($exam->duree_minutes)]
-                );
+        $examController = new \App\Http\Controllers\ExamController();
+
+        // Calculate score for students who saved answers, or auto-grade expired exams
+        foreach ($students as $student) {
+            $res = ExamResult::where('exam_id', $exam->id)->where('user_id', $student->id)->first();
+            if ($res && $res->answers && is_array($res->answers) && count($res->answers) > 0) {
+                $calcScore = $examController->calculateScore($exam, $res->answers);
+                if ($res->score === null || ($res->status !== 'completed' && $res->score < $calcScore)) {
+                    $res->update(['score' => $calcScore]);
+                }
+            } else if (!$res && $exam->isExpired() && $exam->type === 'online') {
+                ExamResult::create([
+                    'exam_id' => $exam->id,
+                    'user_id' => $student->id,
+                    'score' => 0,
+                    'status' => 'completed',
+                    'finished_at' => $exam->scheduled_at ? $exam->scheduled_at->addMinutes($exam->duree_minutes) : now(),
+                ]);
             }
         }
 
-        // Get existing results for this exam (including newly created ones)
+        // Get existing results for this exam (including newly updated ones)
         $results = ExamResult::where('exam_id', $exam->id)->get()->keyBy('user_id');
 
         // Merge results into students data
-        $formattedResults = $students->map(function ($student) use ($results) {
+        $formattedResults = $students->map(function ($student) use ($results, $examController, $exam) {
             $res = $results->get($student->id);
+            $score = $res ? $res->score : null;
+
+            if ($res && $score === null && $res->answers && is_array($res->answers)) {
+                $score = $examController->calculateScore($exam, $res->answers);
+            }
+
             return [
                 'user_id' => $student->id,
                 'name'    => $student->name,
-                'score'   => $res ? $res->score : null,
+                'score'   => $score,
                 'bonus'   => $res ? $res->bonus : 0.00,
                 'status'  => $res ? $res->status : null,
                 'answers' => $res ? $res->answers : null,
-                'is_graded' => $res && $res->score !== null,
+                'is_graded' => $res && $score !== null,
             ];
         });
 

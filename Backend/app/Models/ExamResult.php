@@ -17,6 +17,8 @@ class ExamResult extends Model
         'user_id',
         'score',
         'bonus',
+        'status',
+        'started_at',
         'finished_at',
         'answers',
     ];
@@ -26,6 +28,7 @@ class ExamResult extends Model
         return [
             'score' => 'float',
             'bonus' => 'float',
+            'started_at' => 'datetime',
             'finished_at' => 'datetime',
             'answers' => 'json',
         ];
