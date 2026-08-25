@@ -22,7 +22,8 @@ import {
     ArrowPathIcon,
     PencilSquareIcon,
     DocumentDuplicateIcon,
-    UserIcon
+    UserIcon,
+    ExclamationTriangleIcon
 } from '@heroicons/vue/24/outline';
 import { ref, computed, watch } from 'vue';
 import axios from 'axios';
@@ -47,6 +48,8 @@ const isModalOpen = ref(false);
 const isGradeModalOpen = ref(false);
 const isAnswersModalOpen = ref(false);
 const showScoreBeforeClose = ref(false);
+const showUnlockConfirm = ref(false);
+const pendingUnlockStudent = ref(null);
 const editingExam = ref(null);
 const selectedExamForGrades = ref(null);
 const selectedStudentForAnswers = ref(null);
@@ -409,15 +412,22 @@ const submitGrades = () => {
 };
 
 const unlockExam = (userId) => {
-    if (confirm('Êtes-vous sûr de vouloir débloquer cet examen pour cet apprenant ? Sa tentative sera réinitialisée.')) {
-        router.post(route('exams.unlock', { exam: selectedExamForGrades.value.id, user: userId }), {}, {
-            preserveScroll: true,
-            onSuccess: async () => {
-                const response = await axios.get(route('exams.results', selectedExamForGrades.value.id));
-                gradeForm.grades = response.data;
-            }
-        });
-    }
+    const student = gradeForm.grades.find(s => s.user_id === userId);
+    pendingUnlockStudent.value = student || { user_id: userId, name: 'cet apprenant' };
+    showUnlockConfirm.value = true;
+};
+
+const confirmUnlock = () => {
+    const userId = pendingUnlockStudent.value?.user_id;
+    showUnlockConfirm.value = false;
+    router.post(route('exams.unlock', { exam: selectedExamForGrades.value.id, user: userId }), {}, {
+        preserveScroll: true,
+        onSuccess: async () => {
+            const response = await axios.get(route('exams.results', selectedExamForGrades.value.id));
+            gradeForm.grades = response.data;
+            pendingUnlockStudent.value = null;
+        }
+    });
 };
 
 const openQuestionModal = (exam, question = null) => {
@@ -1645,16 +1655,12 @@ function approveExam(examId) {
         <!-- Score Summary Before Close Overlay -->
         <div v-if="showScoreBeforeClose && selectedStudentForAnswers" class="fixed inset-0 z-[70] flex items-center justify-center bg-gray-900/70 backdrop-blur-sm p-4">
             <div class="bg-white w-full max-w-sm rounded-[3rem] shadow-2xl p-10 text-center border border-gray-100">
-                <!-- Icon -->
                 <div class="w-20 h-20 mx-auto mb-6 rounded-3xl flex items-center justify-center"
                     :class="calculatedLiveScore >= 10 ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-500'">
                     <CheckCircleIcon class="h-10 w-10" />
                 </div>
-
                 <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Note finale de</p>
                 <h3 class="text-xl font-black text-gray-900 mb-6 tracking-tight">{{ selectedStudentForAnswers.name }}</h3>
-
-                <!-- Big score display -->
                 <div class="py-8 px-6 rounded-3xl mb-6"
                     :class="calculatedLiveScore >= 10 ? 'bg-emerald-50 border border-emerald-100' : 'bg-red-50 border border-red-100'">
                     <div class="flex items-end justify-center gap-1">
@@ -1669,25 +1675,62 @@ function approveExam(examId) {
                         {{ calculatedLiveScore >= 16 ? 'Excellent !' : calculatedLiveScore >= 14 ? 'Très bien' : calculatedLiveScore >= 12 ? 'Bien' : calculatedLiveScore >= 10 ? 'Passable' : 'Insuffisant' }}
                     </p>
                 </div>
-
                 <p class="text-xs text-gray-400 font-medium mb-6">
                     Examen : <strong class="text-gray-700">{{ selectedExamForGrades?.titre }}</strong>
                 </p>
+                <div class="flex gap-3">
+                    <button @click="showScoreBeforeClose = false" type="button"
+                        class="flex-1 py-4 bg-gray-100 text-gray-600 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-gray-200 transition-all">
+                        Retour
+                    </button>
+                    <button @click="confirmCloseAnswersModal" type="button"
+                        class="flex-1 py-4 bg-gray-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-gray-700 transition-all">
+                        Fermer
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Unlock / Reset Confirmation Modal -->
+        <div v-if="showUnlockConfirm && pendingUnlockStudent" class="fixed inset-0 z-[80] flex items-center justify-center bg-gray-900/70 backdrop-blur-sm p-4">
+            <div class="bg-white w-full max-w-sm rounded-[3rem] shadow-2xl p-10 text-center border border-gray-100">
+                <!-- Icon -->
+                <div class="w-20 h-20 mx-auto mb-6 bg-red-50 text-red-500 rounded-3xl flex items-center justify-center">
+                    <ArrowPathIcon class="h-10 w-10" />
+                </div>
+
+                <h3 class="text-xl font-black text-gray-900 mb-2 tracking-tight">Réinitialiser l'examen ?</h3>
+                <p class="text-sm text-gray-500 font-medium leading-relaxed mb-2">
+                    Vous êtes sur le point de réinitialiser la tentative de
+                </p>
+                <p class="text-base font-black text-gray-900 mb-6">{{ pendingUnlockStudent.name }}</p>
+
+                <!-- Warning box -->
+                <div class="p-4 bg-red-50 border border-red-100 rounded-2xl mb-8 text-left">
+                    <p class="text-[11px] font-black text-red-700 uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
+                        <ExclamationTriangleIcon class="h-4 w-4 shrink-0" />
+                        Action irréversible
+                    </p>
+                    <p class="text-xs text-red-600 font-medium leading-relaxed">
+                        Sa tentative en cours sera supprimée. Il pourra recommencer l'examen à zéro.
+                    </p>
+                </div>
 
                 <div class="flex gap-3">
                     <button
-                        @click="showScoreBeforeClose = false"
+                        @click="showUnlockConfirm = false; pendingUnlockStudent = null"
                         type="button"
-                        class="flex-1 py-4 bg-gray-100 text-gray-600 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-gray-200 transition-all"
+                        class="flex-1 py-4 bg-gray-100 text-gray-700 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-gray-200 transition-all"
                     >
-                        Retour
+                        Annuler
                     </button>
                     <button
-                        @click="confirmCloseAnswersModal"
+                        @click="confirmUnlock"
                         type="button"
-                        class="flex-1 py-4 bg-gray-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-gray-700 transition-all"
+                        class="flex-1 py-4 bg-red-600 hover:bg-red-700 text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-xl shadow-red-100 flex items-center justify-center gap-2"
                     >
-                        Fermer
+                        <ArrowPathIcon class="h-4 w-4" />
+                        Réinitialiser
                     </button>
                 </div>
             </div>
