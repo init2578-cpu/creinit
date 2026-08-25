@@ -175,12 +175,12 @@ watch(() => page.props.flash, (flash) => {
 
 
 <template>
-    <div class="min-h-screen bg-gray-50 flex max-w-full overflow-x-hidden">
+    <div class="min-h-screen bg-gray-50 w-full max-w-[100vw] overflow-x-hidden relative">
         <!-- Sidebar -->
         <Sidebar :is-open="isSidebarOpen" @toggle-sidebar="toggleSidebar" />
 
         <!-- Main Content Area -->
-        <div class="flex-1 flex flex-col lg:ml-64 transition-all duration-300 min-w-0 max-w-full overflow-x-hidden">
+        <div class="w-full lg:pl-64 min-h-screen flex flex-col min-w-0 max-w-full overflow-x-hidden">
             <!-- Topbar -->
             <Topbar @toggle-sidebar="toggleSidebar" />
 
@@ -215,7 +215,7 @@ watch(() => page.props.flash, (flash) => {
             />
 
             <!-- Page Management -->
-            <main :class="['flex-1 min-h-0', noPadding ? '' : 'p-4 sm:p-6 lg:p-8 pt-20 sm:pt-24 lg:pt-28']">
+            <main :class="['flex-1 min-h-0', noPadding ? '' : 'p-3 sm:p-6 lg:p-8 pt-4 sm:pt-6 lg:pt-8']">
                 <slot />
             </main>
 

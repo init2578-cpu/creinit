@@ -73,7 +73,7 @@ const sendMessage = async () => {
         <!-- Chat Window -->
         <div 
             v-if="isOpen"
-            class="absolute bottom-20 right-0 w-80 sm:w-96 bg-white rounded-2xl shadow-2xl overflow-hidden border border-gray-100 flex flex-col transition-all duration-300 ease-out animate-in fade-in slide-in-from-bottom-5"
+            class="fixed sm:absolute bottom-20 right-2 sm:right-0 left-2 sm:left-auto max-w-[calc(100vw-1rem)] sm:w-96 bg-white rounded-2xl shadow-2xl overflow-hidden border border-gray-100 flex flex-col transition-all duration-300 ease-out animate-in fade-in slide-in-from-bottom-5"
         >
             <!-- Header -->
             <div class="bg-emerald-600 p-4 text-white flex items-center space-x-3">
