@@ -430,6 +430,20 @@ const confirmUnlock = () => {
     });
 };
 
+const confirmUnblockOnly = () => {
+    const userId = pendingUnlockStudent.value?.user_id;
+    showUnlockConfirm.value = false;
+    router.post(route('exams.unblock', { exam: selectedExamForGrades.value.id, user: userId }), {}, {
+        preserveScroll: true,
+        onSuccess: async () => {
+            const response = await axios.get(route('exams.results', selectedExamForGrades.value.id));
+            gradeForm.grades = response.data;
+            pendingUnlockStudent.value = null;
+            window.platformAlert("L'examen a été débloqué. L'apprenant peut reprendre là où il s'était arrêté.", "success");
+        }
+    });
+};
+
 const openQuestionModal = (exam, question = null) => {
     selectedExamForQuestionId.value = exam.id;
     editingQuestion.value = question;
@@ -1693,46 +1707,57 @@ function approveExam(examId) {
 
         <!-- Unlock / Reset Confirmation Modal -->
         <div v-if="showUnlockConfirm && pendingUnlockStudent" class="fixed inset-0 z-[80] flex items-center justify-center bg-gray-900/70 backdrop-blur-sm p-4">
-            <div class="bg-white w-full max-w-sm rounded-[3rem] shadow-2xl p-10 text-center border border-gray-100">
-                <!-- Icon -->
-                <div class="w-20 h-20 mx-auto mb-6 bg-red-50 text-red-500 rounded-3xl flex items-center justify-center">
-                    <ArrowPathIcon class="h-10 w-10" />
+            <div class="bg-white w-full max-w-md rounded-[3rem] shadow-2xl p-10 text-center border border-gray-100">
+
+                <!-- Header -->
+                <div class="w-20 h-20 mx-auto mb-5 bg-amber-50 text-amber-500 rounded-3xl flex items-center justify-center">
+                    <ExclamationTriangleIcon class="h-10 w-10" />
                 </div>
+                <h3 class="text-xl font-black text-gray-900 mb-1 tracking-tight">Gérer la tentative</h3>
+                <p class="text-sm text-gray-500 font-medium leading-relaxed mb-1">Que souhaitez-vous faire pour</p>
+                <p class="text-base font-black text-gray-900 mb-8">{{ pendingUnlockStudent.name }} ?</p>
 
-                <h3 class="text-xl font-black text-gray-900 mb-2 tracking-tight">Réinitialiser l'examen ?</h3>
-                <p class="text-sm text-gray-500 font-medium leading-relaxed mb-2">
-                    Vous êtes sur le point de réinitialiser la tentative de
-                </p>
-                <p class="text-base font-black text-gray-900 mb-6">{{ pendingUnlockStudent.name }}</p>
-
-                <!-- Warning box -->
-                <div class="p-4 bg-red-50 border border-red-100 rounded-2xl mb-8 text-left">
-                    <p class="text-[11px] font-black text-red-700 uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
-                        <ExclamationTriangleIcon class="h-4 w-4 shrink-0" />
-                        Action irréversible
-                    </p>
-                    <p class="text-xs text-red-600 font-medium leading-relaxed">
-                        Sa tentative en cours sera supprimée. Il pourra recommencer l'examen à zéro.
-                    </p>
-                </div>
-
-                <div class="flex gap-3">
+                <!-- Two action cards -->
+                <div class="grid grid-cols-2 gap-4 mb-8">
+                    <!-- Option 1: Débloquer (resume) -->
                     <button
-                        @click="showUnlockConfirm = false; pendingUnlockStudent = null"
+                        @click="confirmUnblockOnly"
                         type="button"
-                        class="flex-1 py-4 bg-gray-100 text-gray-700 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-gray-200 transition-all"
+                        class="group flex flex-col items-center gap-3 p-5 rounded-3xl border-2 border-emerald-200 bg-emerald-50 hover:bg-emerald-100 hover:border-emerald-400 transition-all text-left"
                     >
-                        Annuler
+                        <div class="w-12 h-12 rounded-2xl bg-emerald-100 group-hover:bg-emerald-200 text-emerald-600 flex items-center justify-center transition-all">
+                            <CheckCircleIcon class="h-7 w-7" />
+                        </div>
+                        <div>
+                            <p class="font-black text-emerald-800 text-xs uppercase tracking-widest mb-1">Débloquer</p>
+                            <p class="text-[10px] text-emerald-600 leading-tight">Il reprend là où il s'était arrêté, ses réponses sont conservées.</p>
+                        </div>
                     </button>
+
+                    <!-- Option 2: Recommencer (reset) -->
                     <button
                         @click="confirmUnlock"
                         type="button"
-                        class="flex-1 py-4 bg-red-600 hover:bg-red-700 text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-xl shadow-red-100 flex items-center justify-center gap-2"
+                        class="group flex flex-col items-center gap-3 p-5 rounded-3xl border-2 border-red-200 bg-red-50 hover:bg-red-100 hover:border-red-400 transition-all text-left"
                     >
-                        <ArrowPathIcon class="h-4 w-4" />
-                        Réinitialiser
+                        <div class="w-12 h-12 rounded-2xl bg-red-100 group-hover:bg-red-200 text-red-500 flex items-center justify-center transition-all">
+                            <ArrowPathIcon class="h-7 w-7" />
+                        </div>
+                        <div>
+                            <p class="font-black text-red-700 text-xs uppercase tracking-widest mb-1">Recommencer</p>
+                            <p class="text-[10px] text-red-500 leading-tight">Sa tentative est supprimée. Il repart à zéro.</p>
+                        </div>
                     </button>
                 </div>
+
+                <!-- Cancel -->
+                <button
+                    @click="showUnlockConfirm = false; pendingUnlockStudent = null"
+                    type="button"
+                    class="w-full py-3.5 bg-gray-100 text-gray-600 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-gray-200 transition-all"
+                >
+                    Annuler
+                </button>
             </div>
         </div>
 

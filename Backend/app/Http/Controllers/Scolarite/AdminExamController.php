@@ -646,6 +646,35 @@ class AdminExamController extends Controller
         return redirect()->back()->with('error', 'Aucune tentative trouvée pour cet étudiant.');
     }
 
+    /**
+     * Unblock a student's exam without resetting their progress (resume mode).
+     */
+    public function unblock(Request $request, Exam $exam, \App\Models\User $user): RedirectResponse
+    {
+        if ($request->user()->hasRole('Secrétaire')) {
+            abort(403, 'Action non autorisée pour les secrétaires.');
+        }
+
+        if (!$this->canModifyExam($request->user(), $exam)) {
+            abort(403, 'Vous ne pouvez pas débloquer cet examen.');
+        }
+
+        if (!$user->hasRole(['Apprenant', 'Stagiaire'])) {
+            abort(403, 'Utilisateur invalide.');
+        }
+
+        $result = ExamResult::where('exam_id', $exam->id)
+            ->where('user_id', $user->id)
+            ->first();
+
+        if ($result) {
+            $result->update(['status' => 'started']);
+            return redirect()->back()->with('success', 'L\'examen a été débloqué. L\'apprenant peut reprendre là où il s\'était arrêté.');
+        }
+
+        return redirect()->back()->with('error', 'Aucune tentative trouvée pour cet étudiant.');
+    }
+
 
     /**
      * Manage Questions for an exam.
