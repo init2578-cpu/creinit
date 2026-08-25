@@ -455,7 +455,8 @@ class AdminExamController extends Controller
         });
 
         if (!$user->hasRole('Directeur') && $user->isTrainer()) {
-            $groupIds = $user->groupsAsFormateur()->pluck('id');
+            $allowedTrainerIds = $user->getAllowedTrainerUserIds();
+            $groupIds = \App\Models\Group::whereIn('formateur_id', $allowedTrainerIds)->pluck('id');
             $studentsQuery->whereHas('studentGroups', function ($query) use ($groupIds) {
                 $query->whereIn('groups.id', $groupIds);
             });
