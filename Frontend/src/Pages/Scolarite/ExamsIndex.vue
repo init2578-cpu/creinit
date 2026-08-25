@@ -1191,6 +1191,18 @@ function approveExam(examId) {
 
                                 <div class="flex items-center gap-4">
                                     <template v-if="student.status === 'blocked' || student.status === 'started'">
+                                        <!-- Voir la copie (Brouillon) -->
+                                        <button 
+                                            v-if="selectedExamForGrades?.type === 'online'" 
+                                            type="button" 
+                                            @click="openAnswersModal(student)" 
+                                            class="p-2 text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded-xl transition-colors shadow-sm border border-blue-100 flex items-center gap-1.5"
+                                            title="Voir les réponses sauvegardées"
+                                        >
+                                            <EyeIcon class="h-5 w-5" />
+                                            <span class="text-[10px] font-black uppercase tracking-widest hidden sm:inline">Copie</span>
+                                        </button>
+
                                         <span class="px-3 py-1 font-bold rounded-lg text-[10px] uppercase"
                                               :class="student.status === 'blocked' ? 'bg-red-100 text-red-600' : 'bg-amber-100 text-amber-600'">
                                             {{ student.status === 'blocked' ? 'Bloqué' : 'Débloqué / En cours' }}
