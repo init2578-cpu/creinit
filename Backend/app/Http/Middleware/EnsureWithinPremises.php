@@ -38,12 +38,16 @@ class EnsureWithinPremises
             }
         }
 
-        // Check for exam practice bypass
+        // Check for exam practice or particular student / exclusive exam bypass
         $exam = $request->route('exam');
         if (is_numeric($exam)) {
             $exam = \App\Models\Exam::find($exam);
         }
-        if ($exam instanceof \App\Models\Exam && $exam->is_practice) {
+        if ($exam instanceof \App\Models\Exam && ($exam->is_practice || $exam->is_exclusive_directeur)) {
+            return $next($request);
+        }
+
+        if ($request->user()?->is_particulier) {
             return $next($request);
         }
 

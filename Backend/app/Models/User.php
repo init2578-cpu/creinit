@@ -50,6 +50,7 @@ class User extends Authenticatable implements PasskeyUser
         'telephone',
         'adresse',
         'profile_photo_path',
+        'is_particulier',
     ];
 
     /**
@@ -73,6 +74,7 @@ class User extends Authenticatable implements PasskeyUser
             'email_verified_at'  => 'datetime',
             'password'           => 'hashed',
             'is_active'          => 'boolean',
+            'is_particulier'     => 'boolean',
             'must_change_password' => 'boolean',
         ];
     }
@@ -119,6 +121,41 @@ class User extends Authenticatable implements PasskeyUser
     public function studentGroups(): BelongsToMany
     {
         return $this->belongsToMany(Group::class, 'group_user');
+    }
+
+    /**
+     * Modules directly assigned to this individual/particular student without group.
+     */
+    public function particularModules(): BelongsToMany
+    {
+        return $this->belongsToMany(Module::class, 'user_particular_modules')
+            ->withPivot(['assigned_at', 'notes'])
+            ->withTimestamps();
+    }
+
+    /**
+     * Direct exam assignments for this particular student.
+     */
+    public function particularExams(): BelongsToMany
+    {
+        return $this->belongsToMany(Exam::class, 'exam_particular_users')
+            ->withTimestamps();
+    }
+
+    /**
+     * Scope for particular learners only.
+     */
+    public function scopeParticulier($query)
+    {
+        return $query->where('is_particulier', true);
+    }
+
+    /**
+     * Scope for standard/regular group learners.
+     */
+    public function scopeStandard($query)
+    {
+        return $query->where('is_particulier', false);
     }
 
     /**

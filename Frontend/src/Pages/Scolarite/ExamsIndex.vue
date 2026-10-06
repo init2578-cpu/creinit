@@ -37,6 +37,10 @@ const props = defineProps({
     trainers: {
         type: Array,
         default: () => []
+    },
+    particular_students: {
+        type: Array,
+        default: () => []
     }
 });
 
@@ -64,6 +68,7 @@ const selectedExamForQuestion = computed(() => {
 });
 
 const groupSearchQuery = ref('');
+const particularStudentSearchQuery = ref('');
 
 const filteredGroups = computed(() => {
     let result = props.groups || [];
@@ -90,6 +95,22 @@ const filteredGroups = computed(() => {
     return result.slice(0, 10);
 });
 
+const filteredParticularStudents = computed(() => {
+    let result = props.particular_students || [];
+    if (form.module_id) {
+        const mId = parseInt(form.module_id);
+        result = result.filter(s => s.module_ids && s.module_ids.includes(mId));
+    }
+    if (particularStudentSearchQuery.value) {
+        const query = particularStudentSearchQuery.value.toLowerCase();
+        result = result.filter(s => 
+            s.name.toLowerCase().includes(query) || 
+            (s.email && s.email.toLowerCase().includes(query))
+        );
+    }
+    return result;
+});
+
 const form = useForm({
     module_id: '',
     titre: '',
@@ -101,6 +122,8 @@ const form = useForm({
     scheduled_end: '',
     document: null,
     group_ids: [],
+    particular_student_ids: [],
+    is_exclusive_directeur: false,
     user_id: ''
 });
 
@@ -193,6 +216,8 @@ const openModal = (exam = null) => {
         form.duree_minutes = exam.duree_minutes;
         form.total_points = exam.total_points;
         form.group_ids = exam.groups ? exam.groups.map(g => g.id) : [];
+        form.particular_student_ids = exam.particular_student_ids ? [...exam.particular_student_ids] : [];
+        form.is_exclusive_directeur = !!exam.is_exclusive_directeur;
         form.user_id = exam.user_id;
         if (exam.scheduled_at) {
             const dateObj = new Date(exam.scheduled_at);
@@ -215,6 +240,8 @@ const openModal = (exam = null) => {
     } else {
         form.reset();
         form.group_ids = [];
+        form.particular_student_ids = [];
+        form.is_exclusive_directeur = false;
         form.user_id = page.props.auth.user.id;
         setInitialTimes();
     }
@@ -909,7 +936,7 @@ const deleteRattrapage = async (rattrapage) => {
                                                 <span class="text-[9px] text-gray-400 font-black uppercase tracking-wider italic">
                                                     {{ exam.module?.titre }}
                                                 </span>
-                                                <span v-if="exam.groups && exam.groups.length > 0" class="text-gray-300 text-[9px]">•</span>
+                                                <span v-if="(exam.groups && exam.groups.length > 0) || exam.particular_students_count > 0 || exam.is_exclusive_directeur" class="text-gray-300 text-[9px]">•</span>
                                                 <div class="flex gap-1 flex-wrap">
                                                     <span 
                                                         v-for="g in exam.groups" 
@@ -917,6 +944,13 @@ const deleteRattrapage = async (rattrapage) => {
                                                         class="px-1.5 py-0.5 bg-blue-50 text-blue-600 rounded text-[8px] font-black uppercase tracking-wider border border-blue-100 whitespace-nowrap"
                                                     >
                                                         {{ g.nom_groupe }}
+                                                    </span>
+                                                    <span 
+                                                        v-if="exam.is_exclusive_directeur || exam.particular_students_count > 0" 
+                                                        class="px-2 py-0.5 bg-amber-50 text-amber-800 border border-amber-200 rounded text-[8px] font-black uppercase tracking-wider whitespace-nowrap flex items-center gap-1"
+                                                    >
+                                                        <ShieldCheckIcon class="h-3 w-3 text-amber-600" />
+                                                        Direction / Particulier ({{ exam.particular_students_count }})
                                                     </span>
                                                 </div>
                                             </div>
@@ -1145,6 +1179,53 @@ const deleteRattrapage = async (rattrapage) => {
                                     </div>
                                 </div>
                             </div>
+
+                            <!-- Apprenants Particuliers affectés (Visible uniquement pour le Directeur) -->
+                            <div v-if="isDirecteur" class="space-y-3 pt-3 border-t border-gray-100">
+                                <div class="flex items-center justify-between mb-2 ml-1">
+                                    <div>
+                                        <label class="flex items-center gap-1.5 text-[10px] font-black text-amber-700 uppercase tracking-widest">
+                                            <ShieldCheckIcon class="h-4 w-4 text-amber-600" />
+                                            Apprenants Particuliers (Direction)
+                                        </label>
+                                        <p class="text-[10px] text-gray-400 font-bold">Sélectionnez les élèves particuliers individuels assignés à cet examen.</p>
+                                    </div>
+                                    <input 
+                                        type="text" 
+                                        v-model="particularStudentSearchQuery" 
+                                        placeholder="Rechercher élève particulier..." 
+                                        class="text-xs px-3 py-1.5 border border-amber-200 rounded-lg focus:border-amber-600 focus:ring-0 outline-none placeholder:text-gray-300 font-bold"
+                                    >
+                                </div>
+                                <div class="bg-amber-50/40 p-4 rounded-[1.5rem] border border-amber-200/60 max-h-48 overflow-y-auto custom-scrollbar">
+                                    <div v-if="filteredParticularStudents.length === 0" class="text-center py-4 text-xs font-bold text-amber-700/60 uppercase tracking-wider">
+                                        {{ form.module_id ? 'Aucun apprenant particulier inscrit à ce module' : 'Sélectionnez d\'abord un module pour filtrer les apprenants' }}
+                                    </div>
+                                    <div v-else class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                        <label 
+                                            v-for="s in filteredParticularStudents" 
+                                            :key="s.id"
+                                            class="flex items-center gap-3 p-3 bg-white border border-amber-100 rounded-2xl cursor-pointer hover:border-amber-300 transition-all select-none shadow-sm"
+                                        >
+                                            <input 
+                                                type="checkbox" 
+                                                :value="s.id" 
+                                                v-model="form.particular_student_ids"
+                                                class="h-5 w-5 rounded-lg text-amber-600 focus:ring-amber-500 border-amber-300 cursor-pointer shadow-sm transition-all"
+                                            >
+                                            <div class="flex flex-col">
+                                                <span class="text-xs font-black text-gray-800 tracking-tight">{{ s.name }}</span>
+                                                <span class="text-[9px] text-gray-400 font-bold truncate">{{ s.email }}</span>
+                                            </div>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div v-if="form.particular_student_ids.length > 0 || (form.group_ids.length === 0 && isDirecteur)" class="flex items-center gap-2 p-3 bg-amber-50 rounded-xl border border-amber-200 text-xs font-bold text-amber-900">
+                                    <ShieldCheckIcon class="h-4 w-4 text-amber-600 shrink-0" />
+                                    <span>Examen sous la responsabilité et supervision exclusive de la Direction (invisible aux formateurs et secrétaires).</span>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Section: Type & Contenu -->
@@ -1370,6 +1451,10 @@ const deleteRattrapage = async (rattrapage) => {
                                         <p class="font-black text-gray-800 text-sm tracking-tight">{{ student.name }}</p>
                                         <div class="flex flex-wrap items-center gap-1.5 mt-0.5">
                                             <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Apprenant e-CRE</p>
+                                            <span v-if="student.is_particulier" class="px-1.5 py-0.5 bg-amber-100 text-amber-800 font-black text-[8px] rounded uppercase tracking-wider flex items-center gap-0.5">
+                                                <ShieldCheckIcon class="h-3 w-3 text-amber-600" />
+                                                Particulier (Direction)
+                                            </span>
                                             <span v-if="student.is_rattrapage" class="px-1.5 py-0.5 bg-amber-100 text-amber-800 font-black text-[8px] rounded uppercase tracking-wider">
                                                 Rattrapage
                                             </span>

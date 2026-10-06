@@ -47,6 +47,7 @@ class StudentDashboardController extends Controller
         // 3. Avancement du module (pourcentage)
         // On récupère le groupe de l'apprenant (supposons 1 groupe actif pour simplifier)
         $group = $user->studentGroups()->first();
+        $particularModule = $user->particularModules()->first();
         $progress = 0;
         $individualProgress = 0;
 
@@ -72,39 +73,57 @@ class StudentDashboardController extends Controller
                     
                 $individualProgress = round(($submittedExercisesCount / $totalExercises) * 100, 1);
             }
+        } elseif ($particularModule) {
+            $totalChapters = $particularModule->chapters()->count();
+            $totalExercises = $particularModule->chapters()->whereNotNull('exercise_type')->count();
+            if ($totalExercises > 0) {
+                $submittedExercisesCount = ExerciseSubmission::where('user_id', $user->id)
+                    ->whereHas('chapter', function($q) use ($particularModule) {
+                        $q->where('module_id', $particularModule->id);
+                    })
+                    ->distinct('chapter_id')
+                    ->count('chapter_id');
+                $individualProgress = round(($submittedExercisesCount / $totalExercises) * 100, 1);
+                $progress = $individualProgress;
+            }
         }
 
-        // 4. Examens à venir pour le groupe actuel
-        $upcomingExams = [];
-        if ($group) {
-            $exams = Exam::whereHas('groups', function ($query) use ($group) {
-                    $query->where('groups.id', $group->id);
-                })
-                ->where(function ($query) use ($user) {
-                    $query->whereDoesntHave('examResults', function ($q) use ($user) {
-                        $q->where('user_id', $user->id);
-                    })
-                    ->orWhereHas('examResults', function ($q) use ($user) {
-                        $q->where('user_id', $user->id)
-                          ->where('status', 'started');
+        // 4. Examens à venir pour le groupe actuel ou assignés directement (particuliers)
+        $groupId = $group?->id;
+        $exams = Exam::where(function ($query) use ($groupId, $user) {
+                if ($groupId) {
+                    $query->whereHas('groups', function ($q) use ($groupId) {
+                        $q->where('groups.id', $groupId);
                     });
-                })
-                ->where('is_active', true)
-                ->where('is_approved', true)
-                ->get()
-                ->map(function ($exam) use ($user) {
-                    $exam->my_result = \App\Models\ExamResult::where('exam_id', $exam->id)
-                        ->where('user_id', $user->id)
-                        ->first();
-                    return $exam;
+                }
+                $query->orWhereHas('particularStudents', function ($q) use ($user) {
+                    $q->where('users.id', $user->id);
                 });
-                
-            // On filtre les examens expirés, SAUF s'ils ont un statut "started" (débloqué)
-            $upcomingExams = $exams->filter(function($exam) {
-                $isResuming = $exam->my_result && $exam->my_result->status === 'started';
-                return !$exam->has_ended || $isResuming;
-            })->values();
-        }
+            })
+            ->where(function ($query) use ($user) {
+                $query->whereDoesntHave('examResults', function ($q) use ($user) {
+                    $q->where('user_id', $user->id);
+                })
+                ->orWhereHas('examResults', function ($q) use ($user) {
+                    $q->where('user_id', $user->id)
+                      ->where('status', 'started');
+                });
+            })
+            ->where('is_active', true)
+            ->where('is_approved', true)
+            ->get()
+            ->map(function ($exam) use ($user) {
+                $exam->my_result = \App\Models\ExamResult::where('exam_id', $exam->id)
+                    ->where('user_id', $user->id)
+                    ->first();
+                return $exam;
+            });
+            
+        // On filtre les examens expirés, SAUF s'ils ont un statut "started" (débloqué)
+        $upcomingExams = $exams->filter(function($exam) {
+            $isResuming = $exam->my_result && $exam->my_result->status === 'started';
+            return !$exam->has_ended || $isResuming;
+        })->values();
 
         // 5. Résultats récents d'exercices
         $recentExercises = ExerciseSubmission::with('chapter')
@@ -168,7 +187,12 @@ class StudentDashboardController extends Controller
             'absenceCount'    => $absenceCount,
             'progress'        => $progress,
             'individualProgress' => $individualProgress,
-            'group'           => $group,
+            'group'           => $group ?: ($particularModule ? [
+                'id' => null,
+                'nom_groupe' => 'Suivi Particulier (Direction)',
+                'module' => $particularModule,
+                'is_particulier' => true,
+            ] : null),
             'upcomingExams'   => $upcomingExams,
             'recentExercises' => $recentExercises,
             'recentExams'     => $recentExams,

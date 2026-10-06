@@ -577,7 +577,13 @@ function deleteCertificate(certificateId) {
                                         <template v-else>{{ student.name.charAt(0) }}</template>
                                     </div>
                                     <div>
-                                        <h4 class="text-xl font-black text-gray-900">{{ student.name }}</h4>
+                                        <div class="flex items-center gap-2">
+                                            <h4 class="text-xl font-black text-gray-900">{{ student.name }}</h4>
+                                            <span v-if="student.is_particulier" class="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-200 flex items-center gap-1">
+                                                <ShieldCheckIcon class="h-3 w-3 text-amber-600" />
+                                                Particulier (Direction)
+                                            </span>
+                                        </div>
                                         <p class="text-sm text-gray-500 font-medium">{{ student.email }}</p>
                                     </div>
                                 </div>
@@ -591,7 +597,11 @@ function deleteCertificate(certificateId) {
                                         <div class="flex items-center justify-between gap-2">
                                             <span class="text-[10px] font-black uppercase tracking-widest text-gray-400 line-clamp-1 flex-1">{{ prog.module_title }}</span>
                                             
-                                            <span v-if="prog.is_group_closed" class="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-tight bg-amber-100 text-amber-800">
+                                            <span v-if="prog.is_particulier" class="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-tight bg-amber-100 text-amber-800 border border-amber-200 flex items-center gap-1">
+                                                <ShieldCheckIcon class="h-3 w-3 text-amber-600" />
+                                                Particulier
+                                            </span>
+                                            <span v-else-if="prog.is_group_closed" class="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-tight bg-amber-100 text-amber-800">
                                                 Groupe Clôturé
                                             </span>
                                             <span v-else-if="prog.completed" class="flex items-center gap-1 text-[10px] font-black text-emerald-600 uppercase tracking-tighter">

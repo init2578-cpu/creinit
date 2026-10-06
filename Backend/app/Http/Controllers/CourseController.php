@@ -38,8 +38,16 @@ class CourseController extends Controller
             $query->where(fn($sub) => $sub->whereNull('exercise_type')->orWhere('exercise_type', 'none'))->where('is_published', true)->where('is_approved', true)->orderBy('ordre');
         }])->get();
 
+        $groupModules = $groups->pluck('module')->filter();
+
+        $particularModules = $user->particularModules()->with(['chapters' => function($query) {
+            $query->where(fn($sub) => $sub->whereNull('exercise_type')->orWhere('exercise_type', 'none'))->where('is_published', true)->where('is_approved', true)->orderBy('ordre');
+        }])->get();
+
+        $allModules = $groupModules->merge($particularModules)->unique('id')->values();
+
         return Inertia::render('Student/Courses', [
-            'modules' => $groups->pluck('module'),
+            'modules' => $allModules,
         ]);
     }
 
@@ -51,11 +59,14 @@ class CourseController extends Controller
         /** @var \App\Models\User $user */
         $user = Auth::user();
 
-        // Security check: Is user enrolled in a group for this module?
-        $isEnrolled = $user->studentGroups()->where(function($query) use ($module) {
+        // Security check: Is user enrolled in a group for this module or assigned as particular learner?
+        $isEnrolledInGroup = $user->studentGroups()->where(function($query) use ($module) {
             $query->where('module_id', $module->id);
         })->exists();
-        if (!$isEnrolled && !$user->hasRole('Directeur') && !$user->isTrainer()) {
+
+        $isEnrolledParticulier = $user->particularModules()->where('modules.id', $module->id)->exists();
+
+        if (!$isEnrolledInGroup && !$isEnrolledParticulier && !$user->hasRole('Directeur') && !$user->isTrainer()) {
             abort(403);
         }
 

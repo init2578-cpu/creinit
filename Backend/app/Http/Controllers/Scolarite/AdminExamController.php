@@ -30,6 +30,10 @@ class AdminExamController extends Controller
      */
     private function canViewExam(User $user, Exam $exam): bool
     {
+        if ($exam->is_exclusive_directeur || ($exam->groups()->count() === 0 && $exam->particularStudents()->exists())) {
+            return $user->hasRole('Directeur');
+        }
+
         if ($user->hasRole('Directeur') || $user->hasRole('Secrétaire')) {
             return true;
         }
@@ -49,6 +53,10 @@ class AdminExamController extends Controller
      */
     private function canModifyExam(User $user, Exam $exam): bool
     {
+        if ($exam->is_exclusive_directeur || ($exam->groups()->count() === 0 && $exam->particularStudents()->exists())) {
+            return $user->hasRole('Directeur');
+        }
+
         if ($user->hasRole('Directeur')) {
             return true;
         }
@@ -77,12 +85,18 @@ class AdminExamController extends Controller
         $user = $request->user();
 
         if ($user->hasRole('Secrétaire')) {
-            $examQuery = Exam::with(['module', 'user', 'questions.options', 'groups', 'rattrapages.users'])->orderBy('created_at', 'desc');
+            $examQuery = Exam::with(['module', 'user', 'questions.options', 'groups', 'rattrapages.users', 'particularStudents'])->orderBy('created_at', 'desc');
         } else {
-            $examQuery = Exam::with(['module', 'user', 'questions.options', 'examResults.user', 'groups', 'rattrapages.users'])->orderBy('created_at', 'desc');
+            $examQuery = Exam::with(['module', 'user', 'questions.options', 'examResults.user', 'groups', 'rattrapages.users', 'particularStudents'])->orderBy('created_at', 'desc');
         }
         $moduleQuery = Module::query();
         $groupsQuery = Group::query();
+
+        // Non-directors MUST NOT see exclusive director exams or particular student exams
+        if (!$user->hasRole('Directeur')) {
+            $examQuery->where('is_exclusive_directeur', false)
+                      ->whereDoesntHave('particularStudents');
+        }
 
         if (!$user->hasRole('Directeur') && !$user->hasRole('Secrétaire')) {
             $allowedUserIds = $user->getAllowedTrainerUserIds();
@@ -104,18 +118,43 @@ class AdminExamController extends Controller
         $isDirecteur = $user->hasRole('Directeur');
 
         $trainers = [];
+        $particularStudents = [];
         if ($isDirecteur) {
             $trainers = User::whereHas('roles', function ($q) {
                 $q->whereIn('name', ['Formateur', 'Stagiaire']);
             })->get(['id', 'name'])->filter(fn($u) => $u->isTrainer())->values();
+
+            $particularStudents = User::role('Apprenant')
+                ->where('is_particulier', true)
+                ->where('is_active', true)
+                ->with('particularModules')
+                ->orderBy('name')
+                ->get()
+                ->map(fn($u) => [
+                    'id' => $u->id,
+                    'name' => $u->name,
+                    'email' => $u->email,
+                    'telephone' => $u->telephone,
+                    'module_ids' => $u->particularModules->pluck('id')->values(),
+                ]);
         }
 
         return Inertia::render('Scolarite/ExamsIndex', [
             'exams'   => $examQuery->get()->map(function ($exam) use ($isDirecteur, $user) {
                 $exam->expected_results_count = User::role('Apprenant')
-                    ->whereHas('studentGroups', function ($query) use ($exam) {
-                        $query->whereIn('groups.id', $exam->groups->pluck('id'));
+                    ->where(function ($q) use ($exam, $isDirecteur) {
+                        $q->whereHas('studentGroups', function ($query) use ($exam) {
+                            $query->whereIn('groups.id', $exam->groups->pluck('id'));
+                        });
+                        if ($isDirecteur) {
+                            $q->orWhereHas('particularExams', function ($query) use ($exam) {
+                                $query->where('exams.id', $exam->id);
+                            });
+                        }
                     })->count();
+
+                $exam->particular_students_count = $exam->particularStudents->count();
+                $exam->particular_student_ids = $exam->particularStudents->pluck('id')->values();
 
                 $exam->can_manage = $this->canModifyExam($user, $exam);
                 $exam->rattrapages_count = $exam->rattrapages->count();
@@ -128,6 +167,7 @@ class AdminExamController extends Controller
             'modules' => $moduleQuery->get(),
             'groups'  => $groupsQuery->get(),
             'trainers' => $trainers,
+            'particular_students' => $particularStudents,
         ]);
     }
 
@@ -148,6 +188,9 @@ class AdminExamController extends Controller
             'document' => 'nullable|file|mimes:pdf,doc,docx|max:10240',
             'group_ids' => 'nullable|array',
             'group_ids.*' => 'exists:groups,id',
+            'particular_student_ids' => 'nullable|array',
+            'particular_student_ids.*' => 'exists:users,id',
+            'is_exclusive_directeur' => 'nullable|boolean',
             'user_id' => 'nullable|exists:users,id',
         ]);
 
@@ -157,17 +200,29 @@ class AdminExamController extends Controller
         }
 
         $user = $request->user();
-        $validated['is_approved'] = $user->hasRole('Directeur');
-        if ($user->hasRole('Directeur') && $request->filled('user_id')) {
+        $isDirecteur = $user->hasRole('Directeur');
+        $validated['is_approved'] = $isDirecteur;
+
+        if ($isDirecteur && $request->filled('user_id')) {
             $validated['user_id'] = $request->input('user_id');
         } else {
             $validated['user_id'] = $user->id;
         }
 
+        $particularStudentIds = $isDirecteur ? ($request->input('particular_student_ids') ?? []) : [];
+        $groupIds = $request->input('group_ids', []);
+
+        $isExclusive = false;
+        if ($isDirecteur) {
+            $isExclusive = $request->boolean('is_exclusive_directeur') 
+                || (!empty($particularStudentIds) && empty($groupIds));
+        }
+        $validated['is_exclusive_directeur'] = $isExclusive;
+
         $exam = Exam::create($validated);
         $exam->load('module');
 
-        if ($user->hasRole('Directeur') && (int)$exam->user_id !== (int)$user->id && $exam->user) {
+        if ($isDirecteur && (int)$exam->user_id !== (int)$user->id && $exam->user) {
             try {
                 $exam->user->notify(new ExamAssignedNotification($exam));
             } catch (\Throwable $e) {
@@ -175,23 +230,28 @@ class AdminExamController extends Controller
             }
         }
 
-        $user = $request->user();
-        if ($user->hasRole('Directeur')) {
-            $exam->groups()->sync($request->input('group_ids', []));
+        if ($isDirecteur) {
+            $exam->groups()->sync($groupIds);
+            $exam->particularStudents()->sync($particularStudentIds);
         } elseif ($user->isTrainer()) {
             $allowedUserIds = $user->getAllowedTrainerUserIds();
             $trainerGroupIds = \App\Models\Group::whereIn('formateur_id', $allowedUserIds)->pluck('id')->toArray();
             $currentGroupIds = $exam->groups()->pluck('groups.id')->toArray();
             $otherGroupIds = array_diff($currentGroupIds, $trainerGroupIds);
-            $newTrainerGroupIds = array_intersect($request->input('group_ids', []), $trainerGroupIds);
+            $newTrainerGroupIds = array_intersect($groupIds, $trainerGroupIds);
             $exam->groups()->sync(array_merge($otherGroupIds, $newTrainerGroupIds));
         }
 
         if ($exam->is_approved) {
-            // Notify students enrolled in the assigned groups
+            // Notify students enrolled in the assigned groups or directly assigned
             $students = User::role('Apprenant')
-                ->whereHas('studentGroups', function ($query) use ($exam) {
-                    $query->whereIn('groups.id', $exam->groups->pluck('id'));
+                ->where(function ($query) use ($exam) {
+                    $query->whereHas('studentGroups', function ($gQuery) use ($exam) {
+                        $gQuery->whereIn('groups.id', $exam->groups->pluck('id'));
+                    })
+                    ->orWhereHas('particularExams', function ($eQuery) use ($exam) {
+                        $eQuery->where('exams.id', $exam->id);
+                    });
                 })->get();
 
             foreach ($students as $student) {
@@ -235,6 +295,9 @@ class AdminExamController extends Controller
             'document' => 'nullable|file|mimes:pdf,doc,docx|max:10240',
             'group_ids' => 'nullable|array',
             'group_ids.*' => 'exists:groups,id',
+            'particular_student_ids' => 'nullable|array',
+            'particular_student_ids.*' => 'exists:users,id',
+            'is_exclusive_directeur' => 'nullable|boolean',
             'user_id' => 'nullable|exists:users,id',
         ]);
 
@@ -254,23 +317,21 @@ class AdminExamController extends Controller
         $previousUserId = (int)$exam->user_id;
 
         $user = $request->user();
-        if ($user->hasRole('Directeur') && $request->filled('user_id')) {
+        $isDirecteur = $user->hasRole('Directeur');
+
+        if ($isDirecteur && $request->filled('user_id')) {
             $validated['user_id'] = $request->input('user_id');
         }
 
-        $exam->update($validated);
+        if ($isDirecteur) {
+            $particularStudentIds = $request->input('particular_student_ids', []);
+            $groupIds = $request->input('group_ids', []);
+            $exam->groups()->sync($groupIds);
+            $exam->particularStudents()->sync($particularStudentIds);
 
-        if ($user->hasRole('Directeur') && (int)$exam->user_id !== $previousUserId && (int)$exam->user_id !== (int)$user->id && $exam->user) {
-            try {
-                $exam->user->notify(new ExamAssignedNotification($exam));
-            } catch (\Throwable $e) {
-                \Illuminate\Support\Facades\Log::error('Erreur d\'envoi de la notification d\'attribution d\'examen: ' . $e->getMessage());
-            }
-        }
-
-        $user = $request->user();
-        if ($user->hasRole('Directeur')) {
-            $exam->groups()->sync($request->input('group_ids', []));
+            $isExclusive = $request->boolean('is_exclusive_directeur') 
+                || (!empty($particularStudentIds) && empty($groupIds));
+            $validated['is_exclusive_directeur'] = $isExclusive;
         } elseif ($user->isTrainer()) {
             $allowedUserIds = $user->getAllowedTrainerUserIds();
             $trainerGroupIds = \App\Models\Group::whereIn('formateur_id', $allowedUserIds)->pluck('id')->toArray();
@@ -278,6 +339,16 @@ class AdminExamController extends Controller
             $otherGroupIds = array_diff($currentGroupIds, $trainerGroupIds);
             $newTrainerGroupIds = array_intersect($request->input('group_ids', []), $trainerGroupIds);
             $exam->groups()->sync(array_merge($otherGroupIds, $newTrainerGroupIds));
+        }
+
+        $exam->update($validated);
+
+        if ($isDirecteur && (int)$exam->user_id !== $previousUserId && (int)$exam->user_id !== (int)$user->id && $exam->user) {
+            try {
+                $exam->user->notify(new ExamAssignedNotification($exam));
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::error('Erreur d\'envoi de la notification d\'attribution d\'examen: ' . $e->getMessage());
+            }
         }
 
         return redirect()->back()->with('success', 'Examen mis à jour.');
@@ -319,6 +390,7 @@ class AdminExamController extends Controller
         $newExam->scheduled_at = null;
         $newExam->is_approved = false;
         $newExam->are_grades_published = false;
+        $newExam->is_exclusive_directeur = $exam->is_exclusive_directeur;
 
         if ($request->user()->hasRole('Directeur') && $request->filled('user_id')) {
             $newExam->user_id = $request->input('user_id');
@@ -332,6 +404,10 @@ class AdminExamController extends Controller
         }
 
         $newExam->save();
+
+        if ($request->user()->hasRole('Directeur')) {
+            $newExam->particularStudents()->sync($exam->particularStudents->pluck('id'));
+        }
 
         if ($request->user()->hasRole('Directeur') && (int)$newExam->user_id !== (int)$request->user()->id && $newExam->user) {
             try {
@@ -389,6 +465,14 @@ class AdminExamController extends Controller
 
         $directors = User::role('Directeur')->get();
         $isDirector = $request->user()->hasRole('Directeur');
+
+        if (!$isDirector) {
+            $studentIds = collect($validated['grades'])->pluck('user_id');
+            $hasParticularStudent = User::whereIn('id', $studentIds)->where('is_particulier', true)->exists();
+            if ($hasParticularStudent) {
+                abort(403, 'Seul le Directeur est autorisé à saisir les notes des apprenants particuliers.');
+            }
+        }
 
         foreach ($validated['grades'] as $gradeData) {
             if (!isset($gradeData['score']) || $gradeData['score'] === null) {
@@ -452,6 +536,10 @@ class AdminExamController extends Controller
             abort(403, 'Vous ne pouvez pas consulter la gestion des résultats de cet examen.');
         }
 
+        if ($exam->is_exclusive_directeur && !$request->user()->hasRole('Directeur')) {
+            abort(403, 'Cet examen est sous la supervision exclusive du Directeur.');
+        }
+
         $user = $request->user();
 
         // Get students enrolled in the groups assigned to this exam
@@ -466,9 +554,15 @@ class AdminExamController extends Controller
             $studentsQuery->whereHas('studentGroups', function ($query) use ($groupIds) {
                 $query->whereIn('groups.id', $groupIds);
             });
+            $studentsQuery->where('is_particulier', false);
         }
 
         $students = $studentsQuery->get();
+
+        if ($user->hasRole('Directeur')) {
+            $particularStudents = $exam->particularStudents()->get();
+            $students = $students->merge($particularStudents)->unique('id');
+        }
 
         $examController = new \App\Http\Controllers\ExamController();
         $examDate = $exam->scheduled_at ? $exam->scheduled_at->toDateString() : null;
@@ -538,6 +632,7 @@ class AdminExamController extends Controller
             return [
                 'user_id' => $student->id,
                 'name'    => $student->name,
+                'is_particulier' => (bool) $student->is_particulier,
                 'score'   => $score,
                 'bonus'   => $res ? $res->bonus : 0.00,
                 'status'  => $res ? $res->status : null,
@@ -564,6 +659,10 @@ class AdminExamController extends Controller
 
         if (!$this->canModifyExam($request->user(), $exam)) {
             abort(403, 'Vous ne pouvez pas noter cet examen.');
+        }
+
+        if ($user->is_particulier && !$request->user()->hasRole('Directeur')) {
+            abort(403, 'Seul le Directeur est autorisé à évaluer un apprenant particulier.');
         }
 
         $validated = $request->validate([

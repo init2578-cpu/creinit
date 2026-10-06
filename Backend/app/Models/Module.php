@@ -93,4 +93,14 @@ class Module extends Model
     {
         return $this->hasMany(Certificate::class);
     }
+
+    /**
+     * Particular individual learners directly enrolled in this module.
+     */
+    public function particularStudents(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'user_particular_modules')
+            ->withPivot(['assigned_at', 'notes'])
+            ->withTimestamps();
+    }
 }

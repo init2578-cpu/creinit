@@ -31,8 +31,9 @@ class GroupStudentController extends Controller
                 'applications.diploma_path'
             ]);
 
-        // Available users: admitted for the same module but not in THIS group
+        // Available users: admitted for the same module but not in THIS group (and not particular students)
         $availableStudents = User::role(['Apprenant', 'Stagiaire'])
+            ->where('users.is_particulier', false)
             ->join('applications', function ($join) use ($group) {
                 $join->on('users.id', '=', 'applications.user_id')
                      ->where('applications.module_id', '=', $group->module_id)

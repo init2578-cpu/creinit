@@ -8,6 +8,7 @@ use App\Models\Exam;
 use App\Models\ExamResult;
 use App\Models\Option;
 use App\Models\Group;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -30,8 +31,17 @@ class ExamController extends Controller
         // Get the student's group IDs
         $groupIds = $user->studentGroups()->pluck('groups.id');
 
-        $exams = Exam::whereHas('groups', function ($query) use ($groupIds) {
-                $query->whereIn('groups.id', $groupIds);
+        $exams = Exam::where(function ($query) use ($groupIds, $user) {
+                if ($groupIds->isNotEmpty()) {
+                    $query->whereHas('groups', function ($q) use ($groupIds) {
+                        $q->whereIn('groups.id', $groupIds);
+                    });
+                } else {
+                    $query->whereRaw('0 = 1');
+                }
+                $query->orWhereHas('particularStudents', function ($q) use ($user) {
+                    $q->where('users.id', $user->id);
+                });
             })
             ->where('is_approved', true)
             ->with(['module', 'questions.options', 'rattrapages.users'])
@@ -132,9 +142,22 @@ class ExamController extends Controller
         return $totalPoints > 0 ? round(($score / $totalPoints) * 20, 2) : 0.0;
     }
 
+    /**
+     * Check if a student is authorized to access an exam (via assigned group or direct particular assignment).
+     */
+    public function canStudentAccessExam(User $user, Exam $exam): bool
+    {
+        $inGroup = $exam->groups()->whereHas('students', fn($q) => $q->where('users.id', $user->id))->exists();
+        if ($inGroup) {
+            return true;
+        }
+
+        return $exam->particularStudents()->where('users.id', $user->id)->exists();
+    }
+
     public function show(Request $request, Exam $exam): Response|RedirectResponse
     {
-        if (!$exam->is_approved) {
+        if (!$exam->is_approved || !$this->canStudentAccessExam($request->user(), $exam)) {
             return redirect()->route('student.exams.index')->with('error', "Cet examen n'est pas accessible actuellement.");
         }
 
@@ -185,6 +208,10 @@ class ExamController extends Controller
 
     public function start(Request $request, Exam $exam): \Illuminate\Http\JsonResponse
     {
+        if (!$this->canStudentAccessExam($request->user(), $exam)) {
+            return response()->json(['error' => "Cet examen n'est pas accessible actuellement."], 403);
+        }
+
         if (!$exam->is_practice) {
             $existing = ExamResult::where('exam_id', $exam->id)
                 ->where('user_id', $request->user()->id)
@@ -234,7 +261,7 @@ class ExamController extends Controller
      */
     public function saveAnswers(Request $request, Exam $exam): \Illuminate\Http\JsonResponse
     {
-        if (!$exam->is_approved) {
+        if (!$exam->is_approved || !$this->canStudentAccessExam($request->user(), $exam)) {
             return response()->json(['error' => "Cet examen n'est pas accessible actuellement."], 403);
         }
 
@@ -281,7 +308,7 @@ class ExamController extends Controller
      */
     public function submit(Request $request, Exam $exam): Response|RedirectResponse
     {
-        if (!$exam->is_approved) {
+        if (!$exam->is_approved || !$this->canStudentAccessExam($request->user(), $exam)) {
             return redirect()->route('student.exams.index')->with('error', "Cet examen n'est pas accessible actuellement.");
         }
 
@@ -418,7 +445,7 @@ class ExamController extends Controller
         $activeRattrapage = $exam->getActiveRattrapageForUser($request->user());
         $canAccess = $exam->can_start || ($activeRattrapage !== null);
 
-        if (!$exam->is_approved || (!$canAccess && !$exam->is_practice)) {
+        if (!$exam->is_approved || !$this->canStudentAccessExam($request->user(), $exam) || (!$canAccess && !$exam->is_practice)) {
             return redirect()->back()->with('error', "Cet examen n'est pas accessible actuellement.");
         }
 
@@ -440,7 +467,7 @@ class ExamController extends Controller
      */
     public function result(Request $request, Exam $exam): Response|RedirectResponse
     {
-        if (!$exam->are_grades_published) {
+        if (!$exam->are_grades_published || !$this->canStudentAccessExam($request->user(), $exam)) {
             return redirect()->route('student.dashboard')->with('error', "La correction de cet examen n'est pas encore disponible.");
         }
 

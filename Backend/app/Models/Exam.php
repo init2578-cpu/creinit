@@ -28,6 +28,7 @@ class Exam extends Model
         'is_practice',
         'is_approved',
         'are_grades_published',
+        'is_exclusive_directeur',
     ];
 
     protected $appends = ['is_online', 'has_ended', 'can_start', 'end_at'];
@@ -82,6 +83,7 @@ class Exam extends Model
             'is_approved' => 'boolean',
             'is_practice' => 'boolean',
             'are_grades_published' => 'boolean',
+            'is_exclusive_directeur' => 'boolean',
             'duree_minutes' => 'integer',
             'total_points' => 'decimal:2',
             'scheduled_at' => 'datetime',
@@ -111,6 +113,11 @@ class Exam extends Model
     public function groups(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
     {
         return $this->belongsToMany(Group::class, 'exam_group');
+    }
+
+    public function particularStudents(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'exam_particular_users')->withTimestamps();
     }
 
     public function rattrapages(): HasMany

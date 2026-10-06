@@ -22,11 +22,20 @@ import {
     CheckCircleIcon,
     UserIcon,
     LockClosedIcon,
-    CalendarIcon
+    CalendarIcon,
+    ShieldCheckIcon
 } from '@heroicons/vue/24/outline'
 
 const props = defineProps({
-    students: Array
+    students: Array,
+    modules: {
+        type: Array,
+        default: () => []
+    },
+    is_directeur: {
+        type: Boolean,
+        default: false
+    }
 })
 
 // Modals state
@@ -35,6 +44,7 @@ const isFormModalOpen = ref(false)
 const selectedStudent = ref(null)
 const editingStudent = ref(null)
 const activeTab = ref('id') // 'id', 'contact', 'profile'
+const studentFilterType = ref('all') // 'all', 'cohort', 'particular'
 
 // Form state
 const maxBirthDate = `${new Date().getFullYear() - 6}-12-31`
@@ -46,6 +56,8 @@ const studentForm = useForm({
     telephone: '',
     adresse: '',
     is_active: true,
+    is_particulier: false,
+    particular_module_ids: [],
     // Profile fields
     date_naissance: '',
     lieu_naissance: '',
@@ -58,9 +70,17 @@ const studentForm = useForm({
 const searchQuery = ref('')
 const filteredStudents = computed(() => {
     if (!props.students) return []
-    if (!searchQuery.value) return props.students
+    let list = props.students
+
+    if (studentFilterType.value === 'cohort') {
+        list = list.filter(s => !s.is_particulier)
+    } else if (studentFilterType.value === 'particular') {
+        list = list.filter(s => s.is_particulier)
+    }
+
+    if (!searchQuery.value) return list
     const query = searchQuery.value.toLowerCase()
-    return props.students.filter(s => {
+    return list.filter(s => {
         const name = String(s.name || '').toLowerCase()
         const email = String(s.email || '').toLowerCase()
         const telephone = String(s.telephone || '').toLowerCase()
@@ -71,6 +91,7 @@ const filteredStudents = computed(() => {
 // Statistics
 const totalStudentsCount = computed(() => props.students?.length ?? 0)
 const activeStudentsCount = computed(() => props.students?.filter(s => s.is_active).length ?? 0)
+const particularStudentsCount = computed(() => props.students?.filter(s => s.is_particulier).length ?? 0)
 const newStudentsCount = computed(() => {
     if (!props.students) return 0
     const now = new Date()
@@ -97,6 +118,8 @@ function closeViewModal() {
 function openCreateModal() {
     editingStudent.value = null
     studentForm.reset()
+    studentForm.is_particulier = false
+    studentForm.particular_module_ids = []
     activeTab.value = 'id'
     isFormModalOpen.value = true
 }
@@ -109,6 +132,8 @@ function openEditModal(student) {
     studentForm.telephone = student.telephone || ''
     studentForm.adresse = student.adresse || ''
     studentForm.is_active = !!student.is_active
+    studentForm.is_particulier = !!student.is_particulier
+    studentForm.particular_module_ids = (student.particular_modules || []).map(m => m.id)
     
     if (student.profile) {
         studentForm.date_naissance = student.profile.date_naissance || ''
@@ -185,7 +210,7 @@ function deleteLearner(id) {
             </header>
 
             <!-- Stats Cards Grid -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8" :class="is_directeur ? 'lg:grid-cols-4' : ''">
                 <!-- Total Students -->
                 <div class="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm flex items-center justify-between transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:border-blue-100 group">
                     <div class="space-y-2">
@@ -223,6 +248,48 @@ function deleteLearner(id) {
                         <UserGroupIcon class="h-7 w-7" />
                     </div>
                 </div>
+
+                <!-- Particular Students (Director only) -->
+                <div v-if="is_directeur" class="bg-gradient-to-br from-amber-500/10 via-amber-50 to-white p-6 rounded-[2rem] border border-amber-200/80 shadow-sm flex items-center justify-between transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:border-amber-300 group">
+                    <div class="space-y-2">
+                        <p class="text-[10px] font-black text-amber-700 uppercase tracking-widest flex items-center gap-1">
+                            <ShieldCheckIcon class="h-3.5 w-3.5" />
+                            Particuliers (Direction)
+                        </p>
+                        <p class="text-3xl font-black text-amber-900 group-hover:text-amber-600 transition-colors">{{ particularStudentsCount }}</p>
+                        <p class="text-xs text-amber-700/80 font-bold">Sans groupe / Exclusifs</p>
+                    </div>
+                    <div class="h-14 w-14 rounded-2xl bg-amber-500 text-white flex items-center justify-center shadow-md shadow-amber-200 group-hover:scale-105 transition-all duration-300">
+                        <ShieldCheckIcon class="h-7 w-7" />
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filters Bar (Cohorte / Particulier) -->
+            <div v-if="is_directeur" class="flex items-center gap-2 mb-4 bg-gray-100/80 p-1.5 rounded-2xl w-fit">
+                <button 
+                    @click="studentFilterType = 'all'" 
+                    class="px-4 py-2 rounded-xl text-xs font-black transition-all"
+                    :class="studentFilterType === 'all' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900'"
+                >
+                    Tous ({{ totalStudentsCount }})
+                </button>
+                <button 
+                    @click="studentFilterType = 'cohort'" 
+                    class="px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1.5"
+                    :class="studentFilterType === 'cohort' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900'"
+                >
+                    <UserGroupIcon class="h-4 w-4 text-green-600" />
+                    En cohortes standard ({{ totalStudentsCount - particularStudentsCount }})
+                </button>
+                <button 
+                    @click="studentFilterType = 'particular'" 
+                    class="px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1.5"
+                    :class="studentFilterType === 'particular' ? 'bg-amber-500 text-white shadow-sm' : 'text-amber-700 hover:text-amber-900'"
+                >
+                    <ShieldCheckIcon class="h-4 w-4" />
+                    Particuliers Direction ({{ particularStudentsCount }})
+                </button>
             </div>
 
             <!-- Table Section -->
@@ -246,7 +313,13 @@ function deleteLearner(id) {
                                         <template v-else>{{ student.name.charAt(0) }}</template>
                                     </div>
                                     <div>
-                                        <p class="font-black text-gray-900">{{ student.name }}</p>
+                                        <div class="flex items-center gap-2">
+                                            <p class="font-black text-gray-900">{{ student.name }}</p>
+                                            <span v-if="student.is_particulier" class="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-50 text-amber-700 border border-amber-200 rounded-md text-[9px] font-black uppercase tracking-wider">
+                                                <ShieldCheckIcon class="h-3 w-3 text-amber-600" />
+                                                Particulier
+                                            </span>
+                                        </div>
                                         <div class="flex items-center gap-1.5 text-xs text-gray-400 font-medium">
                                             <EnvelopeIcon class="h-3.5 w-3.5" />
                                             {{ student.email }}
@@ -255,7 +328,8 @@ function deleteLearner(id) {
                                 </div>
                             </td>
                             <td class="px-8 py-5">
-                                <div class="flex flex-wrap gap-2">
+                                <!-- Standard group members -->
+                                <div v-if="!student.is_particulier" class="flex flex-wrap gap-2">
                                     <div v-for="group in student.groups" :key="group.id" class="flex flex-col">
                                         <span class="px-2.5 py-0.5 bg-green-50 text-green-700 rounded-lg text-[10px] font-black uppercase tracking-wider flex items-center gap-1">
                                             <UserGroupIcon class="h-3 w-3" />
@@ -265,6 +339,23 @@ function deleteLearner(id) {
                                     </div>
                                     <span v-if="student.groups.length === 0" class="text-[10px] text-gray-300 font-bold italic">
                                         Libre (Aucun groupe)
+                                    </span>
+                                </div>
+
+                                <!-- Particular student modules -->
+                                <div v-else class="flex flex-col gap-1.5">
+                                    <div class="flex items-center gap-1 text-[10px] font-black text-amber-800 uppercase tracking-wider">
+                                        <ShieldCheckIcon class="h-3.5 w-3.5 text-amber-600" />
+                                        Supervision Directe Direction
+                                    </div>
+                                    <div v-if="student.particular_modules && student.particular_modules.length" class="flex flex-wrap gap-1.5">
+                                        <span v-for="mod in student.particular_modules" :key="mod.id" class="px-2 py-0.5 bg-amber-50 text-amber-800 border border-amber-200/60 rounded-lg text-[10px] font-black flex items-center gap-1">
+                                            <AcademicCapIcon class="h-3 w-3 text-amber-600" />
+                                            {{ mod.nom_module }}
+                                        </span>
+                                    </div>
+                                    <span v-else class="text-[10px] text-amber-600/70 font-bold italic">
+                                        Sans modules assignés
                                     </span>
                                 </div>
                             </td>
@@ -411,6 +502,52 @@ function deleteLearner(id) {
                                 <input type="checkbox" v-model="studentForm.is_active" id="is_active" class="h-5 w-5 text-blue-600 rounded-lg border-gray-200 focus:ring-blue-600">
                                 <label for="is_active" class="text-sm font-bold text-gray-700">Compte actif</label>
                             </div>
+
+                            <!-- Apprenant Particulier (Supervision exclusive du Directeur) -->
+                            <div v-if="is_directeur" class="p-5 bg-amber-50/70 border-2 border-amber-200/80 rounded-2xl space-y-3 mt-4">
+                                <div class="flex items-start gap-3">
+                                    <input 
+                                        type="checkbox" 
+                                        v-model="studentForm.is_particulier" 
+                                        id="is_particulier" 
+                                        class="mt-1 h-5 w-5 text-amber-600 rounded-lg border-amber-300 focus:ring-amber-500"
+                                    >
+                                    <div>
+                                        <label for="is_particulier" class="text-sm font-black text-amber-900 cursor-pointer flex items-center gap-1.5">
+                                            <ShieldCheckIcon class="h-4.5 w-4.5 text-amber-600" />
+                                            Apprenant Particulier (Supervision exclusive de la Direction)
+                                        </label>
+                                        <p class="text-xs text-amber-800/80 font-medium mt-0.5">
+                                            Cet élève ne sera rattaché à aucun groupe standard. Seul le Directeur pourra consulter son profil, lui affecter des modules et des examens, saisir ses notes et éditer ses attestations.
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <!-- Modules assignés si particulier -->
+                                <div v-if="studentForm.is_particulier" class="pt-3 border-t border-amber-200/60 space-y-2">
+                                    <label class="text-[10px] font-black text-amber-800 uppercase tracking-widest block">
+                                        Modules de formation suivis :
+                                    </label>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1">
+                                        <label 
+                                            v-for="mod in modules" 
+                                            :key="mod.id" 
+                                            class="flex items-center gap-2.5 p-2.5 bg-white rounded-xl border border-amber-100 hover:border-amber-300 cursor-pointer text-xs font-bold text-gray-800 transition-colors shadow-sm"
+                                        >
+                                            <input 
+                                                type="checkbox" 
+                                                :value="mod.id" 
+                                                v-model="studentForm.particular_module_ids" 
+                                                class="h-4 w-4 text-amber-600 rounded border-gray-300 focus:ring-amber-500"
+                                            >
+                                            <span class="truncate">{{ mod.nom_module }}</span>
+                                        </label>
+                                    </div>
+                                    <p v-if="!modules || modules.length === 0" class="text-xs text-gray-400 italic">
+                                        Aucun module disponible actuellement.
+                                    </p>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Tab: Contact -->
@@ -528,6 +665,11 @@ function deleteLearner(id) {
                             </span>
                             {{ selectedStudent.is_active ? 'Compte Actif' : 'Compte Inactif' }}
                         </span>
+
+                        <span v-if="selectedStudent.is_particulier" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-50 text-amber-800 border border-amber-200">
+                            <ShieldCheckIcon class="h-3.5 w-3.5 text-amber-600" />
+                            Particulier (Direction)
+                        </span>
                     </div>
 
                     <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest mt-2">Membre depuis le {{ selectedStudent.created_at }}</p>
@@ -620,9 +762,12 @@ function deleteLearner(id) {
 
                     <!-- Groups Card Section -->
                     <div class="bg-gray-50/60 rounded-[2rem] p-6 border border-gray-100 space-y-3">
-                        <h3 class="text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100 pb-2">Groupes & Formations Affectés</h3>
+                        <h3 class="text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100 pb-2">
+                            {{ selectedStudent.is_particulier ? 'Modules de Formation (Suivi Direction)' : 'Groupes & Formations Affectés' }}
+                        </h3>
                         
-                        <div class="flex flex-wrap gap-2 pt-1">
+                        <!-- Standard Groups -->
+                        <div v-if="!selectedStudent.is_particulier" class="flex flex-wrap gap-2 pt-1">
                             <span v-for="group in selectedStudent.groups" :key="group.id" 
                                 class="inline-flex flex-col px-3 py-2 bg-white border border-green-100 text-green-700 rounded-xl text-[10px] font-extrabold shadow-sm transition-all hover:border-green-300"
                             >
@@ -635,6 +780,21 @@ function deleteLearner(id) {
                             
                             <div v-if="selectedStudent.groups.length === 0" class="flex flex-col items-center justify-center w-full py-4 text-center">
                                 <span class="text-xs text-gray-400 italic">Cet apprenant n'est affecté à aucun groupe.</span>
+                            </div>
+                        </div>
+
+                        <!-- Particular Modules -->
+                        <div v-else class="flex flex-col gap-2 pt-1">
+                            <div v-if="selectedStudent.particular_modules && selectedStudent.particular_modules.length" class="flex flex-wrap gap-2">
+                                <span v-for="mod in selectedStudent.particular_modules" :key="mod.id" 
+                                    class="inline-flex items-center gap-1.5 px-3 py-2 bg-white border border-amber-200 text-amber-900 rounded-xl text-xs font-black shadow-sm"
+                                >
+                                    <AcademicCapIcon class="h-4 w-4 text-amber-600" />
+                                    {{ mod.nom_module }}
+                                </span>
+                            </div>
+                            <div v-else class="flex flex-col items-center justify-center w-full py-4 text-center">
+                                <span class="text-xs text-amber-700/80 italic">Aucun module individuel n'est actuellement assigné à cet apprenant.</span>
                             </div>
                         </div>
                     </div>

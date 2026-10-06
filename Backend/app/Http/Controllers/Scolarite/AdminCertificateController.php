@@ -123,22 +123,29 @@ class AdminCertificateController extends Controller
             });
 
         // 2. Global student listing with module progress & closed group flags
-        $students = User::role('Apprenant')
-            ->with(['certificates', 'studentGroups.module'])
-            ->get()
+        $isDirecteur = auth()->user()?->hasRole('Directeur');
+        $studentsQuery = User::role('Apprenant')
+            ->with(['certificates', 'studentGroups.module', 'particularModules']);
+
+        if (!$isDirecteur) {
+            $studentsQuery->where('is_particulier', false);
+        }
+
+        $students = $studentsQuery->get()
             ->map(function ($student) use ($modules) {
                 $student->progress = $modules->map(function ($module) use ($student) {
                     $group = $student->studentGroups->where('module_id', $module->id)->first();
+                    $isParticularModule = $student->is_particulier && $student->particularModules->contains('id', $module->id);
 
-                    if (!$group) {
+                    if (!$group && !$isParticularModule) {
                         return null;
                     }
 
                     $totalChapters = $module->chapters->count();
-                    $approvedAtGroupLevel = \App\Models\ChapterGroupProgress::where('group_id', $group->id)
+                    $approvedAtGroupLevel = $group ? \App\Models\ChapterGroupProgress::where('group_id', $group->id)
                         ->where('status', 'approved')
                         ->whereIn('chapter_id', $module->chapters->pluck('id'))
-                        ->pluck('chapter_id')->toArray();
+                        ->pluck('chapter_id')->toArray() : [];
 
                     $completedCount = $module->chapters->filter(function ($chapter) use ($student, $approvedAtGroupLevel) {
                         if (in_array($chapter->id, $approvedAtGroupLevel, true)) {
@@ -161,8 +168,8 @@ class AdminCertificateController extends Controller
                     $score = $this->calculateLearnerGrade($student, $module, $group);
                     $suggestedType = $this->determineCertificateType($score);
 
-                    $firstAttendance = Attendance::where('group_id', $group->id)->min('date');
-                    $lastAttendance  = Attendance::where('group_id', $group->id)->max('date');
+                    $firstAttendance = $group ? Attendance::where('group_id', $group->id)->min('date') : null;
+                    $lastAttendance  = $group ? Attendance::where('group_id', $group->id)->max('date') : null;
 
                     $defaultStartDate = $firstAttendance ?? $module->start_date?->format('Y-m-d');
                     $defaultEndDate   = $lastAttendance ?? $module->end_date?->format('Y-m-d');
@@ -173,17 +180,18 @@ class AdminCertificateController extends Controller
                     return [
                         'module_id' => $module->id,
                         'module_title' => $module->titre,
-                        'group_id' => $group->id,
-                        'group_name' => $group->nom_groupe,
-                        'group_status' => $group->status,
-                        'is_group_closed' => $group->status === 'closed',
+                        'group_id' => $group?->id,
+                        'group_name' => $group?->nom_groupe ?? 'Suivi Particulier',
+                        'group_status' => $group?->status ?? 'particulier',
+                        'is_group_closed' => $group ? $group->status === 'closed' : true,
+                        'is_particulier' => (bool) $student->is_particulier,
                         'score' => $score,
                         'suggested_type' => $suggestedType,
                         'start_date' => $startDate,
                         'end_date' => $endDate,
                         'start_date_fr' => $startDate ? Carbon::parse($startDate)->format('d/m/Y') : null,
                         'end_date_fr' => $endDate ? Carbon::parse($endDate)->format('d/m/Y') : null,
-                        'completed' => ($totalChapters > 0 && $completedCount === $totalChapters) || $group->status === 'closed',
+                        'completed' => ($totalChapters > 0 && $completedCount === $totalChapters) || ($group && $group->status === 'closed') || ($student->is_particulier && $score !== null),
                         'total_chapters' => $totalChapters,
                         'completed_count' => $completedCount,
                         'progress_pct' => $totalChapters > 0 ? (int) round(($completedCount / $totalChapters) * 100) : 0,
@@ -229,6 +237,10 @@ class AdminCertificateController extends Controller
      */
     public function generate(Request $request, User $student, Module $module): RedirectResponse
     {
+        if ($student->is_particulier && !auth()->user()?->hasRole('Directeur')) {
+            abort(403, 'Seul le Directeur est autorisé à émettre une attestation pour un apprenant particulier.');
+        }
+
         $group = null;
         if ($request->filled('group_id')) {
             $group = Group::find($request->input('group_id'));
@@ -379,6 +391,10 @@ class AdminCertificateController extends Controller
                 $q->whereDoesntHave('groups')
                   ->orWhereHas('groups', fn($g) => $g->where('groups.id', $group->id));
             });
+        } elseif ($student->is_particulier) {
+            $examsQuery->where(function ($q) use ($student) {
+                $q->whereHas('particularStudents', fn($ps) => $ps->where('users.id', $student->id));
+            });
         }
 
         $examIds = $examsQuery->pluck('id');
@@ -461,7 +477,7 @@ class AdminCertificateController extends Controller
             $civilite = 'Mme';
         }
 
-        $anneeAcademique = $group->annee_academique ?? date('Y');
+        $anneeAcademique = $group?->annee_academique ?? date('Y');
 
         $firstAttendance = $group ? Attendance::where('group_id', $group->id)->min('date') : null;
         $lastAttendance = $group ? Attendance::where('group_id', $group->id)->max('date') : null;
