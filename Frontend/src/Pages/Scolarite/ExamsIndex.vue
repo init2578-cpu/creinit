@@ -23,7 +23,9 @@ import {
     PencilSquareIcon,
     DocumentDuplicateIcon,
     UserIcon,
-    ExclamationTriangleIcon
+    ExclamationTriangleIcon,
+    UserGroupIcon,
+    ShieldCheckIcon
 } from '@heroicons/vue/24/outline';
 import { ref, computed, watch } from 'vue';
 import axios from 'axios';
@@ -638,6 +640,176 @@ function approveExam(examId) {
     }
 }
 
+// Rattrapage management
+const isRattrapageModalOpen = ref(false);
+const selectedExamForRattrapage = ref(null);
+const existingRattrapages = ref([]);
+const eligibleRattrapageStudents = ref([]);
+const loadingRattrapage = ref(false);
+const submittingRattrapage = ref(false);
+const rattrapageTab = ref('plan');
+const rattrapageDate = ref('');
+const rattrapageHour = ref('09');
+const rattrapageMin = ref('00');
+const rattrapageForm = ref({
+    titre: '',
+    duree_minutes: 60,
+    instructions: '',
+    student_ids: []
+});
+
+const openRattrapageModal = async (exam) => {
+    selectedExamForRattrapage.value = exam;
+    isRattrapageModalOpen.value = true;
+    loadingRattrapage.value = true;
+    rattrapageTab.value = 'plan';
+
+    const today = new Date();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    rattrapageDate.value = formatLocalDate(tomorrow);
+    rattrapageHour.value = '09';
+    rattrapageMin.value = '00';
+
+    rattrapageForm.value = {
+        titre: `Session de rattrapage - ${exam.titre}`,
+        duree_minutes: exam.duree_minutes || 60,
+        instructions: 'Session réservée aux apprenants ayant une absence justifiée.',
+        student_ids: []
+    };
+
+    try {
+        const [rattrapagesRes, eligibleRes] = await Promise.all([
+            axios.get(route('exams.rattrapages.index', exam.id)),
+            axios.get(route('exams.rattrapages.eligible-students', exam.id))
+        ]);
+        existingRattrapages.value = rattrapagesRes.data || [];
+        eligibleRattrapageStudents.value = eligibleRes.data || [];
+
+        const recommendedIds = eligibleRattrapageStudents.value
+            .filter(s => s.is_recommended)
+            .map(s => s.id);
+        rattrapageForm.value.student_ids = recommendedIds;
+
+        if (existingRattrapages.value.length > 0 && recommendedIds.length === 0) {
+            rattrapageTab.value = 'list';
+        }
+    } catch (error) {
+        console.error(error);
+        window.platformAlert("Erreur lors du chargement des sessions de rattrapage.", 'error');
+    } finally {
+        loadingRattrapage.value = false;
+    }
+};
+
+const toggleSelectAllEligible = () => {
+    const recommended = eligibleRattrapageStudents.value.filter(s => s.is_recommended || s.has_justified_absence);
+    const allSelected = recommended.length > 0 && recommended.every(s => rattrapageForm.value.student_ids.includes(s.id));
+    if (allSelected) {
+        const recIds = new Set(recommended.map(s => s.id));
+        rattrapageForm.value.student_ids = rattrapageForm.value.student_ids.filter(id => !recIds.has(id));
+    } else {
+        const newSet = new Set([...rattrapageForm.value.student_ids, ...recommended.map(s => s.id)]);
+        rattrapageForm.value.student_ids = Array.from(newSet);
+    }
+};
+
+const toggleStudentSelection = (id) => {
+    const index = rattrapageForm.value.student_ids.indexOf(id);
+    if (index > -1) {
+        rattrapageForm.value.student_ids.splice(index, 1);
+    } else {
+        rattrapageForm.value.student_ids.push(id);
+    }
+};
+
+const submitRattrapage = async () => {
+    if (!rattrapageDate.value) {
+        window.platformAlert("Veuillez sélectionner une date pour la session de rattrapage.", 'error');
+        return;
+    }
+    if (!rattrapageForm.value.student_ids || rattrapageForm.value.student_ids.length === 0) {
+        window.platformAlert("Veuillez sélectionner au moins un apprenant éligible.", 'error');
+        return;
+    }
+    if (!rattrapageForm.value.duree_minutes || rattrapageForm.value.duree_minutes < 1) {
+        window.platformAlert("Veuillez indiquer une durée valide.", 'error');
+        return;
+    }
+
+    submittingRattrapage.value = true;
+    const scheduledAt = `${rattrapageDate.value}T${rattrapageHour.value}:${rattrapageMin.value}`;
+
+    try {
+        const payload = {
+            scheduled_at: scheduledAt,
+            duree_minutes: parseInt(rattrapageForm.value.duree_minutes),
+            titre: rattrapageForm.value.titre,
+            instructions: rattrapageForm.value.instructions,
+            student_ids: rattrapageForm.value.student_ids
+        };
+
+        await axios.post(route('exams.rattrapages.store', selectedExamForRattrapage.value.id), payload);
+
+        if (selectedExamForRattrapage.value) {
+            selectedExamForRattrapage.value.rattrapages_count = (selectedExamForRattrapage.value.rattrapages_count || 0) + 1;
+            const targetExam = props.exams.find(e => e.id === selectedExamForRattrapage.value.id);
+            if (targetExam) {
+                targetExam.rattrapages_count = (targetExam.rattrapages_count || 0) + 1;
+            }
+        }
+
+        window.platformAlert("Session de rattrapage planifiée avec succès !", 'success');
+
+        const [rattrapagesRes, eligibleRes] = await Promise.all([
+            axios.get(route('exams.rattrapages.index', selectedExamForRattrapage.value.id)),
+            axios.get(route('exams.rattrapages.eligible-students', selectedExamForRattrapage.value.id))
+        ]);
+        existingRattrapages.value = rattrapagesRes.data || [];
+        eligibleRattrapageStudents.value = eligibleRes.data || [];
+        rattrapageForm.value.student_ids = [];
+        rattrapageTab.value = 'list';
+    } catch (error) {
+        console.error(error);
+        const msg = error.response?.data?.message || "Erreur lors de la planification du rattrapage.";
+        window.platformAlert(msg, 'error');
+    } finally {
+        submittingRattrapage.value = false;
+    }
+};
+
+const deleteRattrapage = async (rattrapage) => {
+    if (!confirm(`Voulez-vous vraiment annuler la session "${rattrapage.titre}" ?`)) {
+        return;
+    }
+
+    try {
+        await axios.delete(route('exams.rattrapages.destroy', {
+            exam: selectedExamForRattrapage.value.id,
+            rattrapage: rattrapage.id
+        }));
+
+        if (selectedExamForRattrapage.value) {
+            selectedExamForRattrapage.value.rattrapages_count = Math.max(0, (selectedExamForRattrapage.value.rattrapages_count || 1) - 1);
+            const targetExam = props.exams.find(e => e.id === selectedExamForRattrapage.value.id);
+            if (targetExam) {
+                targetExam.rattrapages_count = Math.max(0, (targetExam.rattrapages_count || 1) - 1);
+            }
+        }
+
+        window.platformAlert("Session de rattrapage supprimée.", 'success');
+        const [rattrapagesRes, eligibleRes] = await Promise.all([
+            axios.get(route('exams.rattrapages.index', selectedExamForRattrapage.value.id)),
+            axios.get(route('exams.rattrapages.eligible-students', selectedExamForRattrapage.value.id))
+        ]);
+        existingRattrapages.value = rattrapagesRes.data || [];
+        eligibleRattrapageStudents.value = eligibleRes.data || [];
+    } catch (error) {
+        console.error(error);
+        window.platformAlert("Erreur lors de la suppression de la session.", 'error');
+    }
+};
+
 </script>
 
 <template>
@@ -808,6 +980,17 @@ function approveExam(examId) {
                                             :title="canManageExam(exam) ? 'Consulter les notes / Saisie' : 'Consulter les résultats'"
                                         >
                                             <ClipboardDocumentCheckIcon class="h-5 w-5" />
+                                        </button>
+                                        <button 
+                                            v-if="exam.is_approved && !isSecretaire && (canManageExam(exam) || exam.can_view_questions)"
+                                            @click="openRattrapageModal(exam)" 
+                                            class="p-1.5 text-amber-600 hover:bg-amber-50 rounded-lg transition shrink-0 relative" 
+                                            :title="canManageExam(exam) ? 'Gérer les sessions de rattrapage' : 'Consulter les rattrapages'"
+                                        >
+                                            <ClockIcon class="h-5 w-5" />
+                                            <span v-if="exam.rattrapages_count > 0" class="absolute -top-1 -right-1 px-1.5 py-0.5 bg-amber-500 text-white text-[8px] font-black rounded-full shadow-sm leading-none">
+                                                {{ exam.rattrapages_count }}
+                                            </span>
                                         </button>
                                         <button 
                                             v-else-if="!isSecretaire && canManageExam(exam)"
@@ -1185,7 +1368,18 @@ function approveExam(examId) {
                                     </div>
                                     <div>
                                         <p class="font-black text-gray-800 text-sm tracking-tight">{{ student.name }}</p>
-                                        <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">Apprenant e-CRE</p>
+                                        <div class="flex flex-wrap items-center gap-1.5 mt-0.5">
+                                            <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Apprenant e-CRE</p>
+                                            <span v-if="student.is_rattrapage" class="px-1.5 py-0.5 bg-amber-100 text-amber-800 font-black text-[8px] rounded uppercase tracking-wider">
+                                                Rattrapage
+                                            </span>
+                                            <span v-else-if="student.rattrapage_scheduled_at && student.status !== 'completed'" class="px-1.5 py-0.5 bg-blue-100 text-blue-700 font-bold text-[8px] rounded tracking-wide">
+                                                Rattrapage prévu : {{ student.rattrapage_scheduled_at }}
+                                            </span>
+                                            <span v-if="student.has_justified_absence" class="px-1.5 py-0.5 bg-purple-100 text-purple-700 font-bold text-[8px] rounded tracking-wide" title="Absence justifiée enregistrée">
+                                                Absence justifiée
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
 
@@ -1752,6 +1946,325 @@ function approveExam(examId) {
                 >
                     Annuler
                 </button>
+            </div>
+        </div>
+
+        <!-- Rattrapage Management Modal -->
+        <div v-if="isRattrapageModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-md transition-all duration-300">
+            <div class="bg-white w-full max-w-4xl rounded-[2.5rem] overflow-hidden shadow-2xl border border-gray-100 flex flex-col max-h-[90vh]">
+                <!-- Header -->
+                <div class="p-6 sm:p-8 border-b border-gray-100 flex items-center justify-between bg-white">
+                    <div class="flex items-center gap-4">
+                        <div class="h-14 w-14 bg-gradient-to-tr from-amber-50 to-amber-100 text-amber-600 rounded-2xl flex items-center justify-center shadow-inner border border-amber-200/50">
+                            <ClockIcon class="h-8 w-8" />
+                        </div>
+                        <div>
+                            <h3 class="text-2xl font-black text-gray-900 tracking-tight italic">Sessions de Rattrapage</h3>
+                            <div class="flex flex-wrap items-center gap-2 mt-1">
+                                <p class="text-[10px] text-gray-400 font-black uppercase tracking-[0.2em] truncate max-w-[240px]">{{ selectedExamForRattrapage?.titre }}</p>
+                                <span class="h-1 w-1 rounded-full bg-gray-300"></span>
+                                <p class="text-[10px] text-amber-600 font-black uppercase tracking-[0.2em]">{{ selectedExamForRattrapage?.module?.titre }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <button @click="isRattrapageModalOpen = false" class="p-3 hover:bg-gray-100 rounded-2xl transition-all duration-300 transform hover:rotate-90">
+                        <XMarkIcon class="h-6 w-6 text-gray-400" />
+                    </button>
+                </div>
+
+                <!-- Tabs -->
+                <div class="flex border-b border-gray-100 px-6 sm:px-8 bg-gray-50/50 gap-2 pt-3">
+                    <button 
+                        type="button"
+                        @click="rattrapageTab = 'plan'"
+                        class="pb-3 px-4 font-black text-xs uppercase tracking-widest border-b-2 transition-all flex items-center gap-2"
+                        :class="rattrapageTab === 'plan' ? 'border-amber-500 text-amber-600' : 'border-transparent text-gray-400 hover:text-gray-600'"
+                    >
+                        <PlusIcon class="h-4 w-4" />
+                        Planifier une session
+                    </button>
+                    <button 
+                        type="button"
+                        @click="rattrapageTab = 'list'"
+                        class="pb-3 px-4 font-black text-xs uppercase tracking-widest border-b-2 transition-all flex items-center gap-2"
+                        :class="rattrapageTab === 'list' ? 'border-amber-500 text-amber-600' : 'border-transparent text-gray-400 hover:text-gray-600'"
+                    >
+                        <QueueListIcon class="h-4 w-4" />
+                        Sessions existantes
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-black" :class="rattrapageTab === 'list' ? 'bg-amber-100 text-amber-700' : 'bg-gray-200 text-gray-600'">
+                            {{ existingRattrapages.length }}
+                        </span>
+                    </button>
+                </div>
+
+                <!-- Body -->
+                <div class="flex-1 overflow-y-auto custom-scrollbar p-6 sm:p-8 bg-gray-50/20">
+                    <!-- Loading state -->
+                    <div v-if="loadingRattrapage" class="flex flex-col items-center justify-center py-20">
+                        <ArrowPathIcon class="h-10 w-10 text-amber-500 animate-spin mb-3" />
+                        <p class="text-sm font-bold text-gray-500">Chargement des données de rattrapage...</p>
+                    </div>
+
+                    <!-- TAB 1: PLANIFIER -->
+                    <div v-else-if="rattrapageTab === 'plan'" class="space-y-6">
+                        <!-- Guidance Alert -->
+                        <div class="p-4 bg-amber-50/80 border border-amber-200 rounded-2xl flex items-start gap-3">
+                            <ExclamationTriangleIcon class="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+                            <div class="text-xs text-amber-900 leading-relaxed">
+                                <span class="font-black">Règles de rattrapage :</span> Seuls les apprenants ayant une <strong>absence justifiée</strong> enregistrée le jour de l'épreuve (ou validée par l'encadrement) sont automatiquement pré-sélectionnés. Dès planification, ils recevront une notification et pourront composer à l'horaire fixé sans pénalité de zéro automatique.
+                            </div>
+                        </div>
+
+                        <!-- Date & Durée -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <!-- Date & Heure -->
+                            <div class="space-y-2">
+                                <label class="flex items-center gap-2 text-[10px] font-black text-gray-500 uppercase tracking-widest">
+                                    <CalendarIcon class="h-4 w-4 text-amber-500" />
+                                    Date et heure du rattrapage
+                                </label>
+                                <div class="flex gap-2">
+                                    <div class="relative flex-1">
+                                        <DateInput v-model="rattrapageDate" required class="w-full px-4 py-3 bg-white border-2 border-gray-100 focus:border-amber-500 rounded-2xl font-bold text-gray-700 text-xs shadow-sm outline-none transition" />
+                                    </div>
+                                    <div class="flex items-center bg-white border-2 border-gray-100 focus-within:border-amber-500 rounded-2xl px-2 shadow-sm transition">
+                                        <select v-model="rattrapageHour" class="bg-transparent border-0 font-black text-xs p-2 focus:ring-0 cursor-pointer text-gray-700">
+                                            <option v-for="h in hourOptions" :key="h" :value="h">{{ h }}h</option>
+                                        </select>
+                                        <span class="text-gray-300 font-black text-xs">:</span>
+                                        <select v-model="rattrapageMin" class="bg-transparent border-0 font-black text-xs p-2 focus:ring-0 cursor-pointer text-gray-700">
+                                            <option v-for="m in minuteOptions" :key="m" :value="m">{{ m }}</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Durée -->
+                            <div class="space-y-2">
+                                <label class="flex items-center gap-2 text-[10px] font-black text-gray-500 uppercase tracking-widest">
+                                    <ClockIcon class="h-4 w-4 text-amber-500" />
+                                    Durée accordée (minutes)
+                                </label>
+                                <input 
+                                    v-model="rattrapageForm.duree_minutes" 
+                                    type="number" 
+                                    min="5" 
+                                    max="480" 
+                                    required
+                                    class="w-full px-4 py-3 bg-white border-2 border-gray-100 focus:border-amber-500 rounded-2xl font-black text-gray-700 text-xs shadow-sm outline-none transition"
+                                />
+                            </div>
+                        </div>
+
+                        <!-- Titre & Consignes -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="space-y-2">
+                                <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest">
+                                    Intitulé de la session
+                                </label>
+                                <input 
+                                    v-model="rattrapageForm.titre" 
+                                    type="text" 
+                                    placeholder="Ex: Session de rattrapage - Évaluation n°1"
+                                    class="w-full px-4 py-3 bg-white border-2 border-gray-100 focus:border-amber-500 rounded-2xl font-bold text-gray-700 text-xs shadow-sm outline-none transition"
+                                />
+                            </div>
+                            <div class="space-y-2">
+                                <label class="text-[10px] font-black text-gray-500 uppercase tracking-widest">
+                                    Consignes spécifiques (optionnel)
+                                </label>
+                                <input 
+                                    v-model="rattrapageForm.instructions" 
+                                    type="text" 
+                                    placeholder="Ex: Munissez-vous de votre pièce d'identité."
+                                    class="w-full px-4 py-3 bg-white border-2 border-gray-100 focus:border-amber-500 rounded-2xl font-bold text-gray-700 text-xs shadow-sm outline-none transition"
+                                />
+                            </div>
+                        </div>
+
+                        <!-- Selection des apprenants -->
+                        <div class="space-y-3 pt-2">
+                            <div class="flex flex-wrap items-center justify-between gap-2 border-b border-gray-100 pb-2">
+                                <div>
+                                    <h4 class="text-sm font-black text-gray-900 tracking-tight flex items-center gap-2">
+                                        <UserGroupIcon class="h-4 w-4 text-amber-500" />
+                                        Apprenants à inscrire au rattrapage
+                                    </h4>
+                                    <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider mt-0.5">
+                                        {{ rattrapageForm.student_ids.length }} sélectionné(s) sur {{ eligibleRattrapageStudents.length }}
+                                    </p>
+                                </div>
+                                <button 
+                                    type="button" 
+                                    @click="toggleSelectAllEligible"
+                                    class="px-3 py-1.5 bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200 rounded-xl text-[10px] font-black uppercase tracking-wider transition"
+                                >
+                                    Sélectionner les absents justifiés
+                                </button>
+                            </div>
+
+                            <div v-if="eligibleRattrapageStudents.length === 0" class="py-12 text-center text-gray-400 font-bold italic bg-white rounded-2xl border border-dashed border-gray-200">
+                                Aucun apprenant inscrit dans les groupes de cet examen.
+                            </div>
+
+                            <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-[300px] overflow-y-auto custom-scrollbar p-1">
+                                <div 
+                                    v-for="student in eligibleRattrapageStudents" 
+                                    :key="student.id"
+                                    @click="toggleStudentSelection(student.id)"
+                                    class="p-3.5 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-3 shadow-sm select-none"
+                                    :class="rattrapageForm.student_ids.includes(student.id) ? 'bg-amber-50/70 border-amber-300 ring-2 ring-amber-400/20' : 'bg-white border-gray-100 hover:border-gray-200'"
+                                >
+                                    <div class="flex items-center gap-3 min-w-0">
+                                        <input 
+                                            type="checkbox"
+                                            :checked="rattrapageForm.student_ids.includes(student.id)"
+                                            @click.stop
+                                            @change="toggleStudentSelection(student.id)"
+                                            class="h-4 w-4 text-amber-600 focus:ring-amber-500 border-gray-300 rounded cursor-pointer"
+                                        />
+                                        <div class="h-9 w-9 rounded-xl flex items-center justify-center font-black text-xs shrink-0"
+                                            :class="student.has_justified_absence ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-600'">
+                                            {{ student.name.charAt(0) }}
+                                        </div>
+                                        <div class="min-w-0">
+                                            <p class="font-black text-gray-800 text-xs tracking-tight truncate">{{ student.name }}</p>
+                                            <p class="text-[9px] text-gray-400 font-bold uppercase truncate">{{ student.group_name }}</p>
+                                        </div>
+                                    </div>
+
+                                    <div class="shrink-0 text-right">
+                                        <span v-if="student.has_justified_absence" class="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-100 text-emerald-800 text-[9px] font-black rounded-lg border border-emerald-200" :title="student.justification_motif">
+                                            <ShieldCheckIcon class="h-3 w-3" />
+                                            Absence justifiée
+                                        </span>
+                                        <span v-else-if="student.is_already_scheduled" class="px-2 py-0.5 bg-blue-100 text-blue-700 text-[9px] font-bold rounded-lg border border-blue-200">
+                                            Déjà planifié
+                                        </span>
+                                        <span v-else-if="student.is_completed" class="px-2 py-0.5 bg-gray-100 text-gray-600 text-[9px] font-bold rounded-lg border border-gray-200">
+                                            Note: {{ student.score }}/20
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="flex items-center justify-end gap-3 pt-4 border-t border-gray-100">
+                            <button 
+                                type="button" 
+                                @click="isRattrapageModalOpen = false" 
+                                class="px-6 py-3.5 bg-gray-100 text-gray-600 hover:bg-gray-200 rounded-2xl font-black text-xs uppercase tracking-widest transition"
+                            >
+                                Annuler
+                            </button>
+                            <button 
+                                type="button" 
+                                @click="submitRattrapage" 
+                                :disabled="submittingRattrapage || rattrapageForm.student_ids.length === 0"
+                                class="px-7 py-3.5 bg-amber-500 hover:bg-amber-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg shadow-amber-200 flex items-center gap-2 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                <ArrowPathIcon v-if="submittingRattrapage" class="h-4 w-4 animate-spin" />
+                                <CheckIcon v-else class="h-4 w-4" />
+                                Planifier la session
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- TAB 2: LISTE DES SESSIONS -->
+                    <div v-else-if="rattrapageTab === 'list'" class="space-y-4">
+                        <div v-if="existingRattrapages.length === 0" class="py-16 text-center space-y-4 bg-white rounded-3xl border border-dashed border-gray-200">
+                            <div class="h-16 w-16 bg-amber-50 text-amber-500 rounded-full flex items-center justify-center mx-auto shadow-inner">
+                                <ClockIcon class="h-8 w-8" />
+                            </div>
+                            <div>
+                                <p class="text-sm font-black text-gray-700">Aucune session de rattrapage existante</p>
+                                <p class="text-xs text-gray-400 mt-1">Vous pouvez en planifier une dès maintenant pour les apprenants absents justifiés.</p>
+                            </div>
+                            <button 
+                                type="button" 
+                                @click="rattrapageTab = 'plan'"
+                                class="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-black text-xs uppercase tracking-widest rounded-xl transition shadow-md shadow-amber-200"
+                            >
+                                Planifier un rattrapage
+                            </button>
+                        </div>
+
+                        <div v-else class="space-y-4">
+                            <div 
+                                v-for="rattrapage in existingRattrapages" 
+                                :key="rattrapage.id"
+                                class="p-5 bg-white rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition space-y-4"
+                            >
+                                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-50 pb-3">
+                                    <div>
+                                        <div class="flex items-center gap-2">
+                                            <h4 class="font-black text-gray-900 text-base tracking-tight">{{ rattrapage.titre }}</h4>
+                                            <span 
+                                                class="px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider border"
+                                                :class="rattrapage.can_start ? 'bg-emerald-50 text-emerald-700 border-emerald-200 animate-pulse' : (rattrapage.has_ended ? 'bg-gray-100 text-gray-500 border-gray-200' : 'bg-blue-50 text-blue-700 border-blue-200')"
+                                            >
+                                                {{ rattrapage.can_start ? 'En cours' : (rattrapage.has_ended ? 'Terminée' : 'À venir') }}
+                                            </span>
+                                        </div>
+                                        <div class="flex flex-wrap items-center gap-3 text-xs text-gray-500 mt-1">
+                                            <span class="flex items-center gap-1 font-bold text-gray-700">
+                                                <CalendarIcon class="h-3.5 w-3.5 text-amber-500" />
+                                                {{ rattrapage.scheduled_at_formatted }}
+                                            </span>
+                                            <span class="flex items-center gap-1 text-gray-400">
+                                                <ClockIcon class="h-3.5 w-3.5" />
+                                                Durée : {{ rattrapage.duree_minutes }} min
+                                            </span>
+                                            <span v-if="rattrapage.created_by" class="text-gray-400">
+                                                Par : {{ rattrapage.created_by }}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <button 
+                                        v-if="canManageExam(selectedExamForRattrapage)"
+                                        type="button"
+                                        @click="deleteRattrapage(rattrapage)"
+                                        class="self-start sm:self-center p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-xl transition"
+                                        title="Annuler cette session de rattrapage"
+                                    >
+                                        <TrashIcon class="h-5 w-5" />
+                                    </button>
+                                </div>
+
+                                <p v-if="rattrapage.instructions" class="text-xs text-gray-600 italic bg-gray-50 p-2.5 rounded-xl border border-gray-100">
+                                    {{ rattrapage.instructions }}
+                                </p>
+
+                                <!-- Inscrits -->
+                                <div class="space-y-2">
+                                    <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                                        Apprenants inscrits ({{ rattrapage.students_count }})
+                                    </p>
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+                                        <div 
+                                            v-for="st in rattrapage.students" 
+                                            :key="st.id"
+                                            class="flex items-center justify-between p-2.5 bg-gray-50/70 rounded-xl border border-gray-100 text-xs"
+                                        >
+                                            <span class="font-bold text-gray-800 truncate mr-2">{{ st.name }}</span>
+                                            <div class="shrink-0 flex items-center gap-1.5">
+                                                <span v-if="st.score !== null && st.score !== undefined" class="px-2 py-0.5 bg-emerald-100 text-emerald-800 text-[9px] font-black rounded-md">
+                                                    {{ st.score }}/20
+                                                </span>
+                                                <span v-else class="px-1.5 py-0.5 rounded text-[8px] font-bold uppercase"
+                                                    :class="st.status === 'completed' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'">
+                                                    {{ st.status === 'completed' ? 'Fait' : 'Inscrit' }}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 

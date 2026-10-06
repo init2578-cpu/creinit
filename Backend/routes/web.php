@@ -275,6 +275,10 @@ Route::middleware(['auth'])->group(function (): void {
             Route::post('exams/{exam}/results/{user}/grade-open-questions', [AdminExamController::class, 'gradeOpenQuestions'])->name('exams.grade-open-questions');
             Route::post('exams/{exam}/unlock/{user}', [AdminExamController::class, 'unlock'])->name('exams.unlock');
             Route::post('exams/{exam}/unblock/{user}', [AdminExamController::class, 'unblock'])->name('exams.unblock');
+            Route::get('exams/{exam}/rattrapages', [AdminExamController::class, 'getRattrapages'])->name('exams.rattrapages.index');
+            Route::get('exams/{exam}/rattrapages/eligible-students', [AdminExamController::class, 'getEligibleRattrapageStudents'])->name('exams.rattrapages.eligible-students');
+            Route::post('exams/{exam}/rattrapages', [AdminExamController::class, 'storeRattrapage'])->name('exams.rattrapages.store');
+            Route::delete('exams/{exam}/rattrapages/{rattrapage}', [AdminExamController::class, 'destroyRattrapage'])->name('exams.rattrapages.destroy');
             Route::get('exercises', [AdminExerciseController::class, 'index'])->name('exercises.index');
             Route::post('exercises', [AdminExerciseController::class, 'store'])->name('exercises.store');
             Route::put('exercises/{chapter}', [AdminExerciseController::class, 'update'])->name('exercises.update');

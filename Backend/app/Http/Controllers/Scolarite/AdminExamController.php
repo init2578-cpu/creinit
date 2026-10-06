@@ -10,8 +10,13 @@ use App\Models\ExamResult;
 use App\Models\Module;
 use App\Models\Group;
 use App\Models\User;
+use App\Models\ExamRattrapage;
+use App\Models\Attendance;
 use App\Notifications\NewExamAvailableNotification;
 use App\Notifications\ExamAssignedNotification;
+use App\Notifications\NewExamRattrapageNotification;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -72,9 +77,9 @@ class AdminExamController extends Controller
         $user = $request->user();
 
         if ($user->hasRole('Secrétaire')) {
-            $examQuery = Exam::with(['module', 'user', 'questions.options', 'groups'])->orderBy('created_at', 'desc');
+            $examQuery = Exam::with(['module', 'user', 'questions.options', 'groups', 'rattrapages.users'])->orderBy('created_at', 'desc');
         } else {
-            $examQuery = Exam::with(['module', 'user', 'questions.options', 'examResults.user', 'groups'])->orderBy('created_at', 'desc');
+            $examQuery = Exam::with(['module', 'user', 'questions.options', 'examResults.user', 'groups', 'rattrapages.users'])->orderBy('created_at', 'desc');
         }
         $moduleQuery = Module::query();
         $groupsQuery = Group::query();
@@ -113,6 +118,7 @@ class AdminExamController extends Controller
                     })->count();
 
                 $exam->can_manage = $this->canModifyExam($user, $exam);
+                $exam->rattrapages_count = $exam->rattrapages->count();
                 $isStarted = $exam->scheduled_at && $exam->scheduled_at->isPast() && $exam->examResults()->exists();
                 $exam->can_modify = $isDirecteur || ($exam->can_manage && !$isStarted);
                 $exam->can_view_questions = $this->canViewExam($user, $exam);
@@ -465,6 +471,7 @@ class AdminExamController extends Controller
         $students = $studentsQuery->get();
 
         $examController = new \App\Http\Controllers\ExamController();
+        $examDate = $exam->scheduled_at ? $exam->scheduled_at->toDateString() : null;
 
         // Calculate score for students who saved answers, or auto-grade expired exams
         foreach ($students as $student) {
@@ -475,27 +482,58 @@ class AdminExamController extends Controller
                     $res->update(['score' => $calcScore]);
                 }
             } else if (!$res && $exam->isExpired() && $exam->type === 'online') {
-                ExamResult::create([
-                    'exam_id' => $exam->id,
-                    'user_id' => $student->id,
-                    'score' => 0,
-                    'status' => 'completed',
-                    'finished_at' => $exam->scheduled_at ? $exam->scheduled_at->addMinutes($exam->duree_minutes) : now(),
-                ]);
+                $hasJustifiedAbsence = Attendance::where('user_id', $student->id)
+                    ->whereIn('group_id', $examGroupIds)
+                    ->where('status', 'justifie')
+                    ->when($examDate, fn($q) => $q->where('date', $examDate))
+                    ->exists();
+
+                $hasRattrapage = $exam->rattrapages()
+                    ->whereHas('users', fn($q) => $q->where('users.id', $student->id))
+                    ->exists();
+
+                // Ne pas mettre 0 d'office si l'apprenant a une absence justifiée ou un rattrapage prévu
+                if (!$hasJustifiedAbsence && !$hasRattrapage) {
+                    ExamResult::create([
+                        'exam_id' => $exam->id,
+                        'user_id' => $student->id,
+                        'score' => 0,
+                        'status' => 'completed',
+                        'finished_at' => $exam->scheduled_at ? $exam->scheduled_at->addMinutes($exam->duree_minutes) : now(),
+                    ]);
+                }
             }
         }
 
         // Get existing results for this exam (including newly updated ones)
         $results = ExamResult::where('exam_id', $exam->id)->get()->keyBy('user_id');
 
+        // Rattrapages mapping for users
+        $rattrapageUsers = DB::table('exam_rattrapage_user')
+            ->join('exam_rattrapages', 'exam_rattrapages.id', '=', 'exam_rattrapage_user.exam_rattrapage_id')
+            ->where('exam_rattrapages.exam_id', $exam->id)
+            ->select('exam_rattrapage_user.user_id', 'exam_rattrapage_user.status as rattrapage_status', 'exam_rattrapages.scheduled_at as rattrapage_scheduled_at')
+            ->get()
+            ->keyBy('user_id');
+
+        // Justified attendances mapping
+        $justifiedAttendanceUserIds = Attendance::whereIn('group_id', $examGroupIds)
+            ->where('status', 'justifie')
+            ->when($examDate, fn($q) => $q->where('date', $examDate))
+            ->pluck('user_id')
+            ->toArray();
+
         // Merge results into students data
-        $formattedResults = $students->map(function ($student) use ($results, $examController, $exam) {
+        $formattedResults = $students->map(function ($student) use ($results, $examController, $exam, $rattrapageUsers, $justifiedAttendanceUserIds) {
             $res = $results->get($student->id);
             $score = $res ? $res->score : null;
 
             if ($res && $score === null && $res->answers && is_array($res->answers)) {
                 $score = $examController->calculateScore($exam, $res->answers);
             }
+
+            $rattrapageInfo = $rattrapageUsers->get($student->id);
+            $hasJustifiedAbsence = in_array($student->id, $justifiedAttendanceUserIds, true);
 
             return [
                 'user_id' => $student->id,
@@ -505,6 +543,10 @@ class AdminExamController extends Controller
                 'status'  => $res ? $res->status : null,
                 'answers' => $res ? $res->answers : null,
                 'is_graded' => $res && $score !== null,
+                'is_rattrapage' => $res ? (bool) $res->is_rattrapage : false,
+                'has_justified_absence' => $hasJustifiedAbsence,
+                'rattrapage_scheduled_at' => $rattrapageInfo ? Carbon::parse($rattrapageInfo->rattrapage_scheduled_at)->format('d/m/Y à H:i') : null,
+                'rattrapage_status' => $rattrapageInfo?->rattrapage_status,
             ];
         });
 
@@ -791,5 +833,234 @@ class AdminExamController extends Controller
         ];
 
         return response()->file($filePath, $headers);
+    }
+
+    /**
+     * Get all rattrapage sessions for an exam.
+     */
+    public function getRattrapages(Request $request, Exam $exam): \Illuminate\Http\JsonResponse
+    {
+        if (!$this->canViewExam($request->user(), $exam)) {
+            abort(403, 'Action non autorisée.');
+        }
+
+        $rattrapages = $exam->rattrapages()
+            ->with(['users', 'creator', 'results'])
+            ->orderBy('scheduled_at', 'desc')
+            ->get()
+            ->map(function ($r) {
+                return [
+                    'id' => $r->id,
+                    'titre' => $r->titre,
+                    'scheduled_at' => $r->scheduled_at ? $r->scheduled_at->format('Y-m-d\TH:i') : null,
+                    'scheduled_at_formatted' => $r->scheduled_at ? $r->scheduled_at->format('d/m/Y à H:i') : null,
+                    'duree_minutes' => $r->duree_minutes,
+                    'instructions' => $r->instructions,
+                    'created_by' => $r->creator?->name,
+                    'can_start' => $r->can_start,
+                    'has_ended' => $r->has_ended,
+                    'students_count' => $r->users->count(),
+                    'students' => $r->users->map(function ($u) use ($r) {
+                        $res = $r->results->firstWhere('user_id', $u->id);
+                        return [
+                            'id' => $u->id,
+                            'name' => $u->name,
+                            'status' => $u->pivot->status,
+                            'motif_justification' => $u->pivot->motif_justification,
+                            'score' => $res?->score,
+                        ];
+                    }),
+                ];
+            });
+
+        return response()->json($rattrapages);
+    }
+
+    /**
+     * Get learners eligible for makeup session (justified absences or group students).
+     */
+    public function getEligibleRattrapageStudents(Request $request, Exam $exam): \Illuminate\Http\JsonResponse
+    {
+        if (!$this->canViewExam($request->user(), $exam)) {
+            abort(403, 'Action non autorisée.');
+        }
+
+        $examGroupIds = $exam->groups()->pluck('groups.id')->toArray();
+        $examDate = $exam->scheduled_at ? $exam->scheduled_at->toDateString() : null;
+
+        // Get all students enrolled in assigned groups
+        $students = User::whereHas('studentGroups', function ($query) use ($examGroupIds) {
+            $query->whereIn('groups.id', $examGroupIds);
+        })->with('studentGroups')->get();
+
+        // Existing results
+        $results = ExamResult::where('exam_id', $exam->id)->get()->keyBy('user_id');
+
+        // Existing scheduled rattrapages
+        $scheduledUserIds = DB::table('exam_rattrapage_user')
+            ->join('exam_rattrapages', 'exam_rattrapages.id', '=', 'exam_rattrapage_user.exam_rattrapage_id')
+            ->where('exam_rattrapages.exam_id', $exam->id)
+            ->pluck('exam_rattrapage_user.user_id')
+            ->toArray();
+
+        // Attendances with status 'justifie' on the exact exam date
+        $justifiedAttendances = Attendance::whereIn('group_id', $examGroupIds)
+            ->where('status', 'justifie')
+            ->when($examDate, function ($q) use ($examDate) {
+                $q->where('date', $examDate);
+            })
+            ->get()
+            ->keyBy('user_id');
+
+        // Fallback: any justified attendance for the module/group
+        $fallbackJustified = Attendance::whereIn('group_id', $examGroupIds)
+            ->where('status', 'justifie')
+            ->latest('date')
+            ->get()
+            ->keyBy('user_id');
+
+        $eligibleList = $students->map(function ($student) use ($results, $scheduledUserIds, $justifiedAttendances, $fallbackJustified) {
+            $res = $results->get($student->id);
+            $isCompleted = $res && $res->status === 'completed' && !$res->is_rattrapage && $res->score !== null && $res->score > 0;
+            $isAlreadyScheduled = in_array($student->id, $scheduledUserIds, true);
+
+            $justifiedExact = $justifiedAttendances->get($student->id);
+            $justifiedGeneral = $fallbackJustified->get($student->id);
+
+            $hasJustifiedAbsenceOnExamDate = $justifiedExact !== null;
+            $hasAnyJustifiedAbsence = $justifiedGeneral !== null;
+
+            $motif = null;
+            if ($hasJustifiedAbsenceOnExamDate) {
+                $motif = "Absence justifiée le jour de l'épreuve (" . $justifiedExact->date->format('d/m/Y') . ")";
+            } elseif ($hasAnyJustifiedAbsence) {
+                $motif = "Absence justifiée enregistrée le " . $justifiedGeneral->date->format('d/m/Y');
+            }
+
+            return [
+                'id' => $student->id,
+                'name' => $student->name,
+                'telephone' => $student->telephone,
+                'group_name' => $student->studentGroups->first()?->nom_groupe ?? 'N/A',
+                'has_justified_absence' => $hasJustifiedAbsenceOnExamDate || $hasAnyJustifiedAbsence,
+                'has_justified_absence_on_exam_date' => $hasJustifiedAbsenceOnExamDate,
+                'justification_motif' => $motif,
+                'attendance_id' => $justifiedExact?->id ?? $justifiedGeneral?->id,
+                'is_completed' => $isCompleted,
+                'score' => $res?->score,
+                'is_already_scheduled' => $isAlreadyScheduled,
+                // Recommended for selection if they had a justified absence and haven't already taken or scheduled
+                'is_recommended' => ($hasJustifiedAbsenceOnExamDate || $hasAnyJustifiedAbsence) && !$isCompleted && !$isAlreadyScheduled,
+            ];
+        });
+
+        // Sort: recommended first, then justified absences, then alphabetically
+        $sorted = $eligibleList->sort(function ($a, $b) {
+            if ($a['is_recommended'] !== $b['is_recommended']) {
+                return $a['is_recommended'] ? -1 : 1;
+            }
+            if ($a['has_justified_absence'] !== $b['has_justified_absence']) {
+                return $a['has_justified_absence'] ? -1 : 1;
+            }
+            return strcmp($a['name'], $b['name']);
+        })->values();
+
+        return response()->json($sorted);
+    }
+
+    /**
+     * Store a new makeup exam session (rattrapage).
+     */
+    public function storeRattrapage(Request $request, Exam $exam)
+    {
+        if (!$this->canModifyExam($request->user(), $exam)) {
+            abort(403, 'Action non autorisée.');
+        }
+
+        $validated = $request->validate([
+            'scheduled_at' => 'required|date',
+            'duree_minutes' => 'required|integer|min:1|max:480',
+            'student_ids' => 'required|array|min:1',
+            'student_ids.*' => 'required|exists:users,id',
+            'titre' => 'nullable|string|max:255',
+            'instructions' => 'nullable|string|max:1000',
+        ], [
+            'student_ids.required' => 'Veuillez sélectionner au moins un apprenant éligible.',
+            'student_ids.min' => 'Veuillez sélectionner au moins un apprenant éligible.',
+        ]);
+
+        $rattrapage = ExamRattrapage::create([
+            'exam_id' => $exam->id,
+            'titre' => $validated['titre'] ?: ("Session de rattrapage - " . $exam->titre),
+            'scheduled_at' => Carbon::parse($validated['scheduled_at']),
+            'duree_minutes' => (int)$validated['duree_minutes'],
+            'instructions' => $validated['instructions'] ?? null,
+            'created_by' => $request->user()->id,
+        ]);
+
+        $examGroupIds = $exam->groups()->pluck('groups.id')->toArray();
+        $examDate = $exam->scheduled_at ? $exam->scheduled_at->toDateString() : null;
+
+        foreach ($validated['student_ids'] as $studentId) {
+            $att = Attendance::where('user_id', $studentId)
+                ->whereIn('group_id', $examGroupIds)
+                ->where('status', 'justifie')
+                ->when($examDate, function ($q) use ($examDate) {
+                    $q->orderByRaw("CASE WHEN date = ? THEN 0 ELSE 1 END", [$examDate]);
+                })
+                ->first();
+
+            $motif = $att 
+                ? "Absence justifiée le " . $att->date->format('d/m/Y')
+                : "Absence justifiée validée par l'encadrement";
+
+            $rattrapage->users()->attach($studentId, [
+                'attendance_id' => $att?->id,
+                'motif_justification' => $motif,
+                'status' => 'scheduled',
+            ]);
+        }
+
+        // Notify learners
+        $students = User::whereIn('id', $validated['student_ids'])->get();
+        foreach ($students as $student) {
+            try {
+                $student->notify(new NewExamRattrapageNotification($rattrapage));
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::error('Erreur notification rattrapage : ' . $e->getMessage());
+            }
+        }
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Session de rattrapage planifiée avec succès.',
+                'rattrapage' => $rattrapage->load('users'),
+            ]);
+        }
+
+        return redirect()->back()->with('success', 'Session de rattrapage planifiée avec succès.');
+    }
+
+    /**
+     * Cancel / delete a makeup exam session.
+     */
+    public function destroyRattrapage(Request $request, Exam $exam, ExamRattrapage $rattrapage)
+    {
+        if (!$this->canModifyExam($request->user(), $exam)) {
+            abort(403, 'Action non autorisée.');
+        }
+
+        if ($rattrapage->exam_id !== $exam->id) {
+            abort(404);
+        }
+
+        $rattrapage->delete();
+
+        if ($request->wantsJson()) {
+            return response()->json(['success' => true]);
+        }
+
+        return redirect()->back()->with('success', 'Session de rattrapage supprimée.');
     }
 }

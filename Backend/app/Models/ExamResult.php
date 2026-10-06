@@ -16,6 +16,8 @@ class ExamResult extends Model
         'exam_id',
         'user_id',
         'score',
+        'is_rattrapage',
+        'exam_rattrapage_id',
         'bonus',
         'status',
         'started_at',
@@ -27,6 +29,7 @@ class ExamResult extends Model
     {
         return [
             'score' => 'float',
+            'is_rattrapage' => 'boolean',
             'bonus' => 'float',
             'started_at' => 'datetime',
             'finished_at' => 'datetime',
@@ -42,5 +45,10 @@ class ExamResult extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function rattrapage(): BelongsTo
+    {
+        return $this->belongsTo(ExamRattrapage::class, 'exam_rattrapage_id');
     }
 }

@@ -64,19 +64,27 @@ const proceedWithAction = (exam, action, latitude, longitude) => {
 }
 
 const statusLabel = (exam) => {
-    if (!exam.my_result) return 'À faire'
+    if (!exam.my_result) {
+        if (exam.rattrapage_session && !exam.can_start) {
+            return 'Rattrapage prévu'
+        }
+        return 'À faire'
+    }
     if (exam.my_result.status === 'blocked') return 'Bloqué'
     if (exam.my_result.status === 'started') return 'En cours'
     
-    if (!exam.is_practice && !exam.are_grades_published) return 'En attente de validation'
+    if (!exam.is_practice && !exam.are_grades_published) {
+        return exam.my_result.is_rattrapage ? 'Rattrapage - En attente' : 'En attente de validation'
+    }
     
     const scoreVal = parseFloat(exam.my_result.score) || 0
     const bonusVal = parseFloat(exam.my_result.bonus) || 0
     const total = scoreVal + bonusVal
+    const suffix = exam.my_result.is_rattrapage ? ' (Rattrapage)' : ''
     if (bonusVal > 0) {
-        return `${total.toFixed(1)} / 20 (+${bonusVal.toFixed(1)} bonus)`
+        return `${total.toFixed(1)} / 20 (+${bonusVal.toFixed(1)} bonus)${suffix}`
     }
-    return `${total.toFixed(1)} / 20`
+    return `${total.toFixed(1)} / 20${suffix}`
 }
 
 const statusClass = (exam) => {
@@ -148,9 +156,13 @@ const formatTime = (dateString) => {
                                     {{ exam.is_practice ? 'Entraînement' : 'Examen' }} •
                                     {{ exam.total_points }} pts
                                 </p>
-                                <div v-if="exam.scheduled_at" class="flex items-center gap-1.5 px-2 py-0.5 bg-blue-50 text-blue-500 rounded-md border border-blue-100 text-[10px] font-black uppercase tracking-tight">
+                                <div v-if="exam.scheduled_at && !exam.rattrapage_session" class="flex items-center gap-1.5 px-2 py-0.5 bg-blue-50 text-blue-500 rounded-md border border-blue-100 text-[10px] font-black uppercase tracking-tight">
                                     <ClockIcon class="h-3 w-3 shrink-0" />
                                     <span>{{ formatDateTime(exam.scheduled_at) }} - {{ formatTime(exam.end_at) }}</span>
+                                </div>
+                                <div v-if="exam.rattrapage_session" class="flex items-center gap-1.5 px-2.5 py-0.5 bg-amber-50 text-amber-700 rounded-md border border-amber-200 text-[10px] font-black uppercase tracking-tight shadow-sm">
+                                    <ClockIcon class="h-3 w-3 shrink-0 text-amber-600" />
+                                    <span>Rattrapage : {{ exam.rattrapage_session.scheduled_at_formatted }} ({{ exam.rattrapage_session.duree_minutes }} min)</span>
                                 </div>
                             </div>
                         </div>
@@ -183,8 +195,11 @@ const formatTime = (dateString) => {
                         </span>
 
                         <!-- État de disponibilité -->
-                        <span v-if="exam.has_ended && !exam.my_result" class="px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border bg-red-50 text-red-400 border-red-100 italic">
+                        <span v-if="exam.has_ended && !exam.my_result && !exam.rattrapage_session" class="px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border bg-red-50 text-red-400 border-red-100 italic">
                             Terminé
+                        </span>
+                        <span v-else-if="exam.rattrapage_session && !exam.can_start && !exam.my_result" class="px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border bg-amber-50 text-amber-700 border-amber-200 italic animate-pulse">
+                            Rattrapage prévu
                         </span>
                         <span v-else-if="!exam.can_start && !exam.my_result" class="px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border bg-blue-50 text-blue-500 border-blue-100 italic animate-pulse">
                             Bientôt
@@ -209,7 +224,7 @@ const formatTime = (dateString) => {
                             class="px-4 sm:px-5 py-2 sm:py-2.5 bg-gray-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-red-600 transition shadow-lg shadow-gray-200 flex items-center justify-center gap-2 disabled:opacity-50 whitespace-nowrap"
                         >
                             <ArrowPathIcon v-if="isLocating && loadingExamId === exam.id" class="h-3.5 w-3.5 animate-spin" />
-                            {{ isLocating && loadingExamId === exam.id ? 'GPS...' : (exam.my_result?.status === 'started' ? 'Reprendre' : (exam.my_result ? 'Refaire' : 'Commencer')) }}
+                            {{ isLocating && loadingExamId === exam.id ? 'GPS...' : (exam.my_result?.status === 'started' ? 'Reprendre' : (exam.rattrapage_session ? 'Passer le rattrapage' : (exam.my_result ? 'Refaire' : 'Commencer'))) }}
                         </button>
                     </div>
                 </div>

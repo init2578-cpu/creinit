@@ -113,6 +113,45 @@ class Exam extends Model
         return $this->belongsToMany(Group::class, 'exam_group');
     }
 
+    public function rattrapages(): HasMany
+    {
+        return $this->hasMany(ExamRattrapage::class)->orderBy('scheduled_at', 'asc');
+    }
+
+    /**
+     * Get active rattrapage session for a specific student right now.
+     */
+    public function getActiveRattrapageForUser(User $user): ?ExamRattrapage
+    {
+        return $this->rattrapages()
+            ->whereHas('users', fn ($q) => $q->where('users.id', $user->id))
+            ->get()
+            ->first(fn ($r) => $r->can_start && !$r->isExpired());
+    }
+
+    /**
+     * Get upcoming or active rattrapage session for a specific student.
+     */
+    public function getUpcomingOrActiveRattrapageForUser(User $user): ?ExamRattrapage
+    {
+        return $this->rattrapages()
+            ->whereHas('users', fn ($q) => $q->where('users.id', $user->id))
+            ->get()
+            ->first(fn ($r) => !$r->isExpired());
+    }
+
+    /**
+     * Check if a specific user can start the exam (either regular or rattrapage session).
+     */
+    public function canStartForUser(User $user): bool
+    {
+        if ($this->can_start) {
+            return true;
+        }
+
+        return $this->getActiveRattrapageForUser($user) !== null;
+    }
+
     /**
      * Check if the exam session has officially ended.
      */
