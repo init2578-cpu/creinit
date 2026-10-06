@@ -63,6 +63,20 @@ const props = defineProps({
                                     <p class="font-black text-gray-900">{{ certificate.issued_at }}</p>
                                 </div>
                             </div>
+                            <div class="p-4 rounded-2xl border" :class="certificate.type === 'participation' ? 'bg-amber-50/80 border-amber-200' : 'bg-emerald-50/80 border-emerald-200'">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <span class="text-[10px] font-black uppercase tracking-widest" :class="certificate.type === 'participation' ? 'text-amber-700' : 'text-emerald-700'">Certification</span>
+                                        <p class="text-sm font-black" :class="certificate.type === 'participation' ? 'text-amber-900' : 'text-emerald-900'">
+                                            {{ certificate.type_label || (certificate.type === 'participation' ? 'Attestation de Participation' : 'Attestation de Réussite') }}
+                                        </p>
+                                    </div>
+                                    <div v-if="certificate.score !== null && certificate.score !== undefined" class="text-right">
+                                        <span class="text-[10px] font-black uppercase tracking-widest" :class="certificate.type === 'participation' ? 'text-amber-700' : 'text-emerald-700'">Moyenne</span>
+                                        <p class="text-sm font-black" :class="certificate.type === 'participation' ? 'text-amber-900' : 'text-emerald-900'">{{ certificate.score }} / 20</p>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
                         <div class="mt-12 flex items-center justify-center gap-3 py-4 border-2 border-dashed border-gray-100 rounded-3xl">

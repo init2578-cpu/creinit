@@ -17,6 +17,9 @@ class Certificate extends Model
         'uuid',
         'user_id',
         'module_id',
+        'type',
+        'score',
+        'group_id',
         'issued_at',
         'pdf_path',
     ];
@@ -26,6 +29,8 @@ class Certificate extends Model
         return [
             'user_id'   => 'integer',
             'module_id' => 'integer',
+            'group_id'  => 'integer',
+            'score'     => 'float',
             'issued_at' => 'datetime',
         ];
     }
@@ -35,6 +40,9 @@ class Certificate extends Model
         static::creating(function (Certificate $cert): void {
             if (empty($cert->uuid)) {
                 $cert->uuid = (string) Str::uuid();
+            }
+            if (empty($cert->type)) {
+                $cert->type = 'reussite';
             }
         });
     }
@@ -51,5 +59,10 @@ class Certificate extends Model
     public function module(): BelongsTo
     {
         return $this->belongsTo(Module::class);
+    }
+
+    public function group(): BelongsTo
+    {
+        return $this->belongsTo(Group::class);
     }
 }

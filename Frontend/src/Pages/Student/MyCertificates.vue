@@ -80,8 +80,11 @@ function suppressCelebration(uuid) {
                                         <AcademicCapIcon class="h-8 w-8" />
                                     </div>
                                     <div class="flex flex-col items-end">
-                                        <div class="px-3 py-1 bg-emerald-50 text-emerald-600 rounded-full text-[9px] font-black uppercase tracking-widest mb-1 border border-emerald-100">
-                                            Vérifié
+                                        <div 
+                                            class="px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest mb-1 border"
+                                            :class="cert.type === 'participation' ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-emerald-50 text-emerald-600 border-emerald-100'"
+                                        >
+                                            {{ cert.type === 'participation' ? 'Participation' : 'Réussite' }}
                                         </div>
                                         <span class="text-[9px] text-slate-400 font-bold uppercase tracking-tighter">ID: {{ cert.uuid.substring(0, 8) }}</span>
                                     </div>
@@ -93,6 +96,10 @@ function suppressCelebration(uuid) {
                                 </h3>
 
                                 <div class="space-y-3 mb-10">
+                                    <div v-if="cert.score !== null && cert.score !== undefined" class="flex items-center gap-3 text-[10px] font-bold uppercase tracking-widest" :class="cert.type === 'participation' ? 'text-amber-700' : 'text-emerald-700'">
+                                        <CheckBadgeIcon class="h-4 w-4 text-slate-400" />
+                                        Moyenne obtenue : {{ cert.score }} / 20
+                                    </div>
                                     <div class="flex items-center gap-3 text-[10px] text-slate-500 font-bold uppercase tracking-widest">
                                         <CalendarIcon class="h-4 w-4 text-slate-300" />
                                         Obtenue le {{ formatDate(cert.issued_at) }}

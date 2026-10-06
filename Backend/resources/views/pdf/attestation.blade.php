@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
-    <title>ATTESTATION - {{ $student->name }}</title>
+    <title>{{ (($type ?? $certificate->type ?? 'reussite') === 'participation') ? 'ATTESTATION DE PARTICIPATION' : 'ATTESTATION DE RÉUSSITE' }} - {{ $student->name }}</title>
     <style>
         @page {
             margin: 0;
@@ -408,7 +408,11 @@
                 <path d="M 150 130 C 165 95, 155 65, 120 50" stroke-width="1"/>
             </g>
             <text x="100" y="95" text-anchor="middle" fill="#d97706" font-size="11" font-weight="bold" font-family="DejaVu Sans">ATTESTATION</text>
-            <text x="100" y="112" text-anchor="middle" fill="#d97706" font-size="10" font-weight="bold" font-family="DejaVu Sans">DE REUSSITE</text>
+            @if(($type ?? $certificate->type ?? 'reussite') === 'participation')
+                <text x="100" y="112" text-anchor="middle" fill="#d97706" font-size="8.5" font-weight="bold" font-family="DejaVu Sans">DE PARTICIPATION</text>
+            @else
+                <text x="100" y="112" text-anchor="middle" fill="#d97706" font-size="10" font-weight="bold" font-family="DejaVu Sans">DE REUSSITE</text>
+            @endif
             <polygon points="100,68 104,78 114,78 106,84 109,94 100,88 91,94 94,84 86,78 96,78" fill="#d97706" opacity="0.5"/>
         </svg>
     </div>
@@ -446,14 +450,18 @@
 
         <!-- Main Title -->
         <div class="title-section">
-            <h2 class="main-title">A T T E S T A T I O N</h2>
+            @if(($type ?? $certificate->type ?? 'reussite') === 'participation')
+                <h2 class="main-title" style="letter-spacing: 6px; font-size: 26pt; color: #d97706;">ATTESTATION DE PARTICIPATION</h2>
+            @else
+                <h2 class="main-title" style="letter-spacing: 8px; font-size: 28pt; color: #2563eb;">ATTESTATION DE RÉUSSITE</h2>
+            @endif
             <table class="ornament-table">
                 <tr>
-                    <td style="width: 14px; text-align: center;"><div class="ornament-dot-sm"></div></td>
+                    <td style="width: 14px; text-align: center;"><div class="ornament-dot-sm" style="{{ (($type ?? $certificate->type ?? 'reussite') === 'participation') ? 'background-color: #d97706;' : '' }}"></div></td>
                     <td style="vertical-align: middle;"><div class="ornament-line-bar"></div></td>
-                    <td style="width: 18px; text-align: center;"><div class="ornament-dot-lg"></div></td>
+                    <td style="width: 18px; text-align: center;"><div class="ornament-dot-lg" style="{{ (($type ?? $certificate->type ?? 'reussite') === 'participation') ? 'background-color: #d97706;' : '' }}"></div></td>
                     <td style="vertical-align: middle;"><div class="ornament-line-bar"></div></td>
-                    <td style="width: 14px; text-align: center;"><div class="ornament-dot-sm"></div></td>
+                    <td style="width: 14px; text-align: center;"><div class="ornament-dot-sm" style="{{ (($type ?? $certificate->type ?? 'reussite') === 'participation') ? 'background-color: #d97706;' : '' }}"></div></td>
                 </tr>
             </table>
         </div>
@@ -473,13 +481,25 @@
                 Né(e) le <strong>{{ $dateNaissance ?? '........................' }}</strong> à <strong>{{ $lieuNaissance ?? '........................' }}</strong>
             </div>
 
-            <div class="success-line">
-                a réussi avec succès à la formation en informatique aux Modules :
-            </div>
+            @if(($type ?? $certificate->type ?? 'reussite') === 'participation')
+                <div class="success-line">
+                    a suivi avec assiduité la formation en informatique aux Modules :
+                </div>
+            @else
+                <div class="success-line">
+                    a réussi avec succès à la formation en informatique aux Modules :
+                </div>
+            @endif
 
-            <div class="module-title">
+            <div class="module-title" style="{{ (($type ?? $certificate->type ?? 'reussite') === 'participation') ? 'color: #b45309;' : 'color: #2563eb;' }}">
                 {{ $module->titre ?? $module->title }}
             </div>
+
+            @if(($type ?? $certificate->type ?? 'reussite') === 'reussite' && isset($score) && $score !== null)
+                <div style="font-size: 11pt; font-style: italic; margin-top: -2mm; margin-bottom: 2mm; color: #1e293b;">
+                    avec la moyenne de <strong>{{ number_format((float)$score, 2, ',', ' ') }}/20</strong>
+                </div>
+            @endif
 
             <div class="period-line">
                 <span class="period-bold">Période de la formation : Du {{ $dateDebut ?? '...................' }} au {{ $dateFin ?? '...................' }}</span>

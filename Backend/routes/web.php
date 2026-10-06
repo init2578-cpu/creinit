@@ -289,6 +289,7 @@ Route::middleware(['auth'])->group(function (): void {
             Route::patch('questions/{question}', [AdminExerciseController::class, 'updateQuestion'])->name('questions.update');
             Route::delete('questions/{question}', [AdminExerciseController::class, 'destroyQuestion'])->name('questions.destroy');
             Route::resource('certificates', \App\Http\Controllers\Scolarite\AdminCertificateController::class)->only(['index', 'destroy']);
+            Route::post('certificates/group/{group}', [\App\Http\Controllers\Scolarite\AdminCertificateController::class, 'generateForGroup'])->name('certificates.generate-group');
             Route::post('certificates/{student}/{module}', [\App\Http\Controllers\Scolarite\AdminCertificateController::class, 'generate'])->name('certificates.generate');
         });
 

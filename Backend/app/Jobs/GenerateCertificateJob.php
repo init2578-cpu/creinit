@@ -23,6 +23,9 @@ class GenerateCertificateJob implements ShouldQueue
     public function __construct(
         private readonly int $userId,
         private readonly int $moduleId,
+        private readonly string $type = 'reussite',
+        private readonly ?float $score = null,
+        private readonly ?int $groupId = null,
     ) {}
 
     public function handle(): void
@@ -30,14 +33,17 @@ class GenerateCertificateJob implements ShouldQueue
         $user   = User::findOrFail($this->userId);
         $module = Module::findOrFail($this->moduleId);
 
-        // Create certificate record
-        $certificate = Certificate::firstOrCreate(
+        // Create or update certificate record
+        $certificate = Certificate::updateOrCreate(
             [
                 'user_id'   => $user->id,
                 'module_id' => $module->id,
             ],
             [
                 'issued_at' => now(),
+                'type'      => $this->type,
+                'score'     => $this->score,
+                'group_id'  => $this->groupId,
             ],
         );
 
@@ -77,7 +83,10 @@ class GenerateCertificateJob implements ShouldQueue
             'student'         => $user,
             'module'          => $module,
             'certificate'     => $certificate,
+            'type'            => $certificate->type ?? 'reussite',
+            'score'           => $certificate->score,
             'qrCode'          => $qrCode,
+            'verifyUrl'       => $verificationUrl,
             'civilite'        => $civilite,
             'dateNaissance'   => $dateNaissance,
             'lieuNaissance'   => $lieuNaissance,
