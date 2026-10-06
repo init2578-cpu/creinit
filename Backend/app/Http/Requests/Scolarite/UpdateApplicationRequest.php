@@ -35,6 +35,7 @@ class UpdateApplicationRequest extends FormRequest
             'fonction' => ['required', 'string', 'max:255'],
             'etablissement' => ['nullable', 'string', 'max:255'],
             'commentaires' => ['nullable', 'string'],
+            'motif_remise_en_attente' => ['nullable', 'string'],
             'sexe' => ['required', 'string', 'in:M,F'],
             'has_cni' => ['nullable', 'boolean'],
             'cni' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:5120'],

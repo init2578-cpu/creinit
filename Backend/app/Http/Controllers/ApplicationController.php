@@ -207,8 +207,17 @@ class ApplicationController extends Controller
 
     public function updateStatus(Request $request, Application $application)
     {
+        $isPuttingAdmittedToPending = ($application->status === 'admitted' && $request->input('status') === 'pending');
+
         $validated = $request->validate([
-            'status' => 'required|in:admitted,rejected,pending'
+            'status' => 'required|in:admitted,rejected,pending',
+            'motif' => [
+                $isPuttingAdmittedToPending ? 'required' : 'nullable',
+                'string',
+                'max:1000',
+            ],
+        ], [
+            'motif.required' => "Un motif est obligatoire pour remettre en attente un apprenant précédemment admis.",
         ]);
 
         if ($validated['status'] === 'pending') {
@@ -217,16 +226,50 @@ class ApplicationController extends Controller
             if (!$user->hasRole('Directeur')) {
                 return redirect()->back()->with('error', "Seul le Directeur est autorisé à remettre une candidature en attente.");
             }
+
+            if ($application->status === 'admitted' && empty(trim((string) ($validated['motif'] ?? '')))) {
+                return redirect()->back()->withErrors([
+                    'motif' => "Un motif est obligatoire pour remettre en attente un apprenant précédemment admis.",
+                ]);
+            }
         }
 
-        $application->update(['status' => $validated['status']]);
+        $updateData = ['status' => $validated['status']];
 
-        // If admitted, ensure user has the Apprenant role
+        if ($validated['status'] === 'pending') {
+            if ($application->status === 'admitted' || !empty($validated['motif'])) {
+                $updateData['motif_remise_en_attente'] = trim((string) ($validated['motif'] ?? ''));
+            }
+        } elseif ($validated['status'] === 'admitted') {
+            $updateData['motif_remise_en_attente'] = null;
+        }
+
+        $previousStatus = $application->status;
+        $application->update($updateData);
+
+        // Role management
         if ($validated['status'] === 'admitted') {
             $application->user->assignRole('Apprenant');
+        } elseif ($validated['status'] === 'pending' && $previousStatus === 'admitted') {
+            $hasOtherAdmitted = Application::where('user_id', $application->user_id)
+                ->where('id', '!=', $application->id)
+                ->where('status', 'admitted')
+                ->exists();
+
+            if (!$hasOtherAdmitted && $application->user->hasRole('Apprenant')) {
+                $application->user->removeRole('Apprenant');
+            }
         }
 
-        return back()->with('success', "Le statut de la candidature a été mis à jour.");
+        $msg = match ($validated['status']) {
+            'admitted' => "Candidature admise avec succès. L'apprenant a été activé.",
+            'rejected' => "La candidature a été rejetée.",
+            'pending' => $previousStatus === 'admitted'
+                ? "L'apprenant a été remis en attente avec le motif enregistré."
+                : "La candidature a été remise en attente.",
+        };
+
+        return back()->with('success', $msg);
     }
 
     public function store(StoreApplicationRequest $request): RedirectResponse

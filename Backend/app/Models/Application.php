@@ -33,6 +33,7 @@ class Application extends Model
         'etablissement',
         'telephone',
         'sexe',
+        'motif_remise_en_attente',
     ];
 
     protected $casts = [

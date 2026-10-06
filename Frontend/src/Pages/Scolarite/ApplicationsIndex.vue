@@ -21,7 +21,9 @@ import {
     MagnifyingGlassIcon,
     ArrowPathIcon,
     ChevronDownIcon,
-    UserGroupIcon
+    UserGroupIcon,
+    ChatBubbleBottomCenterTextIcon,
+    ExclamationTriangleIcon
 } from '@heroicons/vue/24/outline'
 import { useForm } from '@inertiajs/vue3'
 
@@ -285,21 +287,104 @@ function closeDetails() {
     applicationForDetails.value = null
 }
 
-function updateStatus(id, status) {
-    let confirmMsg = '';
+const showPendingMotifModal = ref(false)
+const targetAppForPending = ref(null)
+const pendingMotif = ref('')
+const pendingMotifError = ref('')
+const isSubmittingPendingMotif = ref(false)
+
+const quickMotifs = [
+    "Dossier incomplet / pièces justificatives à corriger",
+    "Demande de report de session formulée par l'apprenant",
+    "Erreur matérielle lors de la validation initiale",
+    "Paiement / confirmation des droits d'inscription en attente",
+    "Réévaluation pédagogique requise"
+]
+
+function openPendingMotifModal(app) {
+    targetAppForPending.value = app
+    pendingMotif.value = ''
+    pendingMotifError.value = ''
+    showPendingMotifModal.value = true
+}
+
+function closePendingMotifModal() {
+    showPendingMotifModal.value = false
+    targetAppForPending.value = null
+    pendingMotif.value = ''
+    pendingMotifError.value = ''
+}
+
+function selectQuickMotif(text) {
+    pendingMotif.value = text
+    pendingMotifError.value = ''
+}
+
+function submitPendingMotif() {
+    if (!targetAppForPending.value) return
+
+    const trimmed = pendingMotif.value.trim()
+    if (!trimmed) {
+        pendingMotifError.value = "Un motif est obligatoire pour justifier la remise en attente de cet apprenant."
+        return
+    }
+
+    isSubmittingPendingMotif.value = true
+    router.patch(route('applications.status.update', targetAppForPending.value.id), {
+        status: 'pending',
+        motif: trimmed
+    }, {
+        preserveScroll: true,
+        onSuccess: () => {
+            closePendingMotifModal()
+            if (isDetailsOpen.value) {
+                closeDetails()
+            }
+        },
+        onError: (errors) => {
+            if (errors?.motif) {
+                pendingMotifError.value = errors.motif
+            }
+        },
+        onFinish: () => {
+            isSubmittingPendingMotif.value = false
+        }
+    })
+}
+
+function updateStatus(appOrId, status) {
+    const app = typeof appOrId === 'object' && appOrId !== null
+        ? appOrId
+        : props.applications?.find(a => a.id === appOrId)
+
+    if (!app) return
+
+    // Si l'apprenant était admis et qu'on le remet en attente, le motif est strictement obligatoire
+    if (status === 'pending' && app.status === 'admitted') {
+        openPendingMotifModal(app)
+        return
+    }
+
+    let confirmMsg = ''
+    const candidateName = app.nom_complet || app.user?.name || 'ce candidat'
     if (status === 'admitted') {
-        confirmMsg = 'Confirmer la décision : ADMIS ?';
+        confirmMsg = `Confirmer la décision : ADMETTRE ${candidateName} ?`
     } else if (status === 'rejected') {
-        confirmMsg = 'Confirmer la décision : REJETÉ ?';
+        confirmMsg = `Confirmer la décision : REJETER le dossier de ${candidateName} ?`
     } else if (status === 'pending') {
-        confirmMsg = 'Confirmer la décision : REMETTRE EN ATTENTE ?';
+        confirmMsg = `Confirmer la décision : REMETTRE EN ATTENTE ${candidateName} ?`
     }
 
     if (confirm(confirmMsg)) {
-        router.patch(route('applications.status.update', id), {
+        router.patch(route('applications.status.update', app.id), {
             status: status
         }, {
-            preserveScroll: true
+            preserveScroll: true,
+            onSuccess: () => {
+                if (isDetailsOpen.value && applicationForDetails.value?.id === app.id) {
+                    closeDetails()
+                }
+            }
         })
     }
 }
@@ -717,9 +802,19 @@ const getStatusClass = (status) => {
                                     </span>
                                 </td>
                                 <td class="px-6 py-4 text-center">
-                                    <span class="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border" :class="getStatusClass(app.status)">
-                                        {{ app.status }}
-                                    </span>
+                                    <div class="flex flex-col items-center gap-1.5">
+                                        <span class="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border" :class="getStatusClass(app.status)">
+                                            {{ app.status }}
+                                        </span>
+                                        <span 
+                                            v-if="app.status === 'pending' && app.motif_remise_en_attente" 
+                                            class="inline-flex items-center gap-1 text-[10px] font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200/70 max-w-[180px] truncate cursor-help"
+                                            :title="`Motif de remise en attente : ${app.motif_remise_en_attente}`"
+                                        >
+                                            <ChatBubbleBottomCenterTextIcon class="h-3 w-3 text-amber-600 shrink-0" />
+                                            <span class="truncate">{{ app.motif_remise_en_attente }}</span>
+                                        </span>
+                                    </div>
                                 </td>
                                 <td class="px-6 py-4 text-right">
                                     <div class="flex justify-end gap-2">
@@ -731,15 +826,15 @@ const getStatusClass = (status) => {
                                             Détails
                                         </button>
                                         <template v-if="app.status === 'pending'">
-                                            <button @click="updateStatus(app.id, 'admitted')" class="p-2 text-green-600 hover:bg-green-50 rounded-xl transition" title="Admettre">
+                                            <button @click="updateStatus(app, 'admitted')" class="p-2 text-green-600 hover:bg-green-50 rounded-xl transition" title="Admettre">
                                                 <CheckCircleIcon class="h-6 w-6" />
                                             </button>
-                                            <button @click="updateStatus(app.id, 'rejected')" class="p-2 text-red-600 hover:bg-red-50 rounded-xl transition" title="Rejeter">
+                                            <button @click="updateStatus(app, 'rejected')" class="p-2 text-red-600 hover:bg-red-50 rounded-xl transition" title="Rejeter">
                                                 <XCircleIcon class="h-6 w-6" />
                                             </button>
                                         </template>
                                         <template v-else-if="$page.props.auth.user.roles.includes('Directeur')">
-                                            <button @click="updateStatus(app.id, 'pending')" class="p-2 text-amber-600 hover:bg-amber-50 rounded-xl transition" title="Remettre en attente">
+                                            <button @click="updateStatus(app, 'pending')" class="p-2 text-amber-600 hover:bg-amber-50 rounded-xl transition" title="Remettre en attente">
                                                 <ArrowPathIcon class="h-6 w-6" />
                                             </button>
                                         </template>
@@ -778,6 +873,26 @@ const getStatusClass = (status) => {
                 </div>
 
                 <div class="p-8 overflow-y-auto space-y-8 custom-scrollbar">
+                    <!-- Alert: Motif de remise en attente -->
+                    <div v-if="applicationForDetails.motif_remise_en_attente" class="p-5 bg-gradient-to-r from-amber-500/10 via-amber-50 to-orange-50 border border-amber-200 rounded-[2rem] flex items-start gap-4 shadow-sm">
+                        <div class="h-10 w-10 bg-amber-500 text-white rounded-xl flex items-center justify-center shrink-0 shadow-md shadow-amber-200">
+                            <ArrowPathIcon class="h-5 w-5" />
+                        </div>
+                        <div class="flex-1">
+                            <div class="flex items-center justify-between">
+                                <h4 class="text-xs font-black uppercase tracking-wider text-amber-900 flex items-center gap-1.5">
+                                    <ExclamationTriangleIcon class="h-4 w-4 text-amber-600" />
+                                    Dossier remis en attente
+                                </h4>
+                                <span class="text-[10px] font-bold text-amber-700 bg-amber-100/80 px-2.5 py-0.5 rounded-full border border-amber-200">Direction</span>
+                            </div>
+                            <p class="text-[11px] font-bold text-amber-800 mt-1.5">Motif de la décision :</p>
+                            <p class="text-xs font-medium text-amber-950 mt-1 bg-white/90 p-3 rounded-xl border border-amber-200/60 leading-relaxed whitespace-pre-line">
+                                {{ applicationForDetails.motif_remise_en_attente }}
+                            </p>
+                        </div>
+                    </div>
+
                     <!-- SECTION: Identity -->
                     <div>
                         <h4 class="text-[10px] font-black text-blue-600 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
@@ -905,15 +1020,15 @@ const getStatusClass = (status) => {
 
                 <div class="p-8 bg-gray-50 flex justify-end gap-3 mt-auto">
                     <template v-if="applicationForDetails.status === 'pending'">
-                        <button @click="updateStatus(applicationForDetails.id, 'rejected'); closeDetails()" class="px-6 py-3 bg-white text-red-600 border border-red-100 rounded-2xl font-black text-sm hover:bg-red-50 transition">
+                        <button @click="updateStatus(applicationForDetails, 'rejected')" class="px-6 py-3 bg-white text-red-600 border border-red-100 rounded-2xl font-black text-sm hover:bg-red-50 transition">
                             Rejeter le dossier
                         </button>
-                        <button @click="updateStatus(applicationForDetails.id, 'admitted'); closeDetails()" class="px-6 py-3 bg-blue-600 text-white rounded-2xl font-black text-sm hover:bg-blue-700 transition shadow-lg shadow-blue-100">
+                        <button @click="updateStatus(applicationForDetails, 'admitted')" class="px-6 py-3 bg-blue-600 text-white rounded-2xl font-black text-sm hover:bg-blue-700 transition shadow-lg shadow-blue-100">
                             Admettre le candidat
                         </button>
                     </template>
                     <template v-else-if="$page.props.auth.user.roles.includes('Directeur')">
-                        <button @click="updateStatus(applicationForDetails.id, 'pending'); closeDetails()" class="px-6 py-3 bg-amber-600 text-white rounded-2xl font-black text-sm hover:bg-amber-700 transition shadow-lg shadow-amber-100">
+                        <button @click="updateStatus(applicationForDetails, 'pending')" class="px-6 py-3 bg-amber-600 text-white rounded-2xl font-black text-sm hover:bg-amber-700 transition shadow-lg shadow-amber-100">
                             Remettre en attente
                         </button>
                     </template>
@@ -1278,6 +1393,108 @@ const getStatusClass = (status) => {
                         :src="route('applications.preview', { application: selectedApplication.id, type: previewType })" 
                         class="w-full h-full border-0"
                     ></iframe>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal: Motif de Remise en Attente -->
+        <div v-if="showPendingMotifModal" class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-gray-900/80 backdrop-blur-sm">
+            <div class="bg-white w-full max-w-lg rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col">
+                <!-- Header -->
+                <div class="px-8 py-6 border-b border-gray-100 flex items-center justify-between bg-amber-50/50">
+                    <div class="flex items-center gap-3">
+                        <div class="h-12 w-12 bg-amber-500 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-amber-200">
+                            <ArrowPathIcon class="h-6 w-6" />
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-black text-gray-900 tracking-tight">Remise en attente</h3>
+                            <p class="text-xs text-amber-700 font-bold mt-0.5">
+                                {{ targetAppForPending?.nom_complet || targetAppForPending?.user?.name || 'Candidat' }}
+                            </p>
+                        </div>
+                    </div>
+                    <button @click="closePendingMotifModal" class="p-2 hover:bg-gray-200/70 rounded-xl transition">
+                        <XMarkIcon class="h-6 w-6 text-gray-400" />
+                    </button>
+                </div>
+
+                <!-- Body -->
+                <div class="p-8 space-y-6">
+                    <div class="p-4 bg-amber-50/70 border border-amber-200 rounded-2xl text-xs text-amber-900 flex items-start gap-3">
+                        <ExclamationTriangleIcon class="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+                        <div class="space-y-1">
+                            <p class="font-bold">Cet apprenant est actuellement admis.</p>
+                            <p class="text-amber-800 leading-relaxed">
+                                Sa remise en attente suspendra son statut d'apprenant actif. Un motif explicite doit obligatoirement être consigné pour motiver cette décision.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Suggestions rapides -->
+                    <div>
+                        <label class="block text-[10px] font-black uppercase tracking-wider text-gray-400 mb-2">
+                            Motifs fréquents (cliquez pour sélectionner) :
+                        </label>
+                        <div class="flex flex-wrap gap-2">
+                            <button
+                                v-for="motifSuggestion in quickMotifs"
+                                :key="motifSuggestion"
+                                type="button"
+                                @click="selectQuickMotif(motifSuggestion)"
+                                class="text-[11px] font-medium px-3 py-1.5 rounded-xl border transition text-left"
+                                :class="pendingMotif === motifSuggestion 
+                                    ? 'bg-amber-100 border-amber-300 text-amber-900 font-bold shadow-sm' 
+                                    : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100 hover:text-gray-900'"
+                            >
+                                {{ motifSuggestion }}
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Textarea motif -->
+                    <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <label class="block text-xs font-black uppercase tracking-wider text-gray-700">
+                                Motif de la remise en attente <span class="text-rose-600">*</span>
+                            </label>
+                            <span class="text-[10px] font-bold" :class="pendingMotif.length > 950 ? 'text-rose-600' : 'text-gray-400'">
+                                {{ pendingMotif.length }} / 1000
+                            </span>
+                        </div>
+                        <textarea
+                            v-model="pendingMotif"
+                            rows="4"
+                            maxlength="1000"
+                            placeholder="Précisez la raison détaillée justifiant la remise en attente..."
+                            class="w-full px-4 py-3 bg-gray-50 border rounded-2xl text-sm font-medium focus:bg-white focus:ring-2 focus:ring-amber-500 focus:outline-none transition resize-none"
+                            :class="pendingMotifError ? 'border-rose-400 bg-rose-50/30' : 'border-gray-200'"
+                        ></textarea>
+                        <p v-if="pendingMotifError" class="text-xs font-bold text-rose-600 mt-1.5 flex items-center gap-1">
+                            <XCircleIcon class="h-4 w-4 shrink-0" />
+                            <span>{{ pendingMotifError }}</span>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Footer -->
+                <div class="px-8 py-5 bg-gray-50 border-t border-gray-100 flex items-center justify-end gap-3">
+                    <button
+                        type="button"
+                        @click="closePendingMotifModal"
+                        class="px-6 py-2.5 rounded-xl font-bold text-sm text-gray-600 hover:bg-gray-200 transition"
+                        :disabled="isSubmittingPendingMotif"
+                    >
+                        Annuler
+                    </button>
+                    <button
+                        type="button"
+                        @click="submitPendingMotif"
+                        class="px-6 py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl font-black text-sm transition shadow-lg shadow-amber-200 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                        :disabled="isSubmittingPendingMotif || !pendingMotif.trim()"
+                    >
+                        <ArrowPathIcon v-if="isSubmittingPendingMotif" class="h-4 w-4 animate-spin" />
+                        <span>{{ isSubmittingPendingMotif ? 'Enregistrement...' : 'Confirmer la remise en attente' }}</span>
+                    </button>
                 </div>
             </div>
         </div>
