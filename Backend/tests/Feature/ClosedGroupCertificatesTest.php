@@ -303,6 +303,112 @@ class ClosedGroupCertificatesTest extends TestCase
         ]);
     }
 
+    public function test_generate_certificate_records_custom_dates(): void
+    {
+        $director = User::factory()->create();
+        $director->assignRole('Directeur');
+
+        $trainer = User::factory()->create();
+        $trainer->assignRole('Formateur');
+
+        $module = Module::create([
+            'code_module' => 'DEV101',
+            'titre' => 'Programmation Python',
+            'quota_heures' => 45,
+        ]);
+
+        $group = Group::create([
+            'nom_groupe' => 'G5-26',
+            'module_id' => $module->id,
+            'formateur_id' => $trainer->id,
+            'annee_academique' => '2025-2026',
+            'status' => 'closed',
+        ]);
+
+        $student = User::factory()->create(['name' => 'Khadija Ba']);
+        $student->assignRole('Apprenant');
+        $group->students()->attach($student->id);
+
+        $response = $this->actingAs($director)->post(
+            route('certificates.generate', ['student' => $student->id, 'module' => $module->id]),
+            [
+                'group_id' => $group->id,
+                'score' => 16.5,
+                'type' => 'reussite',
+                'start_date' => '2026-01-15',
+                'end_date' => '2026-05-20',
+            ]
+        );
+
+        $response->assertSessionHas('success');
+
+        $this->assertDatabaseHas('certificates', [
+            'user_id' => $student->id,
+            'module_id' => $module->id,
+            'group_id' => $group->id,
+            'type' => 'reussite',
+            'score' => 16.5,
+            'start_date' => '2026-01-15 00:00:00',
+            'end_date' => '2026-05-20 00:00:00',
+        ]);
+    }
+
+    public function test_batch_generate_applies_custom_dates(): void
+    {
+        $director = User::factory()->create();
+        $director->assignRole('Directeur');
+
+        $trainer = User::factory()->create();
+        $trainer->assignRole('Formateur');
+
+        $module = Module::create([
+            'code_module' => 'DEV102',
+            'titre' => 'Bases de Données',
+            'quota_heures' => 35,
+        ]);
+
+        $group = Group::create([
+            'nom_groupe' => 'G6-26',
+            'module_id' => $module->id,
+            'formateur_id' => $trainer->id,
+            'annee_academique' => '2025-2026',
+            'status' => 'closed',
+        ]);
+
+        $student1 = User::factory()->create();
+        $student1->assignRole('Apprenant');
+        $student2 = User::factory()->create();
+        $student2->assignRole('Apprenant');
+
+        $group->students()->attach([$student1->id, $student2->id]);
+
+        $response = $this->actingAs($director)->post(
+            route('certificates.generate-group', ['group' => $group->id]),
+            [
+                'start_date' => '2025-10-01',
+                'end_date' => '2026-02-28',
+            ]
+        );
+
+        $response->assertSessionHas('success');
+
+        $this->assertDatabaseHas('certificates', [
+            'user_id' => $student1->id,
+            'module_id' => $module->id,
+            'group_id' => $group->id,
+            'start_date' => '2025-10-01 00:00:00',
+            'end_date' => '2026-02-28 00:00:00',
+        ]);
+
+        $this->assertDatabaseHas('certificates', [
+            'user_id' => $student2->id,
+            'module_id' => $module->id,
+            'group_id' => $group->id,
+            'start_date' => '2025-10-01 00:00:00',
+            'end_date' => '2026-02-28 00:00:00',
+        ]);
+    }
+
     public function test_certificate_verification_returns_type_and_score(): void
     {
         $user = User::factory()->create(['name' => 'Amadou Fall']);

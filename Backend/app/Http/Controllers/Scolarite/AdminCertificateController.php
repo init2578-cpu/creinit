@@ -44,7 +44,15 @@ class AdminCertificateController extends Controller
             ->get()
             ->map(function ($group) {
                 $module = $group->module;
-                $studentsList = $group->students->map(function ($student) use ($group, $module) {
+
+                // Auto-deduce default group period from attendances or module dates
+                $firstAttendance = Attendance::where('group_id', $group->id)->min('date');
+                $lastAttendance  = Attendance::where('group_id', $group->id)->max('date');
+
+                $defaultStartDate = $firstAttendance ?? $module?->start_date?->format('Y-m-d');
+                $defaultEndDate   = $lastAttendance ?? $module?->end_date?->format('Y-m-d');
+
+                $studentsList = $group->students->map(function ($student) use ($group, $module, $defaultStartDate, $defaultEndDate) {
                     $score = $this->calculateLearnerGrade($student, $module, $group);
                     $suggestedType = $this->determineCertificateType($score);
 
@@ -60,6 +68,9 @@ class AdminCertificateController extends Controller
                     $totalRecorded = $attendances->whereIn('status', ['present', 'absent_non_justifie', 'justifie', 'late', 'en_retard'])->count();
                     $rate = $totalRecorded > 0 ? (float) round(($presences / $totalRecorded) * 100, 1) : 100.0;
 
+                    $startDate = $cert?->start_date ? $cert->start_date->format('Y-m-d') : $defaultStartDate;
+                    $endDate   = $cert?->end_date ? $cert->end_date->format('Y-m-d') : $defaultEndDate;
+
                     return [
                         'id' => $student->id,
                         'name' => $student->name,
@@ -69,12 +80,20 @@ class AdminCertificateController extends Controller
                         'score' => $score,
                         'suggested_type' => $suggestedType,
                         'attendance_rate' => $rate,
+                        'start_date' => $startDate,
+                        'end_date' => $endDate,
+                        'start_date_fr' => $startDate ? Carbon::parse($startDate)->format('d/m/Y') : null,
+                        'end_date_fr' => $endDate ? Carbon::parse($endDate)->format('d/m/Y') : null,
                         'has_certificate' => (bool) $hasCert,
                         'certificate' => $cert ? [
                             'id' => $cert->id,
                             'uuid' => $cert->uuid,
                             'type' => $cert->type,
                             'score' => $cert->score,
+                            'start_date' => $cert->start_date?->format('Y-m-d'),
+                            'end_date' => $cert->end_date?->format('Y-m-d'),
+                            'start_date_fr' => $cert->start_date?->format('d/m/Y'),
+                            'end_date_fr' => $cert->end_date?->format('d/m/Y'),
                             'issued_at' => $cert->issued_at?->format('d/m/Y'),
                             'pdf_path' => $cert->pdf_path,
                         ] : null,
@@ -92,6 +111,10 @@ class AdminCertificateController extends Controller
                     'module_id' => $group->module_id,
                     'module_title' => $module?->titre ?? 'N/A',
                     'formateur_name' => $group->formateur?->name ?? 'N/A',
+                    'default_start_date' => $defaultStartDate,
+                    'default_end_date' => $defaultEndDate,
+                    'default_start_date_fr' => $defaultStartDate ? Carbon::parse($defaultStartDate)->format('d/m/Y') : null,
+                    'default_end_date_fr' => $defaultEndDate ? Carbon::parse($defaultEndDate)->format('d/m/Y') : null,
                     'students_count' => $totalCount,
                     'certified_count' => $certifiedCount,
                     'pending_count' => $pendingCount,
@@ -138,6 +161,15 @@ class AdminCertificateController extends Controller
                     $score = $this->calculateLearnerGrade($student, $module, $group);
                     $suggestedType = $this->determineCertificateType($score);
 
+                    $firstAttendance = Attendance::where('group_id', $group->id)->min('date');
+                    $lastAttendance  = Attendance::where('group_id', $group->id)->max('date');
+
+                    $defaultStartDate = $firstAttendance ?? $module->start_date?->format('Y-m-d');
+                    $defaultEndDate   = $lastAttendance ?? $module->end_date?->format('Y-m-d');
+
+                    $startDate = $cert?->start_date ? $cert->start_date->format('Y-m-d') : $defaultStartDate;
+                    $endDate   = $cert?->end_date ? $cert->end_date->format('Y-m-d') : $defaultEndDate;
+
                     return [
                         'module_id' => $module->id,
                         'module_title' => $module->titre,
@@ -147,6 +179,10 @@ class AdminCertificateController extends Controller
                         'is_group_closed' => $group->status === 'closed',
                         'score' => $score,
                         'suggested_type' => $suggestedType,
+                        'start_date' => $startDate,
+                        'end_date' => $endDate,
+                        'start_date_fr' => $startDate ? Carbon::parse($startDate)->format('d/m/Y') : null,
+                        'end_date_fr' => $endDate ? Carbon::parse($endDate)->format('d/m/Y') : null,
                         'completed' => ($totalChapters > 0 && $completedCount === $totalChapters) || $group->status === 'closed',
                         'total_chapters' => $totalChapters,
                         'completed_count' => $completedCount,
@@ -157,6 +193,10 @@ class AdminCertificateController extends Controller
                             'uuid' => $cert->uuid,
                             'type' => $cert->type,
                             'score' => $cert->score,
+                            'start_date' => $cert->start_date?->format('Y-m-d'),
+                            'end_date' => $cert->end_date?->format('Y-m-d'),
+                            'start_date_fr' => $cert->start_date?->format('d/m/Y'),
+                            'end_date_fr' => $cert->end_date?->format('d/m/Y'),
                             'issued_at' => $cert->issued_at?->format('d/m/Y'),
                             'pdf_path' => $cert->pdf_path,
                         ] : null,
@@ -205,16 +245,32 @@ class AdminCertificateController extends Controller
             $type = $this->determineCertificateType($score);
         }
 
+        // Custom or auto-deduced training period dates
+        $startDate = $request->input('start_date');
+        $endDate   = $request->input('end_date');
+
+        if (!$startDate) {
+            $firstAttendance = $group ? Attendance::where('group_id', $group->id)->min('date') : null;
+            $startDate = $firstAttendance ?? $module->start_date?->format('Y-m-d');
+        }
+
+        if (!$endDate) {
+            $lastAttendance = $group ? Attendance::where('group_id', $group->id)->max('date') : null;
+            $endDate = $lastAttendance ?? $module->end_date?->format('Y-m-d');
+        }
+
         $certificate = Certificate::updateOrCreate(
             [
                 'user_id'   => $student->id,
                 'module_id' => $module->id,
             ],
             [
-                'group_id'  => $group?->id,
-                'type'      => $type,
-                'score'     => $score,
-                'issued_at' => now(),
+                'group_id'   => $group?->id,
+                'type'       => $type,
+                'score'      => $score,
+                'start_date' => $startDate,
+                'end_date'   => $endDate,
+                'issued_at'  => now(),
             ]
         );
 
@@ -241,6 +297,17 @@ class AdminCertificateController extends Controller
             return back()->withErrors(['group' => 'Ce groupe ne contient aucun apprenant.']);
         }
 
+        // Custom or auto-deduced group dates
+        $groupStartDate = $request->input('start_date');
+        $groupEndDate   = $request->input('end_date');
+
+        if (!$groupStartDate) {
+            $groupStartDate = Attendance::where('group_id', $group->id)->min('date') ?? $module->start_date?->format('Y-m-d');
+        }
+        if (!$groupEndDate) {
+            $groupEndDate = Attendance::where('group_id', $group->id)->max('date') ?? $module->end_date?->format('Y-m-d');
+        }
+
         $reussiteCount = 0;
         $participationCount = 0;
 
@@ -254,10 +321,12 @@ class AdminCertificateController extends Controller
                     'module_id' => $module->id,
                 ],
                 [
-                    'group_id'  => $group->id,
-                    'type'      => $type,
-                    'score'     => $score,
-                    'issued_at' => now(),
+                    'group_id'   => $group->id,
+                    'type'       => $type,
+                    'score'      => $score,
+                    'start_date' => $groupStartDate,
+                    'end_date'   => $groupEndDate,
+                    'issued_at'  => now(),
                 ]
             );
 
@@ -397,8 +466,14 @@ class AdminCertificateController extends Controller
         $firstAttendance = $group ? Attendance::where('group_id', $group->id)->min('date') : null;
         $lastAttendance = $group ? Attendance::where('group_id', $group->id)->max('date') : null;
 
-        $dateDebut = $firstAttendance ? Carbon::parse($firstAttendance)->format('d/m/Y') : null;
-        $dateFin = $lastAttendance ? Carbon::parse($lastAttendance)->format('d/m/Y') : null;
+        $dateDebut = $certificate->start_date 
+            ? Carbon::parse($certificate->start_date)->format('d/m/Y') 
+            : ($firstAttendance ? Carbon::parse($firstAttendance)->format('d/m/Y') : ($module->start_date ? Carbon::parse($module->start_date)->format('d/m/Y') : null));
+
+        $dateFin = $certificate->end_date 
+            ? Carbon::parse($certificate->end_date)->format('d/m/Y') 
+            : ($lastAttendance ? Carbon::parse($lastAttendance)->format('d/m/Y') : ($module->end_date ? Carbon::parse($module->end_date)->format('d/m/Y') : null));
+
         $issuedDate = $certificate->issued_at ? $certificate->issued_at->format('d/m/Y') : date('d/m/Y');
 
         $pdf = Pdf::loadView('pdf.attestation', [

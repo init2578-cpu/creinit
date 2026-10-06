@@ -20,6 +20,8 @@ class Certificate extends Model
         'type',
         'score',
         'group_id',
+        'start_date',
+        'end_date',
         'issued_at',
         'pdf_path',
     ];
@@ -27,11 +29,13 @@ class Certificate extends Model
     protected function casts(): array
     {
         return [
-            'user_id'   => 'integer',
-            'module_id' => 'integer',
-            'group_id'  => 'integer',
-            'score'     => 'float',
-            'issued_at' => 'datetime',
+            'user_id'    => 'integer',
+            'module_id'  => 'integer',
+            'group_id'   => 'integer',
+            'score'      => 'float',
+            'start_date' => 'date',
+            'end_date'   => 'date',
+            'issued_at'  => 'datetime',
         ];
     }
 

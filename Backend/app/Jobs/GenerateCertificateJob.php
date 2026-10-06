@@ -26,6 +26,8 @@ class GenerateCertificateJob implements ShouldQueue
         private readonly string $type = 'reussite',
         private readonly ?float $score = null,
         private readonly ?int $groupId = null,
+        private readonly ?string $startDate = null,
+        private readonly ?string $endDate = null,
     ) {}
 
     public function handle(): void
@@ -40,10 +42,12 @@ class GenerateCertificateJob implements ShouldQueue
                 'module_id' => $module->id,
             ],
             [
-                'issued_at' => now(),
-                'type'      => $this->type,
-                'score'     => $this->score,
-                'group_id'  => $this->groupId,
+                'issued_at'  => now(),
+                'type'       => $this->type,
+                'score'      => $this->score,
+                'group_id'   => $this->groupId,
+                'start_date' => $this->startDate,
+                'end_date'   => $this->endDate,
             ],
         );
 
@@ -74,8 +78,12 @@ class GenerateCertificateJob implements ShouldQueue
         $firstAttendance = $group ? \App\Models\Attendance::where('group_id', $group->id)->min('date') : null;
         $lastAttendance = $group ? \App\Models\Attendance::where('group_id', $group->id)->max('date') : null;
         
-        $dateDebut = $firstAttendance ? \Carbon\Carbon::parse($firstAttendance)->format('d/m/Y') : null;
-        $dateFin = $lastAttendance ? \Carbon\Carbon::parse($lastAttendance)->format('d/m/Y') : null;
+        $dateDebut = $certificate->start_date 
+            ? $certificate->start_date->format('d/m/Y') 
+            : ($firstAttendance ? \Carbon\Carbon::parse($firstAttendance)->format('d/m/Y') : ($module->start_date ? $module->start_date->format('d/m/Y') : null));
+        $dateFin = $certificate->end_date 
+            ? $certificate->end_date->format('d/m/Y') 
+            : ($lastAttendance ? \Carbon\Carbon::parse($lastAttendance)->format('d/m/Y') : ($module->end_date ? $module->end_date->format('d/m/Y') : null));
         $issuedDate = $certificate->issued_at ? $certificate->issued_at->format('d/m/Y') : date('d/m/Y');
 
         // Generate PDF

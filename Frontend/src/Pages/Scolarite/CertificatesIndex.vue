@@ -18,7 +18,8 @@ import {
     SparklesIcon,
     DocumentTextIcon,
     XMarkIcon,
-    ShieldCheckIcon
+    ShieldCheckIcon,
+    CalendarDaysIcon
 } from '@heroicons/vue/24/outline'
 
 const props = defineProps({
@@ -76,9 +77,13 @@ const modalModule = ref(null)
 const modalGroup = ref(null)
 const modalScore = ref(null)
 const modalType = ref('reussite')
+const modalStartDate = ref('')
+const modalEndDate = ref('')
+const defaultAutoStartDate = ref('')
+const defaultAutoEndDate = ref('')
 const isSubmitting = ref(false)
 
-function openGenerateModal(student, module, group, currentScore = null, currentType = null) {
+function openGenerateModal(student, module, group, currentScore = null, currentType = null, startDate = null, endDate = null) {
     modalStudent.value = student
     modalModule.value = module
     modalGroup.value = group
@@ -91,8 +96,21 @@ function openGenerateModal(student, module, group, currentScore = null, currentT
     } else {
         modalType.value = 'reussite'
     }
+
+    const start = startDate || student?.certificate?.start_date || student?.start_date || group?.default_start_date || ''
+    const end = endDate || student?.certificate?.end_date || student?.end_date || group?.default_end_date || ''
+
+    modalStartDate.value = start
+    modalEndDate.value = end
+    defaultAutoStartDate.value = student?.start_date || group?.default_start_date || ''
+    defaultAutoEndDate.value = student?.end_date || group?.default_end_date || ''
     
     showGenerateModal.value = true
+}
+
+function resetModalDatesToAuto() {
+    modalStartDate.value = defaultAutoStartDate.value
+    modalEndDate.value = defaultAutoEndDate.value
 }
 
 function submitGenerateModal() {
@@ -105,6 +123,8 @@ function submitGenerateModal() {
             group_id: modalGroup.value ? modalGroup.value.id : null,
             type: modalType.value,
             score: modalScore.value !== null && modalScore.value !== '' ? Number(modalScore.value) : null,
+            start_date: modalStartDate.value || null,
+            end_date: modalEndDate.value || null,
         },
         {
             preserveScroll: true,
@@ -140,10 +160,23 @@ function quickGenerateCertificate(studentId, moduleId, groupId = null, suggested
 // Batch generation for all students of a closed group
 const showBatchModal = ref(false)
 const batchTargetGroup = ref(null)
+const batchStartDate = ref('')
+const batchEndDate = ref('')
+const defaultBatchAutoStartDate = ref('')
+const defaultBatchAutoEndDate = ref('')
 
 function confirmGenerateForGroup(group) {
     batchTargetGroup.value = group
+    batchStartDate.value = group.default_start_date || ''
+    batchEndDate.value = group.default_end_date || ''
+    defaultBatchAutoStartDate.value = group.default_start_date || ''
+    defaultBatchAutoEndDate.value = group.default_end_date || ''
     showBatchModal.value = true
+}
+
+function resetBatchDatesToAuto() {
+    batchStartDate.value = defaultBatchAutoStartDate.value
+    batchEndDate.value = defaultBatchAutoEndDate.value
 }
 
 function submitBatchGeneration() {
@@ -152,7 +185,10 @@ function submitBatchGeneration() {
     
     router.post(
         route('certificates.generate-group', { group: batchTargetGroup.value.id }),
-        {},
+        {
+            start_date: batchStartDate.value || null,
+            end_date: batchEndDate.value || null,
+        },
         {
             preserveScroll: true,
             onFinish: () => {
@@ -310,6 +346,10 @@ function deleteCertificate(certificateId) {
                                     <span class="px-3.5 py-1 bg-white/10 text-slate-300 rounded-full text-[10px] font-black uppercase tracking-widest">
                                         Année {{ group.annee_academique }}
                                     </span>
+                                    <span v-if="group.default_start_date_fr && group.default_end_date_fr" class="px-3.5 py-1 bg-white/10 text-slate-300 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5">
+                                        <CalendarDaysIcon class="w-3.5 h-3.5 text-blue-400" />
+                                        <span>Période : {{ group.default_start_date_fr }} au {{ group.default_end_date_fr }}</span>
+                                    </span>
                                     <span class="text-xs text-slate-400 font-medium">
                                         Formateur : {{ group.formateur_name }}
                                     </span>
@@ -394,6 +434,19 @@ function deleteCertificate(certificateId) {
                                         </p>
                                     </div>
 
+                                    <!-- Training Period -->
+                                    <div class="text-center sm:text-left hidden lg:block">
+                                        <span class="text-[10px] font-black uppercase tracking-wider text-gray-400">Période</span>
+                                        <p class="text-xs font-bold text-gray-700">
+                                            <span v-if="student.start_date_fr && student.end_date_fr">
+                                                {{ student.start_date_fr }} au {{ student.end_date_fr }}
+                                            </span>
+                                            <span v-else class="text-gray-400 italic text-[11px]">
+                                                Automatique
+                                            </span>
+                                        </p>
+                                    </div>
+
                                     <!-- Proposed Certificate Type Badge -->
                                     <div>
                                         <span class="text-[10px] font-black uppercase tracking-wider text-gray-400 block mb-1">Attestation</span>
@@ -445,9 +498,9 @@ function deleteCertificate(certificateId) {
                                         </Link>
 
                                         <button 
-                                            @click="openGenerateModal(student, { id: group.module_id, titre: group.module_title }, group, student.certificate.score ?? student.score, student.certificate.type)"
+                                            @click="openGenerateModal(student, { id: group.module_id, titre: group.module_title }, group, student.certificate.score ?? student.score, student.certificate.type, student.certificate.start_date ?? student.start_date, student.certificate.end_date ?? student.end_date)"
                                             class="p-3 bg-slate-50 text-slate-600 hover:bg-slate-100 rounded-xl transition shadow-sm"
-                                            title="Régénérer / Modifier le type ou la note"
+                                            title="Régénérer / Modifier le type, la période ou la note"
                                         >
                                             <ArrowPathIcon class="h-4 w-4" />
                                         </button>
@@ -463,7 +516,7 @@ function deleteCertificate(certificateId) {
 
                                     <template v-else>
                                         <button 
-                                            @click="quickGenerateCertificate(student.id, group.module_id, group.id, student.suggested_type, student.score)"
+                                            @click="openGenerateModal(student, { id: group.module_id, titre: group.module_title }, group, student.score, student.suggested_type, student.start_date, student.end_date)"
                                             :disabled="isSubmitting"
                                             class="flex items-center gap-2 px-4 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-black text-[11px] uppercase tracking-wider transition shadow-md shadow-blue-200 disabled:opacity-50"
                                         >
@@ -472,9 +525,9 @@ function deleteCertificate(certificateId) {
                                         </button>
 
                                         <button 
-                                            @click="openGenerateModal(student, { id: group.module_id, titre: group.module_title }, group, student.score, student.suggested_type)"
+                                            @click="openGenerateModal(student, { id: group.module_id, titre: group.module_title }, group, student.score, student.suggested_type, student.start_date, student.end_date)"
                                             class="p-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition shadow-sm"
-                                            title="Ajuster la note ou le type manuellement avant génération"
+                                            title="Ajuster la période, la note ou le type manuellement avant génération"
                                         >
                                             <FunnelIcon class="h-4 w-4" />
                                         </button>
@@ -582,7 +635,7 @@ function deleteCertificate(certificateId) {
                                                 </template>
                                                 <button 
                                                     v-else-if="prog.completed || prog.is_group_closed"
-                                                    @click="openGenerateModal(student, { id: prog.module_id, titre: prog.module_title }, { id: prog.group_id, nom_groupe: prog.group_name }, prog.score, prog.suggested_type)"
+                                                    @click="openGenerateModal(student, { id: prog.module_id, titre: prog.module_title }, { id: prog.group_id, nom_groupe: prog.group_name }, prog.score, prog.suggested_type, prog.start_date, prog.end_date)"
                                                     class="flex items-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-500 transition shadow-lg shadow-blue-200"
                                                 >
                                                     <PrinterIcon class="h-4 w-4" />
@@ -636,6 +689,54 @@ function deleteCertificate(certificateId) {
                         <div v-if="modalGroup" class="flex justify-between">
                             <span class="text-gray-400 font-bold uppercase tracking-wider">Groupe :</span>
                             <span class="font-bold text-gray-700">{{ modalGroup.nom_groupe }}</span>
+                        </div>
+                    </div>
+
+                    <!-- Période de formation (Début & Fin) avec saisie / modification -->
+                    <div class="p-4 bg-blue-50/60 border border-blue-100 rounded-2xl space-y-3">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-blue-900">
+                                <CalendarDaysIcon class="w-4 h-4 text-blue-600" />
+                                <span>Période de la formation</span>
+                            </div>
+                            <button 
+                                v-if="defaultAutoStartDate && (modalStartDate !== defaultAutoStartDate || modalEndDate !== defaultAutoEndDate)"
+                                type="button" 
+                                @click="resetModalDatesToAuto"
+                                class="text-[11px] font-bold text-blue-600 hover:text-blue-800 underline transition"
+                            >
+                                Rétablir auto
+                            </button>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-[11px] font-bold text-gray-700 mb-1">
+                                    Date de début
+                                </label>
+                                <input 
+                                    v-model="modalStartDate"
+                                    type="date"
+                                    class="w-full px-3 py-2.5 bg-white border border-blue-200 rounded-xl font-bold text-xs text-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                                />
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-bold text-gray-700 mb-1">
+                                    Date de fin
+                                </label>
+                                <input 
+                                    v-model="modalEndDate"
+                                    type="date"
+                                    class="w-full px-3 py-2.5 bg-white border border-blue-200 rounded-xl font-bold text-xs text-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                                />
+                            </div>
+                        </div>
+
+                        <div class="flex items-start gap-2 pt-1 text-[11px] text-blue-800/80 leading-snug">
+                            <ShieldCheckIcon class="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
+                            <span>
+                                Période déduite de l'émargement. Renseignez ou modifiez manuellement avant validation (sous approbation du Directeur).
+                            </span>
                         </div>
                     </div>
 
@@ -754,6 +855,54 @@ function deleteCertificate(certificateId) {
                         <div class="flex items-start gap-2 text-amber-800">
                             <DocumentTextIcon class="w-4 h-4 shrink-0 text-amber-600 mt-0.5" />
                             <span><strong>Attestation de Participation :</strong> attribuée à tout étudiant n'ayant pas atteint la moyenne requise (&lt; 10/20).</span>
+                        </div>
+                    </div>
+
+                    <!-- Période de formation pour le groupe -->
+                    <div class="p-4 bg-blue-50/60 border border-blue-100 rounded-2xl space-y-3">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-blue-900">
+                                <CalendarDaysIcon class="w-4 h-4 text-blue-600" />
+                                <span>Période de la formation du groupe</span>
+                            </div>
+                            <button 
+                                v-if="defaultBatchAutoStartDate && (batchStartDate !== defaultBatchAutoStartDate || batchEndDate !== defaultBatchAutoEndDate)"
+                                type="button" 
+                                @click="resetBatchDatesToAuto"
+                                class="text-[11px] font-bold text-blue-600 hover:text-blue-800 underline transition"
+                            >
+                                Rétablir auto
+                            </button>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-[11px] font-bold text-gray-700 mb-1">
+                                    Date de début
+                                </label>
+                                <input 
+                                    v-model="batchStartDate"
+                                    type="date"
+                                    class="w-full px-3 py-2.5 bg-white border border-blue-200 rounded-xl font-bold text-xs text-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                                />
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-bold text-gray-700 mb-1">
+                                    Date de fin
+                                </label>
+                                <input 
+                                    v-model="batchEndDate"
+                                    type="date"
+                                    class="w-full px-3 py-2.5 bg-white border border-blue-200 rounded-xl font-bold text-xs text-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                                />
+                            </div>
+                        </div>
+
+                        <div class="flex items-start gap-2 pt-1 text-[11px] text-blue-800/80 leading-snug">
+                            <ShieldCheckIcon class="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
+                            <span>
+                                Ces dates figureront sur l'ensemble des attestations produites pour ce groupe. Pré-remplies selon les présences (modifiable sous approbation du Directeur).
+                            </span>
                         </div>
                     </div>
                 </div>
