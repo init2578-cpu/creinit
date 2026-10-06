@@ -56,7 +56,7 @@ class DirectorDashboardController extends Controller
      */
     public function getKpis(): array
     {
-        $kpis = \Illuminate\Support\Facades\Cache::remember('director_dashboard_kpis_v4', 600, function () {
+        $kpis = \Illuminate\Support\Facades\Cache::remember('director_dashboard_kpis_v5', 600, function () {
             return [
                 'attendance_rate'          => $this->getAttendanceRate(),
                 'gender_parity'            => $this->getGenderParity(),
@@ -74,12 +74,13 @@ class DirectorDashboardController extends Controller
                 'trainers_performance'    => $this->getTrainersPerformance(),
                 'top_learners'            => $this->getTopLearners(),
                 'attendance_stats'         => $this->getAttendanceStats(),
-                'alerts'                   => $this->getAlerts(),
                 'daily_trends'             => $this->getDailyTrends(),
                 'module_distribution'      => $this->getModuleDistribution(),
             ];
         });
 
+        // Hors cache : un groupe clôturé doit disparaître immédiatement des alertes
+        $kpis['alerts'] = $this->getAlerts();
         $kpis['online_users_count'] = $this->getOnlineUsersCount();
         $kpis['trainers_availability'] = $this->getTrainersAvailability();
 
@@ -310,6 +311,12 @@ class DirectorDashboardController extends Controller
     private function getAlerts(): array
     {
         $learnersAtRisk = Attendance::where('status', 'absent_non_justifie')
+            // Groupes clôturés masqués de l'affichage (historique conservé en BDD)
+            ->whereHas('group', function ($q) {
+                $q->where(function ($sq) {
+                    $sq->whereNull('status')->orWhere('status', '!=', 'closed');
+                });
+            })
             ->select('user_id', 'group_id', DB::raw('COUNT(*) as total_absences'))
             ->groupBy('user_id', 'group_id')
             ->havingRaw('COUNT(*) >= 2')

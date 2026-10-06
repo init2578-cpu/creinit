@@ -35,15 +35,8 @@ class AttendanceController extends Controller
             })
             ->get();
 
-        // Also fetch closed groups for this trainer to consult history
-        $closedGroups = Group::with('module')
-            ->where('status', 'closed')
-            ->whereIn('formateur_id', $trainerIds)
-            ->get();
-
         return Inertia::render('Attendances/Index', [
             'groups' => $groups,
-            'closed_groups' => $closedGroups,
         ]);
     }
 

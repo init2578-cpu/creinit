@@ -337,6 +337,64 @@ class GroupAttendanceHistoryTest extends TestCase
             ->where('sessions.0.schedule.start_time', '10:00:00')
         );
     }
+
+    public function test_closed_groups_are_excluded_from_trainer_attendances_index_page(): void
+    {
+        $trainer = User::factory()->create();
+        $trainer->assignRole('Formateur');
+
+        $module = Module::create([
+            'code_module' => 'DEV107',
+            'titre' => 'Web Avancé',
+            'quota_heures' => 30,
+        ]);
+
+        $activeGroup = Group::create([
+            'nom_groupe' => 'Groupe Actif',
+            'module_id' => $module->id,
+            'formateur_id' => $trainer->id,
+            'annee_academique' => '2025-2026',
+            'status' => 'active',
+        ]);
+
+        $closedGroup = Group::create([
+            'nom_groupe' => 'Groupe Clôturé',
+            'module_id' => $module->id,
+            'formateur_id' => $trainer->id,
+            'annee_academique' => '2025-2026',
+            'status' => 'closed',
+        ]);
+
+        $room = \App\Models\Room::create([
+            'nom' => 'Salle C01',
+            'capacite' => 20,
+            'type_salle' => 'cours',
+        ]);
+
+        Schedule::create([
+            'group_id' => $activeGroup->id,
+            'room_id' => $room->id,
+            'formateur_id' => $trainer->id,
+            'day_of_week' => 1,
+            'start_time' => '08:00',
+            'end_time' => '10:00',
+        ]);
+
+        $response = $this->actingAs($trainer)->get(route('attendances.trainer-groups'));
+        $response->assertOk();
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('Attendances/Index')
+            ->has('groups', 1)
+            ->where('groups.0.id', $activeGroup->id)
+            ->missing('closed_groups')
+        );
+
+        // Verify closed group is completely preserved in DB
+        $this->assertDatabaseHas('groups', [
+            'id' => $closedGroup->id,
+            'status' => 'closed',
+        ]);
+    }
 }
 
 

@@ -170,4 +170,32 @@ class DirectorDashboardTest extends TestCase
         $this->assertEquals('2026-07-10', $data['absences'][1]['date']);
         $this->assertEquals('absent_non_justifie', $data['absences'][1]['status']);
     }
+
+    public function test_closed_groups_are_hidden_from_vigilance_alerts_without_deleting_data()
+    {
+        $module = Module::create(['titre' => 'Informatique', 'code_module' => 'INF01', 'quota_heures' => 40]);
+        $trainer = User::factory()->create();
+        $trainer->assignRole('Formateur');
+
+        $activeGroup = Group::create(['nom_groupe' => 'G-Actif', 'annee_academique' => '2026', 'module_id' => $module->id, 'formateur_id' => $trainer->id, 'status' => 'active']);
+        $closedGroup = Group::create(['nom_groupe' => 'G-Clos', 'annee_academique' => '2026', 'module_id' => $module->id, 'formateur_id' => $trainer->id, 'status' => 'closed']);
+
+        $learner = User::factory()->create();
+        $learner->assignRole('Apprenant');
+
+        foreach ([$activeGroup, $closedGroup] as $g) {
+            Attendance::create(['user_id' => $learner->id, 'group_id' => $g->id, 'status' => 'absent_non_justifie', 'date' => '2026-07-10']);
+            Attendance::create(['user_id' => $learner->id, 'group_id' => $g->id, 'status' => 'absent_non_justifie', 'date' => '2026-07-11']);
+        }
+
+        $alerts = app(\App\Http\Controllers\DirectorDashboardController::class)->getKpis()['alerts']['learners_at_risk'];
+        $groupIds = collect($alerts)->pluck('group_id')->map(fn ($id) => (int) $id)->all();
+
+        $this->assertContains($activeGroup->id, $groupIds);
+        $this->assertNotContains($closedGroup->id, $groupIds);
+
+        // Les données du groupe clôturé restent intactes en base
+        $this->assertEquals(2, Attendance::where('group_id', $closedGroup->id)->count());
+        $this->assertEquals('closed', $closedGroup->fresh()->status);
+    }
 }
