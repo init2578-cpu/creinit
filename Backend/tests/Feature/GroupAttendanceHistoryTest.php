@@ -248,5 +248,95 @@ class GroupAttendanceHistoryTest extends TestCase
             ->where('attendanceStats.total_sessions', 1)
         );
     }
+
+    public function test_reopening_closed_group_does_not_restore_its_schedule_in_timetable(): void
+    {
+        $director = User::factory()->create();
+        $director->assignRole('Directeur');
+
+        $trainer = User::factory()->create();
+        $trainer->assignRole('Formateur');
+
+        $module = Module::create([
+            'code_module' => 'DEV106',
+            'titre' => 'Architecture Logicielle',
+            'quota_heures' => 40,
+        ]);
+
+        $group = Group::create([
+            'nom_groupe' => 'Promo F',
+            'module_id' => $module->id,
+            'formateur_id' => $trainer->id,
+            'annee_academique' => '2025-2026',
+            'status' => 'active',
+        ]);
+
+        $room = \App\Models\Room::create([
+            'nom' => 'Salle B12',
+            'capacite' => 25,
+            'type_salle' => 'cours',
+        ]);
+
+        $schedule = Schedule::create([
+            'group_id' => $group->id,
+            'room_id' => $room->id,
+            'formateur_id' => $trainer->id,
+            'day_of_week' => 2, // Mardi
+            'start_time' => '10:00',
+            'end_time' => '12:00',
+        ]);
+
+        $student = User::factory()->create();
+        $student->assignRole('Apprenant');
+        $group->students()->attach($student->id);
+
+        $attendance = Attendance::create([
+            'group_id' => $group->id,
+            'schedule_id' => $schedule->id,
+            'user_id' => $student->id,
+            'date' => '2026-03-03',
+            'status' => 'present',
+        ]);
+
+        // 1. Close the group
+        $this->actingAs($director)->patch(route('groups.close', $group->id));
+        $this->assertSoftDeleted('schedules', ['id' => $schedule->id]);
+
+        // 2. Reopen the group
+        $reopenResponse = $this->actingAs($director)->patch(route('groups.reopen', $group->id));
+        $reopenResponse->assertSessionHas('success');
+
+        $group->refresh();
+        $this->assertEquals('active', $group->status);
+
+        // Schedule must STILL be soft-deleted (not active)
+        $this->assertSoftDeleted('schedules', ['id' => $schedule->id]);
+
+        // The timetable must NOT contain this schedule
+        $schedulesResponse = $this->actingAs($director)->get(route('schedules.index'));
+        $schedulesResponse->assertOk();
+        $schedulesResponse->assertInertia(fn (Assert $page) => $page
+            ->component('Scolarite/Schedules')
+            ->has('schedules', 0)
+        );
+
+        // BUT the historical attendance still keeps its schedule link and data
+        $this->assertDatabaseHas('attendances', [
+            'id' => $attendance->id,
+            'schedule_id' => $schedule->id,
+            'status' => 'present',
+        ]);
+
+        // And group attendance history page still loads successfully with session info
+        $historyResponse = $this->actingAs($director)->get(route('groups.attendances.history', $group->id));
+        $historyResponse->assertOk();
+        $historyResponse->assertInertia(fn (Assert $page) => $page
+            ->component('Scolarite/GroupAttendanceHistory')
+            ->has('sessions', 1)
+            ->where('sessions.0.schedule.room', 'Salle B12')
+            ->where('sessions.0.schedule.start_time', '10:00:00')
+        );
+    }
 }
+
 

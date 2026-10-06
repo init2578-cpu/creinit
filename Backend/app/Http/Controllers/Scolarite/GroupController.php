@@ -193,23 +193,26 @@ class GroupController extends Controller
 
     /**
      * Close (archive) a group when the training is done.
-     * Sets status to 'closed'. Schedules and attendances are kept to preserve history.
+     * Sets status to 'closed'. Schedules are soft-deleted to free rooms and timetables.
      */
     public function close(Group $group): RedirectResponse
     {
         $group->update(['status' => 'closed']);
+        $group->schedules()->delete();
 
         return back()->with('success', "Le groupe « {$group->nom_groupe} » a été clôturé avec succès. L'historique d'émargement et les données du groupe sont archivés.");
     }
 
     /**
      * Reopen a previously closed group.
+     * Its past schedules remain soft-deleted so they do not reappear in the active timetable.
      */
     public function reopen(Group $group): RedirectResponse
     {
         $group->update(['status' => 'active']);
+        $group->schedules()->delete();
 
-        return back()->with('success', "Le groupe « {$group->nom_groupe} » a été réactivé.");
+        return back()->with('success', "Le groupe « {$group->nom_groupe} » a été réactivé. Ses anciens créneaux d'emploi du temps ont été libérés pour éviter les conflits.");
     }
 
     /**
@@ -232,7 +235,13 @@ class GroupController extends Controller
             }
         }
 
-        $group->load(['module', 'formateur', 'responsableGroupe', 'adjointGroupe', 'schedules.room']);
+        $group->load([
+            'module', 
+            'formateur', 
+            'responsableGroupe', 
+            'adjointGroupe', 
+            'schedules' => fn($q) => $q->withTrashed()->with('room')
+        ]);
 
         $attendances = Attendance::with('user:id,name,email,telephone,profile_photo_path')
             ->where('group_id', $group->id)
@@ -248,7 +257,7 @@ class GroupController extends Controller
                 ? $group->schedules->firstWhere('id', $first->schedule_id) 
                 : null;
             if (!$schedule && $first->schedule_id) {
-                $schedule = Schedule::with(['room', 'formateur'])->find($first->schedule_id);
+                $schedule = Schedule::withTrashed()->with(['room', 'formateur'])->find($first->schedule_id);
             }
 
             $trainerId = $schedule?->formateur_id ?? $group->formateur_id;
