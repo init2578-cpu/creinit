@@ -14,7 +14,8 @@ import {
     TrashIcon,
     LockClosedIcon,
     LockOpenIcon,
-    CheckCircleIcon
+    CheckCircleIcon,
+    ClipboardDocumentCheckIcon
 } from '@heroicons/vue/24/outline'
 
 const props = defineProps({
@@ -97,7 +98,7 @@ const isDirectorOrSecretary = computed(() => {
 })
 
 const closeGroup = (group) => {
-    if (confirm(`Clôturer le groupe « ${group.nom_groupe} » ? La formation sera marquée comme terminée.`)) {
+    if (confirm(`Clôturer le groupe « ${group.nom_groupe} » ? La formation sera marquée comme terminée. L'ensemble des listes de présence et historiques sera conservé et consultable.`)) {
         router.patch(route('groups.close', group.id))
     }
 }
@@ -258,13 +259,24 @@ const sortedGroups = computed(() => {
                                 </span>
                             </div>
 
-                            <Link 
-                                :href="route('groups.students.index', group.id)"
-                                class="w-full bg-blue-50 hover:bg-blue-600 text-blue-600 hover:text-white py-3 rounded-2xl font-black text-xs text-center transition-all duration-300 flex items-center justify-center gap-2"
-                            >
-                                <AcademicCapIcon class="h-4 w-4" />
-                                Gérer les Apprenants
-                            </Link>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                <Link 
+                                    :href="route('groups.students.index', group.id)"
+                                    class="bg-blue-50 hover:bg-blue-600 text-blue-600 hover:text-white py-3 px-3 rounded-2xl font-black text-xs text-center transition-all duration-300 flex items-center justify-center gap-1.5"
+                                >
+                                    <AcademicCapIcon class="h-4 w-4 shrink-0" />
+                                    <span class="truncate">{{ group.status === 'closed' ? 'Effectif figé' : 'Apprenants' }}</span>
+                                </Link>
+
+                                <Link 
+                                    :href="route('groups.attendances.history', group.id)"
+                                    class="bg-slate-100 hover:bg-slate-800 text-slate-700 hover:text-white py-3 px-3 rounded-2xl font-black text-xs text-center transition-all duration-300 flex items-center justify-center gap-1.5"
+                                    title="Consulter l'historique d'émargement"
+                                >
+                                    <ClipboardDocumentCheckIcon class="h-4 w-4 shrink-0" />
+                                    <span class="truncate">Présences</span>
+                                </Link>
+                            </div>
 
                             <!-- Close / Reopen buttons (Director & Secretary only) -->
                             <template v-if="isDirectorOrSecretary">

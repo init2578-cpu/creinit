@@ -48,13 +48,43 @@ class GenerateCertificateJob implements ShouldQueue
             ->errorCorrection('H')
             ->generate($verificationUrl));
 
+        // Prepare dynamic parameters for official CRE Kolda attestation
+        $application = $user->application;
+        $dateNaissance = $application?->date_naissance 
+            ? \Carbon\Carbon::parse($application->date_naissance)->format('d/m/Y') 
+            : ($user->date_of_birth ? \Carbon\Carbon::parse($user->date_of_birth)->format('d/m/Y') : null);
+        $lieuNaissance = $application?->lieu_naissance ?? $user->place_of_birth ?? null;
+        
+        $civilite = 'M./Mme';
+        if ($application?->sexe === 'M') {
+            $civilite = 'M.';
+        } elseif ($application?->sexe === 'F') {
+            $civilite = 'Mme';
+        }
+
+        $group = $user->studentGroups()->where('module_id', $module->id)->first();
+        $anneeAcademique = $group->annee_academique ?? date('Y');
+        
+        $firstAttendance = $group ? \App\Models\Attendance::where('group_id', $group->id)->min('date') : null;
+        $lastAttendance = $group ? \App\Models\Attendance::where('group_id', $group->id)->max('date') : null;
+        
+        $dateDebut = $firstAttendance ? \Carbon\Carbon::parse($firstAttendance)->format('d/m/Y') : null;
+        $dateFin = $lastAttendance ? \Carbon\Carbon::parse($lastAttendance)->format('d/m/Y') : null;
+        $issuedDate = $certificate->issued_at ? $certificate->issued_at->format('d/m/Y') : date('d/m/Y');
+
         // Generate PDF
         $pdf = Pdf::loadView('pdf.attestation', [
-            'student'     => $user,
-            'module'      => $module,
-            'certificate' => $certificate,
-            'qrCode'      => $qrCode,
-            'issuedAt'    => $certificate->issued_at->format('d/m/Y'),
+            'student'         => $user,
+            'module'          => $module,
+            'certificate'     => $certificate,
+            'qrCode'          => $qrCode,
+            'civilite'        => $civilite,
+            'dateNaissance'   => $dateNaissance,
+            'lieuNaissance'   => $lieuNaissance,
+            'dateDebut'       => $dateDebut,
+            'dateFin'         => $dateFin,
+            'anneeAcademique' => $anneeAcademique,
+            'issuedDate'      => $issuedDate,
         ])->setPaper('a4', 'landscape');
 
         // Store PDF

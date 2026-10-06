@@ -1,6 +1,6 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
-import { Head, useForm } from '@inertiajs/vue3'
+import { Head, useForm, Link } from '@inertiajs/vue3'
 import ConfirmModal from '@/Components/ConfirmModal.vue'
 import { ref, computed } from 'vue'
 import { 
@@ -11,7 +11,8 @@ import {
     CakeIcon,
     EnvelopeIcon,
     CheckCircleIcon,
-    LockClosedIcon
+    LockClosedIcon,
+    ClipboardDocumentCheckIcon
 } from '@heroicons/vue/24/outline'
 
 const props = defineProps({
@@ -210,8 +211,23 @@ function toggleGroup(groupId) {
                     <!-- Accordion Body (Students List) -->
                     <div 
                         v-show="openGroups.includes(group.id)"
-                        class="border-t border-gray-100 bg-slate-50/30 p-6"
+                        class="border-t border-gray-100 bg-slate-50/30 p-6 space-y-4"
                     >
+                        <!-- Group History Bar -->
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+                            <div class="flex items-center gap-2 text-xs text-slate-500 font-medium">
+                                <span class="h-2 w-2 rounded-full" :class="group.status === 'closed' ? 'bg-rose-400' : 'bg-emerald-400'"></span>
+                                {{ group.status === 'closed' ? 'Formation clôturée — Historique d\'émargement archivé' : 'Groupe en cours — Suivi d\'assiduité en temps réel' }}
+                            </div>
+                            <Link 
+                                :href="route('groups.attendances.history', group.id)"
+                                class="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 hover:bg-blue-600 text-blue-700 hover:text-white rounded-xl text-xs font-black transition-all shadow-sm shrink-0"
+                            >
+                                <ClipboardDocumentCheckIcon class="h-4 w-4" />
+                                Feuilles d'émargement & Historique
+                            </Link>
+                        </div>
+
                         <div v-if="!group.students || group.students.length === 0" class="text-center py-8">
                             <p class="text-gray-500 italic text-sm">Ce groupe ne contient aucun apprenant pour le moment.</p>
                         </div>
@@ -290,12 +306,26 @@ function toggleGroup(groupId) {
                                     </div>
                                 </div>
                                 
-                                <div class="space-y-3 pt-3 border-t border-slate-100">
-                                    <div class="flex items-center justify-between">
-                                        <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Absences</span>
-                                        <span class="text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md border shrink-0" 
-                                            :class="student.absences_count > 0 ? 'bg-red-50 text-red-600 border-red-100' : 'bg-green-50 text-green-600 border-green-100'">
-                                            {{ student.absences_count }} absence{{ student.absences_count !== 1 ? 's' : '' }}
+                                <div class="space-y-2.5 pt-3 border-t border-slate-100">
+                                    <div class="grid grid-cols-2 gap-2">
+                                        <div class="flex flex-col p-2 rounded-xl bg-emerald-50/70 border border-emerald-100/70">
+                                            <span class="text-[9px] font-black text-emerald-800 uppercase tracking-wider">Présences</span>
+                                            <span class="text-xs font-black text-emerald-700 mt-0.5">
+                                                {{ student.presences_count || 0 }} séance{{ (student.presences_count || 0) > 1 ? 's' : '' }}
+                                            </span>
+                                        </div>
+                                        <div class="flex flex-col p-2 rounded-xl border" :class="(student.absences_count || 0) > 0 ? 'bg-rose-50/70 border-rose-100/70' : 'bg-slate-50 border-slate-100'">
+                                            <span class="text-[9px] font-black uppercase tracking-wider" :class="(student.absences_count || 0) > 0 ? 'text-rose-800' : 'text-slate-500'">Absences</span>
+                                            <span class="text-xs font-black mt-0.5" :class="(student.absences_count || 0) > 0 ? 'text-rose-700' : 'text-slate-600'">
+                                                {{ student.absences_count || 0 }} absence{{ (student.absences_count || 0) > 1 ? 's' : '' }}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <div class="flex items-center justify-between text-[10px] font-bold text-slate-500">
+                                        <span>Assiduité</span>
+                                        <span class="font-black" :class="(student.attendance_rate ?? 100) >= 80 ? 'text-emerald-600' : 'text-amber-600'">
+                                            {{ student.attendance_rate ?? 100 }}%
                                         </span>
                                     </div>
 

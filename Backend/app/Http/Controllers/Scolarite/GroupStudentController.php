@@ -52,10 +52,46 @@ class GroupStudentController extends Controller
                 'applications.diploma_path'
             ]);
 
+        // Fetch attendances for this group to calculate presence/absence per learner
+        $attendances = \App\Models\Attendance::where('group_id', $group->id)->get();
+        $totalSessions = $attendances->groupBy(function($item) {
+            return $item->date . '_' . ($item->schedule_id ?? 'default');
+        })->count();
+
+        $currentStudents = $currentStudents->map(function ($student) use ($attendances, $totalSessions) {
+            $userAttendances = $attendances->where('user_id', $student->id);
+            $presences = $userAttendances->where('status', 'present')->count();
+            $absentNonJustifie = $userAttendances->where('status', 'absent_non_justifie')->count();
+            $justifie = $userAttendances->where('status', 'justifie')->count();
+            $late = $userAttendances->whereIn('status', ['late', 'en_retard'])->count();
+            $totalRecorded = $presences + $absentNonJustifie + $justifie + $late;
+
+            $student->presences_count = $presences;
+            $student->absences_count = $absentNonJustifie + $justifie;
+            $student->absences_non_justifiees_count = $absentNonJustifie;
+            $student->absences_justifiees_count = $justifie;
+            $student->late_count = $late;
+            $student->attendance_rate = $totalRecorded > 0
+                ? (float) round(($presences / $totalRecorded) * 100, 1)
+                : ($totalSessions > 0 ? 0.0 : 100.0);
+
+            return $student;
+        });
+
+        $attendanceStats = [
+            'total_sessions' => $totalSessions,
+            'total_presences' => (int) $currentStudents->sum('presences_count'),
+            'total_absences' => (int) $currentStudents->sum('absences_count'),
+            'average_rate' => $currentStudents->count() > 0 
+                ? (float) round($currentStudents->avg('attendance_rate'), 1) 
+                : 100.0,
+        ];
+
         return Inertia::render('Scolarite/GroupStudents', [
             'group' => $group->load(['module', 'formateur']),
             'currentStudents' => $currentStudents,
             'availableStudents' => $availableStudents,
+            'attendanceStats' => $attendanceStats,
         ]);
     }
 

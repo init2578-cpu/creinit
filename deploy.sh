@@ -34,6 +34,7 @@ php artisan storage:link || true # Ne pas planter si le lien existe déjà
 # Optimisation de Laravel
 echo "✨ Optimisation du cache Laravel..."
 php artisan optimize
+php artisan queue:restart || true
 
 # 3. Frontend (Vue.js / Vite)
 echo "🎨 Mise à jour du Frontend (Vite)..."

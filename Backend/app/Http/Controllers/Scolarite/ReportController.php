@@ -152,10 +152,10 @@ class ReportController extends Controller
 
     private function getAttendanceData($groupId, $startDate, $endDate): array
     {
-        $query = Attendance::with(['user', 'schedule.group']);
+        $query = Attendance::with(['user', 'group']);
 
         if ($groupId) {
-            $query->whereHas('schedule', fn($q) => $q->where('group_id', $groupId));
+            $query->where('group_id', $groupId);
         }
 
         if ($startDate && $endDate) {
@@ -167,12 +167,22 @@ class ReportController extends Controller
         $data = [];
         foreach ($attendances as $userId => $userAttendances) {
             $user = $userAttendances->first()->user;
+            if (!$user) continue;
+
+            $total = $userAttendances->count();
+            $present = $userAttendances->where('status', 'present')->count();
+            $absent = $userAttendances->where('status', 'absent_non_justifie')->count();
+            $late = $userAttendances->whereIn('status', ['late', 'en_retard'])->count();
+            $justified = $userAttendances->where('status', 'justifie')->count();
+
             $data[] = [
                 'student_name' => $user->name,
-                'total'        => $userAttendances->count(),
-                'present'      => $userAttendances->where('status', 'present')->count(),
-                'absent'       => $userAttendances->where('status', 'absent_non_justifie')->count(),
-                'late'         => $userAttendances->where('status', 'en_retard')->count(),
+                'total'        => $total,
+                'present'      => $present,
+                'absent'       => $absent,
+                'late'         => $late,
+                'justified'    => $justified,
+                'rate'         => $total > 0 ? round(($present / $total) * 100, 1) : 0,
             ];
         }
 

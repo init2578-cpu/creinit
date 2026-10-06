@@ -108,13 +108,44 @@ class AdminCertificateController extends Controller
             ->errorCorrection('H')
             ->generate($verifyUrl));
 
+        // Prepare dynamic parameters for official CRE Kolda attestation
+        $application = $student->application;
+        $dateNaissance = $application?->date_naissance 
+            ? \Carbon\Carbon::parse($application->date_naissance)->format('d/m/Y') 
+            : ($student->date_of_birth ? \Carbon\Carbon::parse($student->date_of_birth)->format('d/m/Y') : null);
+        $lieuNaissance = $application?->lieu_naissance ?? $student->place_of_birth ?? null;
+        
+        $civilite = 'M./Mme';
+        if ($application?->sexe === 'M') {
+            $civilite = 'M.';
+        } elseif ($application?->sexe === 'F') {
+            $civilite = 'Mme';
+        }
+
+        $group = $student->studentGroups()->where('module_id', $module->id)->first();
+        $anneeAcademique = $group->annee_academique ?? date('Y');
+        
+        $firstAttendance = $group ? \App\Models\Attendance::where('group_id', $group->id)->min('date') : null;
+        $lastAttendance = $group ? \App\Models\Attendance::where('group_id', $group->id)->max('date') : null;
+        
+        $dateDebut = $firstAttendance ? \Carbon\Carbon::parse($firstAttendance)->format('d/m/Y') : null;
+        $dateFin = $lastAttendance ? \Carbon\Carbon::parse($lastAttendance)->format('d/m/Y') : null;
+        $issuedDate = $certificate->issued_at ? $certificate->issued_at->format('d/m/Y') : date('d/m/Y');
+
         // Generate PDF
         $pdf = Pdf::loadView('pdf.attestation', [
-            'certificate' => $certificate,
-            'student' => $student,
-            'module' => $module,
-            'qrCode' => $qrCode,
-            'verifyUrl' => $verifyUrl,
+            'certificate'     => $certificate,
+            'student'         => $student,
+            'module'          => $module,
+            'qrCode'          => $qrCode,
+            'verifyUrl'       => $verifyUrl,
+            'civilite'        => $civilite,
+            'dateNaissance'   => $dateNaissance,
+            'lieuNaissance'   => $lieuNaissance,
+            'dateDebut'       => $dateDebut,
+            'dateFin'         => $dateFin,
+            'anneeAcademique' => $anneeAcademique,
+            'issuedDate'      => $issuedDate,
         ])->setPaper('a4', 'landscape');
 
         $path = "certificates/attestation-{$certificate->uuid}.pdf";

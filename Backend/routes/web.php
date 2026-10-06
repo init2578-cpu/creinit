@@ -363,6 +363,7 @@ Route::middleware(['auth'])->group(function (): void {
     // Lists (Read Only for most)
     Route::get('/groups', [\App\Http\Controllers\Scolarite\GroupController::class, 'index'])->name('groups.index');
     Route::get('/groups/{group}/students', [\App\Http\Controllers\Scolarite\GroupStudentController::class, 'index'])->name('groups.students.index');
+    Route::get('/groups/{group}/attendances', [\App\Http\Controllers\Scolarite\GroupController::class, 'attendanceHistory'])->name('groups.attendances.history');
     Route::get('/rooms', [\App\Http\Controllers\Scolarite\RoomController::class, 'index'])->name('rooms.index');
     Route::get('/modules', [\App\Http\Controllers\ModuleController::class, 'index'])->name('modules.index');
     Route::get('/modules/{module}', [\App\Http\Controllers\ModuleController::class, 'show'])->name('modules.show');

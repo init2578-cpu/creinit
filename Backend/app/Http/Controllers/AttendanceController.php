@@ -26,7 +26,7 @@ class AttendanceController extends Controller
             $trainerIds[] = $user->internshipRecord->tuteur_id;
         }
 
-        // Only show active groups assigned to the trainer which HAVE a schedule for this trainer
+        // Show active groups assigned to the trainer which HAVE a schedule for this trainer
         $groups = Group::with('module')
             ->where('status', 'active')
             ->whereIn('formateur_id', $trainerIds)
@@ -35,8 +35,15 @@ class AttendanceController extends Controller
             })
             ->get();
 
+        // Also fetch closed groups for this trainer to consult history
+        $closedGroups = Group::with('module')
+            ->where('status', 'closed')
+            ->whereIn('formateur_id', $trainerIds)
+            ->get();
+
         return Inertia::render('Attendances/Index', [
             'groups' => $groups,
+            'closed_groups' => $closedGroups,
         ]);
     }
 
@@ -45,6 +52,11 @@ class AttendanceController extends Controller
      */
     public function takeAttendance(Group $group): Response|\Illuminate\Http\RedirectResponse
     {
+        if ($group->status === 'closed') {
+            return redirect()->route('groups.attendances.history', $group->id)
+                ->with('info', "Ce groupe est clôturé. Voici l'historique complet des présences.");
+        }
+
         $user = auth()->user();
         $trainerIds = [$user->id];
         if ($user->hasRole('Stagiaire') && $user->internshipRecord?->tuteur_id) {
@@ -217,6 +229,11 @@ class AttendanceController extends Controller
 
         // Timeframe and status restrictions for trainers (Directeur and Secrétaire bypass this check)
         if (!$user->hasRole('Directeur') && !$user->hasRole('Secrétaire')) {
+            $targetGroup = Group::find($groupId);
+            if ($targetGroup && $targetGroup->status === 'closed') {
+                return redirect()->back()->with('error', "Ce groupe est clôturé. L'émargement est archivé et ne peut plus être modifié.");
+            }
+
             if (!$schedule) {
                 return redirect()->back()->with('error', "Aucun créneau d'emploi du temps trouvé pour cette date.");
             }

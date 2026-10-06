@@ -58,10 +58,21 @@ class TrainerGroupsController extends Controller
                 ->pluck('count', 'user_id');
 
             foreach ($group->students as $student) {
-                $student->absences_count = $student->attendances
-                    ->where('group_id', $group->id)
-                    ->whereIn('status', ['absent_non_justifie', 'justifie'])
-                    ->count();
+                $groupAttendances = $student->attendances->where('group_id', $group->id);
+                $presences = $groupAttendances->where('status', 'present')->count();
+                $absencesNonJustifiees = $groupAttendances->where('status', 'absent_non_justifie')->count();
+                $absencesJustifiees = $groupAttendances->where('status', 'justifie')->count();
+                $lates = $groupAttendances->whereIn('status', ['late', 'en_retard'])->count();
+                $totalRecorded = $presences + $absencesNonJustifiees + $absencesJustifiees + $lates;
+
+                $student->presences_count = $presences;
+                $student->absences_count = $absencesNonJustifiees + $absencesJustifiees;
+                $student->absences_non_justifiees_count = $absencesNonJustifiees;
+                $student->absences_justifiees_count = $absencesJustifiees;
+                $student->late_count = $lates;
+                $student->attendance_rate = $totalRecorded > 0
+                    ? (float) round(($presences / $totalRecorded) * 100, 1)
+                    : 100.0;
                 
                 $submittedCount = $submissionsCounts[$student->id] ?? 0;
                 $student->progression_percentage = $totalExercises > 0 

@@ -71,11 +71,16 @@ function formatDate(dateString) {
                         class="bg-white rounded-[2.5rem] border border-gray-100 p-8 hover:shadow-2xl hover:shadow-gray-200/50 transition duration-500 flex flex-col relative overflow-hidden group">
                         
                         <!-- Status Badge -->
-                        <div class="absolute top-6 right-6 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest"
-                            :class="schedule.attendance_taken ? 'bg-green-50 text-green-600' : 'bg-amber-50 text-amber-600'">
-                            <CheckCircleIcon v-if="schedule.attendance_taken" class="h-3 w-3" />
-                            <ClockIcon v-else class="h-3 w-3" />
-                            {{ schedule.attendance_taken ? 'Saisie effectuée' : 'En attente' }}
+                        <div class="absolute top-6 right-6 flex items-center gap-1.5">
+                            <span v-if="schedule.group?.status === 'closed'" class="px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-wider bg-rose-50 text-rose-700 border border-rose-200">
+                                Clôturé
+                            </span>
+                            <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest"
+                                :class="schedule.attendance_taken ? 'bg-green-50 text-green-600' : 'bg-amber-50 text-amber-600'">
+                                <CheckCircleIcon v-if="schedule.attendance_taken" class="h-3 w-3" />
+                                <ClockIcon v-else class="h-3 w-3" />
+                                {{ schedule.attendance_taken ? 'Saisie effectuée' : 'En attente' }}
+                            </div>
                         </div>
 
                         <div class="mb-6 flex items-start gap-4">
@@ -103,13 +108,26 @@ function formatDate(dateString) {
                             </div>
                         </div>
 
-                        <Link 
-                            :href="route('attendance.history', { schedule: schedule.id })"
-                            class="mt-auto w-full py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all flex items-center justify-center gap-2 shadow-lg bg-blue-600 text-white hover:bg-blue-700 shadow-blue-100"
-                        >
-                            Voir l'historique d'émargement
-                            <ChevronRightIcon class="h-4 w-4" />
-                        </Link>
+                        <div class="mt-auto grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <Link 
+                                :href="route('attendance.take', { schedule: schedule.id, date: selectedDate })"
+                                class="w-full py-3.5 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all flex items-center justify-center gap-1.5 border text-center"
+                                :class="schedule.group?.status === 'closed' 
+                                    ? 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
+                                    : (schedule.attendance_taken ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100' : 'bg-blue-600 text-white shadow-lg shadow-blue-100 hover:bg-blue-700')"
+                            >
+                                {{ schedule.group?.status === 'closed' ? 'Feuille émargée' : (schedule.attendance_taken ? 'Voir / Modifier' : 'Faire l\'appel') }}
+                            </Link>
+
+                            <Link 
+                                :href="route('groups.attendances.history', schedule.group.id)"
+                                class="w-full py-3.5 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all flex items-center justify-center gap-1.5 bg-slate-900 text-white hover:bg-black text-center"
+                                title="Bilan complet d'assiduité du groupe"
+                            >
+                                Bilan groupe
+                                <ChevronRightIcon class="h-3.5 w-3.5" />
+                            </Link>
+                        </div>
                     </div>
                 </div>
             </div>

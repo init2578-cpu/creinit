@@ -10,13 +10,16 @@ import {
     AcademicCapIcon,
     CheckCircleIcon,
     XCircleIcon,
-    LockClosedIcon
+    LockClosedIcon,
+    ClipboardDocumentCheckIcon,
+    CalendarIcon
 } from '@heroicons/vue/24/outline'
 
 const props = defineProps({
     group: Object,
     currentStudents: Array,
-    availableStudents: Array
+    availableStudents: Array,
+    attendanceStats: Object
 })
 
 const search = ref('')
@@ -119,14 +122,64 @@ const nominate = (userId, role) => {
                         </p>
                     </div>
                 </div>
+
+                <div class="flex items-center gap-3">
+                    <Link
+                        :href="route('groups.attendances.history', group.id)"
+                        class="px-5 py-3 rounded-2xl bg-white border border-gray-200 text-gray-700 font-black text-xs uppercase tracking-wider hover:bg-gray-50 transition shadow-sm flex items-center gap-2"
+                    >
+                        <ClipboardDocumentCheckIcon class="h-4 w-4 text-blue-600" />
+                        Historique d'Émargement
+                    </Link>
+                </div>
+            </div>
+
+            <!-- Attendance Stats Overview Banner -->
+            <div v-if="attendanceStats" class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+                <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-3">
+                    <div class="h-10 w-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+                        <CalendarIcon class="h-5 w-5" />
+                    </div>
+                    <div>
+                        <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest">Séances</p>
+                        <p class="text-lg font-black text-gray-900">{{ attendanceStats.total_sessions || 0 }}</p>
+                    </div>
+                </div>
+                <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-3">
+                    <div class="h-10 w-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+                        <CheckCircleIcon class="h-5 w-5" />
+                    </div>
+                    <div>
+                        <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest">Taux Moyen</p>
+                        <p class="text-lg font-black text-emerald-600">{{ attendanceStats.average_rate || 100 }}%</p>
+                    </div>
+                </div>
+                <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-3">
+                    <div class="h-10 w-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
+                        <AcademicCapIcon class="h-5 w-5" />
+                    </div>
+                    <div>
+                        <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest">Présences</p>
+                        <p class="text-lg font-black text-indigo-600">{{ attendanceStats.total_presences || 0 }}</p>
+                    </div>
+                </div>
+                <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-3">
+                    <div class="h-10 w-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
+                        <XCircleIcon class="h-5 w-5" />
+                    </div>
+                    <div>
+                        <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest">Absences</p>
+                        <p class="text-lg font-black text-rose-600">{{ attendanceStats.total_absences || 0 }}</p>
+                    </div>
+                </div>
             </div>
 
             <!-- Closed Group Banner -->
-            <div v-if="group.status === 'closed'" class="mb-6 flex items-center gap-4 p-5 bg-gray-100 border border-gray-200 rounded-3xl text-gray-500">
-                <LockClosedIcon class="h-6 w-6 shrink-0 text-gray-400" />
+            <div v-if="group.status === 'closed'" class="mb-6 flex items-center gap-4 p-5 bg-gray-100 border border-gray-200 rounded-3xl text-gray-600">
+                <LockClosedIcon class="h-6 w-6 shrink-0 text-gray-500" />
                 <div>
-                    <p class="font-black text-gray-700 text-sm">Formation terminée &mdash; Groupe clôturé</p>
-                    <p class="text-xs font-medium">L’effectif de ce groupe est figé. Aucun apprenant ne peut être ajouté ou retiré.</p>
+                    <p class="font-black text-gray-800 text-sm">Formation terminée &mdash; Groupe clôturé</p>
+                    <p class="text-xs font-medium text-gray-500">L’effectif et l'historique d'émargement de ce groupe sont figés et archivés. Toutes les données de présence sont consultables via le bouton ci-dessus.</p>
                 </div>
             </div>
 
@@ -179,6 +232,20 @@ const nominate = (userId, role) => {
                                         <p class="text-xs font-medium mt-0.5" :class="hasUploadedDocuments(student) ? 'text-gray-400' : 'text-rose-700/80'">
                                             {{ student.email || student.telephone }}
                                         </p>
+                                        <div class="flex items-center gap-1.5 mt-2 flex-wrap">
+                                            <span class="inline-flex items-center text-[10px] font-black px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-100">
+                                                {{ student.presences_count || 0 }} présent(s)
+                                            </span>
+                                            <span 
+                                                class="inline-flex items-center text-[10px] font-black px-2 py-0.5 rounded-md border"
+                                                :class="(student.absences_count || 0) > 0 ? 'bg-rose-50 text-rose-700 border-rose-200' : 'bg-gray-50 text-gray-400 border-gray-100'"
+                                            >
+                                                {{ student.absences_count || 0 }} absent(s)
+                                            </span>
+                                            <span class="inline-flex items-center text-[10px] font-extrabold text-indigo-600 bg-indigo-50/70 px-2 py-0.5 rounded-md border border-indigo-100/70">
+                                                {{ student.attendance_rate ?? 100 }}% assiduité
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
                                 <div class="flex items-center gap-2">
