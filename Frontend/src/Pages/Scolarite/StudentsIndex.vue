@@ -351,7 +351,7 @@ function deleteLearner(id) {
                                     <div v-if="student.particular_modules && student.particular_modules.length" class="flex flex-wrap gap-1.5">
                                         <span v-for="mod in student.particular_modules" :key="mod.id" class="px-2 py-0.5 bg-amber-50 text-amber-800 border border-amber-200/60 rounded-lg text-[10px] font-black flex items-center gap-1">
                                             <AcademicCapIcon class="h-3 w-3 text-amber-600" />
-                                            {{ mod.nom_module }}
+                                            {{ mod.titre || mod.nom_module }}
                                         </span>
                                     </div>
                                     <span v-else class="text-[10px] text-amber-600/70 font-bold italic">
@@ -540,7 +540,7 @@ function deleteLearner(id) {
                                                 v-model="studentForm.particular_module_ids" 
                                                 class="h-4 w-4 text-amber-600 rounded border-gray-300 focus:ring-amber-500"
                                             >
-                                            <span class="truncate">{{ mod.nom_module }}</span>
+                                            <span class="truncate font-semibold">{{ mod.code_module ? mod.code_module + ' - ' : '' }}{{ mod.titre || mod.nom_module }}</span>
                                         </label>
                                     </div>
                                     <p v-if="!modules || modules.length === 0" class="text-xs text-gray-400 italic">
@@ -790,7 +790,7 @@ function deleteLearner(id) {
                                     class="inline-flex items-center gap-1.5 px-3 py-2 bg-white border border-amber-200 text-amber-900 rounded-xl text-xs font-black shadow-sm"
                                 >
                                     <AcademicCapIcon class="h-4 w-4 text-amber-600" />
-                                    {{ mod.nom_module }}
+                                    {{ mod.titre || mod.nom_module }}
                                 </span>
                             </div>
                             <div v-else class="flex flex-col items-center justify-center w-full py-4 text-center">

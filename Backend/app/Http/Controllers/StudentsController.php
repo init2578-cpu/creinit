@@ -49,7 +49,7 @@ class StudentsController extends Controller
                     'groups' => $user->studentGroups->map(fn($group) => [
                         'id' => $group->id,
                         'nom_groupe' => $group->nom_groupe,
-                        'module' => $group->module->nom_module ?? 'N/A',
+                        'module' => $group->module?->titre ?? $group->module?->nom_module ?? 'N/A',
                     ]),
                     'particular_modules' => $user->particularModules->map(fn($m) => [
                         'id' => $m->id,
