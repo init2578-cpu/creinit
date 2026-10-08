@@ -107,6 +107,12 @@ class StudentDashboardController extends Controller
                 ->orWhereHas('examResults', function ($q) use ($user) {
                     $q->where('user_id', $user->id)
                       ->where('status', 'started');
+                })
+                ->orWhereHas('rattrapages', function ($q) use ($user) {
+                    $q->whereHas('users', function ($qu) use ($user) {
+                        $qu->where('users.id', $user->id)
+                           ->where('exam_rattrapage_user.status', '!=', 'completed');
+                    });
                 });
             })
             ->where('is_active', true)
@@ -116,13 +122,33 @@ class StudentDashboardController extends Controller
                 $exam->my_result = \App\Models\ExamResult::where('exam_id', $exam->id)
                     ->where('user_id', $user->id)
                     ->first();
+
+                $rattrapage = $exam->getUpcomingOrActiveRattrapageForUser($user);
+                if ($rattrapage) {
+                    $rattrapageUserPivot = $rattrapage->users->firstWhere('id', $user->id)?->pivot;
+                    $isRattrapageCompleted = $rattrapageUserPivot?->status === 'completed';
+                    if (!$isRattrapageCompleted) {
+                        if ($rattrapage->can_start) {
+                            $exam->can_start = true;
+                            $exam->has_ended = false;
+                        } elseif (!$rattrapage->has_ended) {
+                            $exam->has_ended = false;
+                        }
+                        $exam->rattrapage_session = [
+                            'id' => $rattrapage->id,
+                            'titre' => $rattrapage->titre,
+                            'can_start' => $rattrapage->can_start,
+                            'scheduled_at' => $rattrapage->scheduled_at,
+                        ];
+                    }
+                }
+
                 return $exam;
             });
             
-        // On filtre les examens expirés, SAUF s'ils ont un statut "started" (débloqué)
+        // On filtre les examens expirés
         $upcomingExams = $exams->filter(function($exam) {
-            $isResuming = $exam->my_result && $exam->my_result->status === 'started';
-            return !$exam->has_ended || $isResuming;
+            return !$exam->has_ended;
         })->values();
 
         // 5. Résultats récents d'exercices
@@ -132,9 +158,11 @@ class StudentDashboardController extends Controller
             ->take(5)
             ->get();
 
-        // 6. Résultats récents d'examens
+        // 6. Résultats récents d'examens (uniquement les examens passés et terminés)
         $recentExams = \App\Models\ExamResult::with('exam')
             ->where('user_id', $user->id)
+            ->where('status', 'completed')
+            ->whereNotNull('score')
             ->whereHas('exam', function($q) {
                 $q->where('is_practice', false);
             })

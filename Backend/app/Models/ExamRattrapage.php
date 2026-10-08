@@ -40,7 +40,13 @@ class ExamRattrapage extends Model
     protected function endAt(): Attribute
     {
         return Attribute::make(
-            get: fn () => $this->scheduled_at ? $this->scheduled_at->addMinutes($this->duree_minutes) : null,
+            get: function ($value, $attributes) {
+                if (array_key_exists('end_at', $attributes)) {
+                    return $attributes['end_at'];
+                }
+                return $this->scheduled_at ? $this->scheduled_at->copy()->addMinutes($this->duree_minutes) : null;
+            },
+            set: fn ($value) => ['end_at' => $value],
         );
     }
 
@@ -50,7 +56,13 @@ class ExamRattrapage extends Model
     protected function hasEnded(): Attribute
     {
         return Attribute::make(
-            get: fn () => $this->isExpired(),
+            get: function ($value, $attributes) {
+                if (array_key_exists('has_ended', $attributes)) {
+                    return (bool) $attributes['has_ended'];
+                }
+                return $this->isExpired();
+            },
+            set: fn ($value) => ['has_ended' => $value],
         );
     }
 
@@ -60,7 +72,13 @@ class ExamRattrapage extends Model
     protected function canStart(): Attribute
     {
         return Attribute::make(
-            get: fn () => (!$this->scheduled_at || now()->isAfter($this->scheduled_at)) && !$this->isExpired(),
+            get: function ($value, $attributes) {
+                if (array_key_exists('can_start', $attributes)) {
+                    return (bool) $attributes['can_start'];
+                }
+                return (!$this->scheduled_at || now()->greaterThanOrEqualTo($this->scheduled_at)) && !$this->isExpired();
+            },
+            set: fn ($value) => ['can_start' => $value],
         );
     }
 
@@ -71,7 +89,7 @@ class ExamRattrapage extends Model
         }
 
         // Buffer of 1 minute to allow for submission network latency
-        return now()->isAfter($this->scheduled_at->addMinutes($this->duree_minutes + 1));
+        return now()->isAfter($this->scheduled_at->copy()->addMinutes($this->duree_minutes + 1));
     }
 
     public function exam(): BelongsTo

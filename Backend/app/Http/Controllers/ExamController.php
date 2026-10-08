@@ -44,12 +44,9 @@ class ExamController extends Controller
                 });
             })
             ->where('is_approved', true)
-            ->with(['module', 'questions.options', 'rattrapages.users'])
+            ->with(['module', 'rattrapages.users'])
             ->get()
             ->map(function ($exam) use ($user) {
-                // Ensure questions are sequential for list previews if used
-                $exam->setRelation('questions', $exam->questions->values());
-
                 $result = ExamResult::where('exam_id', $exam->id)
                     ->where('user_id', $user->id)
                     ->first();
@@ -58,6 +55,8 @@ class ExamController extends Controller
                 // Check if user has an assigned rattrapage session
                 $rattrapage = $exam->getUpcomingOrActiveRattrapageForUser($user);
                 if ($rattrapage) {
+                    $rattrapageUserPivot = $rattrapage->users->firstWhere('id', $user->id)?->pivot;
+                    $pivotStatus = $rattrapageUserPivot?->status ?? 'scheduled';
                     $exam->rattrapage_session = [
                         'id' => $rattrapage->id,
                         'titre' => $rattrapage->titre,
@@ -68,12 +67,16 @@ class ExamController extends Controller
                         'end_at_formatted' => $rattrapage->end_at ? $rattrapage->end_at->format('H:i') : null,
                         'can_start' => $rattrapage->can_start,
                         'has_ended' => $rattrapage->has_ended,
+                        'pivot_status' => $pivotStatus,
                     ];
 
-                    if ($rattrapage->can_start && (!$result || $result->status !== 'completed')) {
+                    $isRattrapageCompleted = ($pivotStatus === 'completed')
+                        || ($result && $result->is_rattrapage && $result->exam_rattrapage_id === $rattrapage->id && $result->status === 'completed');
+
+                    if ($rattrapage->can_start && !$isRattrapageCompleted) {
                         $exam->can_start = true;
                         $exam->has_ended = false;
-                    } elseif (!$rattrapage->has_ended && (!$result || $result->status !== 'completed')) {
+                    } elseif (!$rattrapage->has_ended && !$isRattrapageCompleted) {
                         $exam->has_ended = false;
                     }
                 } else {
@@ -163,6 +166,7 @@ class ExamController extends Controller
 
         $savedAnswers = [];
         $existingResult = null;
+        $activeRattrapage = $exam->getActiveRattrapageForUser($request->user());
 
         if (!$exam->is_practice) {
             $existingResult = ExamResult::where('exam_id', $exam->id)
@@ -170,34 +174,62 @@ class ExamController extends Controller
                 ->first();
 
             if ($existingResult) {
-                if ($existingResult->status === 'completed') {
-                    return redirect()->route('student.exams.index')->with('success', "Vous avez déjà passé cet examen.");
-                }
-                
-                if ($existingResult->status === 'blocked') {
-                    return redirect()->route('student.exams.index')->with('error', "Cet examen a été bloqué suite à une interruption. Veuillez contacter votre formateur pour le débloquer.");
-                }
+                if ($activeRattrapage !== null) {
+                    if ($existingResult->is_rattrapage && $existingResult->exam_rattrapage_id === $activeRattrapage->id) {
+                        if ($existingResult->status === 'completed') {
+                            return redirect()->route('student.exams.index')->with('success', "Vous avez déjà passé cet examen de rattrapage.");
+                        }
+                        if ($existingResult->status === 'blocked') {
+                            return redirect()->route('student.exams.index')->with('error', "Cet examen a été bloqué suite à une interruption. Veuillez contacter votre formateur pour le débloquer.");
+                        }
+                        if ($existingResult->answers && is_array($existingResult->answers)) {
+                            $savedAnswers = $existingResult->answers;
+                        }
+                    } else {
+                        // User has an existing result from regular session, but is starting a new rattrapage
+                        $savedAnswers = [];
+                    }
+                } else {
+                    if ($existingResult->status === 'completed') {
+                        return redirect()->route('student.exams.index')->with('success', "Vous avez déjà passé cet examen.");
+                    }
+                    
+                    if ($existingResult->status === 'blocked') {
+                        return redirect()->route('student.exams.index')->with('error', "Cet examen a été bloqué suite à une interruption. Veuillez contacter votre formateur pour le débloquer.");
+                    }
 
-                if ($existingResult->answers && is_array($existingResult->answers)) {
-                    $savedAnswers = $existingResult->answers;
+                    if ($existingResult->answers && is_array($existingResult->answers)) {
+                        $savedAnswers = $existingResult->answers;
+                    }
                 }
             }
+        }
+
+        $component = $exam->is_practice ? 'Student/PracticeExam' : 'LMS/TakeExam';
+
+        // Allow access if regular session can start, active rattrapage is available, or resuming in-progress attempt
+        $canAccess = $exam->can_start 
+            || ($activeRattrapage !== null)
+            || ($existingResult && $existingResult->status === 'started' && !$exam->has_ended);
+
+        if (!$canAccess && !$exam->is_practice) {
+            return redirect()->route('student.exams.index')->with('error', "Cet examen n'est pas accessible actuellement.");
+        }
+
+        // Adjust timing for active rattrapage so LMS/TakeExam Timer reflects the make-up session
+        if ($activeRattrapage !== null) {
+            $exam->scheduled_at = $activeRattrapage->scheduled_at;
+            $exam->duree_minutes = $activeRattrapage->duree_minutes;
         }
 
         $exam->load(['questions.options']);
         $exam->setRelation('questions', $exam->questions->values());
 
-        $component = $exam->is_practice ? 'Student/PracticeExam' : 'LMS/TakeExam';
-
-        // Allow resume if the student was already started (admin unblocked them)
-        // Only block access for new attempts when can_start is false
-        $activeRattrapage = $exam->getActiveRattrapageForUser($request->user());
-        $canAccess = $exam->can_start 
-            || ($activeRattrapage !== null && (!$existingResult || $existingResult->status !== 'completed'))
-            || ($existingResult && $existingResult->status === 'started');
-
-        if (!$canAccess && !$exam->is_practice) {
-            return redirect()->route('student.exams.index')->with('error', "Cet examen n'est pas accessible actuellement.");
+        if (!$exam->is_practice) {
+            $exam->questions->each(function ($question) {
+                $question->makeHidden('expected_answer');
+                $question->options->each->makeHidden('is_correct');
+            });
         }
 
         return Inertia::render($component, [
@@ -218,11 +250,11 @@ class ExamController extends Controller
                 ->first();
 
             $activeRattrapage = $exam->getActiveRattrapageForUser($request->user());
-            // Allow resume if already started (admin unblocked) or active rattrapage session
+            // Allow access if regular session can start, active rattrapage is available, or resuming started attempt
             $canAccess = $exam->is_approved && (
                 $exam->can_start 
-                || ($activeRattrapage !== null && (!$existing || $existing->status !== 'completed'))
-                || ($existing && $existing->status === 'started')
+                || ($activeRattrapage !== null)
+                || ($existing && $existing->status === 'started' && !$exam->has_ended)
             );
 
             if (!$canAccess) {
@@ -238,14 +270,17 @@ class ExamController extends Controller
                     'is_rattrapage' => $activeRattrapage !== null,
                     'exam_rattrapage_id' => $activeRattrapage?->id,
                 ]);
-            } else if ($activeRattrapage !== null && $existing->status !== 'started') {
-                $existing->update([
-                    'status' => 'started',
-                    'is_rattrapage' => true,
-                    'exam_rattrapage_id' => $activeRattrapage->id,
-                    'started_at' => now(),
-                    'finished_at' => null,
-                ]);
+            } else if ($activeRattrapage !== null) {
+                if ($existing->exam_rattrapage_id !== $activeRattrapage->id || $existing->status !== 'started') {
+                    $existing->update([
+                        'status' => 'started',
+                        'is_rattrapage' => true,
+                        'exam_rattrapage_id' => $activeRattrapage->id,
+                        'started_at' => now(),
+                        'finished_at' => null,
+                        'answers' => null,
+                    ]);
+                }
             }
         } else {
             if (!$exam->is_approved) {
@@ -288,12 +323,13 @@ class ExamController extends Controller
                 'is_rattrapage' => $activeRattrapage !== null,
                 'exam_rattrapage_id' => $activeRattrapage?->id,
             ]);
-        } else if ($result->status !== 'completed') {
+        } else if ($result->status !== 'completed' || ($activeRattrapage !== null && ($result->exam_rattrapage_id !== $activeRattrapage->id || !$result->is_rattrapage))) {
             $updateData = [
                 'score' => $score,
                 'answers' => $validated['answers'],
+                'status' => 'started',
             ];
-            if ($activeRattrapage !== null && !$result->is_rattrapage) {
+            if ($activeRattrapage !== null) {
                 $updateData['is_rattrapage'] = true;
                 $updateData['exam_rattrapage_id'] = $activeRattrapage->id;
             }
@@ -467,20 +503,24 @@ class ExamController extends Controller
      */
     public function result(Request $request, Exam $exam): Response|RedirectResponse
     {
-        if (!$exam->are_grades_published || !$this->canStudentAccessExam($request->user(), $exam)) {
-            return redirect()->route('student.dashboard')->with('error', "La correction de cet examen n'est pas encore disponible.");
+        if (!$this->canStudentAccessExam($request->user(), $exam)) {
+            return redirect()->route('student.exams.index')->with('error', "Cet examen n'est pas accessible.");
         }
 
-        $exam->load(['module', 'questions.options']);
+        if (!$exam->are_grades_published) {
+            return redirect()->route('student.dashboard')->with('error', "La correction de cet examen n'est pas encore disponible.");
+        }
 
         $user = $request->user();
         $result = ExamResult::where('exam_id', $exam->id)
             ->where('user_id', $user->id)
             ->first();
 
-        if (!$result) {
-            return redirect()->route('student.dashboard')->with('error', "Vous n'avez pas de résultat pour cet examen.");
+        if (!$result || $result->status !== 'completed' || $result->score === null) {
+            return redirect()->route('student.exams.index')->with('error', "Vous n'avez pas passé cet examen. Vous ne pouvez pas accéder aux questions ni à la correction.");
         }
+
+        $exam->load(['module', 'questions.options']);
 
         return Inertia::render('Student/ExamResult', [
             'exam' => $exam,

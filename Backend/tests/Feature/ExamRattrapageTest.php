@@ -268,4 +268,158 @@ class ExamRattrapageTest extends TestCase
         $response->assertOk();
         $this->assertDatabaseMissing('exam_rattrapages', ['id' => $rattrapage->id]);
     }
+
+    public function test_student_with_prior_completed_result_can_open_and_pass_rattrapage_when_time_arrives(): void
+    {
+        $this->withoutMiddleware(\App\Http\Middleware\EnsureWithinPremises::class);
+
+        // Student took regular exam, scored 6/20 (completed)
+        $initialResult = ExamResult::create([
+            'exam_id' => $this->exam->id,
+            'user_id' => $this->studentRegular->id,
+            'score' => 6,
+            'status' => 'completed',
+            'finished_at' => Carbon::now()->subDays(2),
+            'answers' => [$this->exam->questions->first()->id => 'wrong_answer'],
+        ]);
+
+        // Trainer schedules rattrapage for this student, scheduled time has arrived (5 min ago)
+        $rattrapage = ExamRattrapage::create([
+            'exam_id' => $this->exam->id,
+            'titre' => 'Rattrapage Note Insuffisante',
+            'scheduled_at' => Carbon::now()->subMinutes(5),
+            'duree_minutes' => 45,
+            'created_by' => $this->trainer->id,
+        ]);
+
+        $rattrapage->users()->attach($this->studentRegular->id, [
+            'status' => 'scheduled',
+            'motif_justification' => 'Note inférieure à la moyenne',
+        ]);
+
+        // 1. Student checks /student/exams
+        $indexResponse = $this->actingAs($this->studentRegular)
+            ->get(route('student.exams.index'));
+        $indexResponse->assertOk();
+        $exams = $indexResponse->viewData('page')['props']['exams'];
+        $examData = collect($exams)->firstWhere('id', $this->exam->id);
+        $this->assertNotNull($examData);
+        $this->assertTrue($examData['can_start']);
+        $this->assertNotNull($examData['rattrapage_session']);
+        $this->assertTrue($examData['rattrapage_session']['can_start']);
+
+        // 2. Student opens exam /student/exams/{id} (must not be redirected with "Vous avez déjà passé cet examen")
+        $showResponse = $this->actingAs($this->studentRegular)
+            ->get(route('student.exams.show', $this->exam->id));
+        $showResponse->assertOk();
+        $showExam = $showResponse->viewData('page')['props']['exam'];
+        $this->assertEquals(45, $showExam['duree_minutes']);
+        // Saved answers for new rattrapage attempt should be empty
+        $this->assertEmpty($showResponse->viewData('page')['props']['savedAnswers']);
+
+        // 3. Student starts rattrapage exam
+        $startResponse = $this->actingAs($this->studentRegular)
+            ->postJson(route('student.exams.start', $this->exam->id));
+        $startResponse->assertOk();
+
+        $initialResult->refresh();
+        $this->assertEquals('started', $initialResult->status);
+        $this->assertTrue((bool)$initialResult->is_rattrapage);
+        $this->assertEquals($rattrapage->id, $initialResult->exam_rattrapage_id);
+
+        // 4. Student submits rattrapage exam
+        $submitResponse = $this->actingAs($this->studentRegular)
+            ->post(route('student.exams.submit', $this->exam->id), [
+                'answers' => [
+                    $this->exam->questions->first()->id => 'strlen',
+                ],
+            ]);
+        $submitResponse->assertRedirect(route('student.dashboard'));
+
+        $initialResult->refresh();
+        $this->assertEquals('completed', $initialResult->status);
+        $this->assertNotNull($initialResult->finished_at);
+
+        // Pivot status updated to completed
+        $this->assertDatabaseHas('exam_rattrapage_user', [
+            'exam_rattrapage_id' => $rattrapage->id,
+            'user_id' => $this->studentRegular->id,
+            'status' => 'completed',
+        ]);
+    }
+
+    public function test_student_dashboard_displays_active_rattrapage_even_if_regular_exam_ended(): void
+    {
+        // Student had regular exam result
+        ExamResult::create([
+            'exam_id' => $this->exam->id,
+            'user_id' => $this->studentRegular->id,
+            'score' => 5,
+            'status' => 'completed',
+            'finished_at' => Carbon::now()->subDays(2),
+        ]);
+
+        // Rattrapage scheduled for now
+        $rattrapage = ExamRattrapage::create([
+            'exam_id' => $this->exam->id,
+            'titre' => 'Rattrapage Actif',
+            'scheduled_at' => Carbon::now()->subMinutes(2),
+            'duree_minutes' => 60,
+            'created_by' => $this->trainer->id,
+        ]);
+
+        $rattrapage->users()->attach($this->studentRegular->id, [
+            'status' => 'scheduled',
+            'motif_justification' => 'Session de rattrapage',
+        ]);
+
+        $dashboardResponse = $this->actingAs($this->studentRegular)
+            ->get(route('student.dashboard'));
+        $dashboardResponse->assertOk();
+
+        $upcomingExams = $dashboardResponse->viewData('page')['props']['upcomingExams'];
+        $found = collect($upcomingExams)->firstWhere('id', $this->exam->id);
+        $this->assertNotNull($found);
+        $this->assertNotNull($found['rattrapage_session']);
+        $this->assertTrue($found['rattrapage_session']['can_start']);
+    }
+
+    public function test_student_cannot_retake_rattrapage_after_completing_it(): void
+    {
+        $this->withoutMiddleware(\App\Http\Middleware\EnsureWithinPremises::class);
+
+        $rattrapage = ExamRattrapage::create([
+            'exam_id' => $this->exam->id,
+            'titre' => 'Rattrapage Terminé',
+            'scheduled_at' => Carbon::now()->subMinutes(10),
+            'duree_minutes' => 60,
+            'created_by' => $this->trainer->id,
+        ]);
+
+        // Pivot status is completed
+        $rattrapage->users()->attach($this->studentJustified->id, [
+            'status' => 'completed',
+            'motif_justification' => 'Absence justifiée',
+        ]);
+
+        // Result marked completed for rattrapage
+        ExamResult::create([
+            'exam_id' => $this->exam->id,
+            'user_id' => $this->studentJustified->id,
+            'score' => 15,
+            'status' => 'completed',
+            'is_rattrapage' => true,
+            'exam_rattrapage_id' => $rattrapage->id,
+        ]);
+
+        // Accessing show should redirect back
+        $showResponse = $this->actingAs($this->studentJustified)
+            ->get(route('student.exams.show', $this->exam->id));
+        $showResponse->assertRedirect(route('student.exams.index'));
+
+        // Calling start should return 403
+        $startResponse = $this->actingAs($this->studentJustified)
+            ->postJson(route('student.exams.start', $this->exam->id));
+        $startResponse->assertStatus(403);
+    }
 }

@@ -49,7 +49,13 @@ class Exam extends Model
     protected function endAt(): Attribute
     {
         return Attribute::make(
-            get: fn () => $this->scheduled_at ? $this->scheduled_at->addMinutes($this->duree_minutes) : null,
+            get: function ($value, $attributes) {
+                if (array_key_exists('end_at', $attributes)) {
+                    return $attributes['end_at'];
+                }
+                return $this->scheduled_at ? $this->scheduled_at->copy()->addMinutes($this->duree_minutes) : null;
+            },
+            set: fn ($value) => ['end_at' => $value],
         );
     }
 
@@ -59,7 +65,13 @@ class Exam extends Model
     protected function hasEnded(): Attribute
     {
         return Attribute::make(
-            get: fn () => $this->isExpired(),
+            get: function ($value, $attributes) {
+                if (array_key_exists('has_ended', $attributes)) {
+                    return (bool) $attributes['has_ended'];
+                }
+                return $this->isExpired();
+            },
+            set: fn ($value) => ['has_ended' => $value],
         );
     }
 
@@ -69,10 +81,16 @@ class Exam extends Model
     protected function canStart(): Attribute
     {
         return Attribute::make(
-            get: fn () => $this->is_active 
-                && $this->is_approved
-                && (!$this->scheduled_at || now()->isAfter($this->scheduled_at))
-                && !$this->isExpired(),
+            get: function ($value, $attributes) {
+                if (array_key_exists('can_start', $attributes)) {
+                    return (bool) $attributes['can_start'];
+                }
+                return $this->is_active 
+                    && $this->is_approved
+                    && (!$this->scheduled_at || now()->greaterThanOrEqualTo($this->scheduled_at))
+                    && !$this->isExpired();
+            },
+            set: fn ($value) => ['can_start' => $value],
         );
     }
 
@@ -131,7 +149,8 @@ class Exam extends Model
     public function getActiveRattrapageForUser(User $user): ?ExamRattrapage
     {
         return $this->rattrapages()
-            ->whereHas('users', fn ($q) => $q->where('users.id', $user->id))
+            ->with(['users' => fn ($q) => $q->where('users.id', $user->id)])
+            ->whereHas('users', fn ($q) => $q->where('users.id', $user->id)->where('exam_rattrapage_user.status', '!=', 'completed'))
             ->get()
             ->first(fn ($r) => $r->can_start && !$r->isExpired());
     }
@@ -141,10 +160,16 @@ class Exam extends Model
      */
     public function getUpcomingOrActiveRattrapageForUser(User $user): ?ExamRattrapage
     {
-        return $this->rattrapages()
+        $all = $this->rattrapages()
+            ->with(['users' => fn ($q) => $q->where('users.id', $user->id)])
             ->whereHas('users', fn ($q) => $q->where('users.id', $user->id))
             ->get()
-            ->first(fn ($r) => !$r->isExpired());
+            ->filter(fn ($r) => !$r->isExpired());
+
+        return $all->first(function ($r) use ($user) {
+            $pivot = $r->users->firstWhere('id', $user->id)?->pivot;
+            return $pivot && $pivot->status !== 'completed';
+        }) ?? $all->first();
     }
 
     /**
@@ -169,6 +194,6 @@ class Exam extends Model
         }
 
         // Buffer of 1 minute to allow for submission network time
-        return now()->isAfter($this->scheduled_at->addMinutes($this->duree_minutes + 1));
+        return now()->isAfter($this->scheduled_at->copy()->addMinutes($this->duree_minutes + 1));
     }
 }

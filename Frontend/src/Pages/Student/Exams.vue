@@ -63,18 +63,85 @@ const proceedWithAction = (exam, action, latitude, longitude) => {
     }
 }
 
+const canStartExam = (exam) => {
+    if (!exam.is_online) return false
+
+    // Active rattrapage session for this student that has not yet been completed
+    if (exam.rattrapage_session && exam.rattrapage_session.can_start && exam.rattrapage_session.pivot_status !== 'completed') {
+        return true
+    }
+
+    // Practice exam: can always be taken if active
+    if (exam.is_practice) {
+        return exam.can_start
+    }
+
+    // Resuming an already started exam
+    if (exam.my_result?.status === 'started') {
+        return !exam.has_ended || (exam.rattrapage_session && exam.rattrapage_session.can_start)
+    }
+
+    // Regular exam: can start and has not been completed
+    if (exam.can_start && !exam.my_result) {
+        return true
+    }
+
+    return false
+}
+
+const getActionButtonText = (exam) => {
+    if (isLocating.value && loadingExamId.value === exam.id) {
+        return 'GPS...'
+    }
+    if (exam.rattrapage_session && exam.rattrapage_session.can_start && exam.rattrapage_session.pivot_status !== 'completed') {
+        if (exam.my_result?.status === 'started' && exam.my_result.exam_rattrapage_id === exam.rattrapage_session.id) {
+            return 'Reprendre le rattrapage'
+        }
+        return 'Passer le rattrapage'
+    }
+    if (exam.my_result?.status === 'started') {
+        return 'Reprendre'
+    }
+    if (exam.is_practice && exam.my_result) {
+        return 'Refaire'
+    }
+    return 'Commencer'
+}
+
 const statusLabel = (exam) => {
+    const isRattrapageScheduled = exam.rattrapage_session && exam.rattrapage_session.pivot_status !== 'completed'
+    const isRattrapageActive = isRattrapageScheduled && exam.rattrapage_session.can_start
+
+    if (isRattrapageScheduled) {
+        if (exam.my_result?.status === 'started' && exam.my_result.exam_rattrapage_id === exam.rattrapage_session.id) {
+            return 'Rattrapage en cours'
+        }
+        if (isRattrapageActive) {
+            return 'Rattrapage ouvert'
+        }
+        return 'Rattrapage prévu'
+    }
+
     if (!exam.my_result) {
-        if (exam.rattrapage_session && !exam.can_start) {
-            return 'Rattrapage prévu'
+        if (exam.has_ended) {
+            return 'Non composé'
         }
         return 'À faire'
     }
     if (exam.my_result.status === 'blocked') return 'Bloqué'
-    if (exam.my_result.status === 'started') return 'En cours'
+    if (exam.my_result.status === 'started') {
+        if (exam.has_ended) {
+            return 'Non terminé'
+        }
+        return 'En cours'
+    }
     
     if (!exam.is_practice && !exam.are_grades_published) {
         return exam.my_result.is_rattrapage ? 'Rattrapage - En attente' : 'En attente de validation'
+    }
+
+    if (exam.my_result.status !== 'completed' || exam.my_result.score === null) {
+        return 'Non composé'
     }
     
     const scoreVal = parseFloat(exam.my_result.score) || 0
@@ -88,11 +155,31 @@ const statusLabel = (exam) => {
 }
 
 const statusClass = (exam) => {
-    if (!exam.my_result) return 'bg-amber-50 text-amber-600 border-amber-100'
+    const isRattrapageScheduled = exam.rattrapage_session && exam.rattrapage_session.pivot_status !== 'completed'
+    const isRattrapageActive = isRattrapageScheduled && exam.rattrapage_session.can_start
+
+    if (isRattrapageScheduled) {
+        if (isRattrapageActive) {
+            return 'bg-emerald-50 text-emerald-600 border-emerald-200 animate-pulse'
+        }
+        return 'bg-amber-50 text-amber-700 border-amber-200'
+    }
+
+    if (!exam.my_result) {
+        if (exam.has_ended) return 'bg-gray-100 text-gray-500 border-gray-200'
+        return 'bg-amber-50 text-amber-600 border-amber-100'
+    }
     if (exam.my_result.status === 'blocked') return 'bg-red-100 text-red-600 border-red-200 animate-pulse'
-    if (exam.my_result.status === 'started') return 'bg-blue-50 text-blue-600 border-blue-200 animate-pulse'
+    if (exam.my_result.status === 'started') {
+        if (exam.has_ended) return 'bg-gray-100 text-gray-500 border-gray-200'
+        return 'bg-blue-50 text-blue-600 border-blue-200 animate-pulse'
+    }
     
     if (!exam.is_practice && !exam.are_grades_published) return 'bg-gray-100 text-gray-500 border-gray-200'
+
+    if (exam.my_result.status !== 'completed' || exam.my_result.score === null) {
+        return 'bg-gray-100 text-gray-500 border-gray-200'
+    }
 
     const scoreVal = parseFloat(exam.my_result.score) || 0
     const bonusVal = parseFloat(exam.my_result.bonus) || 0
@@ -196,21 +283,22 @@ const formatTime = (dateString) => {
 
                         <!-- État de disponibilité -->
                         <span v-if="exam.has_ended && !exam.my_result && !exam.rattrapage_session" class="px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border bg-red-50 text-red-400 border-red-100 italic">
-                            Terminé
+                            Non composé
                         </span>
-                        <span v-else-if="exam.rattrapage_session && !exam.can_start && !exam.my_result" class="px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border bg-amber-50 text-amber-700 border-amber-200 italic animate-pulse">
+                        <span v-else-if="exam.rattrapage_session && !exam.rattrapage_session.can_start && exam.rattrapage_session.pivot_status !== 'completed'" class="px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border bg-amber-50 text-amber-700 border-amber-200 italic animate-pulse">
                             Rattrapage prévu
                         </span>
-                        <span v-else-if="!exam.can_start && !exam.my_result" class="px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border bg-blue-50 text-blue-500 border-blue-100 italic animate-pulse">
+                        <span v-else-if="!exam.can_start && !exam.has_ended && !exam.my_result && !exam.rattrapage_session" class="px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border bg-blue-50 text-blue-500 border-blue-100 italic animate-pulse">
                             Bientôt
                         </span>
 
-                        <span v-if="exam.my_result" class="px-3 sm:px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border whitespace-nowrap" :class="statusClass(exam)">
+                        <span v-if="exam.my_result || (exam.rattrapage_session && exam.rattrapage_session.pivot_status !== 'completed')" class="px-3 sm:px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border whitespace-nowrap" :class="statusClass(exam)">
                             {{ statusLabel(exam) }}
                         </span>
 
+                        <!-- Correction accessible UNIQUEMENT si l'élève a passé l'examen et que les notes sont publiées (et pas de rattrapage en cours) -->
                         <Link
-                            v-if="exam.are_grades_published"
+                            v-if="exam.are_grades_published && exam.my_result && exam.my_result.status === 'completed' && exam.my_result.score !== null && (!exam.rattrapage_session || exam.rattrapage_session.pivot_status === 'completed')"
                             :href="route('student.exams.result', exam.id)"
                             class="px-4 sm:px-5 py-2 sm:py-2.5 bg-emerald-50 text-emerald-600 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-100 transition border border-emerald-200 shadow-sm flex items-center justify-center gap-1.5 whitespace-nowrap"
                         >
@@ -218,13 +306,13 @@ const formatTime = (dateString) => {
                         </Link>
 
                         <button
-                            v-if="exam.is_online && ((exam.can_start && (!exam.my_result || exam.is_practice)) || exam.my_result?.status === 'started')"
+                            v-if="canStartExam(exam)"
                             @click="handleExamAction(exam, 'start')"
                             :disabled="isLocating && loadingExamId === exam.id"
                             class="px-4 sm:px-5 py-2 sm:py-2.5 bg-gray-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-red-600 transition shadow-lg shadow-gray-200 flex items-center justify-center gap-2 disabled:opacity-50 whitespace-nowrap"
                         >
                             <ArrowPathIcon v-if="isLocating && loadingExamId === exam.id" class="h-3.5 w-3.5 animate-spin" />
-                            {{ isLocating && loadingExamId === exam.id ? 'GPS...' : (exam.my_result?.status === 'started' ? 'Reprendre' : (exam.rattrapage_session ? 'Passer le rattrapage' : (exam.my_result ? 'Refaire' : 'Commencer'))) }}
+                            {{ getActionButtonText(exam) }}
                         </button>
                     </div>
                 </div>

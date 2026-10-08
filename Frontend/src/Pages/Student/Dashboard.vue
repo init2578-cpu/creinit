@@ -243,7 +243,7 @@ const handleExamAction = (exam) => {
                                     </div>
                                     <div>
                                         <p class="text-sm font-black text-gray-900">{{ exam.titre }}</p>
-                                        <p class="text-[8px] text-rose-500 font-black uppercase tracking-widest mt-0.5">{{ exam.my_result?.status === 'started' ? 'Examen débloqué - À terminer' : (exam.is_practice ? 'Entraînement' : 'Examen Final') }}</p>
+                                        <p class="text-[8px] text-rose-500 font-black uppercase tracking-widest mt-0.5">{{ exam.my_result?.status === 'started' ? 'Examen débloqué - À terminer' : (exam.rattrapage_session ? 'Rattrapage' : (exam.is_practice ? 'Entraînement' : 'Examen Final')) }}</p>
                                     </div>
                                 </div>
                                 <button 
@@ -252,7 +252,7 @@ const handleExamAction = (exam) => {
                                     class="px-4 py-2 bg-rose-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-rose-700 transition active:scale-95 shadow-sm hover:shadow flex items-center justify-center gap-2 disabled:opacity-50"
                                 >
                                     <ArrowPathIcon v-if="isLocating && loadingExamId === exam.id" class="h-3.5 w-3.5 animate-spin" />
-                                    {{ isLocating && loadingExamId === exam.id ? 'GPS...' : (exam.my_result?.status === 'started' ? 'Reprendre' : 'Commencer') }}
+                                    {{ isLocating && loadingExamId === exam.id ? 'GPS...' : (exam.my_result?.status === 'started' ? 'Reprendre' : (exam.rattrapage_session ? 'Passer le rattrapage' : 'Commencer')) }}
                                 </button>
                             </div>
                             <div v-if="upcomingExams.length === 0" class="py-8 text-center text-gray-400 font-bold italic text-xs">
@@ -315,7 +315,7 @@ const handleExamAction = (exam) => {
                         </div>
                         <div class="space-y-4">
                             <div v-for="res in recentExams" :key="res.id">
-                                <Link v-if="res.exam.are_grades_published" :href="route('student.exams.result', res.exam.id)" class="flex items-center justify-between border-b border-white/5 pb-3.5 pt-3.5 first:pt-0 last:border-0 last:pb-0 hover:bg-white/5 transition-colors -mx-4 px-4 rounded-xl group">
+                                <Link v-if="res.exam.are_grades_published && res.status === 'completed' && res.score !== null" :href="route('student.exams.result', res.exam.id)" class="flex items-center justify-between border-b border-white/5 pb-3.5 pt-3.5 first:pt-0 last:border-0 last:pb-0 hover:bg-white/5 transition-colors -mx-4 px-4 rounded-xl group">
                                     <div class="min-w-0 flex-1 pr-4">
                                         <p class="font-bold text-sm text-slate-100 truncate group-hover:text-emerald-400 transition-colors">{{ res.exam.titre }}</p>
                                         <p class="text-[8px] font-black uppercase tracking-widest text-emerald-500 mt-0.5">Voir la correction &rarr;</p>
@@ -329,7 +329,7 @@ const handleExamAction = (exam) => {
                                 <div v-else class="flex items-center justify-between border-b border-white/5 pb-3.5 pt-3.5 first:pt-0 last:border-0 last:pb-0">
                                     <div class="min-w-0 flex-1 pr-4">
                                         <p class="font-bold text-sm text-slate-100 truncate">{{ res.exam.titre }}</p>
-                                        <p class="text-[8px] font-black uppercase tracking-widest text-slate-500 mt-0.5">En attente</p>
+                                        <p class="text-[8px] font-black uppercase tracking-widest text-slate-500 mt-0.5">En attente de validation</p>
                                     </div>
                                     <div class="text-right shrink-0">
                                         <div class="text-[10px] font-black uppercase text-slate-600 tracking-widest">
