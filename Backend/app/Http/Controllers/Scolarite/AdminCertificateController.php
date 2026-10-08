@@ -65,8 +65,13 @@ class AdminCertificateController extends Controller
                         ->where('user_id', $student->id)
                         ->get();
                     $presences = $attendances->where('status', 'present')->count();
+                    $unjustifiedCount = $attendances->where('status', 'absent_non_justifie')->count();
                     $totalRecorded = $attendances->whereIn('status', ['present', 'absent_non_justifie', 'justifie', 'late', 'en_retard'])->count();
                     $rate = $totalRecorded > 0 ? (float) round(($presences / $totalRecorded) * 100, 1) : 100.0;
+
+                    $hasTooManyUnjustifiedAbsences = $unjustifiedCount > 3;
+                    $isBlockedWithoutGrade = ($score === null);
+                    $requiresDirectorJustification = $hasTooManyUnjustifiedAbsences && ($score !== null);
 
                     $startDate = $cert?->start_date ? $cert->start_date->format('Y-m-d') : $defaultStartDate;
                     $endDate   = $cert?->end_date ? $cert->end_date->format('Y-m-d') : $defaultEndDate;
@@ -80,6 +85,10 @@ class AdminCertificateController extends Controller
                         'score' => $score,
                         'suggested_type' => $suggestedType,
                         'attendance_rate' => $rate,
+                        'unjustified_absences_count' => $unjustifiedCount,
+                        'has_too_many_unjustified_absences' => $hasTooManyUnjustifiedAbsences,
+                        'is_blocked_without_grade' => $isBlockedWithoutGrade,
+                        'requires_director_justification' => $requiresDirectorJustification,
                         'start_date' => $startDate,
                         'end_date' => $endDate,
                         'start_date_fr' => $startDate ? Carbon::parse($startDate)->format('d/m/Y') : null,
@@ -90,6 +99,7 @@ class AdminCertificateController extends Controller
                             'uuid' => $cert->uuid,
                             'type' => $cert->type,
                             'score' => $cert->score,
+                            'justification' => $cert->justification,
                             'start_date' => $cert->start_date?->format('Y-m-d'),
                             'end_date' => $cert->end_date?->format('Y-m-d'),
                             'start_date_fr' => $cert->start_date?->format('d/m/Y'),
@@ -103,6 +113,8 @@ class AdminCertificateController extends Controller
                 $totalCount = $studentsList->count();
                 $certifiedCount = $studentsList->where('has_certificate', true)->count();
                 $pendingCount = $totalCount - $certifiedCount;
+                $blockedCount = $studentsList->where('is_blocked_without_grade', true)->where('has_certificate', false)->count();
+                $requiresDirectorCount = $studentsList->where('requires_director_justification', true)->where('has_certificate', false)->count();
 
                 return [
                     'id' => $group->id,
@@ -118,6 +130,8 @@ class AdminCertificateController extends Controller
                     'students_count' => $totalCount,
                     'certified_count' => $certifiedCount,
                     'pending_count' => $pendingCount,
+                    'blocked_count' => $blockedCount,
+                    'requires_director_count' => $requiresDirectorCount,
                     'students' => $studentsList->values(),
                 ];
             });
@@ -168,6 +182,11 @@ class AdminCertificateController extends Controller
                     $score = $this->calculateLearnerGrade($student, $module, $group);
                     $suggestedType = $this->determineCertificateType($score);
 
+                    $unjustifiedCount = $this->countUnjustifiedAbsences($student, $module, $group);
+                    $hasTooManyUnjustifiedAbsences = $unjustifiedCount > 3;
+                    $isBlockedWithoutGrade = ($score === null);
+                    $requiresDirectorJustification = $hasTooManyUnjustifiedAbsences && ($score !== null);
+
                     $firstAttendance = $group ? Attendance::where('group_id', $group->id)->min('date') : null;
                     $lastAttendance  = $group ? Attendance::where('group_id', $group->id)->max('date') : null;
 
@@ -187,6 +206,10 @@ class AdminCertificateController extends Controller
                         'is_particulier' => (bool) $student->is_particulier,
                         'score' => $score,
                         'suggested_type' => $suggestedType,
+                        'unjustified_absences_count' => $unjustifiedCount,
+                        'has_too_many_unjustified_absences' => $hasTooManyUnjustifiedAbsences,
+                        'is_blocked_without_grade' => $isBlockedWithoutGrade,
+                        'requires_director_justification' => $requiresDirectorJustification,
                         'start_date' => $startDate,
                         'end_date' => $endDate,
                         'start_date_fr' => $startDate ? Carbon::parse($startDate)->format('d/m/Y') : null,
@@ -201,6 +224,7 @@ class AdminCertificateController extends Controller
                             'uuid' => $cert->uuid,
                             'type' => $cert->type,
                             'score' => $cert->score,
+                            'justification' => $cert->justification,
                             'start_date' => $cert->start_date?->format('Y-m-d'),
                             'end_date' => $cert->end_date?->format('Y-m-d'),
                             'start_date_fr' => $cert->start_date?->format('d/m/Y'),
@@ -229,6 +253,7 @@ class AdminCertificateController extends Controller
             'modules' => $modules,
             'closedGroups' => $closedGroups,
             'stats' => $stats,
+            'isDirecteur' => (bool) $isDirecteur,
         ]);
     }
 
@@ -237,8 +262,8 @@ class AdminCertificateController extends Controller
      */
     public function generate(Request $request, User $student, Module $module): RedirectResponse
     {
-        if ($student->is_particulier && !auth()->user()?->hasRole('Directeur')) {
-            abort(403, 'Seul le Directeur est autorisé à émettre une attestation pour un apprenant particulier.');
+        if (!auth()->user()?->hasRole('Directeur')) {
+            abort(403, "Accès refusé : seul le Directeur de l'établissement a l'habilitation d'attester et de délivrer des attestations officielles.");
         }
 
         $group = null;
@@ -250,11 +275,36 @@ class AdminCertificateController extends Controller
         }
 
         $calculatedScore = $this->calculateLearnerGrade($student, $module, $group);
-        $score = $request->filled('score') ? (float) $request->input('score') : $calculatedScore;
+        $score = ($request->has('score') && $request->input('score') !== null && $request->input('score') !== '')
+            ? (float) $request->input('score')
+            : $calculatedScore;
+
+        $unjustifiedAbsences = $this->countUnjustifiedAbsences($student, $module, $group);
+
+        // RULE 1: Tout apprenant n'ayant pas de note n'a pas droit à une attestation
+        if ($score === null) {
+            return back()->withErrors([
+                'score' => "Impossible de valider et générer l'attestation : tout apprenant n'ayant pas de note n'a pas droit à une attestation. Une note doit obligatoirement être enregistrée.",
+            ])->with('error', "Génération bloquée : {$student->name} ne dispose d'aucune note.");
+        }
+
+        // RULE 2: Even if the learner has a grade, if they have > 3 unjustified absences:
+        // Only the Directeur can judge and validate, with written justification required.
+        $justification = null;
+        if ($unjustifiedAbsences > 3) {
+            $justification = trim((string) $request->input('justification'));
+            if (empty($justification)) {
+                return back()->withErrors([
+                    'justification' => "Une justification écrite du Directeur est obligatoire pour autoriser la délivrance de l'attestation d'un apprenant cumulant {$unjustifiedAbsences} absences non justifiées.",
+                ])->with('error', "Justification écrite du Directeur obligatoire (plus de 3 absences non justifiées).");
+            }
+        } else {
+            $justification = $request->filled('justification') ? trim((string) $request->input('justification')) : null;
+        }
 
         $type = $request->input('type');
         if (!in_array($type, ['reussite', 'participation'], true)) {
-            $type = $this->determineCertificateType($score);
+            $type = $this->determineCertificateType($score) ?? 'participation';
         }
 
         // Custom or auto-deduced training period dates
@@ -277,12 +327,13 @@ class AdminCertificateController extends Controller
                 'module_id' => $module->id,
             ],
             [
-                'group_id'   => $group?->id,
-                'type'       => $type,
-                'score'      => $score,
-                'start_date' => $startDate,
-                'end_date'   => $endDate,
-                'issued_at'  => now(),
+                'group_id'      => $group?->id,
+                'type'          => $type,
+                'score'         => $score,
+                'start_date'    => $startDate,
+                'end_date'      => $endDate,
+                'justification' => $justification,
+                'issued_at'     => now(),
             ]
         );
 
@@ -291,7 +342,12 @@ class AdminCertificateController extends Controller
         $student->notify(new CertificateIssuedNotification($certificate, $module));
 
         $label = $type === 'participation' ? 'de participation' : 'de réussite';
-        return back()->with('success', "Attestation {$label} générée et transmise à l'apprenant avec succès.");
+        $successMsg = "Attestation {$label} générée et transmise à l'apprenant avec succès.";
+        if ($unjustifiedAbsences > 3) {
+            $successMsg .= " (Appréciation dérogatoire du Directeur enregistrée avec justificatif écrit).";
+        }
+
+        return back()->with('success', $successMsg);
     }
 
     /**
@@ -299,6 +355,10 @@ class AdminCertificateController extends Controller
      */
     public function generateForGroup(Request $request, Group $group): RedirectResponse
     {
+        if (!auth()->user()?->hasRole('Directeur')) {
+            abort(403, "Accès refusé : seul le Directeur de l'établissement a l'habilitation d'attester et de délivrer des attestations officielles.");
+        }
+
         $module = $group->module;
         if (!$module) {
             return back()->withErrors(['group' => 'Ce groupe n\'a pas de module associé.']);
@@ -322,10 +382,26 @@ class AdminCertificateController extends Controller
 
         $reussiteCount = 0;
         $participationCount = 0;
+        $skippedWithoutGrade = [];
+        $skippedNeedDirector = [];
 
         foreach ($students as $student) {
+            $unjustifiedCount = $this->countUnjustifiedAbsences($student, $module, $group);
             $score = $this->calculateLearnerGrade($student, $module, $group);
-            $type = $this->determineCertificateType($score);
+
+            // 1) Tout apprenant n'ayant pas de note n'a pas droit à une attestation
+            if ($score === null) {
+                $skippedWithoutGrade[] = $student->name;
+                continue;
+            }
+
+            // 2) Plus de 3 absences non justifiées : appréciation individuelle requise par le Directeur
+            if ($unjustifiedCount > 3) {
+                $skippedNeedDirector[] = $student->name;
+                continue;
+            }
+
+            $type = $this->determineCertificateType($score) ?? 'participation';
 
             $certificate = Certificate::updateOrCreate(
                 [
@@ -353,10 +429,33 @@ class AdminCertificateController extends Controller
         }
 
         $totalGenerated = $reussiteCount + $participationCount;
-        return back()->with(
-            'success',
-            "{$totalGenerated} attestations générées avec succès pour le groupe « {$group->nom_groupe} » ({$reussiteCount} de réussite, {$participationCount} de participation)."
-        );
+
+        if ($totalGenerated === 0 && (!empty($skippedWithoutGrade) || !empty($skippedNeedDirector))) {
+            $reasonParts = [];
+            if (!empty($skippedWithoutGrade)) {
+                $reasonParts[] = count($skippedWithoutGrade) . " apprenant(s) sans note (" . implode(', ', $skippedWithoutGrade) . ") n'ont pas droit à une attestation";
+            }
+            if (!empty($skippedNeedDirector)) {
+                $reasonParts[] = count($skippedNeedDirector) . " apprenant(s) avec plus de 3 absences (" . implode(', ', $skippedNeedDirector) . ") requièrent l'appréciation du Directeur avec justificatif écrit";
+            }
+            return back()->withErrors([
+                'group' => "Aucune attestation n'a été générée. " . implode(' et ', $reasonParts) . ".",
+            ])->with('error', "Génération impossible : aucun apprenant n'est éligible (note requise et/ou avis Directeur requis).");
+        }
+
+        $msg = "{$totalGenerated} attestations générées avec succès pour le groupe « {$group->nom_groupe} » ({$reussiteCount} de réussite, {$participationCount} de participation).";
+        $notes = [];
+        if (!empty($skippedWithoutGrade)) {
+            $notes[] = count($skippedWithoutGrade) . " apprenant(s) sans note (" . implode(', ', $skippedWithoutGrade) . ")";
+        }
+        if (!empty($skippedNeedDirector)) {
+            $notes[] = count($skippedNeedDirector) . " apprenant(s) à apprécier individuellement par le Directeur avec justificatif écrit (" . implode(', ', $skippedNeedDirector) . ")";
+        }
+        if (!empty($notes)) {
+            $msg .= " Note : " . implode(' et ', $notes) . " ont été exclu(s) de la production groupée.";
+        }
+
+        return back()->with('success', $msg);
     }
 
     /**
@@ -364,6 +463,10 @@ class AdminCertificateController extends Controller
      */
     public function destroy(Certificate $certificate): RedirectResponse
     {
+        if (!auth()->user()?->hasRole('Directeur')) {
+            abort(403, "Accès refusé : seul le Directeur de l'établissement a l'habilitation de supprimer des attestations officielles.");
+        }
+
         if ($certificate->pdf_path) {
             Storage::disk('local')->delete($certificate->pdf_path);
         }
@@ -437,14 +540,15 @@ class AdminCertificateController extends Controller
 
     /**
      * Determine certificate type based on average score (>= 10 = reussite, < 10 = participation).
+     * Returns null if no score is recorded.
      */
-    public function determineCertificateType(?float $score): string
+    public function determineCertificateType(?float $score): ?string
     {
         if ($score !== null) {
             return $score >= 10.0 ? 'reussite' : 'participation';
         }
 
-        return 'reussite'; // Default fallback when no numerical exam is configured
+        return null;
     }
 
     /**
@@ -513,5 +617,27 @@ class AdminCertificateController extends Controller
         Storage::disk('local')->put($path, $pdf->output());
 
         $certificate->update(['pdf_path' => $path]);
+    }
+
+    /**
+     * Helper to count unjustified absences for a learner in a group or module.
+     */
+    public function countUnjustifiedAbsences(User $student, ?Module $module = null, ?Group $group = null): int
+    {
+        $query = Attendance::where('user_id', $student->id)
+            ->where('status', 'absent_non_justifie');
+
+        if ($group) {
+            $query->where('group_id', $group->id);
+        } elseif ($module) {
+            $groupIds = $student->studentGroups()->where('module_id', $module->id)->pluck('groups.id');
+            if ($groupIds->isNotEmpty()) {
+                $query->whereIn('group_id', $groupIds);
+            } else {
+                return 0;
+            }
+        }
+
+        return $query->count();
     }
 }

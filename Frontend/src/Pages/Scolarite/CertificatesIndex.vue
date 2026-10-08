@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed } from 'vue'
-import { Head, Link, router } from '@inertiajs/vue3'
+import { Head, Link, router, usePage } from '@inertiajs/vue3'
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
 import { 
     AcademicCapIcon, 
@@ -19,8 +19,13 @@ import {
     DocumentTextIcon,
     XMarkIcon,
     ShieldCheckIcon,
-    CalendarDaysIcon
+    CalendarDaysIcon,
+    LockClosedIcon,
+    ExclamationTriangleIcon,
+    PencilSquareIcon
 } from '@heroicons/vue/24/outline'
+
+const page = usePage()
 
 const props = defineProps({
     students: {
@@ -45,6 +50,10 @@ const props = defineProps({
             closed_groups_count: 0,
             closed_groups_pending_count: 0,
         })
+    },
+    isDirecteur: {
+        type: Boolean,
+        default: false
     }
 })
 
@@ -79,15 +88,21 @@ const modalScore = ref(null)
 const modalType = ref('reussite')
 const modalStartDate = ref('')
 const modalEndDate = ref('')
+const modalJustification = ref('')
 const defaultAutoStartDate = ref('')
 const defaultAutoEndDate = ref('')
 const isSubmitting = ref(false)
+
+const userIsDirecteur = computed(() => {
+    return Boolean(props.isDirecteur || page.props.auth?.user?.roles?.includes('Directeur'))
+})
 
 function openGenerateModal(student, module, group, currentScore = null, currentType = null, startDate = null, endDate = null) {
     modalStudent.value = student
     modalModule.value = module
     modalGroup.value = group
     modalScore.value = currentScore !== null && currentScore !== undefined ? currentScore : null
+    modalJustification.value = student?.certificate?.justification || ''
     
     if (currentType) {
         modalType.value = currentType
@@ -113,8 +128,41 @@ function resetModalDatesToAuto() {
     modalEndDate.value = defaultAutoEndDate.value
 }
 
+const isModalBlockedWithoutGrade = computed(() => {
+    if (!modalStudent.value) return false
+    const hasScore = modalScore.value !== null && modalScore.value !== ''
+    return !hasScore
+})
+
+const isModalBlockedNonDirector = computed(() => {
+    return !userIsDirecteur.value
+})
+
+const isModalMissingJustification = computed(() => {
+    if (!modalStudent.value) return false
+    const absences = modalStudent.value.unjustified_absences_count ?? 0
+    const hasScore = modalScore.value !== null && modalScore.value !== ''
+    return absences > 3 && hasScore && userIsDirecteur.value && !modalJustification.value.trim()
+})
+
 function submitGenerateModal() {
     if (!modalStudent.value || !modalModule.value) return
+
+    if (!userIsDirecteur.value) {
+        alert("Accès refusé : seul le Directeur de l'établissement a l'habilitation d'attester et de délivrer des attestations officielles.")
+        return
+    }
+
+    if (isModalBlockedWithoutGrade.value) {
+        alert("Impossible de valider et générer l'attestation : tout apprenant n'ayant pas de note n'a pas droit à une attestation. Vous devez obligatoirement renseigner une note.")
+        return
+    }
+
+    if (isModalMissingJustification.value) {
+        alert("Une justification écrite du Directeur est obligatoire pour autoriser la délivrance de l'attestation pour cet apprenant.")
+        return
+    }
+
     isSubmitting.value = true
     
     router.post(
@@ -125,6 +173,7 @@ function submitGenerateModal() {
             score: modalScore.value !== null && modalScore.value !== '' ? Number(modalScore.value) : null,
             start_date: modalStartDate.value || null,
             end_date: modalEndDate.value || null,
+            justification: modalJustification.value.trim() || null,
         },
         {
             preserveScroll: true,
@@ -138,6 +187,10 @@ function submitGenerateModal() {
 
 // Quick 1-click generation using defaults
 function quickGenerateCertificate(studentId, moduleId, groupId = null, suggestedType = null, score = null) {
+    if (!userIsDirecteur.value) {
+        alert("Accès refusé : seul le Directeur de l'établissement a l'habilitation d'attester et de délivrer des attestations officielles.")
+        return
+    }
     if (isSubmitting.value) return
     isSubmitting.value = true
     
@@ -165,7 +218,16 @@ const batchEndDate = ref('')
 const defaultBatchAutoStartDate = ref('')
 const defaultBatchAutoEndDate = ref('')
 
+const batchBlockedStudentsCount = computed(() => {
+    if (!batchTargetGroup.value?.students) return 0
+    return batchTargetGroup.value.students.filter(s => (s.score === null || s.unjustified_absences_count > 3) && !s.has_certificate).length
+})
+
 function confirmGenerateForGroup(group) {
+    if (!userIsDirecteur.value) {
+        alert("Accès refusé : seul le Directeur de l'établissement a l'habilitation d'attester pour un groupe.")
+        return
+    }
     batchTargetGroup.value = group
     batchStartDate.value = group.default_start_date || ''
     batchEndDate.value = group.default_end_date || ''
@@ -181,6 +243,10 @@ function resetBatchDatesToAuto() {
 
 function submitBatchGeneration() {
     if (!batchTargetGroup.value) return
+    if (!userIsDirecteur.value) {
+        alert("Accès refusé : seul le Directeur de l'établissement a l'habilitation d'attester.")
+        return
+    }
     isSubmitting.value = true
     
     router.post(
@@ -200,6 +266,10 @@ function submitBatchGeneration() {
 }
 
 function deleteCertificate(certificateId) {
+    if (!userIsDirecteur.value) {
+        alert("Accès refusé : seul le Directeur de l'établissement a l'habilitation de supprimer des attestations officielles.")
+        return
+    }
     if (confirm('Êtes-vous sûr de vouloir supprimer cette attestation ? Le document PDF associé sera supprimé.')) {
         router.delete(route('certificates.destroy', certificateId), {
             preserveScroll: true
@@ -231,6 +301,37 @@ function deleteCertificate(certificateId) {
         <div class="py-10">
             <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-8">
                 
+                <!-- Notice Banner: Habilitation à attester -->
+                <div v-if="!userIsDirecteur" class="p-5 bg-amber-50/80 border border-amber-200 rounded-[2rem] flex items-center gap-4 text-amber-900 shadow-sm">
+                    <div class="w-12 h-12 rounded-2xl bg-amber-100 flex items-center justify-center text-amber-700 shrink-0">
+                        <ShieldCheckIcon class="w-6 h-6" />
+                    </div>
+                    <div class="space-y-0.5 text-xs">
+                        <p class="font-black text-sm tracking-tight text-amber-950 flex items-center gap-2">
+                            <span>Habilitation Exclusive du Directeur</span>
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-amber-200/80 text-amber-900">Mode Consultation</span>
+                        </p>
+                        <p class="font-medium text-amber-800">
+                            Seul le Directeur de l'établissement a l'habilitation officielle pour valider, émettre et signer les attestations de formation. Les fonctions d'émission et de production sont réservées à la Direction.
+                        </p>
+                    </div>
+                </div>
+
+                <div v-else class="p-4 bg-emerald-50/80 border border-emerald-200 rounded-[2rem] flex items-center gap-4 text-emerald-900 shadow-sm">
+                    <div class="w-10 h-10 rounded-2xl bg-emerald-100 flex items-center justify-center text-emerald-700 shrink-0">
+                        <ShieldCheckIcon class="w-5 h-5" />
+                    </div>
+                    <div class="space-y-0.5 text-xs">
+                        <p class="font-black text-xs uppercase tracking-wider text-emerald-950 flex items-center gap-2">
+                            <span>Habilitation Directorale Active</span>
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-emerald-200/80 text-emerald-900">Autorité Directrice</span>
+                        </p>
+                        <p class="font-medium text-emerald-800">
+                            Vous disposez de l'habilitation légale d'attester et de délivrer les attestations officielles individuelles et groupées de l'établissement.
+                        </p>
+                    </div>
+                </div>
+
                 <!-- Stats / Quick Actions -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                     <div class="bg-white p-6 rounded-[2rem] shadow-sm border border-gray-100 flex items-center gap-5">
@@ -350,6 +451,10 @@ function deleteCertificate(certificateId) {
                                         <CalendarDaysIcon class="w-3.5 h-3.5 text-blue-400" />
                                         <span>Période : {{ group.default_start_date_fr }} au {{ group.default_end_date_fr }}</span>
                                     </span>
+                                    <span v-if="group.blocked_count > 0" class="px-3.5 py-1 bg-rose-500/20 border border-rose-400/30 text-rose-300 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5">
+                                        <LockClosedIcon class="w-3.5 h-3.5 text-rose-400" />
+                                        <span>{{ group.blocked_count }} bloqué(s) (> 3 abs. sans note)</span>
+                                    </span>
                                     <span class="text-xs text-slate-400 font-medium">
                                         Formateur : {{ group.formateur_name }}
                                     </span>
@@ -370,25 +475,38 @@ function deleteCertificate(certificateId) {
                                     Progression : <span class="font-black text-white">{{ group.certified_count }}/{{ group.students_count }}</span>
                                 </div>
 
-                                <button
-                                    v-if="group.pending_count > 0"
-                                    @click="confirmGenerateForGroup(group)"
-                                    :disabled="isSubmitting"
-                                    class="px-5 py-3.5 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg shadow-blue-900/40 transition flex items-center gap-2 disabled:opacity-50"
-                                >
-                                    <SparklesIcon class="h-4 w-4" />
-                                    <span>Valider tout le groupe ({{ group.pending_count }})</span>
-                                </button>
-                                <button
-                                    v-else
-                                    @click="confirmGenerateForGroup(group)"
-                                    :disabled="isSubmitting"
-                                    class="px-4 py-3 bg-white/10 hover:bg-white/20 text-slate-200 rounded-2xl font-black text-xs uppercase tracking-widest transition flex items-center gap-2"
-                                    title="Régénérer toutes les attestations du groupe"
-                                >
-                                    <ArrowPathIcon class="h-4 w-4" />
-                                    <span>Régénérer le groupe</span>
-                                </button>
+                                <template v-if="userIsDirecteur">
+                                    <button
+                                        v-if="group.pending_count > 0"
+                                        @click="confirmGenerateForGroup(group)"
+                                        :disabled="isSubmitting"
+                                        class="px-5 py-3.5 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg shadow-blue-900/40 transition flex items-center gap-2 disabled:opacity-50"
+                                    >
+                                        <SparklesIcon class="h-4 w-4" />
+                                        <span>Valider tout le groupe ({{ group.pending_count }})</span>
+                                    </button>
+                                    <button
+                                        v-else
+                                        @click="confirmGenerateForGroup(group)"
+                                        :disabled="isSubmitting"
+                                        class="px-4 py-3 bg-white/10 hover:bg-white/20 text-slate-200 rounded-2xl font-black text-xs uppercase tracking-widest transition flex items-center gap-2"
+                                        title="Régénérer toutes les attestations du groupe"
+                                    >
+                                        <ArrowPathIcon class="h-4 w-4" />
+                                        <span>Régénérer le groupe</span>
+                                    </button>
+                                </template>
+                                <template v-else>
+                                    <button
+                                        type="button"
+                                        disabled
+                                        class="px-4 py-3 bg-white/5 border border-white/10 text-slate-400 rounded-2xl font-black text-xs uppercase tracking-widest cursor-not-allowed flex items-center gap-2 shadow-none"
+                                        title="Seul le Directeur de l'établissement a l'habilitation d'attester pour le groupe"
+                                    >
+                                        <LockClosedIcon class="h-4 w-4 text-slate-400" />
+                                        <span>Habilitation Directeur Requise</span>
+                                    </button>
+                                </template>
                             </div>
                         </div>
 
@@ -417,7 +535,22 @@ function deleteCertificate(certificateId) {
                                     <!-- Attendance Rate -->
                                     <div class="text-center sm:text-left">
                                         <span class="text-[10px] font-black uppercase tracking-wider text-gray-400">Présence</span>
-                                        <p class="text-sm font-black text-gray-800">{{ student.attendance_rate }}%</p>
+                                        <div class="flex items-center gap-2">
+                                            <p class="text-sm font-black text-gray-800">{{ student.attendance_rate }}%</p>
+                                            <span 
+                                                v-if="student.unjustified_absences_count > 0"
+                                                :class="[
+                                                    student.has_too_many_unjustified_absences
+                                                        ? 'bg-rose-100 text-rose-700 border-rose-200' 
+                                                        : 'bg-slate-100 text-slate-600 border-slate-200'
+                                                ]"
+                                                class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold border"
+                                                :title="`${student.unjustified_absences_count} absence(s) non justifiée(s)`"
+                                            >
+                                                <ExclamationTriangleIcon v-if="student.has_too_many_unjustified_absences" class="w-3 h-3 text-rose-600" />
+                                                <span>{{ student.unjustified_absences_count }} abs. non just.</span>
+                                            </span>
+                                        </div>
                                     </div>
 
                                     <!-- Score / Moyenne -->
@@ -432,6 +565,33 @@ function deleteCertificate(certificateId) {
                                         >
                                             {{ student.score !== null ? `${student.score} / 20` : 'Non renseignée' }}
                                         </p>
+                                    </div>
+
+                                    <!-- Blocked notice badge if no score -->
+                                    <div v-if="student.score === null && !student.has_certificate" class="hidden sm:block">
+                                        <span class="text-[10px] font-black uppercase tracking-wider text-rose-500 block mb-1">Statut</span>
+                                        <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-tight bg-rose-50 text-rose-700 border border-rose-200">
+                                            <LockClosedIcon class="w-3.5 h-3.5 text-rose-600" />
+                                            <span>Non éligible (Sans note)</span>
+                                        </span>
+                                    </div>
+
+                                    <!-- Notice badge if > 3 absences with score (Director review required) -->
+                                    <div v-else-if="student.requires_director_justification && !student.has_certificate" class="hidden sm:block">
+                                        <span class="text-[10px] font-black uppercase tracking-wider text-purple-600 block mb-1">Statut</span>
+                                        <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-tight bg-purple-50 text-purple-700 border border-purple-200">
+                                            <ShieldCheckIcon class="w-3.5 h-3.5 text-purple-600" />
+                                            <span>Avis Directeur requis</span>
+                                        </span>
+                                    </div>
+
+                                    <!-- Notice badge if eligible -->
+                                    <div v-else-if="!student.has_certificate" class="hidden sm:block">
+                                        <span class="text-[10px] font-black uppercase tracking-wider text-emerald-600 block mb-1">Statut</span>
+                                        <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-tight bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                            <CheckBadgeIcon class="w-3.5 h-3.5 text-emerald-600" />
+                                            <span>Éligible</span>
+                                        </span>
                                     </div>
 
                                     <!-- Training Period -->
@@ -451,7 +611,14 @@ function deleteCertificate(certificateId) {
                                     <div>
                                         <span class="text-[10px] font-black uppercase tracking-wider text-gray-400 block mb-1">Attestation</span>
                                         <span 
-                                            v-if="student.suggested_type === 'reussite'"
+                                            v-if="student.score === null"
+                                            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-tight bg-gray-100 text-gray-500 border border-gray-200"
+                                        >
+                                            <LockClosedIcon class="w-4 h-4 text-gray-400" />
+                                            <span>Sans note</span>
+                                        </span>
+                                        <span 
+                                            v-else-if="student.suggested_type === 'reussite'"
                                             class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-tight bg-emerald-50 text-emerald-700 border border-emerald-200"
                                         >
                                             <CheckBadgeIcon class="w-4 h-4 text-emerald-600" />
@@ -478,6 +645,9 @@ function deleteCertificate(certificateId) {
                                                 {{ student.certificate.type === 'participation' ? 'Participation' : 'Réussite' }}
                                             </span>
                                             <p class="text-[10px] text-gray-400 font-medium mt-0.5">{{ student.certificate.issued_at }}</p>
+                                            <p v-if="student.certificate.justification" class="text-[9px] font-bold text-purple-700 bg-purple-50 border border-purple-200 px-1.5 py-0.5 rounded mt-0.5 max-w-[140px] truncate" :title="`Justificatif Directeur : ${student.certificate.justification}`">
+                                                ⚖️ Dérogation accordée
+                                            </p>
                                         </div>
 
                                         <a 
@@ -497,40 +667,95 @@ function deleteCertificate(certificateId) {
                                             <EyeIcon class="h-4 w-4" />
                                         </Link>
 
-                                        <button 
-                                            @click="openGenerateModal(student, { id: group.module_id, titre: group.module_title }, group, student.certificate.score ?? student.score, student.certificate.type, student.certificate.start_date ?? student.start_date, student.certificate.end_date ?? student.end_date)"
-                                            class="p-3 bg-slate-50 text-slate-600 hover:bg-slate-100 rounded-xl transition shadow-sm"
-                                            title="Régénérer / Modifier le type, la période ou la note"
-                                        >
-                                            <ArrowPathIcon class="h-4 w-4" />
-                                        </button>
+                                        <template v-if="userIsDirecteur">
+                                            <button 
+                                                @click="openGenerateModal(student, { id: group.module_id, titre: group.module_title }, group, student.certificate.score ?? student.score, student.certificate.type, student.certificate.start_date ?? student.start_date, student.certificate.end_date ?? student.end_date)"
+                                                class="p-3 bg-slate-50 text-slate-600 hover:bg-slate-100 rounded-xl transition shadow-sm"
+                                                title="Régénérer / Modifier le type, la période ou la note"
+                                            >
+                                                <ArrowPathIcon class="h-4 w-4" />
+                                            </button>
 
-                                        <button 
-                                            @click="deleteCertificate(student.certificate.id)"
-                                            class="p-3 bg-red-50 text-red-600 hover:bg-red-100 rounded-xl transition shadow-sm"
-                                            title="Supprimer l'attestation"
-                                        >
-                                            <TrashIcon class="h-4 w-4" />
-                                        </button>
+                                            <button 
+                                                @click="deleteCertificate(student.certificate.id)"
+                                                class="p-3 bg-red-50 text-red-600 hover:bg-red-100 rounded-xl transition shadow-sm"
+                                                title="Supprimer l'attestation"
+                                            >
+                                                <TrashIcon class="h-4 w-4" />
+                                            </button>
+                                        </template>
                                     </template>
 
                                     <template v-else>
-                                        <button 
-                                            @click="openGenerateModal(student, { id: group.module_id, titre: group.module_title }, group, student.score, student.suggested_type, student.start_date, student.end_date)"
-                                            :disabled="isSubmitting"
-                                            class="flex items-center gap-2 px-4 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-black text-[11px] uppercase tracking-wider transition shadow-md shadow-blue-200 disabled:opacity-50"
-                                        >
-                                            <PrinterIcon class="h-4 w-4" />
-                                            <span>Valider & Générer</span>
-                                        </button>
+                                        <!-- Non-directeur: No habilitation to generate any certificate -->
+                                        <template v-if="!userIsDirecteur">
+                                            <button 
+                                                type="button"
+                                                disabled
+                                                class="flex items-center gap-2 px-4 py-3 bg-slate-100 text-slate-400 rounded-xl font-black text-[11px] uppercase tracking-wider cursor-not-allowed border border-slate-200 shadow-none"
+                                                title="Délivrance restreinte : seul le Directeur de l'établissement a l'habilitation d'attester"
+                                            >
+                                                <LockClosedIcon class="h-4 w-4 text-slate-400" />
+                                                <span>Réservé au Directeur</span>
+                                            </button>
+                                        </template>
 
-                                        <button 
-                                            @click="openGenerateModal(student, { id: group.module_id, titre: group.module_title }, group, student.score, student.suggested_type, student.start_date, student.end_date)"
-                                            class="p-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition shadow-sm"
-                                            title="Ajuster la période, la note ou le type manuellement avant génération"
-                                        >
-                                            <FunnelIcon class="h-4 w-4" />
-                                        </button>
+                                        <!-- Director is logged in -->
+                                        <template v-else>
+                                            <!-- Blocked: No score -->
+                                            <template v-if="student.score === null">
+                                                <button 
+                                                    type="button"
+                                                    disabled
+                                                    class="flex items-center gap-2 px-4 py-3 bg-slate-100 text-slate-400 rounded-xl font-black text-[11px] uppercase tracking-wider cursor-not-allowed border border-slate-200 shadow-none"
+                                                    title="Génération impossible : tout apprenant n'ayant pas de note n'a pas droit à une attestation"
+                                                >
+                                                    <LockClosedIcon class="h-4 w-4 text-slate-400" />
+                                                    <span>Note Requise</span>
+                                                </button>
+
+                                                <button 
+                                                    @click="openGenerateModal(student, { id: group.module_id, titre: group.module_title }, group, student.score, student.suggested_type, student.start_date, student.end_date)"
+                                                    class="p-3 bg-amber-50 hover:bg-amber-100 text-amber-700 rounded-xl transition shadow-sm border border-amber-200"
+                                                    title="Saisir manuellement une note pour débloquer l'attestation"
+                                                >
+                                                    <PencilSquareIcon class="h-4 w-4" />
+                                                </button>
+                                            </template>
+
+                                            <!-- > 3 absences WITH score: Director appraisal -->
+                                            <template v-else-if="student.requires_director_justification">
+                                                <button 
+                                                    @click="openGenerateModal(student, { id: group.module_id, titre: group.module_title }, group, student.score, student.suggested_type, student.start_date, student.end_date)"
+                                                    :disabled="isSubmitting"
+                                                    class="flex items-center gap-2 px-4 py-3 bg-purple-600 hover:bg-purple-500 text-white rounded-xl font-black text-[11px] uppercase tracking-wider transition shadow-md shadow-purple-200 disabled:opacity-50"
+                                                    title="Appréciation du Directeur avec justificatif écrit requis"
+                                                >
+                                                    <ShieldCheckIcon class="h-4 w-4" />
+                                                    <span>Apprécier & Générer</span>
+                                                </button>
+                                            </template>
+
+                                            <!-- Standard generation -->
+                                            <template v-else>
+                                                <button 
+                                                    @click="openGenerateModal(student, { id: group.module_id, titre: group.module_title }, group, student.score, student.suggested_type, student.start_date, student.end_date)"
+                                                    :disabled="isSubmitting"
+                                                    class="flex items-center gap-2 px-4 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-black text-[11px] uppercase tracking-wider transition shadow-md shadow-blue-200 disabled:opacity-50"
+                                                >
+                                                    <PrinterIcon class="h-4 w-4" />
+                                                    <span>Valider & Générer</span>
+                                                </button>
+
+                                                <button 
+                                                    @click="openGenerateModal(student, { id: group.module_id, titre: group.module_title }, group, student.score, student.suggested_type, student.start_date, student.end_date)"
+                                                    class="p-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition shadow-sm"
+                                                    title="Ajuster la période, la note ou le type manuellement avant génération"
+                                                >
+                                                    <FunnelIcon class="h-4 w-4" />
+                                                </button>
+                                            </template>
+                                        </template>
                                     </template>
                                 </div>
                             </div>
@@ -636,6 +861,7 @@ function deleteCertificate(certificateId) {
                                                         <ArrowDownTrayIcon class="h-4 w-4" />
                                                     </a>
                                                     <button 
+                                                        v-if="userIsDirecteur"
                                                         @click="deleteCertificate(prog.certificate.id)"
                                                         class="p-3 bg-red-50 text-red-600 rounded-xl hover:bg-red-100 transition shadow-sm"
                                                         title="Supprimer"
@@ -643,14 +869,61 @@ function deleteCertificate(certificateId) {
                                                         <TrashIcon class="h-4 w-4" />
                                                     </button>
                                                 </template>
-                                                <button 
-                                                    v-else-if="prog.completed || prog.is_group_closed"
-                                                    @click="openGenerateModal(student, { id: prog.module_id, titre: prog.module_title }, { id: prog.group_id, nom_groupe: prog.group_name }, prog.score, prog.suggested_type, prog.start_date, prog.end_date)"
-                                                    class="flex items-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-500 transition shadow-lg shadow-blue-200"
-                                                >
-                                                    <PrinterIcon class="h-4 w-4" />
-                                                    Générer
-                                                </button>
+                                                <div v-else-if="prog.completed || prog.is_group_closed" class="flex items-center gap-2">
+                                                    <!-- Non-directeur: Restricted to Director -->
+                                                    <template v-if="!userIsDirecteur">
+                                                        <button 
+                                                            type="button"
+                                                            disabled
+                                                            class="flex items-center gap-2 px-4 py-3 bg-slate-100 text-slate-400 rounded-xl font-black text-[10px] uppercase tracking-widest cursor-not-allowed border border-slate-200"
+                                                            title="Délivrance restreinte : seul le Directeur de l'établissement a l'habilitation d'attester"
+                                                        >
+                                                            <LockClosedIcon class="h-4 w-4 text-slate-400" />
+                                                            <span>Directeur</span>
+                                                        </button>
+                                                    </template>
+
+                                                    <!-- Director is logged in -->
+                                                    <template v-else>
+                                                        <template v-if="prog.is_blocked_without_grade">
+                                                            <button 
+                                                                type="button"
+                                                                disabled
+                                                                class="flex items-center gap-2 px-4 py-3 bg-slate-100 text-slate-400 rounded-xl font-black text-[10px] uppercase tracking-widest cursor-not-allowed border border-slate-200"
+                                                                title="Génération impossible : tout apprenant n'ayant pas de note n'a pas droit à une attestation"
+                                                            >
+                                                                <LockClosedIcon class="h-4 w-4 text-slate-400" />
+                                                                <span>Note Requise</span>
+                                                            </button>
+                                                            <button 
+                                                                @click="openGenerateModal(student, { id: prog.module_id, titre: prog.module_title }, { id: prog.group_id, nom_groupe: prog.group_name }, prog.score, prog.suggested_type, prog.start_date, prog.end_date)"
+                                                                class="p-2.5 bg-amber-50 hover:bg-amber-100 text-amber-700 rounded-xl transition shadow-sm border border-amber-200"
+                                                                title="Saisir une note manuellement pour débloquer"
+                                                            >
+                                                                <PencilSquareIcon class="h-4 w-4" />
+                                                            </button>
+                                                        </template>
+                                                        <template v-else-if="prog.requires_director_justification">
+                                                            <button 
+                                                                @click="openGenerateModal(student, { id: prog.module_id, titre: prog.module_title }, { id: prog.group_id, nom_groupe: prog.group_name }, prog.score, prog.suggested_type, prog.start_date, prog.end_date)"
+                                                                class="flex items-center gap-2 px-4 py-3 bg-purple-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-purple-500 transition shadow-lg shadow-purple-200"
+                                                                title="Appréciation Directorale avec justificatif écrit requis"
+                                                            >
+                                                                <ShieldCheckIcon class="h-4 w-4" />
+                                                                <span>Apprécier</span>
+                                                            </button>
+                                                        </template>
+                                                        <template v-else>
+                                                            <button 
+                                                                @click="openGenerateModal(student, { id: prog.module_id, titre: prog.module_title }, { id: prog.group_id, nom_groupe: prog.group_name }, prog.score, prog.suggested_type, prog.start_date, prog.end_date)"
+                                                                class="flex items-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-500 transition shadow-lg shadow-blue-200"
+                                                            >
+                                                                <PrinterIcon class="h-4 w-4" />
+                                                                <span>Générer</span>
+                                                            </button>
+                                                        </template>
+                                                    </template>
+                                                </div>
                                                 <span v-else class="text-[10px] font-black text-gray-400 uppercase tracking-widest">En cours</span>
                                             </div>
                                         </div>
@@ -690,6 +963,56 @@ function deleteCertificate(certificateId) {
                 </div>
 
                 <div class="space-y-4">
+                    <!-- Alerte habilitation exclusive Directeur -->
+                    <div 
+                        v-if="!userIsDirecteur"
+                        class="p-4 bg-amber-50 border border-amber-200 rounded-2xl space-y-1 text-xs text-amber-900"
+                    >
+                        <div class="flex items-center gap-2 font-black uppercase tracking-wider text-amber-800">
+                            <LockClosedIcon class="w-4 h-4 text-amber-600 shrink-0" />
+                            <span>Habilitation requise : Réservé au Directeur</span>
+                        </div>
+                        <p class="leading-relaxed font-medium">
+                            Seul le Directeur de l'établissement a l'habilitation officielle pour valider, émettre et délivrer les attestations de formation.
+                        </p>
+                    </div>
+
+                    <!-- Alerte blocage apprenant sans note -->
+                    <div 
+                        v-if="modalScore === null || modalScore === ''"
+                        class="p-4 bg-rose-50 border border-rose-200 rounded-2xl space-y-2 text-xs text-rose-900"
+                    >
+                        <div class="flex items-center gap-2 font-black uppercase tracking-wider text-rose-700">
+                            <ExclamationTriangleIcon class="w-4 h-4 text-rose-600 shrink-0" />
+                            <span>Note requise : Aucun droit à une attestation sans note</span>
+                        </div>
+                        <p class="leading-relaxed font-medium">
+                            Tout apprenant n'ayant pas de note n'a pas droit à une attestation. La validation et la délivrance sont <strong>strictement impossibles sans note enregistrée</strong>.
+                        </p>
+                        <p class="text-rose-700 font-bold flex items-center gap-1.5 pt-1">
+                            <LockClosedIcon class="w-3.5 h-3.5" />
+                            <span>Veuillez renseigner la moyenne ci-dessous pour débloquer la génération.</span>
+                        </p>
+                    </div>
+
+                    <!-- Alerte décision Directorale requise (> 3 absences AVEC note) -->
+                    <div 
+                        v-else-if="modalStudent?.unjustified_absences_count > 3 && modalScore !== null && modalScore !== ''"
+                        class="p-4 bg-purple-50 border border-purple-200 rounded-2xl space-y-2 text-xs text-purple-900"
+                    >
+                        <div class="flex items-center gap-2 font-black uppercase tracking-wider text-purple-800">
+                            <ShieldCheckIcon class="w-4 h-4 text-purple-600 shrink-0" />
+                            <span>Appréciation exclusive du Directeur ({{ modalStudent?.unjustified_absences_count }} absences non justifiées)</span>
+                        </div>
+                        <p v-if="!userIsDirecteur" class="leading-relaxed font-bold text-rose-700 flex items-center gap-1.5">
+                            <LockClosedIcon class="w-4 h-4 text-rose-600 shrink-0" />
+                            <span>Seul le Directeur de l'établissement est habilité à apprécier et autoriser la délivrance de cette attestation avec justificatif écrit.</span>
+                        </p>
+                        <p v-else class="leading-relaxed font-medium">
+                            En tant que Directeur, vous avez l'appréciation exclusive de décider de la délivrance de cette attestation. Un <strong>justificatif écrit à l'appui est obligatoire</strong> pour motiver cette décision.
+                        </p>
+                    </div>
+
                     <!-- Module & Group preview -->
                     <div class="p-4 bg-slate-50 rounded-2xl space-y-1 text-xs">
                         <div class="flex justify-between">
@@ -752,9 +1075,18 @@ function deleteCertificate(certificateId) {
 
                     <!-- Note / Moyenne input -->
                     <div>
-                        <label class="block text-xs font-black uppercase tracking-wider text-gray-600 mb-2">
-                            Moyenne de l'apprenant (/20)
-                        </label>
+                        <div class="flex items-center justify-between mb-2">
+                            <label class="block text-xs font-black uppercase tracking-wider text-gray-600">
+                                Moyenne de l'apprenant (/20) *
+                            </label>
+                            <span 
+                                v-if="modalScore === null || modalScore === ''" 
+                                class="text-[11px] font-bold text-rose-600 flex items-center gap-1"
+                            >
+                                <ExclamationTriangleIcon class="w-3.5 h-3.5" />
+                                Note obligatoire
+                            </span>
+                        </div>
                         <input 
                             v-model="modalScore"
                             type="number"
@@ -763,10 +1095,38 @@ function deleteCertificate(certificateId) {
                             max="20"
                             placeholder="Ex : 14.50"
                             @input="modalType = (modalScore !== null && modalScore !== '' && Number(modalScore) >= 10) ? 'reussite' : 'participation'"
-                            class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl font-bold text-sm focus:ring-2 focus:ring-blue-500 focus:bg-white transition"
+                            :class="[
+                                (modalScore === null || modalScore === '')
+                                    ? 'border-rose-300 ring-2 ring-rose-200 bg-rose-50/30'
+                                    : 'border-gray-200 bg-gray-50'
+                            ]"
+                            class="w-full px-4 py-3 border rounded-2xl font-bold text-sm focus:ring-2 focus:ring-blue-500 focus:bg-white transition"
                         />
                         <p class="text-[11px] text-gray-400 mt-1 font-medium">
-                            Note calculée à partir des examens et exercices du module.
+                            Note obligatoire : tout apprenant n'ayant pas de note n'a pas droit à une attestation.
+                        </p>
+                    </div>
+
+                    <!-- Champ Justificatif écrit du Directeur (Obligatoire si > 3 absences non justifiées) -->
+                    <div 
+                        v-if="modalStudent?.unjustified_absences_count > 3 && userIsDirecteur"
+                        class="p-4 bg-purple-50/70 border border-purple-200 rounded-2xl space-y-2"
+                    >
+                        <div class="flex items-center justify-between">
+                            <label class="block text-xs font-black uppercase tracking-wider text-purple-900 flex items-center gap-1.5">
+                                <ShieldCheckIcon class="w-4 h-4 text-purple-600" />
+                                <span>Justificatif écrit du Directeur *</span>
+                            </label>
+                            <span class="text-[10px] font-bold text-rose-600 uppercase">Obligatoire</span>
+                        </div>
+                        <textarea 
+                            v-model="modalJustification"
+                            rows="3"
+                            placeholder="Indiquez le motif de la décision / appréciation de l'assiduité (ex : rattrapage des cours effectué, projet compensatoire validé, excellence aux examens...)"
+                            class="w-full px-4 py-3 bg-white border border-purple-300 rounded-xl font-medium text-xs text-gray-800 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition resize-none placeholder:text-gray-400"
+                        ></textarea>
+                        <p class="text-[11px] text-purple-700/80 font-medium">
+                            Ce texte sera consigné dans le registre des attestations pour justifier la dérogation accordée.
                         </p>
                     </div>
 
@@ -824,11 +1184,12 @@ function deleteCertificate(certificateId) {
                     <button
                         type="button"
                         @click="submitGenerateModal"
-                        :disabled="isSubmitting"
-                        class="px-6 py-3.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-lg shadow-blue-200 transition flex items-center gap-2 disabled:opacity-50"
+                        :disabled="isSubmitting || isModalBlockedWithoutGrade || isModalBlockedNonDirector || isModalMissingJustification"
+                        class="px-6 py-3.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-lg shadow-blue-200 transition flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                        :title="isModalBlockedWithoutGrade ? 'Veuillez saisir une note avant de générer' : (isModalBlockedNonDirector ? 'Réservé au Directeur' : (isModalMissingJustification ? 'Veuillez saisir le justificatif écrit' : ''))"
                     >
-                        <SparklesIcon class="w-4 h-4" />
-                        <span>Confirmer & Générer</span>
+                        <component :is="(isModalBlockedWithoutGrade || isModalBlockedNonDirector) ? LockClosedIcon : SparklesIcon" class="w-4 h-4" />
+                        <span>{{ isModalBlockedWithoutGrade ? 'Note Requise' : (isModalBlockedNonDirector ? 'Réservé au Directeur' : (isModalMissingJustification ? 'Justificatif Requis' : 'Confirmer & Générer')) }}</span>
                     </button>
                 </div>
             </div>
@@ -865,6 +1226,19 @@ function deleteCertificate(certificateId) {
                         <div class="flex items-start gap-2 text-amber-800">
                             <DocumentTextIcon class="w-4 h-4 shrink-0 text-amber-600 mt-0.5" />
                             <span><strong>Attestation de Participation :</strong> attribuée à tout étudiant n'ayant pas atteint la moyenne requise (&lt; 10/20).</span>
+                        </div>
+                    </div>
+
+                    <!-- Avertissement apprenants exclus si sans note ou > 3 absences -->
+                    <div v-if="batchBlockedStudentsCount > 0" class="p-4 bg-amber-50 border border-amber-200 rounded-2xl flex items-start gap-3 text-xs text-amber-900">
+                        <ExclamationTriangleIcon class="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                        <div class="space-y-1">
+                            <p class="font-black uppercase tracking-wider text-amber-800">
+                                {{ batchBlockedStudentsCount }} apprenant(s) exclu(s) de la génération automatique
+                            </p>
+                            <p class="leading-relaxed font-medium">
+                                Ces apprenants sont sans note (aucun droit à une attestation sans note) ou cumulent plus de 3 absences non justifiées (nécessitant l'appréciation individuelle du Directeur avec justificatif écrit).
+                            </p>
                         </div>
                     </div>
 

@@ -24,6 +24,7 @@ class Certificate extends Model
         'end_date',
         'issued_at',
         'pdf_path',
+        'justification',
     ];
 
     protected function casts(): array
