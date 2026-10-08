@@ -45,16 +45,39 @@ class AttendanceController extends Controller
             })
             ->get();
 
-        // For each schedule, check if attendance is already taken
+        // For each schedule, check if attendance is already taken (excluding purely advance reported absences)
         $schedules->each(function ($schedule) use ($date) {
             $schedule->attendance_taken = Attendance::where('schedule_id', $schedule->id)
                 ->where('date', $date)
+                ->where('is_advance_reported', false)
                 ->exists();
+
+            $schedule->advance_reported_count = Attendance::where('schedule_id', $schedule->id)
+                ->where('date', $date)
+                ->where('is_advance_reported', true)
+                ->count();
         });
+
+        $user = auth()->user();
+        $canReportAdvance = $user && ($user->hasRole('Directeur') || $user->hasRole('Secrétaire'));
+
+        $activeGroups = [];
+        if ($canReportAdvance) {
+            $activeGroups = Group::where('status', 'active')
+                ->with([
+                    'students:users.id,users.name,users.email',
+                    'schedules' => function ($q) {
+                        $q->whereNull('deleted_at')->with(['room:id,nom', 'formateur:id,name']);
+                    }
+                ])
+                ->get(['id', 'nom_groupe', 'module_id']);
+        }
 
         return Inertia::render('Scolarite/AttendanceIndex', [
             'schedules' => $schedules,
             'selectedDate' => $date,
+            'can_report_advance' => $canReportAdvance,
+            'active_groups' => $activeGroups,
         ]);
     }
 
@@ -68,6 +91,7 @@ class AttendanceController extends Controller
 
         $alreadyTaken = Attendance::where('schedule_id', $schedule->id)
             ->where('date', $date)
+            ->where('is_advance_reported', false)
             ->exists();
 
         $group = $schedule->group;
@@ -87,26 +111,37 @@ class AttendanceController extends Controller
         // Existing records for this session
         $existingAttendance = Attendance::where('schedule_id', $schedule->id)
             ->where('date', $date)
-            ->get(['user_id', 'status'])
+            ->with('reportedByUser:id,name')
+            ->get(['id', 'user_id', 'status', 'is_advance_reported', 'motif', 'reported_by', 'reported_at'])
             ->keyBy('user_id');
 
         $participants = $students->map(function ($student) use ($existingAttendance) {
+            $record = $existingAttendance->get($student->id);
             return [
-                'id' => $student->id,
-                'name' => $student->name,
-                'email' => $student->email,
-                'status' => $existingAttendance->get($student->id)?->status ?? 'present',
-                'is_trainer' => false,
+                'id'                  => $student->id,
+                'name'                => $student->name,
+                'email'               => $student->email,
+                'status'              => $record?->status ?? 'present',
+                'is_advance_reported' => (bool) ($record?->is_advance_reported ?? false),
+                'motif'               => $record?->motif ?? null,
+                'reported_at'         => $record?->reported_at?->format('d/m/Y H:i') ?? null,
+                'reported_by_name'    => $record?->reportedByUser?->name ?? null,
+                'is_trainer'          => false,
             ];
         });
 
         if ($trainer) {
+            $record = $existingAttendance->get($trainer->id);
             $participants->prepend([
-                'id' => $trainer->id,
-                'name' => "[FORMATEUR] " . $trainer->name,
-                'email' => $trainer->email,
-                'status' => $existingAttendance->get($trainer->id)?->status ?? 'present',
-                'is_trainer' => true,
+                'id'                  => $trainer->id,
+                'name'                => "[FORMATEUR] " . $trainer->name,
+                'email'               => $trainer->email,
+                'status'              => $record?->status ?? 'present',
+                'is_advance_reported' => false,
+                'motif'               => null,
+                'reported_at'         => null,
+                'reported_by_name'    => null,
+                'is_trainer'          => true,
             ]);
 
             $assistants = User::role('Stagiaire')
@@ -117,12 +152,17 @@ class AttendanceController extends Controller
                 ->get(['id', 'name', 'email']);
 
             foreach ($assistants as $assistant) {
+                $asstRecord = $existingAttendance->get($assistant->id);
                 $participants->prepend([
-                    'id' => $assistant->id,
-                    'name' => "[ASSISTANT] " . $assistant->name,
-                    'email' => $assistant->email,
-                    'status' => $existingAttendance->get($assistant->id)?->status ?? 'present',
-                    'is_trainer' => true,
+                    'id'                  => $assistant->id,
+                    'name'                => "[ASSISTANT] " . $assistant->name,
+                    'email'               => $assistant->email,
+                    'status'              => $asstRecord?->status ?? 'present',
+                    'is_advance_reported' => false,
+                    'motif'               => null,
+                    'reported_at'         => null,
+                    'reported_by_name'    => null,
+                    'is_trainer'          => true,
                 ]);
             }
         }
@@ -132,6 +172,7 @@ class AttendanceController extends Controller
             'date' => $date,
             'students' => $participants,
             'readonly' => $readonly,
+            'can_report_advance' => $user->hasRole('Directeur') || $user->hasRole('Secrétaire'),
             'settings' => [
                 'latitude' => Setting::getValue('cre_latitude'),
                 'longitude' => Setting::getValue('cre_longitude'),
@@ -177,6 +218,7 @@ class AttendanceController extends Controller
         if ($isTrainer) {
             $alreadyTaken = Attendance::where('schedule_id', $schedule->id)
                 ->where('date', $validated['date'])
+                ->where('is_advance_reported', false)
                 ->exists();
 
             if ($alreadyTaken) {
@@ -196,7 +238,7 @@ class AttendanceController extends Controller
 
         $isWithinTimeframe = $courseDate->isToday() && $now->between($startTime, $endTime);
 
-        if (!$isWithinTimeframe) {
+        if ($isTrainer && !$isWithinTimeframe) {
             $existingAttendances = Attendance::where('schedule_id', $schedule->id)
                 ->where('date', $validated['date'])
                 ->get()
@@ -224,7 +266,27 @@ class AttendanceController extends Controller
             }
         }
 
+        $existingRecords = Attendance::where('schedule_id', $schedule->id)
+            ->where('date', $validated['date'])
+            ->get()
+            ->keyBy('user_id');
+
         foreach ($validated['students'] as $studentData) {
+            $existing = $existingRecords->get((int)$studentData['id']);
+            $isAdvance = false;
+            $motif = null;
+            $reportedBy = null;
+            $reportedAt = null;
+
+            if ($existing && $existing->is_advance_reported) {
+                if ($studentData['status'] === 'justifie') {
+                    $isAdvance = true;
+                    $motif = $existing->motif;
+                    $reportedBy = $existing->reported_by;
+                    $reportedAt = $existing->reported_at;
+                }
+            }
+
             Attendance::updateOrCreate(
                 [
                     'user_id' => $studentData['id'],
@@ -233,9 +295,13 @@ class AttendanceController extends Controller
                     'date' => $validated['date'],
                 ],
                 [
-                    'status'    => $studentData['status'],
-                    'latitude'  => $validated['latitude'] ?? null,
-                    'longitude' => $validated['longitude'] ?? null,
+                    'status'              => $studentData['status'],
+                    'latitude'            => $validated['latitude'] ?? null,
+                    'longitude'           => $validated['longitude'] ?? null,
+                    'is_advance_reported' => $isAdvance,
+                    'motif'               => $motif,
+                    'reported_by'         => $reportedBy,
+                    'reported_at'         => $reportedAt,
                 ]
             );
         }
@@ -250,6 +316,87 @@ class AttendanceController extends Controller
 
         return redirect()->route('attendance.history', ['schedule' => $schedule->id])
             ->with('success', 'La liste de présence a été enregistrée avec succès.');
+    }
+
+    /**
+     * Mention an advance absence reported by a student before the class.
+     * Accessible only by Directeur and Secrétaire.
+     */
+    public function reportAdvanceAbsence(Request $request): RedirectResponse
+    {
+        $user = $request->user();
+        if (!$user || (!$user->hasRole('Directeur') && !$user->hasRole('Secrétaire'))) {
+            abort(403, "Seuls le Directeur et la Secrétaire peuvent mentionner les absences signalées par les apprenants.");
+        }
+
+        $validated = $request->validate([
+            'schedule_id' => 'nullable',
+            'group_id'    => 'required|exists:groups,id',
+            'user_id'     => 'required|exists:users,id',
+            'date'        => 'required|date',
+            'motif'       => 'nullable|string|max:255',
+            'action'      => 'nullable|string|in:report,cancel',
+        ]);
+
+        $group = Group::findOrFail($validated['group_id']);
+        $student = User::findOrFail($validated['user_id']);
+        $date = $validated['date'];
+        $carbonDate = Carbon::parse($date);
+        $dayOfWeek = $carbonDate->dayOfWeekIso;
+
+        // Resolve target schedules
+        $targetScheduleIds = [];
+        if (!empty($validated['schedule_id']) && $validated['schedule_id'] !== 'all') {
+            $targetScheduleIds = [(int) $validated['schedule_id']];
+        } else {
+            $targetScheduleIds = Schedule::where('group_id', $group->id)
+                ->where('day_of_week', $dayOfWeek)
+                ->pluck('id')
+                ->toArray();
+            
+            // If no schedule matches this day_of_week, pick any active schedule of group
+            if (empty($targetScheduleIds)) {
+                $targetScheduleIds = Schedule::where('group_id', $group->id)->pluck('id')->toArray();
+            }
+        }
+
+        if (empty($targetScheduleIds)) {
+            return back()->withErrors(['schedule_id' => "Aucun créneau d'emploi du temps trouvé pour ce groupe à cette date."]);
+        }
+
+        if (($validated['action'] ?? 'report') === 'cancel') {
+            Attendance::whereIn('schedule_id', $targetScheduleIds)
+                ->where('user_id', $student->id)
+                ->where('date', $date)
+                ->where('is_advance_reported', true)
+                ->delete();
+
+            \Illuminate\Support\Facades\Cache::forget('director_dashboard_kpis');
+
+            return back()->with('success', "L'absence signalée pour {$student->name} a été retirée.");
+        }
+
+        foreach ($targetScheduleIds as $schedId) {
+            Attendance::updateOrCreate(
+                [
+                    'user_id'     => $student->id,
+                    'schedule_id' => $schedId,
+                    'group_id'    => $group->id,
+                    'date'        => $date,
+                ],
+                [
+                    'status'              => 'justifie',
+                    'is_advance_reported' => true,
+                    'motif'               => !empty($validated['motif']) ? $validated['motif'] : 'Absence signalée avant le cours',
+                    'reported_by'         => $user->id,
+                    'reported_at'         => Carbon::now(),
+                ]
+            );
+        }
+
+        \Illuminate\Support\Facades\Cache::forget('director_dashboard_kpis');
+
+        return back()->with('success', "L'absence signalée pour {$student->name} a été enregistrée avec succès.");
     }
 
     /**
@@ -276,18 +423,22 @@ class AttendanceController extends Controller
             $absent = $studentItems->where('status', 'absent_non_justifie')->count();
             $late = $studentItems->where('status', 'late')->count();
             $justified = $studentItems->where('status', 'justifie')->count();
+            $advanceReported = $studentItems->where('is_advance_reported', true)->count();
+            $isValidated = $items->where('is_advance_reported', false)->isNotEmpty();
 
             $trainerRecord = $items->firstWhere('user_id', $trainerId);
             $trainerStatus = $trainerRecord ? $trainerRecord->status : 'Non émargé';
 
             return [
-                'date' => $date,
-                'total_students' => $total,
-                'present' => $present,
-                'absent' => $absent,
-                'late' => $late,
-                'justified' => $justified,
-                'trainer_status' => $trainerStatus,
+                'date'             => $date,
+                'total_students'   => $total,
+                'present'          => $present,
+                'absent'           => $absent,
+                'late'             => $late,
+                'justified'        => $justified,
+                'advance_reported' => $advanceReported,
+                'is_validated'     => $isValidated,
+                'trainer_status'   => $trainerStatus,
             ];
         })->values()->sortByDesc('date')->values();
 

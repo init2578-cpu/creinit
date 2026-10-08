@@ -51,6 +51,10 @@ class EnsureWithinPremises
             return $next($request);
         }
 
+        if ($request->user() && ($request->user()->hasRole('Directeur') || $request->user()->hasRole('Secrétaire'))) {
+            return $next($request);
+        }
+
         $latitude  = (float) $request->input('latitude');
         $longitude = (float) $request->input('longitude');
 

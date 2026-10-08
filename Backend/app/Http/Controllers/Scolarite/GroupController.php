@@ -284,6 +284,8 @@ class GroupController extends Controller
                     'user_id' => $item->user_id,
                     'user_name' => $item->user?->name ?? 'Apprenant',
                     'status' => $item->status,
+                    'is_advance_reported' => (bool) $item->is_advance_reported,
+                    'motif' => $item->motif,
                 ])->values(),
             ];
         })->values()->sortByDesc('date')->values();
@@ -301,6 +303,7 @@ class GroupController extends Controller
             $presences = $studentAttendances->where('status', 'present')->count();
             $absentNonJustifie = $studentAttendances->where('status', 'absent_non_justifie')->count();
             $justifie = $studentAttendances->where('status', 'justifie')->count();
+            $signalees = $studentAttendances->where('is_advance_reported', true)->count();
             $late = $studentAttendances->whereIn('status', ['late', 'en_retard'])->count();
             $totalRecorded = $presences + $absentNonJustifie + $justifie + $late;
 
@@ -327,6 +330,7 @@ class GroupController extends Controller
                 'absences_count' => $absentNonJustifie + $justifie,
                 'absences_non_justifiees_count' => $absentNonJustifie,
                 'absences_justifiees_count' => $justifie,
+                'absences_signalees_count' => $signalees,
                 'late_count' => $late,
                 'attendance_rate' => $rate,
             ];

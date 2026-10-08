@@ -357,6 +357,9 @@ const statusBadge = (status) => {
                                         >
                                             {{ student.absences_justifiees_count }}
                                         </span>
+                                        <div v-if="student.absences_signalees_count > 0" class="text-[9px] font-black text-purple-600 mt-0.5">
+                                            dont {{ student.absences_signalees_count }} signalée(s)
+                                        </div>
                                     </td>
 
                                     <!-- Retards -->
@@ -516,7 +519,16 @@ const statusBadge = (status) => {
                                 <span class="font-black text-gray-900 text-sm">{{ record.user_name }}</span>
                             </div>
 
+                            <div v-if="record.is_advance_reported" class="flex flex-col items-end">
+                                <span class="px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-purple-50 text-purple-700 border border-purple-200">
+                                    📢 Absence signalée
+                                </span>
+                                <span v-if="record.motif" class="text-[10px] text-gray-500 font-medium mt-0.5 max-w-[200px] truncate" :title="record.motif">
+                                    {{ record.motif }}
+                                </span>
+                            </div>
                             <span 
+                                v-else
                                 class="px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider border"
                                 :class="statusBadge(record.status).bg"
                             >

@@ -976,9 +976,11 @@ onUnmounted(() => {
                                         <div v-for="absence in learnerAbsences" :key="absence.id" class="flex items-center justify-between p-4 bg-slate-50/50 hover:bg-slate-50 border border-slate-100 hover:border-slate-200 rounded-2xl transition-all group">
                                             <div class="flex items-center gap-3.5">
                                                 <div class="h-10 w-10 rounded-xl flex items-center justify-center border shrink-0"
-                                                    :class="absence.status === 'absent_non_justifie' 
-                                                        ? 'bg-red-50 text-red-600 border-red-100/50' 
-                                                        : 'bg-amber-50 text-amber-600 border-amber-100/50'">
+                                                    :class="absence.is_advance_reported
+                                                        ? 'bg-purple-50 text-purple-600 border-purple-100'
+                                                        : (absence.status === 'absent_non_justifie' 
+                                                            ? 'bg-red-50 text-red-600 border-red-100/50' 
+                                                            : 'bg-amber-50 text-amber-600 border-amber-100/50')">
                                                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
                                                         <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5m-9-6h.008v.008H12v-.008ZM12 15h.008v.008H12V15Zm0 2.25h.008v.008H12v-.008ZM9.75 15h.008v.008H9.75V15Zm0 2.25h.008v.008H9.75v-.008ZM7.5 15h.008v.008H7.5V15Zm0 2.25h.008v.008H7.5v-.008Zm6.75-4.5h.008v.008h-.008v-.008Zm0 2.25h.008v.008h-.008V15Zm0 2.25h.008v.008h-.008v-.008Zm2.25-4.5h.008v.008H16.5v-.008Zm0 2.25h.008v.008H16.5V15Z" />
                                                     </svg>
@@ -996,7 +998,15 @@ onUnmounted(() => {
                                                 </div>
                                             </div>
                                             <div>
-                                                <span class="px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wider border"
+                                                <div v-if="absence.is_advance_reported" class="flex flex-col items-end">
+                                                    <span class="px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wider bg-purple-50 text-purple-700 border border-purple-200">
+                                                        📢 Signalée à l'avance
+                                                    </span>
+                                                    <span v-if="absence.motif" class="text-[9px] text-gray-500 font-medium mt-0.5 max-w-[180px] truncate" :title="absence.motif">
+                                                        {{ absence.motif }}
+                                                    </span>
+                                                </div>
+                                                <span v-else class="px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wider border"
                                                     :class="absence.status === 'absent_non_justifie' 
                                                         ? 'bg-red-50 text-red-700 border-red-100' 
                                                         : 'bg-amber-50 text-amber-700 border-amber-100'">

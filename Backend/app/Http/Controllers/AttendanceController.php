@@ -107,9 +107,10 @@ class AttendanceController extends Controller
                 $schedule = $schedules->first();
             }
 
-            // Check if attendance was already taken/validated for this specific schedule
+            // Check if attendance was already taken/validated for this specific schedule (excluding advance reported absences)
             $alreadyTaken = Attendance::where('schedule_id', $schedule->id)
                 ->where('date', $today)
+                ->where('is_advance_reported', false)
                 ->exists();
 
             if ($alreadyTaken) {
@@ -152,6 +153,20 @@ class AttendanceController extends Controller
                 $students->prepend($assistant);
             }
         }
+
+        $today = \Carbon\Carbon::today()->toDateString();
+        $existingRecords = Attendance::where('group_id', $group->id)
+            ->where('date', $today)
+            ->get(['user_id', 'status', 'is_advance_reported', 'motif'])
+            ->keyBy('user_id');
+
+        $students = $students->map(function ($s) use ($existingRecords) {
+            $rec = $existingRecords->get($s->id);
+            $s->is_advance_reported = (bool) ($rec?->is_advance_reported ?? false);
+            $s->advance_motif = $rec?->motif ?? null;
+            $s->initial_status = $rec?->status ?? 'present';
+            return $s;
+        });
 
         return Inertia::render('Attendances/TakeAttendance', [
             'group'    => $group,
@@ -245,9 +260,10 @@ class AttendanceController extends Controller
                 return redirect()->back()->with('error', "Les formateurs ne peuvent faire l'appel que pour la date du jour.");
             }
 
-            // 3. Restriction: check if already validated/taken for this specific schedule
+            // 3. Restriction: check if already validated/taken for this specific schedule (excluding advance reported absences)
             $alreadyTaken = Attendance::where('schedule_id', $schedule->id)
                 ->where('date', $date)
+                ->where('is_advance_reported', false)
                 ->exists();
 
             if ($alreadyTaken) {
@@ -265,6 +281,16 @@ class AttendanceController extends Controller
         }
 
         foreach ($request->validated('attendances') as $data) {
+            $existing = Attendance::where('schedule_id', $scheduleId)
+                ->where('user_id', $data['user_id'])
+                ->where('date', $date)
+                ->first();
+
+            // If learner already has an advance reported absence, preserve its justified status and advance metadata
+            if ($existing && $existing->is_advance_reported) {
+                continue;
+            }
+
             Attendance::updateOrCreate(
                 [
                     'user_id'     => $data['user_id'],
@@ -273,9 +299,10 @@ class AttendanceController extends Controller
                     'date'        => $date,
                 ],
                 [
-                    'status'    => $data['status'],
-                    'latitude'  => $request->validated('latitude'),
-                    'longitude' => $request->validated('longitude'),
+                    'status'              => $data['status'],
+                    'latitude'            => $request->validated('latitude'),
+                    'longitude'           => $request->validated('longitude'),
+                    'is_advance_reported' => false,
                 ]
             );
         }

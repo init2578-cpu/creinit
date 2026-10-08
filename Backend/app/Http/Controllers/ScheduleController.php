@@ -118,6 +118,11 @@ class ScheduleController extends Controller
             ->map(function ($schedule) use ($today) {
                 $schedule->attendance_taken_today = \App\Models\Attendance::where('schedule_id', $schedule->id)
                     ->where('date', $today)
+                    ->where('is_advance_reported', false)
+                    ->exists();
+                $schedule->has_advance_reported_absences_today = \App\Models\Attendance::where('schedule_id', $schedule->id)
+                    ->where('date', $today)
+                    ->where('is_advance_reported', true)
                     ->exists();
                 return $schedule;
             });

@@ -15,13 +15,14 @@ import {
     CheckCircleIcon,
     XCircleIcon,
     PlusIcon,
-    ArrowRightIcon
+    ArrowRightIcon,
+    MegaphoneIcon
 } from '@heroicons/vue/24/outline'
 import { formatTime } from '@/utils/format'
 
 const props = defineProps({
     schedule: Object,
-    history: Array, // Array of { date, total_students, present, absent, late, justified, trainer_status }
+    history: Array, // Array of { date, total_students, present, absent, late, justified, advance_reported, is_validated, trainer_status }
 })
 
 const days = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi']
@@ -136,9 +137,25 @@ const startNewSession = () => {
                         class="bg-white rounded-3xl border border-gray-100 p-6 sm:p-8 hover:shadow-xl hover:shadow-gray-100/50 transition duration-300 flex flex-col lg:flex-row lg:items-center justify-between gap-6"
                     >
                         <div class="space-y-2">
-                            <h3 class="text-lg font-black text-gray-900 capitalize">
-                                {{ formatDate(item.date) }}
-                            </h3>
+                            <div class="flex flex-wrap items-center gap-2">
+                                <h3 class="text-lg font-black text-gray-900 capitalize">
+                                    {{ formatDate(item.date) }}
+                                </h3>
+                                <span 
+                                    v-if="item.advance_reported > 0" 
+                                    class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-purple-50 text-purple-700 border border-purple-200"
+                                    title="Absence(s) signalée(s) par l'administration"
+                                >
+                                    <MegaphoneIcon class="h-3 w-3" />
+                                    {{ item.advance_reported }} signalée(s)
+                                </span>
+                                <span 
+                                    v-if="!item.is_validated && item.advance_reported > 0" 
+                                    class="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-amber-50 text-amber-700 border border-amber-200"
+                                >
+                                    En attente d'appel
+                                </span>
+                            </div>
                             <div class="flex flex-wrap items-center gap-3 text-xs font-bold text-gray-500">
                                 <span>Statut Formateur :</span>
                                 <span 
@@ -169,6 +186,10 @@ const startNewSession = () => {
                             <div v-if="!isTrainer" class="bg-blue-50 border border-blue-100 text-blue-700 px-4 py-2.5 rounded-2xl text-center min-w-[70px]">
                                 <div class="text-sm font-black">{{ item.justified }}</div>
                                 <div class="text-[8px] font-black uppercase tracking-widest opacity-75">Justifiés</div>
+                            </div>
+                            <div v-if="item.advance_reported > 0" class="bg-purple-50 border border-purple-100 text-purple-700 px-4 py-2.5 rounded-2xl text-center min-w-[70px]">
+                                <div class="text-sm font-black">{{ item.advance_reported }}</div>
+                                <div class="text-[8px] font-black uppercase tracking-widest opacity-75">Signalées</div>
                             </div>
                             <div class="bg-gray-50 border border-gray-100 text-gray-500 px-4 py-2.5 rounded-2xl text-center min-w-[70px]">
                                 <div class="text-sm font-black">{{ item.total_students }}</div>

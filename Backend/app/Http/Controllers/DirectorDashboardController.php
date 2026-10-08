@@ -503,6 +503,8 @@ class DirectorDashboardController extends Controller
                     'id' => $attendance->id,
                     'date' => $attendance->date ? $attendance->date->format('Y-m-d') : null,
                     'status' => $attendance->status,
+                    'is_advance_reported' => (bool) $attendance->is_advance_reported,
+                    'motif' => $attendance->motif,
                     'start_time' => $attendance->schedule->start_time ?? null,
                     'end_time' => $attendance->schedule->end_time ?? null,
                     'day_of_week' => $attendance->schedule->day_of_week ?? null,

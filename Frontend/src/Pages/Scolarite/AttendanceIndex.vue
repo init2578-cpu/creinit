@@ -1,7 +1,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
-import { ref, watch } from 'vue'
-import { router, Link } from '@inertiajs/vue3'
+import { ref, computed, watch } from 'vue'
+import { router, Link, useForm, usePage } from '@inertiajs/vue3'
 import { 
     CalendarIcon, 
     UserGroupIcon, 
@@ -9,16 +9,32 @@ import {
     MapPinIcon,
     ChevronRightIcon,
     CheckCircleIcon,
-    XCircleIcon
+    XCircleIcon,
+    MegaphoneIcon,
+    XMarkIcon
 } from '@heroicons/vue/24/outline'
 import { formatTime } from '@/utils/format'
 
 const props = defineProps({
     schedules: Array,
     selectedDate: String,
+    can_report_advance: {
+        type: Boolean,
+        default: false,
+    },
+    active_groups: {
+        type: Array,
+        default: () => [],
+    },
 })
 
+const page = usePage()
 const date = ref(props.selectedDate)
+
+const canReportAdvance = computed(() => {
+    const roles = page.props.auth.user?.roles || []
+    return props.can_report_advance || roles.includes('Directeur') || roles.includes('Secrétaire')
+})
 
 watch(date, (newDate) => {
     router.get(route('attendance.index'), { date: newDate }, {
@@ -28,8 +44,73 @@ watch(date, (newDate) => {
 })
 
 function formatDate(dateString) {
+    if (!dateString) return ''
     const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
     return new Date(dateString).toLocaleDateString('fr-FR', options);
+}
+
+// Modal and advance reporting state
+const isAdvanceModalOpen = ref(false)
+const motifPresets = [
+    'Raison médicale / Maladie',
+    'Empêchement familial / Urgence',
+    'Démarche administrative / Concours',
+    'Transport / Déplacement',
+    'Autre motif personnel'
+]
+
+const advanceForm = useForm({
+    group_id: '',
+    user_id: '',
+    schedule_id: '',
+    date: props.selectedDate,
+    motif: 'Raison médicale / Maladie',
+    action: 'report',
+})
+
+const selectedGroup = computed(() => {
+    if (!props.active_groups) return null
+    return props.active_groups.find(g => g.id === advanceForm.group_id) || null
+})
+
+const availableStudents = computed(() => {
+    return selectedGroup.value?.students || []
+})
+
+const availableSchedules = computed(() => {
+    return selectedGroup.value?.schedules || []
+})
+
+function openAdvanceModal(schedule = null) {
+    if (schedule) {
+        advanceForm.group_id = schedule.group?.id || schedule.group_id || ''
+        advanceForm.schedule_id = schedule.id
+        advanceForm.date = date.value
+        advanceForm.user_id = ''
+        advanceForm.motif = 'Raison médicale / Maladie'
+    } else {
+        advanceForm.group_id = props.active_groups?.[0]?.id || ''
+        advanceForm.schedule_id = ''
+        advanceForm.date = date.value
+        advanceForm.user_id = ''
+        advanceForm.motif = 'Raison médicale / Maladie'
+    }
+    advanceForm.action = 'report'
+    isAdvanceModalOpen.value = true
+}
+
+function closeAdvanceModal() {
+    isAdvanceModalOpen.value = false
+}
+
+function submitAdvanceReport() {
+    advanceForm.action = 'report'
+    advanceForm.post(route('attendance.report-absence'), {
+        preserveScroll: true,
+        onSuccess: () => {
+            closeAdvanceModal()
+        }
+    })
 }
 
 </script>
@@ -42,14 +123,26 @@ function formatDate(dateString) {
                     <h1 class="text-4xl font-black text-gray-900 tracking-tight">Listes de Présence</h1>
                     <p class="text-gray-500 mt-2 font-medium">Suivi des présences par session de formation.</p>
                 </div>
-                <div class="flex items-center gap-4 bg-white p-2 rounded-2xl border border-gray-100 shadow-sm">
-                    <CalendarIcon class="h-6 w-6 text-blue-600 ml-2" />
-                    <input 
-                        v-model="date" 
-                        type="date" 
-                        title="jj/mm/aaaa"
-                        class="border-0 focus:ring-0 font-black text-gray-900 cursor-pointer"
+                <div class="flex flex-wrap items-center gap-4">
+                    <button 
+                        v-if="canReportAdvance" 
+                        @click="openAdvanceModal()"
+                        type="button"
+                        class="px-5 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-2xl text-xs font-black uppercase tracking-wider shadow-lg shadow-purple-500/20 transition flex items-center gap-2"
                     >
+                        <MegaphoneIcon class="h-4 w-4" />
+                        <span>Signaler une absence</span>
+                    </button>
+
+                    <div class="flex items-center gap-4 bg-white p-2 rounded-2xl border border-gray-100 shadow-sm">
+                        <CalendarIcon class="h-6 w-6 text-blue-600 ml-2" />
+                        <input 
+                            v-model="date" 
+                            type="date" 
+                            title="jj/mm/aaaa"
+                            class="border-0 focus:ring-0 font-black text-gray-900 cursor-pointer"
+                        >
+                    </div>
                 </div>
             </header>
 
@@ -70,17 +163,33 @@ function formatDate(dateString) {
                     <div v-for="schedule in schedules" :key="schedule.id" 
                         class="bg-white rounded-[2.5rem] border border-gray-100 p-8 hover:shadow-2xl hover:shadow-gray-200/50 transition duration-500 flex flex-col relative overflow-hidden group">
                         
-                        <!-- Status Badge -->
+                        <!-- Status Badge & Action -->
                         <div class="absolute top-6 right-6 flex items-center gap-1.5">
                             <span v-if="schedule.group?.status === 'closed'" class="px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-wider bg-rose-50 text-rose-700 border border-rose-200">
                                 Clôturé
                             </span>
+
+                            <span v-if="schedule.advance_reported_count > 0" class="flex items-center gap-1 px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-wider bg-purple-50 text-purple-700 border border-purple-200" title="Absences signalées à l'avance pour cette session">
+                                <MegaphoneIcon class="h-3 w-3" />
+                                {{ schedule.advance_reported_count }} signalée(s)
+                            </span>
+
                             <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest"
                                 :class="schedule.attendance_taken ? 'bg-green-50 text-green-600' : 'bg-amber-50 text-amber-600'">
                                 <CheckCircleIcon v-if="schedule.attendance_taken" class="h-3 w-3" />
                                 <ClockIcon v-else class="h-3 w-3" />
                                 {{ schedule.attendance_taken ? 'Saisie effectuée' : 'En attente' }}
                             </div>
+
+                            <button 
+                                v-if="canReportAdvance"
+                                @click="openAdvanceModal(schedule)"
+                                type="button"
+                                class="p-1.5 rounded-xl text-purple-600 bg-purple-50 hover:bg-purple-100 border border-purple-200 transition"
+                                title="Signaler une absence pour cette session"
+                            >
+                                <MegaphoneIcon class="h-3.5 w-3.5" />
+                            </button>
                         </div>
 
                         <div class="mb-6 flex items-start gap-4">
@@ -129,6 +238,125 @@ function formatDate(dateString) {
                             </Link>
                         </div>
                     </div>
+                </div>
+            </div>
+
+            <!-- Modal: Signaler une absence à l'avance (Secrétaire et Directeur) -->
+            <div v-if="isAdvanceModalOpen" class="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+                <div class="bg-white rounded-[2.5rem] max-w-lg w-full p-8 shadow-2xl border border-gray-100 relative">
+                    <div class="flex items-center justify-between pb-6 border-b border-gray-100">
+                        <div class="flex items-center gap-3">
+                            <div class="p-3 bg-purple-50 text-purple-600 rounded-2xl border border-purple-100">
+                                <MegaphoneIcon class="h-6 w-6" />
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-black text-gray-900">Signaler une absence avant cours</h3>
+                                <p class="text-xs font-bold text-gray-400 mt-0.5">Réservé au Secrétaire et au Directeur</p>
+                            </div>
+                        </div>
+                        <button @click="closeAdvanceModal" class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-xl transition">
+                            <XMarkIcon class="h-5 w-5" />
+                        </button>
+                    </div>
+
+                    <form @submit.prevent="submitAdvanceReport" class="mt-6 space-y-4">
+                        <!-- Groupe -->
+                        <div>
+                            <label class="block text-xs font-black uppercase tracking-wider text-gray-600 mb-2">Groupe de formation</label>
+                            <select 
+                                v-model="advanceForm.group_id" 
+                                required
+                                class="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 text-sm font-bold text-gray-800 focus:bg-white focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition"
+                            >
+                                <option value="" disabled>Sélectionner un groupe</option>
+                                <option v-for="grp in active_groups" :key="grp.id" :value="grp.id">
+                                    {{ grp.nom_groupe }}
+                                </option>
+                            </select>
+                        </div>
+
+                        <!-- Apprenant -->
+                        <div>
+                            <label class="block text-xs font-black uppercase tracking-wider text-gray-600 mb-2">Apprenant concerné</label>
+                            <select 
+                                v-model="advanceForm.user_id" 
+                                required
+                                :disabled="!advanceForm.group_id"
+                                class="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 text-sm font-bold text-gray-800 focus:bg-white focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition disabled:opacity-50"
+                            >
+                                <option value="" disabled>{{ advanceForm.group_id ? 'Sélectionner un apprenant' : 'Choisissez d\'abord un groupe' }}</option>
+                                <option v-for="st in availableStudents" :key="st.id" :value="st.id">
+                                    {{ st.name }} ({{ st.email }})
+                                </option>
+                            </select>
+                        </div>
+
+                        <!-- Date et Session -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-black uppercase tracking-wider text-gray-600 mb-2">Date du cours</label>
+                                <input 
+                                    v-model="advanceForm.date" 
+                                    type="date"
+                                    required
+                                    class="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 text-sm font-bold text-gray-800 focus:bg-white focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition"
+                                />
+                            </div>
+                            <div>
+                                <label class="block text-xs font-black uppercase tracking-wider text-gray-600 mb-2">Créneau / Cours</label>
+                                <select 
+                                    v-model="advanceForm.schedule_id"
+                                    class="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 text-xs font-bold text-gray-800 focus:bg-white focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition"
+                                >
+                                    <option value="">Tous les cours de la journée</option>
+                                    <option v-for="sc in availableSchedules" :key="sc.id" :value="sc.id">
+                                        {{ formatTime(sc.start_time) }} - {{ formatTime(sc.end_time) }} ({{ sc.room?.nom || 'Salle' }})
+                                    </option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Motif présélectionné -->
+                        <div>
+                            <label class="block text-xs font-black uppercase tracking-wider text-gray-600 mb-2">Motif signalé</label>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3">
+                                <button 
+                                    v-for="preset in motifPresets" 
+                                    :key="preset"
+                                    type="button"
+                                    @click="advanceForm.motif = preset"
+                                    class="text-left px-3 py-2 rounded-xl text-xs font-bold border transition text-gray-600 hover:border-purple-300"
+                                    :class="advanceForm.motif === preset ? 'bg-purple-50 border-purple-300 text-purple-700' : 'bg-gray-50 border-gray-200'"
+                                >
+                                    {{ preset }}
+                                </button>
+                            </div>
+                            <input 
+                                v-model="advanceForm.motif" 
+                                type="text"
+                                placeholder="Précisez le motif ou commentaire libre..."
+                                required
+                                class="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 text-sm font-bold text-gray-800 focus:bg-white focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition"
+                            />
+                        </div>
+
+                        <div class="pt-4 border-t border-gray-100 flex items-center justify-end gap-2">
+                            <button 
+                                type="button" 
+                                @click="closeAdvanceModal"
+                                class="px-5 py-3 rounded-2xl text-xs font-bold text-gray-500 hover:bg-gray-100 transition"
+                            >
+                                Annuler
+                            </button>
+                            <button 
+                                type="submit"
+                                :disabled="advanceForm.processing"
+                                class="px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-2xl text-xs font-black uppercase tracking-wider shadow-lg shadow-purple-500/20 transition disabled:opacity-50"
+                            >
+                                {{ advanceForm.processing ? 'Enregistrement...' : 'Enregistrer' }}
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>

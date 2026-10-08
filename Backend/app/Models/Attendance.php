@@ -24,6 +24,10 @@ class Attendance extends Model
         'status',
         'latitude',
         'longitude',
+        'is_advance_reported',
+        'motif',
+        'reported_by',
+        'reported_at',
     ];
 
     /**
@@ -32,12 +36,15 @@ class Attendance extends Model
     protected function casts(): array
     {
         return [
-            'user_id'     => 'integer',
-            'group_id'    => 'integer',
-            'schedule_id' => 'integer',
-            'date'        => 'date',
-            'latitude'    => 'float',
-            'longitude'   => 'float',
+            'user_id'             => 'integer',
+            'group_id'            => 'integer',
+            'schedule_id'         => 'integer',
+            'date'                => 'date',
+            'latitude'            => 'float',
+            'longitude'           => 'float',
+            'is_advance_reported' => 'boolean',
+            'reported_by'         => 'integer',
+            'reported_at'         => 'datetime',
         ];
     }
 
@@ -58,5 +65,10 @@ class Attendance extends Model
     public function schedule(): BelongsTo
     {
         return $this->belongsTo(Schedule::class);
+    }
+
+    public function reportedByUser(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'reported_by');
     }
 }

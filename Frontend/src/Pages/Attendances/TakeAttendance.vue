@@ -25,7 +25,7 @@ const form = useForm({
     longitude: (props.group.gps_check_required === 0 || props.group.gps_check_required === false || !props.group.gps_check_required) ? 0 : null,
     attendances: props.students.map(s => ({
         user_id: s.id,
-        status: 'present'
+        status: s.is_advance_reported ? 'justifie' : 'present'
     }))
 })
 
@@ -102,9 +102,19 @@ function submitAttendance() {
             <!-- Attendance List -->
             <div v-if="locationValidated" class="space-y-4">
                 <div v-for="(student, index) in students" :key="student.id" class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between">
-                    <span class="font-medium text-gray-900">{{ student.name }}</span>
+                    <div>
+                        <span class="font-medium text-gray-900">{{ student.name }}</span>
+                        <div v-if="student.is_advance_reported && student.advance_motif" class="text-xs text-purple-600 font-medium mt-0.5">
+                            Motif : {{ student.advance_motif }}
+                        </div>
+                    </div>
                     
-                    <div class="flex gap-2">
+                    <div v-if="student.is_advance_reported" class="flex items-center">
+                        <span class="px-3.5 py-1.5 rounded-lg text-xs font-bold bg-purple-50 text-purple-700 border border-purple-200 flex items-center gap-1.5 shadow-sm">
+                            <span>📢</span> Absence signalée (Secrétariat/Direction)
+                        </span>
+                    </div>
+                    <div v-else class="flex gap-2">
                         <label class="cursor-pointer">
                             <input 
                                 type="radio" 

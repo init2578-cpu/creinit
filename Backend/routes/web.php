@@ -258,6 +258,8 @@ Route::middleware(['auth'])->group(function (): void {
         Route::get('/attendance/{schedule}/{date}', [\App\Http\Controllers\Scolarite\AttendanceController::class, 'take'])->name('attendance.take')->withTrashed();
         Route::post('/attendance', [\App\Http\Controllers\Scolarite\AttendanceController::class, 'store'])
             ->middleware(EnsureWithinPremises::class)->name('attendance.store');
+        Route::post('/attendance/report-absence', [\App\Http\Controllers\Scolarite\AttendanceController::class, 'reportAdvanceAbsence'])
+            ->name('attendance.report-absence');
 
 
 
