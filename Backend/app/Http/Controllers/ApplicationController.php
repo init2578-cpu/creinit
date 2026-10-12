@@ -239,9 +239,11 @@ class ApplicationController extends Controller
         if ($validated['status'] === 'pending') {
             if ($application->status === 'admitted' || !empty($validated['motif'])) {
                 $updateData['motif_remise_en_attente'] = trim((string) ($validated['motif'] ?? ''));
+                $updateData['motif_remise_en_attente_at'] = now();
             }
         } elseif ($validated['status'] === 'admitted') {
             $updateData['motif_remise_en_attente'] = null;
+            $updateData['motif_remise_en_attente_at'] = null;
         }
 
         $previousStatus = $application->status;

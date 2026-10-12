@@ -95,6 +95,7 @@ class ApplicationPendingMotifTest extends TestCase
             'status' => 'pending',
             'motif_remise_en_attente' => 'Dossier incomplet : pièce d’identité illisible',
         ]);
+        $this->assertNotNull($application->fresh()->motif_remise_en_attente_at);
 
         // Learner role should be removed since no other admitted applications exist
         $this->assertFalse($learner->fresh()->hasRole('Apprenant'));
@@ -138,6 +139,7 @@ class ApplicationPendingMotifTest extends TestCase
             'telephone' => '774567890',
             'status' => 'pending',
             'motif_remise_en_attente' => 'Dossier mis en attente pour vérification',
+            'motif_remise_en_attente_at' => now(),
         ]);
 
         $response = $this->actingAs($this->director)
@@ -152,6 +154,7 @@ class ApplicationPendingMotifTest extends TestCase
             'id' => $application->id,
             'status' => 'admitted',
             'motif_remise_en_attente' => null,
+            'motif_remise_en_attente_at' => null,
         ]);
 
         $this->assertTrue($learner->fresh()->hasRole('Apprenant'));

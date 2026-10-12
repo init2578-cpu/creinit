@@ -34,10 +34,12 @@ class Application extends Model
         'telephone',
         'sexe',
         'motif_remise_en_attente',
+        'motif_remise_en_attente_at',
     ];
 
     protected $casts = [
         'has_cni' => 'boolean',
+        'motif_remise_en_attente_at' => 'datetime',
     ];
 
     public function user(): BelongsTo

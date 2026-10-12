@@ -23,7 +23,8 @@ import {
     ChevronDownIcon,
     UserGroupIcon,
     ChatBubbleBottomCenterTextIcon,
-    ExclamationTriangleIcon
+    ExclamationTriangleIcon,
+    ClockIcon
 } from '@heroicons/vue/24/outline'
 import { useForm } from '@inertiajs/vue3'
 
@@ -287,6 +288,25 @@ function closeDetails() {
     applicationForDetails.value = null
 }
 
+function formatPendingDateTime(app) {
+    if (!app) return ''
+    const raw = app.motif_remise_en_attente_at || (app.motif_remise_en_attente ? app.updated_at : null)
+    if (!raw) return ''
+    const d = new Date(raw)
+    if (isNaN(d.getTime())) return ''
+    const dateStr = d.toLocaleDateString()
+    const timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })
+    return `${dateStr} à ${timeStr}`
+}
+
+function formatPendingTooltip(app) {
+    if (!app || !app.motif_remise_en_attente) return ''
+    const dt = formatPendingDateTime(app)
+    return dt 
+        ? `Motif de remise en attente (le ${dt}) : ${app.motif_remise_en_attente}`
+        : `Motif de remise en attente : ${app.motif_remise_en_attente}`
+}
+
 const showPendingMotifModal = ref(false)
 const targetAppForPending = ref(null)
 const pendingMotif = ref('')
@@ -298,7 +318,8 @@ const quickMotifs = [
     "Demande de report de session formulée par l'apprenant",
     "Erreur matérielle lors de la validation initiale",
     "Paiement / confirmation des droits d'inscription en attente",
-    "Réévaluation pédagogique requise"
+    "Réévaluation pédagogique requise",
+    "Injoignable"
 ]
 
 function openPendingMotifModal(app) {
@@ -809,7 +830,7 @@ const getStatusClass = (status) => {
                                         <span 
                                             v-if="app.status === 'pending' && app.motif_remise_en_attente" 
                                             class="inline-flex items-center gap-1 text-[10px] font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200/70 max-w-[180px] truncate cursor-help"
-                                            :title="`Motif de remise en attente : ${app.motif_remise_en_attente}`"
+                                            :title="formatPendingTooltip(app)"
                                         >
                                             <ChatBubbleBottomCenterTextIcon class="h-3 w-3 text-amber-600 shrink-0" />
                                             <span class="truncate">{{ app.motif_remise_en_attente }}</span>
@@ -878,12 +899,18 @@ const getStatusClass = (status) => {
                         <div class="h-10 w-10 bg-amber-500 text-white rounded-xl flex items-center justify-center shrink-0 shadow-md shadow-amber-200">
                             <ArrowPathIcon class="h-5 w-5" />
                         </div>
-                        <div class="flex-1">
-                            <div class="flex items-center justify-between">
-                                <h4 class="text-xs font-black uppercase tracking-wider text-amber-900 flex items-center gap-1.5">
-                                    <ExclamationTriangleIcon class="h-4 w-4 text-amber-600" />
-                                    Dossier remis en attente
-                                </h4>
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center justify-between gap-3 flex-wrap">
+                                <div class="flex items-center gap-2 flex-wrap">
+                                    <h4 class="text-xs font-black uppercase tracking-wider text-amber-900 flex items-center gap-1.5">
+                                        <ExclamationTriangleIcon class="h-4 w-4 text-amber-600" />
+                                        Dossier remis en attente
+                                    </h4>
+                                    <span v-if="formatPendingDateTime(applicationForDetails)" class="text-[10px] font-bold text-amber-800 bg-amber-100/90 px-2.5 py-0.5 rounded-full border border-amber-200/80 flex items-center gap-1 shadow-sm">
+                                        <ClockIcon class="h-3 w-3 text-amber-600 shrink-0" />
+                                        Le {{ formatPendingDateTime(applicationForDetails) }}
+                                    </span>
+                                </div>
                                 <span class="text-[10px] font-bold text-amber-700 bg-amber-100/80 px-2.5 py-0.5 rounded-full border border-amber-200">Direction</span>
                             </div>
                             <p class="text-[11px] font-bold text-amber-800 mt-1.5">Motif de la décision :</p>
