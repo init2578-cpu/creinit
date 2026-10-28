@@ -240,10 +240,13 @@ class GroupController extends Controller
             'formateur', 
             'responsableGroupe', 
             'adjointGroupe', 
-            'schedules' => fn($q) => $q->withTrashed()->with('room')
+            'schedules' => fn($q) => $q->withTrashed()->with(['room', 'formateur'])
         ]);
 
-        $attendances = Attendance::with('user:id,name,email,telephone,profile_photo_path')
+        $attendances = Attendance::with([
+            'user:id,name,email,telephone,profile_photo_path',
+            'schedule' => fn($q) => $q->withTrashed()->with(['room', 'formateur'])
+        ])
             ->where('group_id', $group->id)
             ->orderByDesc('date')
             ->get();
@@ -265,7 +268,7 @@ class GroupController extends Controller
             $trainerRecord = $items->firstWhere('user_id', $trainerId);
 
             return [
-                'date' => $first->date,
+                'date' => $first->date instanceof \DateTimeInterface ? $first->date->format('Y-m-d') : (string) $first->date,
                 'schedule_id' => $first->schedule_id,
                 'schedule' => $schedule ? [
                     'id' => $schedule->id,
@@ -318,6 +321,32 @@ class GroupController extends Controller
                 $role = 'Adjoint';
             }
 
+            $records = $studentAttendances->map(function ($item) use ($group) {
+                $schedule = $item->schedule;
+                if (!$schedule && $item->schedule_id) {
+                    $schedule = $group->schedules->firstWhere('id', $item->schedule_id);
+                }
+
+                $formattedDate = $item->date instanceof \DateTimeInterface 
+                    ? $item->date->format('Y-m-d') 
+                    : ($item->date ? (string) $item->date : null);
+
+                return [
+                    'id' => $item->id,
+                    'date' => $formattedDate,
+                    'status' => $item->status,
+                    'is_advance_reported' => (bool) $item->is_advance_reported,
+                    'motif' => $item->motif,
+                    'schedule' => $schedule ? [
+                        'id' => $schedule->id,
+                        'start_time' => $schedule->start_time,
+                        'end_time' => $schedule->end_time,
+                        'room' => $schedule->room?->nom ?? 'N/A',
+                        'formateur' => $schedule->formateur?->name ?? null,
+                    ] : null,
+                ];
+            })->values();
+
             return [
                 'id' => $student->id,
                 'name' => $student->name,
@@ -333,6 +362,7 @@ class GroupController extends Controller
                 'absences_signalees_count' => $signalees,
                 'late_count' => $late,
                 'attendance_rate' => $rate,
+                'records' => $records,
             ];
         });
 

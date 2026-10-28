@@ -110,6 +110,8 @@ class GroupAttendanceHistoryTest extends TestCase
             ->where('stats.total_absences', 2)
             ->where('stats.total_lates', 1)
             ->has('students', 2)
+            ->has('students.0.records', 2)
+            ->where('students.0.records.0.status', fn($status) => in_array($status, ['present', 'absent_non_justifie', 'late', 'justifie']))
             ->has('sessions', 2)
         );
     }
