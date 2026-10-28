@@ -102,8 +102,10 @@ class AttendanceController extends Controller
 
         $group = $schedule->group;
         
-        // Students in the group
-        $students = $group->students()->get(['users.id', 'users.name', 'users.email']);
+        // Students in the group (exclude suspended/blocked inactive users)
+        $students = $group->students()
+            ->where('users.is_active', true)
+            ->get(['users.id', 'users.name', 'users.email']);
         
         // Trainer of the session
         $trainer = $schedule->formateur;
@@ -145,6 +147,7 @@ class AttendanceController extends Controller
             ]);
 
             $assistants = User::role('Stagiaire')
+                ->where('users.is_active', true)
                 ->whereHas('internshipRecord', function($q) use ($trainer) {
                     $q->where('internship_type', 'course_assistant')
                       ->where('tuteur_id', $trainer->id);
@@ -271,7 +274,15 @@ class AttendanceController extends Controller
             ->get()
             ->keyBy('user_id');
 
+        $activeUserIds = User::whereIn('id', collect($validated['students'])->pluck('id'))
+            ->where('is_active', true)
+            ->pluck('id')
+            ->toArray();
+
         foreach ($validated['students'] as $studentData) {
+            if (!in_array((int)$studentData['id'], $activeUserIds)) {
+                continue;
+            }
             $existing = $existingRecords->get((int)$studentData['id']);
             $isAdvance = false;
             $motif = null;
@@ -339,7 +350,7 @@ class AttendanceController extends Controller
         ]);
 
         $group = Group::findOrFail($validated['group_id']);
-        $student = User::findOrFail($validated['user_id']);
+        $student = User::where('is_active', true)->findOrFail($validated['user_id']);
         $date = $validated['date'];
         $carbonDate = Carbon::parse($date);
         $dayOfWeek = $carbonDate->dayOfWeekIso;

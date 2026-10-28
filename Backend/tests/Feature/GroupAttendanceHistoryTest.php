@@ -540,6 +540,44 @@ class GroupAttendanceHistoryTest extends TestCase
 
         $response->assertForbidden();
     }
+
+    public function test_suspended_or_inactive_user_does_not_appear_in_group_attendance_history(): void
+    {
+        $director = User::factory()->create();
+        $director->assignRole('Directeur');
+
+        $trainer = User::factory()->create();
+        $trainer->assignRole('Formateur');
+
+        $module = Module::create([
+            'code_module' => 'DEV111',
+            'titre' => 'Module Active Check',
+            'quota_heures' => 15,
+        ]);
+
+        $group = Group::create([
+            'nom_groupe' => 'Groupe Test Suspended',
+            'module_id' => $module->id,
+            'formateur_id' => $trainer->id,
+            'annee_academique' => '2025-2026',
+            'status' => 'active',
+        ]);
+
+        $activeStudent = User::factory()->create(['name' => 'Active Learner', 'is_active' => true]);
+        $activeStudent->assignRole('Apprenant');
+
+        $suspendedStudent = User::factory()->create(['name' => 'Suspended Learner', 'is_active' => false]);
+        $suspendedStudent->assignRole('Apprenant');
+
+        $group->students()->attach([$activeStudent->id, $suspendedStudent->id]);
+
+        $response = $this->actingAs($director)->get(route('groups.attendances.history', $group->id));
+        $response->assertOk();
+
+        $students = collect($response->viewData('page')['props']['students']);
+        $this->assertTrue($students->contains('id', $activeStudent->id));
+        $this->assertFalse($students->contains('id', $suspendedStudent->id));
+    }
 }
 
 

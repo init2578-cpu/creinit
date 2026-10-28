@@ -136,12 +136,15 @@ class AttendanceController extends Controller
             }
         }
 
-        $group->load('students');
+        $group->load(['students' => function ($q) {
+            $q->where('users.is_active', true);
+        }]);
         $students = $group->students;
 
         $trainerId = $group->formateur_id;
         if ($trainerId) {
             $assistants = \App\Models\User::role('Stagiaire')
+                ->where('is_active', true)
                 ->whereHas('internshipRecord', function($q) use ($trainerId) {
                     $q->where('internship_type', 'course_assistant')
                       ->where('tuteur_id', $trainerId);
@@ -280,7 +283,15 @@ class AttendanceController extends Controller
             }
         }
 
+        $activeUserIds = \App\Models\User::whereIn('id', collect($request->validated('attendances'))->pluck('user_id'))
+            ->where('is_active', true)
+            ->pluck('id')
+            ->toArray();
+
         foreach ($request->validated('attendances') as $data) {
+            if (!in_array((int)$data['user_id'], $activeUserIds)) {
+                continue;
+            }
             $existing = Attendance::where('schedule_id', $scheduleId)
                 ->where('user_id', $data['user_id'])
                 ->where('date', $date)

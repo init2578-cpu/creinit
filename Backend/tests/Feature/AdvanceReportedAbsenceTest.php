@@ -307,4 +307,71 @@ class AdvanceReportedAbsenceTest extends TestCase
 
         $responseGroupHistory->assertStatus(200);
     }
+
+    public function test_suspended_or_inactive_user_does_not_appear_in_attendance_take_list(): void
+    {
+        $data = $this->createSetup();
+        $today = Carbon::today()->toDateString();
+
+        // Suspend student 2 (is_active = false)
+        $data['student2']->update(['is_active' => false]);
+
+        $response = $this->actingAs($data['trainer'])
+            ->get(route('attendance.take', [
+                'schedule' => $data['schedule']->id,
+                'date' => $today,
+            ]));
+
+        $response->assertStatus(200);
+
+        // Verify that student 1 is present in the attendance sheet and student 2 is excluded
+        $students = collect($response->viewData('page')['props']['students']);
+        $this->assertTrue($students->contains('id', $data['student1']->id));
+        $this->assertFalse($students->contains('id', $data['student2']->id));
+    }
+
+    public function test_suspended_or_inactive_user_is_not_saved_during_attendance_store(): void
+    {
+        $data = $this->createSetup();
+        $today = Carbon::today()->toDateString();
+
+        // Suspend student 2
+        $data['student2']->update(['is_active' => false]);
+
+        // Attempt submitting attendance with both students
+        $response = $this->actingAs($data['trainer'])
+            ->post(route('attendance.store'), [
+                'schedule_id' => $data['schedule']->id,
+                'date' => $today,
+                'latitude' => 0,
+                'longitude' => 0,
+                'students' => [
+                    [
+                        'id' => $data['student1']->id,
+                        'status' => 'present',
+                    ],
+                    [
+                        'id' => $data['student2']->id,
+                        'status' => 'absent_non_justifie',
+                    ],
+                ],
+            ]);
+
+        $response->assertRedirect();
+
+        // Student 1 should be recorded
+        $this->assertDatabaseHas('attendances', [
+            'user_id' => $data['student1']->id,
+            'schedule_id' => $data['schedule']->id,
+            'date' => $today,
+            'status' => 'present',
+        ]);
+
+        // Student 2 must NOT be recorded
+        $this->assertDatabaseMissing('attendances', [
+            'user_id' => $data['student2']->id,
+            'schedule_id' => $data['schedule']->id,
+            'date' => $today,
+        ]);
+    }
 }

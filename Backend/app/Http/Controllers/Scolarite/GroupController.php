@@ -244,7 +244,7 @@ class GroupController extends Controller
         ]);
 
         $attendances = Attendance::with([
-            'user:id,name,email,telephone,profile_photo_path',
+            'user:id,name,email,telephone,profile_photo_path,is_active',
             'schedule' => fn($q) => $q->withTrashed()->with(['room', 'formateur'])
         ])
             ->where('group_id', $group->id)
@@ -264,7 +264,7 @@ class GroupController extends Controller
             }
 
             $trainerId = $schedule?->formateur_id ?? $group->formateur_id;
-            $studentItems = $items->filter(fn($item) => $item->user_id !== $trainerId);
+            $studentItems = $items->filter(fn($item) => $item->user_id !== $trainerId && ($item->user?->is_active ?? true));
             $trainerRecord = $items->firstWhere('user_id', $trainerId);
 
             return [
@@ -295,6 +295,7 @@ class GroupController extends Controller
         })->values()->sortByDesc('date')->values();
 
         $students = $group->students()
+            ->where('users.is_active', true)
             ->select('users.id', 'users.name', 'users.email', 'users.telephone', 'users.profile_photo_path')
             ->orderBy('users.name')
             ->get();
