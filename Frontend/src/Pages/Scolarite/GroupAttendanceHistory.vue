@@ -1,7 +1,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
 import { ref, computed } from 'vue'
-import { Head, Link } from '@inertiajs/vue3'
+import { Head, Link, router } from '@inertiajs/vue3'
 import { 
     ChevronLeftIcon,
     ChevronRightIcon,
@@ -21,7 +21,11 @@ import {
     XMarkIcon,
     MapPinIcon,
     ChatBubbleBottomCenterTextIcon,
-    SparklesIcon
+    SparklesIcon,
+    ShieldCheckIcon,
+    PencilSquareIcon,
+    ArrowPathIcon,
+    DocumentCheckIcon
 } from '@heroicons/vue/24/outline'
 
 const props = defineProps({
@@ -39,6 +43,23 @@ const isSessionModalOpen = ref(false)
 const selectedStudent = ref(null)
 const isStudentModalOpen = ref(false)
 const studentFilter = ref('anomalies') // 'anomalies' | 'all' | 'absent_non_justifie' | 'justifie' | 'late' | 'present'
+
+// Justification state
+const isJustifyModalOpen = ref(false)
+const justifyingRecord = ref(null)
+const justifyingStudent = ref(null)
+const justifyMotif = ref('')
+const isSubmittingJustification = ref(false)
+const justifyErrorMessage = ref('')
+
+const quickMotifs = [
+    'Certificat médical',
+    'Urgence familiale',
+    'Maladie / Raison de santé',
+    'Convocation officielle',
+    'Problème de transport',
+    'Absence autorisée par la direction',
+]
 
 const filteredStudents = computed(() => {
     if (!props.students) return []
@@ -147,6 +168,105 @@ const studentFilteredRecords = computed(() => {
 
 function printPage() {
     window.print()
+}
+
+function openJustifyModal(record, student) {
+    justifyingRecord.value = record
+    justifyingStudent.value = student
+    justifyMotif.value = record?.motif || ''
+    justifyErrorMessage.value = ''
+    isJustifyModalOpen.value = true
+}
+
+function closeJustifyModal() {
+    isJustifyModalOpen.value = false
+    justifyingRecord.value = null
+    justifyingStudent.value = null
+    justifyMotif.value = ''
+    justifyErrorMessage.value = ''
+    isSubmittingJustification.value = false
+}
+
+function selectQuickMotif(motif) {
+    if (!justifyMotif.value) {
+        justifyMotif.value = motif
+    } else if (!justifyMotif.value.includes(motif)) {
+        justifyMotif.value = `${justifyMotif.value} - ${motif}`
+    }
+}
+
+function submitJustification() {
+    if (!justifyingRecord.value || !justifyingRecord.value.id) return
+    isSubmittingJustification.value = true
+    justifyErrorMessage.value = ''
+
+    router.post(route('attendance.justify'), {
+        attendance_id: justifyingRecord.value.id,
+        motif: justifyMotif.value,
+        action: 'justify',
+    }, {
+        preserveScroll: true,
+        preserveState: true,
+        onSuccess: (page) => {
+            isSubmittingJustification.value = false
+            closeJustifyModal()
+            // Synchronize selectedStudent if open
+            if (selectedStudent.value && page.props?.students) {
+                const updated = page.props.students.find(s => s.id === selectedStudent.value.id)
+                if (updated) {
+                    selectedStudent.value = updated
+                }
+            }
+            // Synchronize selectedSession if open
+            if (selectedSession.value && page.props?.sessions) {
+                const updatedSess = page.props.sessions.find(s => 
+                    s.date === selectedSession.value.date && 
+                    s.schedule?.id === selectedSession.value.schedule?.id
+                )
+                if (updatedSess) {
+                    selectedSession.value = updatedSess
+                }
+            }
+        },
+        onError: (errors) => {
+            isSubmittingJustification.value = false
+            justifyErrorMessage.value = Object.values(errors).flat().join(', ') || "Une erreur est survenue lors de l'enregistrement."
+        }
+    })
+}
+
+function cancelJustification(record, student) {
+    if (!record || !record.id) return
+    if (!confirm("Voulez-vous vraiment annuler la justification de cette absence ? Elle repassera en absence non justifiée.")) {
+        return
+    }
+
+    router.post(route('attendance.justify'), {
+        attendance_id: record.id,
+        action: 'cancel',
+    }, {
+        preserveScroll: true,
+        preserveState: true,
+        onSuccess: (page) => {
+            // Synchronize selectedStudent if open
+            if (selectedStudent.value && page.props?.students) {
+                const updated = page.props.students.find(s => s.id === selectedStudent.value.id)
+                if (updated) {
+                    selectedStudent.value = updated
+                }
+            }
+            // Synchronize selectedSession if open
+            if (selectedSession.value && page.props?.sessions) {
+                const updatedSess = page.props.sessions.find(s => 
+                    s.date === selectedSession.value.date && 
+                    s.schedule?.id === selectedSession.value.schedule?.id
+                )
+                if (updatedSess) {
+                    selectedSession.value = updatedSess
+                }
+            }
+        }
+    })
 }
 
 const statusBadge = (status) => {
@@ -627,30 +747,64 @@ const statusBadge = (status) => {
                         <div 
                             v-for="record in selectedSession.records" 
                             :key="record.user_id"
-                            class="p-4 rounded-2xl border border-gray-100 bg-gray-50/50 flex items-center justify-between"
+                            class="p-4 rounded-2xl border border-gray-100 bg-gray-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
                         >
                             <div class="flex items-center gap-3">
                                 <div class="h-9 w-9 rounded-xl bg-blue-100 text-blue-700 font-black text-sm flex items-center justify-center shrink-0">
                                     {{ record.user_name.charAt(0).toUpperCase() }}
                                 </div>
-                                <span class="font-black text-gray-900 text-sm">{{ record.user_name }}</span>
+                                <div>
+                                    <span class="font-black text-gray-900 text-sm block">{{ record.user_name }}</span>
+                                    <span v-if="record.motif" class="text-[11px] text-gray-500 font-medium italic block" :title="record.motif">
+                                        « {{ record.motif }} »
+                                    </span>
+                                </div>
                             </div>
 
-                            <div v-if="record.is_advance_reported" class="flex flex-col items-end">
-                                <span class="px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-purple-50 text-purple-700 border border-purple-200">
-                                    📢 Absence signalée
+                            <div class="flex items-center gap-2 self-end sm:self-center">
+                                <span 
+                                    v-if="record.is_advance_reported"
+                                    class="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-purple-50 text-purple-700 border border-purple-200"
+                                >
+                                    📢 Signalée
                                 </span>
-                                <span v-if="record.motif" class="text-[10px] text-gray-500 font-medium mt-0.5 max-w-[200px] truncate" :title="record.motif">
-                                    {{ record.motif }}
+
+                                <span 
+                                    class="px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider border"
+                                    :class="statusBadge(record.status).bg"
+                                >
+                                    {{ statusBadge(record.status).label }}
                                 </span>
+
+                                <!-- Action: Justifier unexcused absence -->
+                                <button
+                                    v-if="record.status === 'absent_non_justifie'"
+                                    @click="openJustifyModal(record, { name: record.user_name, id: record.user_id, date: selectedSession.date })"
+                                    class="px-3 py-1 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs transition inline-flex items-center gap-1.5"
+                                    title="Justifier cette absence"
+                                >
+                                    <ShieldCheckIcon class="h-3.5 w-3.5" />
+                                    <span>Justifier</span>
+                                </button>
+
+                                <!-- Action: Modifier / Annuler justified absence -->
+                                <div v-else-if="record.status === 'justifie'" class="flex items-center gap-1">
+                                    <button
+                                        @click="openJustifyModal(record, { name: record.user_name, id: record.user_id, date: selectedSession.date })"
+                                        title="Modifier le motif"
+                                        class="p-1.5 rounded-lg text-blue-600 hover:bg-blue-100/60 transition"
+                                    >
+                                        <PencilSquareIcon class="h-4 w-4" />
+                                    </button>
+                                    <button
+                                        @click="cancelJustification(record, { name: record.user_name, id: record.user_id })"
+                                        title="Annuler la justification"
+                                        class="p-1.5 rounded-lg text-rose-500 hover:bg-rose-100/60 transition"
+                                    >
+                                        <XMarkIcon class="h-4 w-4" />
+                                    </button>
+                                </div>
                             </div>
-                            <span 
-                                v-else
-                                class="px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider border"
-                                :class="statusBadge(record.status).bg"
-                            >
-                                {{ statusBadge(record.status).label }}
-                            </span>
                         </div>
                     </div>
 
@@ -972,22 +1126,59 @@ const statusBadge = (status) => {
                                 </div>
                             </div>
 
-                            <!-- Motif / Justification Callout if exists -->
+                            <!-- Justification actions & details block -->
+                            <!-- Case 1: Unexcused absence - CTA button to justify -->
                             <div 
-                                v-if="record.motif" 
-                                class="mt-3 p-3 rounded-xl bg-white border border-gray-100 flex items-start gap-2 text-xs"
+                                v-if="record.status === 'absent_non_justifie'"
+                                class="mt-3 pt-3 border-t border-rose-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5"
                             >
-                                <ChatBubbleBottomCenterTextIcon class="h-4 w-4 text-blue-500 shrink-0 mt-0.5" />
-                                <div class="space-y-0.5">
-                                    <span class="font-bold text-gray-700">Motif renseigné :</span>
-                                    <p class="text-gray-600 font-medium italic">« {{ record.motif }} »</p>
-                                </div>
+                                <span class="text-[11px] text-rose-600 font-medium italic">
+                                    Absence non régularisée pour cette séance.
+                                </span>
+                                <button
+                                    type="button"
+                                    @click="openJustifyModal(record, selectedStudent)"
+                                    class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-xs font-black tracking-wide shadow-sm shadow-blue-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] self-start sm:self-auto"
+                                >
+                                    <ShieldCheckIcon class="h-4 w-4" />
+                                    <span>Justifier l'absence</span>
+                                </button>
                             </div>
+
+                            <!-- Case 2: Justified absence - Show motif with edit & cancel buttons -->
                             <div 
-                                v-else-if="record.status === 'absent_non_justifie'"
-                                class="mt-2 text-[11px] text-gray-400 font-medium italic pl-1"
+                                v-else-if="record.status === 'justifie'" 
+                                class="mt-3 p-3.5 rounded-2xl bg-blue-50/60 border border-blue-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
                             >
-                                Aucun motif ni justificatif fourni pour cette séance.
+                                <div class="flex items-start gap-2.5">
+                                    <ChatBubbleBottomCenterTextIcon class="h-4 w-4 text-blue-600 shrink-0 mt-0.5" />
+                                    <div class="space-y-0.5">
+                                        <span class="font-bold text-blue-900">Motif de justification :</span>
+                                        <p class="text-blue-800 font-medium italic">
+                                            {{ record.motif ? `« ${record.motif} »` : 'Justifiée sans motif textuel' }}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-2 shrink-0 self-end sm:self-auto">
+                                    <button
+                                        type="button"
+                                        @click="openJustifyModal(record, selectedStudent)"
+                                        class="inline-flex items-center gap-1 text-[11px] font-bold text-blue-700 hover:text-blue-900 bg-white hover:bg-blue-100/60 border border-blue-200 px-2.5 py-1 rounded-lg transition shadow-2xs"
+                                        title="Modifier le motif"
+                                    >
+                                        <PencilSquareIcon class="h-3.5 w-3.5" />
+                                        <span>Modifier</span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        @click="cancelJustification(record, selectedStudent)"
+                                        class="inline-flex items-center gap-1 text-[11px] font-bold text-rose-600 hover:text-rose-800 bg-white hover:bg-rose-50 border border-rose-200 px-2.5 py-1 rounded-lg transition shadow-2xs"
+                                        title="Annuler la justification"
+                                    >
+                                        <XMarkIcon class="h-3.5 w-3.5" />
+                                        <span>Annuler</span>
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1004,6 +1195,119 @@ const statusBadge = (status) => {
                             Fermer
                         </button>
                     </div>
+                </div>
+            </div>
+
+            <!-- Modal: Justify Absence Dialog -->
+            <div
+                v-if="isJustifyModalOpen && justifyingRecord"
+                class="fixed inset-0 z-[60] flex items-center justify-center p-3 sm:p-4 bg-gray-950/70 backdrop-blur-md"
+                @click.self="closeJustifyModal"
+            >
+                <div class="bg-white rounded-[2.5rem] max-w-lg w-full p-6 sm:p-7 shadow-2xl border border-gray-100 flex flex-col animate-in fade-in zoom-in-95 duration-200">
+                    <!-- Header -->
+                    <div class="flex items-start justify-between pb-4 border-b border-gray-100">
+                        <div class="flex items-center gap-3.5">
+                            <div class="h-12 w-12 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center shadow-md shadow-blue-500/20 shrink-0">
+                                <ShieldCheckIcon class="h-6 w-6" />
+                            </div>
+                            <div>
+                                <span class="text-[10px] font-black uppercase tracking-wider text-blue-600">Scolarité • Justification</span>
+                                <h3 class="text-lg font-black text-gray-900 leading-tight">
+                                    Justifier l'absence
+                                </h3>
+                                <p class="text-xs text-gray-500 font-medium mt-0.5">
+                                    <strong class="text-gray-800">{{ justifyingStudent?.name }}</strong> &bull;
+                                    {{ formatDateLong(justifyingRecord.date || justifyingStudent?.date) }}
+                                </p>
+                            </div>
+                        </div>
+                        <button
+                            type="button"
+                            @click="closeJustifyModal"
+                            class="p-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-500 transition"
+                        >
+                            <XMarkIcon class="h-5 w-5" />
+                        </button>
+                    </div>
+
+                    <!-- Body Form -->
+                    <form @submit.prevent="submitJustification" class="pt-5 space-y-4">
+                        <!-- Alert / Info -->
+                        <div class="p-3.5 rounded-2xl bg-blue-50/70 border border-blue-100 text-xs text-blue-800 flex items-start gap-2.5">
+                            <InformationCircleIcon class="h-4 w-4 text-blue-600 shrink-0 mt-0.5" />
+                            <div class="space-y-0.5">
+                                <p class="font-bold">Régularisation de l'absence</p>
+                                <p class="text-blue-700/90 text-[11px] leading-relaxed">
+                                    Cette action passera le statut de l'absence en « Justifiée », recalculera le taux d'assiduité et consignera le motif dans l'historique officiel.
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Quick Suggestions -->
+                        <div class="space-y-1.5">
+                            <label class="block text-[11px] font-black uppercase tracking-wider text-gray-500">
+                                Motifs fréquents (cliquez pour insérer) :
+                            </label>
+                            <div class="flex flex-wrap gap-1.5">
+                                <button
+                                    v-for="motif in quickMotifs"
+                                    :key="motif"
+                                    type="button"
+                                    @click="selectQuickMotif(motif)"
+                                    class="text-[11px] font-bold px-2.5 py-1 rounded-lg border transition-all"
+                                    :class="justifyMotif === motif
+                                        ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
+                                        : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-blue-50 hover:border-blue-200 hover:text-blue-700'"
+                                >
+                                    + {{ motif }}
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Custom Motif Input -->
+                        <div class="space-y-1.5">
+                            <label for="justify-motif" class="block text-xs font-black text-gray-700">
+                                Motif ou référence du justificatif <span class="text-rose-500">*</span>
+                            </label>
+                            <textarea
+                                id="justify-motif"
+                                v-model="justifyMotif"
+                                rows="3"
+                                required
+                                placeholder="Ex: Certificat médical transmis par le médecin, urgence familiale justifiée, convocation administrative..."
+                                class="w-full text-xs rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 p-3 text-gray-800 placeholder-gray-400 font-medium transition resize-none"
+                            ></textarea>
+                            <p class="text-[10px] text-gray-400">
+                                Vous pouvez modifier ou annuler ce justificatif à tout moment depuis cet historique.
+                            </p>
+                        </div>
+
+                        <div v-if="justifyErrorMessage" class="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold">
+                            {{ justifyErrorMessage }}
+                        </div>
+
+                        <!-- Actions -->
+                        <div class="pt-3 border-t border-gray-100 flex items-center justify-end gap-2.5">
+                            <button
+                                type="button"
+                                @click="closeJustifyModal"
+                                :disabled="isSubmittingJustification"
+                                class="px-4 py-2.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-xs transition"
+                            >
+                                Annuler
+                            </button>
+                            <button
+                                type="submit"
+                                :disabled="isSubmittingJustification || !justifyMotif.trim()"
+                                class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 text-white font-black text-xs uppercase tracking-wider shadow-md shadow-blue-500/20 transition-all flex items-center gap-2"
+                            >
+                                <ArrowPathIcon v-if="isSubmittingJustification" class="h-4 w-4 animate-spin" />
+                                <ShieldCheckIcon v-else class="h-4 w-4" />
+                                <span>{{ isSubmittingJustification ? 'Enregistrement...' : 'Valider la justification' }}</span>
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>

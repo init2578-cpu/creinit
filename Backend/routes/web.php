@@ -260,6 +260,8 @@ Route::middleware(['auth'])->group(function (): void {
             ->middleware(EnsureWithinPremises::class)->name('attendance.store');
         Route::post('/attendance/report-absence', [\App\Http\Controllers\Scolarite\AttendanceController::class, 'reportAdvanceAbsence'])
             ->name('attendance.report-absence');
+        Route::post('/attendance/justify', [\App\Http\Controllers\Scolarite\AttendanceController::class, 'justifyAbsence'])
+            ->name('attendance.justify');
 
 
 

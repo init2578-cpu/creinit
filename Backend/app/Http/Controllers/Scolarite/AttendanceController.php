@@ -447,4 +447,73 @@ class AttendanceController extends Controller
             'history' => $grouped,
         ]);
     }
+
+    /**
+     * Justify an existing attendance record or cancel its justification.
+     */
+    public function justifyAbsence(Request $request): RedirectResponse
+    {
+        $user = $request->user();
+        if (!$user) {
+            abort(401);
+        }
+
+        $validated = $request->validate([
+            'attendance_id' => 'required|integer|exists:attendances,id',
+            'motif'         => 'nullable|string|max:255',
+            'action'        => 'nullable|string|in:justify,cancel',
+        ]);
+
+        $attendance = Attendance::with(['group', 'user'])->findOrFail($validated['attendance_id']);
+
+        // Permissions check: Directeur, Secrétaire, or the trainer in charge of the group
+        $isDirectorOrSecretary = $user->hasRole('Directeur') || $user->hasRole('Secrétaire');
+        $isTrainer = $user->isTrainer();
+        $isGroupTrainer = false;
+        if ($isTrainer && $attendance->group) {
+            $trainerIds = [$user->id];
+            if ($user->hasRole('Stagiaire') && $user->internshipRecord?->tuteur_id) {
+                $trainerIds[] = $user->internshipRecord->tuteur_id;
+            }
+            if (in_array($attendance->group->formateur_id, $trainerIds)) {
+                $isGroupTrainer = true;
+            }
+        }
+
+        if (!$isDirectorOrSecretary && !$isGroupTrainer) {
+            abort(403, "Vous n'avez pas l'autorisation de justifier cette absence.");
+        }
+
+        $action = $validated['action'] ?? 'justify';
+
+        if ($action === 'cancel') {
+            $attendance->update([
+                'status'              => 'absent_non_justifie',
+                'motif'               => null,
+                'is_advance_reported' => false,
+                'reported_by'         => null,
+                'reported_at'         => null,
+            ]);
+
+            \Illuminate\Support\Facades\Cache::forget('director_dashboard_kpis');
+
+            return back()->with('success', "La justification de l'absence pour {$attendance->user?->name} a été annulée.");
+        }
+
+        $motif = trim($validated['motif'] ?? '');
+        if (empty($motif)) {
+            $motif = 'Absence justifiée';
+        }
+
+        $attendance->update([
+            'status'      => 'justifie',
+            'motif'       => $motif,
+            'reported_by' => $user->id,
+            'reported_at' => Carbon::now(),
+        ]);
+
+        \Illuminate\Support\Facades\Cache::forget('director_dashboard_kpis');
+
+        return back()->with('success', "L'absence de {$attendance->user?->name} a été justifiée avec succès.");
+    }
 }

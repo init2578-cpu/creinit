@@ -284,6 +284,7 @@ class GroupController extends Controller
                 'justifie' => $studentItems->where('status', 'justifie')->count(),
                 'late' => $studentItems->whereIn('status', ['late', 'en_retard'])->count(),
                 'records' => $studentItems->map(fn($item) => [
+                    'id' => $item->id,
                     'user_id' => $item->user_id,
                     'user_name' => $item->user?->name ?? 'Apprenant',
                     'status' => $item->status,

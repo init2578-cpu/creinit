@@ -397,6 +397,149 @@ class GroupAttendanceHistoryTest extends TestCase
             'status' => 'closed',
         ]);
     }
+
+    public function test_director_can_justify_an_unjustified_absence(): void
+    {
+        $director = User::factory()->create();
+        $director->assignRole('Directeur');
+
+        $trainer = User::factory()->create();
+        $trainer->assignRole('Formateur');
+
+        $module = Module::create([
+            'code_module' => 'DEV108',
+            'titre' => 'Laravel Test',
+            'quota_heures' => 20,
+        ]);
+
+        $group = Group::create([
+            'nom_groupe' => 'Groupe Test Justif',
+            'module_id' => $module->id,
+            'formateur_id' => $trainer->id,
+            'annee_academique' => '2025-2026',
+            'status' => 'active',
+        ]);
+
+        $student = User::factory()->create(['name' => 'Jean Dupont']);
+        $student->assignRole('Apprenant');
+        $group->students()->attach($student->id);
+
+        $attendance = Attendance::create([
+            'group_id' => $group->id,
+            'user_id' => $student->id,
+            'date' => '2026-10-15',
+            'status' => 'absent_non_justifie',
+        ]);
+
+        $response = $this->actingAs($director)->post(route('attendance.justify'), [
+            'attendance_id' => $attendance->id,
+            'motif' => 'Certificat médical transmis par le médecin',
+        ]);
+
+        $response->assertSessionHas('success');
+
+        $attendance->refresh();
+        $this->assertEquals('justifie', $attendance->status);
+        $this->assertEquals('Certificat médical transmis par le médecin', $attendance->motif);
+        $this->assertEquals($director->id, $attendance->reported_by);
+        $this->assertNotNull($attendance->reported_at);
+
+        // Verify history page reflects the justified status
+        $historyResponse = $this->actingAs($director)->get(route('groups.attendances.history', $group->id));
+        $historyResponse->assertOk();
+        $historyResponse->assertInertia(fn (Assert $page) => $page
+            ->component('Scolarite/GroupAttendanceHistory')
+            ->where('students.0.absences_non_justifiees_count', 0)
+            ->where('students.0.absences_justifiees_count', 1)
+            ->where('students.0.records.0.status', 'justifie')
+            ->where('students.0.records.0.motif', 'Certificat médical transmis par le médecin')
+        );
+    }
+
+    public function test_director_can_cancel_an_absence_justification(): void
+    {
+        $director = User::factory()->create();
+        $director->assignRole('Directeur');
+
+        $trainer = User::factory()->create();
+        $trainer->assignRole('Formateur');
+
+        $module = Module::create([
+            'code_module' => 'DEV109',
+            'titre' => 'Laravel Justif 2',
+            'quota_heures' => 20,
+        ]);
+
+        $group = Group::create([
+            'nom_groupe' => 'Groupe Test Justif 2',
+            'module_id' => $module->id,
+            'formateur_id' => $trainer->id,
+            'annee_academique' => '2025-2026',
+            'status' => 'active',
+        ]);
+
+        $student = User::factory()->create(['name' => 'Paul Faye']);
+        $student->assignRole('Apprenant');
+        $group->students()->attach($student->id);
+
+        $attendance = Attendance::create([
+            'group_id' => $group->id,
+            'user_id' => $student->id,
+            'date' => '2026-10-16',
+            'status' => 'justifie',
+            'motif' => 'Erreur de saisie initiale',
+            'reported_by' => $director->id,
+        ]);
+
+        $response = $this->actingAs($director)->post(route('attendance.justify'), [
+            'attendance_id' => $attendance->id,
+            'action' => 'cancel',
+        ]);
+
+        $response->assertSessionHas('success');
+
+        $attendance->refresh();
+        $this->assertEquals('absent_non_justifie', $attendance->status);
+        $this->assertNull($attendance->motif);
+        $this->assertNull($attendance->reported_by);
+    }
+
+    public function test_unauthorized_user_cannot_justify_absence(): void
+    {
+        $student = User::factory()->create();
+        $student->assignRole('Apprenant');
+
+        $trainer = User::factory()->create();
+        $trainer->assignRole('Formateur');
+
+        $module = Module::create([
+            'code_module' => 'DEV110',
+            'titre' => 'Module Auth',
+            'quota_heures' => 10,
+        ]);
+
+        $group = Group::create([
+            'nom_groupe' => 'Groupe Test Auth',
+            'module_id' => $module->id,
+            'formateur_id' => $trainer->id,
+            'annee_academique' => '2025-2026',
+            'status' => 'active',
+        ]);
+
+        $attendance = Attendance::create([
+            'group_id' => $group->id,
+            'user_id' => $student->id,
+            'date' => '2026-10-17',
+            'status' => 'absent_non_justifie',
+        ]);
+
+        $response = $this->actingAs($student)->post(route('attendance.justify'), [
+            'attendance_id' => $attendance->id,
+            'motif' => 'Tentative apprenant',
+        ]);
+
+        $response->assertForbidden();
+    }
 }
 
 
